@@ -335,7 +335,8 @@ break:
   `node_modules/` with the Linux node-pty binary, and must not carry a loose
   server bundle (`bin.mjs`).
 - The external Windows resource monitor is absent.
-- The unpacked Windows application contains more than 80 files.
+- The unpacked Windows application contains more than 80 files outside the
+  generated `resources/server-compile-cache` directory.
 
 Cross-architecture Windows builds retain every structural and extracted-sidecar
 check, but skip executing the target Electron binary. A same-architecture build

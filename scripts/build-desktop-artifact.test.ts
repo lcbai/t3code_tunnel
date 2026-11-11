@@ -1321,23 +1321,53 @@ it.layer(NodeServices.layer)("build-desktop-artifact", (it) => {
     ),
   );
 
-  it.effect("rejects a Windows payload that regresses above the file-count budget", () =>
-    Effect.scoped(
-      Effect.gen(function* () {
-        const fixture = yield* makeWindowsPayloadFixture({ copyUnpackedNatives: true });
-        const error = yield* validateWindowsPackagedPayload({
-          stageDistDir: fixture.stageDistDir,
-          appExecutableName: fixture.appExecutableName,
-          targetArch: "x64",
-          appVersion: WINDOWS_PAYLOAD_FIXTURE_VERSION,
-          fileLimit: 2,
-        }).pipe(Effect.flip);
+  it.effect(
+    "counts Windows payload files outside the prepared server cache against the budget",
+    () =>
+      Effect.scoped(
+        Effect.gen(function* () {
+          const fs = yield* FileSystem.FileSystem;
+          const path = yield* Path.Path;
+          const fixture = yield* makeWindowsPayloadFixture({ copyUnpackedNatives: true });
+          const input = {
+            stageDistDir: fixture.stageDistDir,
+            appExecutableName: fixture.appExecutableName,
+            targetArch: "x64" as const,
+            appVersion: WINDOWS_PAYLOAD_FIXTURE_VERSION,
+          };
+          const baseline = yield* validateWindowsPackagedPayload(input);
+          const fileLimit = baseline.fileCount;
+          const cacheDir = path.join(fixture.packagedAppDir, "resources", "server-compile-cache");
+          yield* fs.makeDirectory(cacheDir);
+          yield* fs.writeFileString(path.join(cacheDir, "0123abcd"), "compiled-bytecode");
+          yield* fs.writeFileString(
+            path.join(cacheDir, "manifest.json"),
+            JSON.stringify({
+              format: 1,
+              runtime: "fixture",
+              entries: [{ module: "server.asar/apps/server/dist/bin.mjs", file: "0123abcd" }],
+            }),
+          );
+          const cached = yield* validateWindowsPackagedPayload({ ...input, fileLimit });
+          assert.equal(cached.fileCount, fileLimit);
 
-        assert.instanceOf(error, WindowsPackagedPayloadValidationError);
-        assert.equal(error.reason, "file-limit-exceeded");
-        assert.isAbove(error.fileCount ?? 0, 2);
-      }),
-    ),
+          const otherDir = path.join(
+            fixture.packagedAppDir,
+            "resources",
+            "server-compile-cache-extra",
+          );
+          yield* fs.makeDirectory(otherDir);
+          yield* fs.writeFileString(path.join(otherDir, "0123abcd"), "extra-file");
+          const error = yield* validateWindowsPackagedPayload({
+            ...input,
+            fileLimit,
+          }).pipe(Effect.flip);
+
+          assert.instanceOf(error, WindowsPackagedPayloadValidationError);
+          assert.equal(error.reason, "file-limit-exceeded");
+          assert.equal(error.fileCount, fileLimit + 1);
+        }),
+      ).pipe(Effect.provideService(HostProcess.Platform, "linux")),
   );
 
   it.effect("rejects a sidecar whose extracted server bundle cannot resolve", () =>
