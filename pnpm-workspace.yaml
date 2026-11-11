@@ -96,6 +96,7 @@ overrides:
   alchemy: "catalog:"
   expo-audio: 58.0.11
   expo-network: 58.0.4
+  expo-quick-actions: 6.0.2
   expo-sharing: 58.0.22
   expo-widgets: 58.0.27
   "@ff-labs/fff-node": 0.11.0
@@ -198,6 +199,7 @@ patchedDependencies:
   expo-audio@58.0.11: patches/expo-audio@58.0.11.patch
   expo-video@58.0.13: patches/expo-video@58.0.13.patch
   expo-network@58.0.4: patches/expo-network@58.0.4.patch
+  expo-quick-actions@6.0.2: patches/expo-quick-actions@6.0.2.patch
   "@effect/vitest@4.1.2": patches/@effect__vitest@4.1.2.patch
   expo-sharing@58.0.22: patches/expo-sharing@58.0.22.patch
   expo-widgets@58.0.27: patches/expo-widgets@58.0.27.patch

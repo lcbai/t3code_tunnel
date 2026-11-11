@@ -1,0 +1,8 @@
+diff --git a/android/src/main/java/expo/modules.quickactions/ExpoAppIconModule.kt b/android/src/main/java/expo/modules.quickactions/ExpoAppIconModule.kt
+--- a/android/src/main/java/expo/modules.quickactions/ExpoAppIconModule.kt
++++ b/android/src/main/java/expo/modules.quickactions/ExpoAppIconModule.kt
+@@ -24,3 +24,3 @@ class ExpoAppIconModule : Module() {
+-    Function("setIcon") { iconName: String? ->
++    Function<Any?, String?>("setIcon") { iconName ->
+       val mainActivityAlias = context.packageName + MAIN_ACTIVITY_ALIAS
+       val currentIcon = if (SharedObject.icon.isNotEmpty()) SharedObject.icon else mainActivityAlias
