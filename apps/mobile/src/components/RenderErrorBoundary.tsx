@@ -1,4 +1,3 @@
-import { Observe } from "expo-observe";
 import { Component, type ReactNode } from "react";
 import { ScrollView, View } from "react-native";
 
@@ -61,9 +60,7 @@ export class RenderErrorBoundary extends Component<
     return { failed: true, error };
   }
 
-  override componentDidCatch(error: unknown, info: { componentStack?: string }) {
-    // A caught render error never reaches Observe's global handler.
-    Observe.reportError(error);
+  override componentDidCatch(_error: unknown, info: { componentStack?: string }) {
     this.setState({ componentStack: info.componentStack });
   }
 
@@ -103,15 +100,15 @@ export function RenderFailureView(
         {title}
       </Text>
       <Text className="text-center text-sm text-foreground-muted">
-        Try again. If it keeps happening, copy the details for a bug report.
+        请重试。如果问题持续，请复制详情以报告错误。
       </Text>
       <Text selectable className="text-center font-mono text-xs text-danger-foreground">
         {props.details.split("\n", 1)[0]?.slice(0, 300)}
       </Text>
       <View className="w-full max-w-xs gap-2">
-        <Button label="Try again" onPress={props.retry} tone="primary" fullWidth />
+        <Button label="重试" onPress={props.retry} tone="primary" fullWidth />
         <Button
-          label="Copy details"
+          label="复制详情"
           onPress={() => copyTextWithHaptic(props.details, { target: "error details" })}
           fullWidth
         />

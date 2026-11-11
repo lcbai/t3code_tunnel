@@ -42,7 +42,7 @@ import { DeviceWorkspace } from "./DeviceWorkspace";
 import { PreviewPanelShell, type PreviewPanelMode } from "../preview/PreviewPanelShell";
 
 const platformLabel = (platform: DevicePlatform) =>
-  platform === "ios" ? "iOS Simulators" : "Android Emulators";
+  platform === "ios" ? "iOS 模拟器" : "Android 模拟器";
 
 const deviceKey = (device: Pick<DeviceSummary, "hostId" | "id">) =>
   `${device.hostId}\u0000${device.id}`;
@@ -238,8 +238,7 @@ export function DevicePanel(props: {
           <DeviceHostUpdates state={state} environmentId={environmentId} />
           {bootingDevices.length > 0 ? (
             <div role="status" className="border-b px-3 py-2 text-xs text-muted-foreground">
-              Starting {bootingDevices.map((device) => device.name).join(", ")}… This can take a
-              minute.
+              开始 {bootingDevices.map((device) => device.name).join(", ")}这需要一分钟。
             </div>
           ) : null}
           {operationError ? (
@@ -275,17 +274,17 @@ export function DevicePanel(props: {
                 loadError ??
                 (pendingDevice
                   ? pendingDevice.booted
-                    ? "Opening device…"
-                    : "Starting device…"
+                    ? "打开设备…"
+                    : "启动设备…"
                   : state.hostStatus === "installing"
-                    ? (state.hostStatusDetail ?? "Installing device support…")
-                    : "Finding devices…")
+                    ? (state.hostStatusDetail ?? "正在安装设备支持…")
+                    : "查找设备…")
               }
               error={loadError !== null}
             >
               {loadError !== null ? (
                 <Button size="sm" variant="outline" onClick={refreshState}>
-                  Retry
+                  重试
                 </Button>
               ) : null}
             </DeviceLoadingView>
@@ -305,8 +304,8 @@ export function DevicePanel(props: {
                       tabIndex={state.hostStatus === "failed" ? 0 : undefined}
                     >
                       {state.hostStatus === "failed"
-                        ? (state.hostStatusDetail ?? "The device hub failed to start.")
-                        : "No simulators or emulators were found on this environment."}
+                        ? (state.hostStatusDetail ?? "设备枢纽启动失败。")
+                        : "在这个环境中没有找到模拟器或模拟器。"}
                     </p>
                   </>
                 ) : null}
@@ -349,7 +348,7 @@ export function DevicePanel(props: {
                                 ) : (
                                   <Play />
                                 )}
-                                {device.booted ? "Open" : "Start"}
+                                {device.booted ? "打开" : "开始"}
                               </Button>
                             </div>
                           ))}
@@ -363,8 +362,7 @@ export function DevicePanel(props: {
                 !state.devices.some((device) => device.platform === "android") &&
                 !unavailablePlatforms.some((platform) => platform.platform === "android") ? (
                   <p className="max-w-sm text-xs">
-                    No Android virtual devices found. Create one in Android Studio's Device Manager,
-                    then refresh.
+                    未找到 Android 虚拟设备。请在 Android Studio 的设备管理器中创建一个，再刷新。
                   </p>
                 ) : null}
                 {loaded && !hostBusy ? (
@@ -374,7 +372,7 @@ export function DevicePanel(props: {
                     size="sm"
                     onClick={() => void list({ environmentId, input: {} })}
                   >
-                    Refresh devices
+                    刷新设备
                   </Button>
                 ) : null}
               </div>
@@ -399,12 +397,7 @@ function DeviceNotice(props: { readonly onDismiss: () => void; readonly children
       >
         {props.children}
       </div>
-      <Button
-        size="icon-xs"
-        variant="ghost"
-        aria-label="Dismiss device error"
-        onClick={props.onDismiss}
-      >
+      <Button size="icon-xs" variant="ghost" aria-label="调离设备错误" onClick={props.onDismiss}>
         <X />
       </Button>
     </div>
@@ -436,8 +429,8 @@ function DeviceDiscoveryWarning(props: {
         <CircleAlert className="mt-px size-3.5 shrink-0 text-warning-foreground" />
         <span className="min-w-0">
           {platforms.length > 0
-            ? `${platforms.join(" and ")} ${platforms.length > 1 ? "lists" : "list"} on ${props.label} may be incomplete.`
-            : `Device discovery on ${props.label} reported a warning.`}
+            ? `${props.label} 上的 ${platforms.join(" 和 ")} 设备列表可能不完整。`
+            : `${props.label} 上的设备发现报告警告。`}
         </span>
       </span>
       <span className="ml-auto flex shrink-0 items-center gap-0.5">
@@ -446,21 +439,21 @@ function DeviceDiscoveryWarning(props: {
             size="micro"
             variant="ghost"
             disabled={retrying}
-            aria-label={`Retry device discovery on ${props.label}`}
+            aria-label={`重新查找 ${props.label} 上的设备`}
             onClick={() => {
               setRetrying(true);
               void props.onRetry().finally(() => setRetrying(false));
             }}
           >
-            {retrying ? "Retrying…" : "Retry"}
+            {retrying ? "正在重试…" : "重试"}
           </Button>
         ) : null}
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger
-            aria-label={`Details for ${props.label}`}
+            aria-label={`${props.label} 详情`}
             render={<Button size="micro" variant="ghost" />}
           >
-            Details
+            细节
           </PopoverTrigger>
           <PopoverPopup side="bottom" align="end" width="lg" padding="compact">
             <p className="whitespace-pre-wrap break-words font-mono text-xs text-muted-foreground">
@@ -471,7 +464,7 @@ function DeviceDiscoveryWarning(props: {
         <Button
           size="icon-micro"
           variant="ghost"
-          aria-label={`Dismiss device warning for ${props.label}`}
+          aria-label={`关闭 ${props.label} 的设备警告`}
           onClick={() => {
             setOpen(false);
             setDismissedCause(cause);

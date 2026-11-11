@@ -39,7 +39,7 @@ export class PrimaryEnvironmentProtocolUnsupportedError extends Schema.TaggedErr
   },
 ) {
   override get message(): string {
-    return `The ${this.source} primary environment target uses unsupported protocol ${this.protocol}.`;
+    return `${this.source}主环境目标使用不支持的协议${this.protocol}。`;
   }
 }
 
@@ -55,7 +55,7 @@ export class DesktopEnvironmentBootstrapIncompleteError extends Schema.TaggedErr
       ...(this.hasHttpBaseUrl ? [] : ["httpBaseUrl"]),
       ...(this.hasWsBaseUrl ? [] : ["wsBaseUrl"]),
     ];
-    return `Desktop bootstrap is missing ${missing.join(" and ")} for the local environment.`;
+    return `桌面端初始化本地环境时缺少 ${missing.join(" 和 ")}。`;
   }
 }
 

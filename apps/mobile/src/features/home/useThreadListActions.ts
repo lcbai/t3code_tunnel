@@ -79,7 +79,7 @@ function actionFailureTitle(action: ThreadListAction): string {
 
 function checkThreadOperationPermission(thread: EnvironmentThreadShell, title: string): boolean {
   if (readEnvironmentScope(thread.environmentId, AuthOrchestrationOperateScope)) return true;
-  Dialog.alert(title, "This connection cannot change threads.");
+  Dialog.alert(title, "此连接无权修改会话。");
   return false;
 }
 
@@ -111,17 +111,11 @@ function useThreadActionExecutor(
         (action === "settle" || action === "unsettle") &&
         !environmentConfigLoaded(thread.environmentId)
       ) {
-        Dialog.alert(
-          actionFailureTitle(action),
-          "This environment's server does not support settling yet. Update the server to use Settle.",
-        );
+        Dialog.alert(actionFailureTitle(action), "此环境的服务器尚不支持会话收尾，请更新服务器。");
         return false;
       }
       if (action === "archive" && !threadCanArchive(thread.runtime)) {
-        Dialog.alert(
-          actionFailureTitle(action),
-          "This thread is working. Interrupt it first, then try again.",
-        );
+        Dialog.alert(actionFailureTitle(action), "此会话仍在运行。请先中断再重试。");
         return false;
       }
       if (action === "unsettle") ThreadUndo.invalidate("settle", key);
@@ -181,7 +175,7 @@ function confirmThreadDeletion(
   Dialog.confirm({
     title,
     message,
-    confirmText: "Delete",
+    confirmText: "删除",
     destructive: true,
     onConfirm: () => {
       void executeAction("delete", thread);
@@ -257,7 +251,7 @@ export function useThreadListActions(): {
                     const error = Cause.squash(result.cause);
                     Dialog.alert(
                       "Could not restore snooze",
-                      error instanceof Error ? error.message : "The thread could not be snoozed.",
+                      error instanceof Error ? error.message : "无法推迟会话。",
                     );
                     return false;
                   }
@@ -270,7 +264,7 @@ export function useThreadListActions(): {
         } catch (error) {
           Dialog.alert(
             "Could not undo thread action",
-            error instanceof Error ? error.message : "Try again.",
+            error instanceof Error ? error.message : "请重试。",
           );
         }
       },
@@ -299,18 +293,15 @@ export function useThreadListActions(): {
     snoozeInFlightThreadKeys.current.add(key);
     const succeeded = await (async () => {
       if (!environmentConfigLoaded(thread.environmentId)) {
-        Dialog.alert(
-          "Could not snooze thread",
-          "This environment's server does not support snoozing yet. Update the server to use Snooze.",
-        );
+        Dialog.alert("Could not snooze thread", "此环境的服务器尚不支持推迟会话，请更新服务器。");
         return false;
       }
       if (!canSnooze(thread, { now: new Date().toISOString() })) {
         Dialog.alert(
           "Could not snooze thread",
           thread.hasPendingApprovals || thread.pendingSubagentRequest != null
-            ? "This thread is waiting on you. Respond to the pending request before snoozing it."
-            : "This thread is still starting a turn. Try again once it's running.",
+            ? "此会话正在等待你的回复。请先回应待处理请求，再推迟会话。"
+            : "此会话正在启动新一轮，请在运行后重试。",
         );
         return false;
       }
@@ -336,7 +327,7 @@ export function useThreadListActions(): {
           "Could not snooze thread",
           error instanceof Error && error.message.trim().length > 0
             ? error.message
-            : "The thread could not be snoozed.",
+            : "无法推迟会话。",
         );
         return false;
       }
@@ -357,7 +348,7 @@ export function useThreadListActions(): {
       if (!environmentConfigLoaded(thread.environmentId)) {
         Dialog.alert(
           "Could not wake thread",
-          "This environment's server does not support snoozing yet. Update the server to wake this thread.",
+          "此环境的服务器尚不支持推迟会话。请更新服务器以唤醒此会话。",
         );
         return false;
       }
@@ -379,7 +370,7 @@ export function useThreadListActions(): {
           "Could not wake thread",
           error instanceof Error && error.message.trim().length > 0
             ? error.message
-            : "The thread could not be woken.",
+            : "无法唤醒会话。",
         );
         return false;
       }
@@ -393,10 +384,7 @@ export function useThreadListActions(): {
   const pinThread = async (thread: EnvironmentThreadShell, restoreOrderKey?: string) => {
     if (!checkThreadOperationPermission(thread, "Could not pin thread")) return false;
     if (!environmentConfigLoaded(thread.environmentId)) {
-      Dialog.alert(
-        "Could not pin thread",
-        "This environment's server does not support pinning yet. Update the server to use Pin.",
-      );
+      Dialog.alert("Could not pin thread", "此环境的服务器尚不支持置顶，请更新服务器。");
       return false;
     }
     selectionHaptic();
@@ -426,7 +414,7 @@ export function useThreadListActions(): {
         "Could not pin thread",
         error instanceof Error && error.message.trim().length > 0
           ? error.message
-          : "The thread could not be pinned.",
+          : "无法置顶会话。",
       );
       return false;
     }
@@ -435,10 +423,7 @@ export function useThreadListActions(): {
   const unpinThread = async (thread: EnvironmentThreadShell) => {
     if (!checkThreadOperationPermission(thread, "Could not unpin thread")) return false;
     if (!environmentConfigLoaded(thread.environmentId)) {
-      Dialog.alert(
-        "Could not unpin thread",
-        "This environment's server does not support pinning yet. Update the server to use Pin.",
-      );
+      Dialog.alert("Could not unpin thread", "此环境的服务器尚不支持置顶，请更新服务器。");
       return false;
     }
     selectionHaptic();
@@ -460,7 +445,7 @@ export function useThreadListActions(): {
         "Could not unpin thread",
         error instanceof Error && error.message.trim().length > 0
           ? error.message
-          : "The thread could not be unpinned.",
+          : "无法取消置顶会话。",
       );
       return false;
     }
@@ -471,7 +456,7 @@ export function useThreadListActions(): {
     if (!environmentSupportsAutoSettleOptOut(thread.environmentId)) {
       Dialog.alert(
         "Could not update auto-settle",
-        "This environment's server does not support turning auto-settle off per thread yet. Update the server to use it.",
+        "此环境的服务器尚不支持为单个会话关闭自动收尾，请更新服务器。",
       );
       return false;
     }
@@ -486,7 +471,7 @@ export function useThreadListActions(): {
         "Could not update auto-settle",
         error instanceof Error && error.message.trim().length > 0
           ? error.message
-          : "The auto-settle setting could not be changed.",
+          : "无法更改自动收尾设置。",
       );
       return false;
     }
@@ -501,7 +486,7 @@ export function useThreadListActions(): {
     if (!environmentConfigLoaded(thread.environmentId)) {
       Dialog.alert(
         "Could not regenerate title",
-        "This environment's server does not support title regeneration yet. Update the server to regenerate thread titles.",
+        "此环境的服务器尚不支持重新生成会话标题，请更新服务器。",
       );
       return false;
     }
@@ -519,7 +504,7 @@ export function useThreadListActions(): {
           "Could not regenerate title",
           error instanceof Error && error.message.trim().length > 0
             ? error.message
-            : "The thread title could not be regenerated.",
+            : "无法重新生成会话标题。",
         );
         return false;
       }
@@ -532,7 +517,7 @@ export function useThreadListActions(): {
     const commit = (title: string) => {
       const resolution = resolveThreadTitleRename({ title, originalTitle: thread.title });
       if (resolution.action === "reject-empty") {
-        Dialog.alert("Could not rename thread", "Thread title cannot be empty.");
+        Dialog.alert("Could not rename thread", "会话标题不能为空。");
         return;
       }
       if (resolution.action === "noop") return;
@@ -547,15 +532,15 @@ export function useThreadListActions(): {
           "Could not rename thread",
           error instanceof Error && error.message.trim().length > 0
             ? error.message
-            : "The thread could not be renamed.",
+            : "无法重命名会话。",
         );
       });
     };
 
     Dialog.prompt({
-      title: "Rename thread",
+      title: "重命名会话",
       initialValue: thread.title,
-      confirmText: "Rename",
+      confirmText: "重命名",
       onConfirm: commit,
     });
   };
@@ -595,10 +580,7 @@ export function useThreadListActions(): {
     if (!connectedEnvironmentIds.has(thread.environmentId)) return false;
 
     if (!configs.has(thread.environmentId)) {
-      Dialog.alert(
-        "Could not move thread",
-        "This environment's server does not support reordering these threads. Update the server to arrange them.",
-      );
+      Dialog.alert("Could not move thread", "此环境的服务器尚不支持调整会话顺序，请更新服务器。");
       return false;
     }
     const ordered = getThreadListV2OrderedSection({
@@ -690,7 +672,7 @@ export function useThreadListActions(): {
             "Could not move thread",
             error instanceof Error && error.message.trim().length > 0
               ? error.message
-              : "The thread could not be moved.",
+              : "无法移动会话。",
           );
           return false;
         }

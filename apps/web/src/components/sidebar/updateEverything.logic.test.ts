@@ -77,10 +77,10 @@ describe("collectServerUpdateTargets", () => {
     ]);
     expect(skipped.map((entry) => [entry.label, entry.reason])).toEqual([
       ["nightly-service", "on the nightly channel"],
-      ["offline", "not connected"],
-      ["never-connected", "not connected"],
-      ["no-scope", "no permission"],
-      ["busy", "already updating"],
+      ["offline", "未连接"],
+      ["never-connected", "未连接"],
+      ["no-scope", "不允许"],
+      ["busy", "已经更新"],
       ["manual", "needs a manual update"],
     ]);
   });
@@ -186,11 +186,8 @@ describe("collectChannelSwitchTargets", () => {
     expect(targets.every((target) => target.targetDatabaseMigration === 69)).toBe(true);
     expect(skipped.map((entry) => [entry.label, entry.reason])).toEqual([
       ["newer-service", "run `t3 update --channel stable --allow-downgrade` there"],
-      [
-        "new-service",
-        "its database has changes 0.1.3 does not support yet; stay on Nightly until Stable has them",
-      ],
-      ["old-server", "its server predates database checks; update it on Nightly first"],
+      ["new-service", "其数据库有更改0.1.3 尚未支持; 保留在Nightly 直至Stable 拥有它们"],
+      ["old-server", "它的服务器在数据库检查前会更新; 更新到Nightly first"],
       ["mac-desktop", "switch the Mac app on that Mac"],
       ["preview", "runs a preview build"],
     ]);
@@ -235,10 +232,7 @@ describe("collectChannelSwitchTargets", () => {
       ["service", NIGHTLY],
     ]);
     expect(skipped.map((entry) => [entry.label, entry.reason])).toEqual([
-      [
-        "ahead",
-        `its database has changes ${NIGHTLY} does not support yet; stay on Stable until Nightly has them`,
-      ],
+      ["ahead", `其数据库有更改${NIGHTLY} 尚未支持; 保留在Stable 直至Nightly 拥有它们`],
       ["old-desktop", "needs a newer desktop app"],
       [
         "no-nightly",
@@ -263,15 +257,15 @@ describe("localSwitchBlockReason", () => {
         [windows, { connected: true, databaseMigration: 72 }],
         2,
       ),
-    ).toContain("does not support yet");
+    ).toContain("尚未支持");
     // A WSL backend still starting has no client entry, so its database is unchecked.
     expect(localSwitchBlockReason(nightly, stable, [windows], 2)).toBe(
-      "its server is not connected, so its database cannot be checked",
+      "它的服务器没有连接，因此无法检查其数据库",
     );
     // A cached head from a disconnected server proves nothing.
     expect(
       localSwitchBlockReason(nightly, stable, [{ connected: false, databaseMigration: 69 }], 1),
-    ).toBe("its server is not connected, so its database cannot be checked");
+    ).toBe("它的服务器没有连接，因此无法检查其数据库");
     expect(localSwitchBlockReason("0.1.3", stable, [], 1)).toBeNull();
   });
 });
@@ -357,7 +351,7 @@ describe("describeUpdateEverything", () => {
       ],
       skipped: [
         { environmentId: id("manual"), label: "alvin", reason: "needs a manual update" },
-        { environmentId: id("offline"), label: "TheoRoom", reason: "not connected" },
+        { environmentId: id("offline"), label: "TheoRoom", reason: "未连接" },
       ],
     });
 
@@ -368,7 +362,7 @@ describe("describeUpdateEverything", () => {
       ["Mainbook WSL", "this-app", null, []],
       ["bb-1", "server", null, ["Codex", "Claude"]],
       ["alvin", null, "needs a manual update", ["Claude"]],
-      ["TheoRoom", null, "not connected", []],
+      ["TheoRoom", null, "未连接", []],
     ]);
   });
 });

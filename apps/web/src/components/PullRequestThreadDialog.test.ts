@@ -144,7 +144,7 @@ function renderDialog() {
   });
 }
 
-function prepareAction(label: "Local" | "Worktree") {
+function prepareAction(label: "本地" | "工作树") {
   const action = findAction(renderDialog(), label);
   if (!action) throw new Error(`${label} action missing`);
   return action;
@@ -169,7 +169,7 @@ describe("pull request worktree permissions", () => {
 
   it("rechecks task permission before invoking a retained worktree action", async () => {
     state.canOperate = true;
-    const prepare = prepareAction("Worktree");
+    const prepare = prepareAction("工作树");
     state.canOperate = false;
     await prepare();
 

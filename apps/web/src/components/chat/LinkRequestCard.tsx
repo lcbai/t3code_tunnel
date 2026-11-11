@@ -88,7 +88,7 @@ function PendingLinkRequest(props: {
   const [declining, setDeclining] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const answer = useAtomCommand(peerLinkEnvironment.answerRequest, {
-    label: "decline link request",
+    label: "拒绝链接请求",
     reportFailure: false,
     reportDefect: false,
   });
@@ -117,9 +117,7 @@ function PendingLinkRequest(props: {
     >
       <div className="flex min-w-0 flex-col gap-1">
         <p className="text-sm font-medium text-foreground">
-          {picksMachine(item)
-            ? "Link a machine to this environment"
-            : `Link ${target} to this environment`}
+          {picksMachine(item) ? "将机器连接到此环境" : `链接到此环境${target} label`}
         </p>
         {item.reason.trim() ? <p className="text-sm text-muted-foreground">{item.reason}</p> : null}
         {item.label !== undefined && item.url !== undefined ? (
@@ -140,16 +138,14 @@ function PendingLinkRequest(props: {
             disabled={declining}
             onClick={() => void decline()}
           >
-            Decline
+            缩写
           </Button>
           <Button type="button" size="xs" disabled={declining} onClick={() => setOpen(true)}>
-            {picksMachine(item) ? "Choose machine…" : "Review link…"}
+            {picksMachine(item) ? "选择机器…" : "检讨链接…"}
           </Button>
         </div>
       ) : (
-        <p className="text-xs text-muted-foreground">
-          Only a session that manages access here can answer this.
-        </p>
+        <p className="text-xs text-muted-foreground">只有管理这里访问的会话才能回答这个问题。</p>
       )}
       <LinkRequestDialog
         environmentId={props.environmentId}
@@ -223,7 +219,7 @@ function LinkRequestDialog(props: {
   // Enter then a click can both run before a re-render; this guard is synchronous.
   const inFlight = useRef(false);
   const answer = useAtomCommand(peerLinkEnvironment.answerRequest, {
-    label: "answer link request",
+    label: "解答链接请求",
     // The failure cause holds the request, and with it the code; keep it out of the console.
     reportFailure: false,
     reportDefect: false,
@@ -330,8 +326,8 @@ function LinkRequestDialog(props: {
     >
       <WizardPopup>
         <WizardHeader
-          title={pickMachine ? "Link a machine" : `Link ${targetName}`}
-          description="Agents here can then launch, message and wait on threads there. Revoke it in that machine's Connections."
+          title={pickMachine ? "连接机器" : `链接${targetName}`}
+          description="这里的特工可以在那里发布消息和等待会话。在机器的连接中撤消它。"
         >
           {steps.length > 1 && !useExisting ? (
             <WizardSteps
@@ -373,7 +369,7 @@ function LinkRequestDialog(props: {
                 ) : null}
                 {asksAddress ? (
                   <label className="block space-y-1.5">
-                    <span className="block text-xs font-medium text-foreground">Address</span>
+                    <span className="block text-xs font-medium text-foreground">地址</span>
                     <Input
                       value={address}
                       onChange={(event) => setAddress(event.target.value)}
@@ -384,8 +380,7 @@ function LinkRequestDialog(props: {
                     />
                     {target.kind === "machine" ? (
                       <span className="block text-xs text-muted-foreground">
-                        This app has no address for {target.label} that another machine can reach.
-                        Enter its https or Tailscale address.
+                        此应用程序没有地址 {target.label} 输入其 https 或Tailscale 地址。
                       </span>
                     ) : null}
                   </label>
@@ -400,21 +395,18 @@ function LinkRequestDialog(props: {
                   <>
                     {canMint ? null : (
                       <label className="block space-y-1.5">
-                        <span className="block text-xs font-medium text-foreground">
-                          Pairing code
-                        </span>
+                        <span className="block text-xs font-medium text-foreground">配对码</span>
                         <Input
                           value={pairingCode}
                           onChange={(event) => setPairingCode(event.target.value)}
-                          placeholder="Paste the code"
+                          placeholder="粘贴代码"
                           disabled={busy}
                           autoComplete="one-time-code"
                           nativeInput
                           spellCheck={false}
                         />
                         <span className="block text-xs text-muted-foreground">
-                          Create a link on {targetName}: Settings → Connections → Create link, then
-                          paste its code here.
+                          创建链接于 {targetName}:设置 = 连接 = 创建链接，然后粘贴其代码在此。
                         </span>
                       </label>
                     )}
@@ -425,8 +417,8 @@ function LinkRequestDialog(props: {
             )}
             {useExisting ? (
               <p className="text-xs text-muted-foreground">
-                This environment is already linked to {targetName}. The agent can use that link as
-                it is; change its access in Settings → Connections.
+                这种环境已经与 {targetName}。代理可以按原样使用该链接;在设置 →
+                连接中更改其访问权限。
               </p>
             ) : null}
             {error !== null ? (
@@ -447,11 +439,11 @@ function LinkRequestDialog(props: {
                 setError(null);
               }}
             >
-              Back
+              返回
             </Button>
           ) : (
             <Button variant="outline" type="button" disabled={busy} onClick={close}>
-              Cancel
+              取消
             </Button>
           )}
           <Button
@@ -459,7 +451,7 @@ function LinkRequestDialog(props: {
             type="submit"
             disabled={busy || (finishesHere ? !ready : !machineReady)}
           >
-            {busy ? "Linking…" : useExisting ? "Use this link" : finishesHere ? "Link" : "Continue"}
+            {busy ? "连接中…" : useExisting ? "使用此链接" : finishesHere ? "链接" : "继续"}
           </Button>
         </WizardFooter>
       </WizardPopup>
@@ -478,7 +470,7 @@ function MachinePicker(props: {
   return (
     <div className="space-y-2">
       <span id={labelId} className="block text-xs font-medium">
-        Machine
+        机器
       </span>
       <RadioGroup
         aria-labelledby={labelId}
@@ -502,7 +494,7 @@ function MachinePicker(props: {
         ))}
         <label className="flex cursor-pointer items-center gap-2.5 rounded-lg border px-3 py-2 text-sm">
           <Radio value={ANOTHER_ADDRESS} />
-          <span className="min-w-0 flex-1 font-medium">Another address…</span>
+          <span className="min-w-0 flex-1 font-medium">另一个地址…</span>
         </label>
       </RadioGroup>
     </div>

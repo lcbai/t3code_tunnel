@@ -24,13 +24,13 @@ export function ProjectCloneBanner(props: {
         <AppActivityIndicator size="small" />
         <View className="min-w-0 flex-1">
           <Text className="font-t3-medium text-sm" numberOfLines={1}>
-            Cloning {name}
+            正在克隆 {name}
           </Text>
           <Text className="text-xs text-foreground-muted" numberOfLines={1}>
             {projectCloneProgressSummary(clone)}
           </Text>
         </View>
-        <BannerAction label="Cancel" onPress={props.onCancel} />
+        <BannerAction label="取消" onPress={props.onCancel} />
       </View>
     );
   }
@@ -57,8 +57,8 @@ export function ProjectCloneBanner(props: {
         </Text>
       ) : null}
       <View className="mt-2 flex-row justify-end gap-2">
-        <BannerAction label="Remove project" onPress={props.onRemove} />
-        <BannerAction label="Retry" onPress={props.onRetry} />
+        <BannerAction label="移除项目" onPress={props.onRemove} />
+        <BannerAction label="重试" onPress={props.onRetry} />
       </View>
     </View>
   );

@@ -54,7 +54,7 @@ describe("ThemeImportDialog", () => {
       </StrictMode>,
     );
 
-    await userEvent.type(page.getByLabelText("Search Open VSX themes"), "night");
+    await userEvent.type(page.getByLabelText("搜索打开的 VSX 主题"), "night");
 
     await expect.element(page.getByRole("heading", { name: "Nightfall" })).toBeVisible();
     expect(searchOpenVsxThemes).toHaveBeenCalledWith(
@@ -100,7 +100,7 @@ it.each(["Update existing", "Keep both"])(
       new File(["{"], "broken.json", { type: "application/json" }),
     ]);
 
-    await expect.element(page.getByText("Already installed")).toBeVisible();
+    await expect.element(page.getByText("已安装")).toBeVisible();
     await expect.element(page.getByText(/^broken\.json:/)).toBeVisible();
     expect(getCustomThemes().map((theme) => theme.label)).toContain("Dawn");
     await page.getByRole("button", { name: choice }).click();
@@ -151,13 +151,13 @@ describe("ThemeImportDialog JSONC imports", () => {
     );
     const json = themeJsonc("JSONC Night", "#002b36");
     if (source === "paste") {
-      await page.getByRole("textbox", { name: "Theme JSON" }).fill(json);
+      await page.getByRole("textbox", { name: "主题JSON" }).fill(json);
     } else {
       const input = document.querySelector<HTMLInputElement>('input[type="file"]')!;
       await userEvent.upload(input, new File([json], "night.json", { type: "application/json" }));
-      await expect.element(page.getByRole("textbox", { name: "Theme JSON" })).toHaveValue(json);
+      await expect.element(page.getByRole("textbox", { name: "主题JSON" })).toHaveValue(json);
     }
-    await page.getByRole("button", { name: "Add theme", exact: true }).click();
+    await page.getByRole("button", { name: "添加主题", exact: true }).click();
 
     expect(getCustomThemes().map((theme) => theme.label)).toEqual(["JSONC Night"]);
     expect(themeColorToHex(getCustomThemes()[0]!.colors.canvas)).toBe("#002b36");

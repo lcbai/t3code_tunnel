@@ -100,7 +100,7 @@ function UpdateEverythingDialogContent({
   onConfirm,
   cancelRef,
   title,
-  confirmLabel = "Update",
+  confirmLabel = "更新",
   notes = [],
   disabledReason = null,
   busy = false,
@@ -132,7 +132,8 @@ function UpdateEverythingDialogContent({
     <>
       <AlertDialogHeader className="shrink-0">
         <AlertDialogTitle>
-          {title ?? `Update ${updating.length} ${updating.length === 1 ? "machine" : "machines"}?`}
+          {title ??
+            `要更新 ${updating.length} ${updating.length === 1 ? "machine" : "machines"} 吗？`}
         </AlertDialogTitle>
         <AlertDialogDescription>
           {version !== null ? (
@@ -144,9 +145,7 @@ function UpdateEverythingDialogContent({
           {providerCount > 0
             ? `${providerCount} provider ${providerCount === 1 ? "update" : "updates"}`
             : null}
-          {checking
-            ? `${version !== null || providerCount > 0 ? " · " : ""}Checking for more…`
-            : null}
+          {checking ? `${version !== null || providerCount > 0 ? " · " : ""}正在继续检查…` : null}
         </AlertDialogDescription>
       </AlertDialogHeader>
       <ScrollArea scrollFade>
@@ -159,9 +158,9 @@ function UpdateEverythingDialogContent({
           {/* Machine names truncate first. Provider lists wrap between names, never inside one. */}
           <div className="grid grid-cols-[minmax(4rem,max-content)_max-content_minmax(min-content,1fr)_max-content] gap-x-4 text-sm">
             <div className="col-span-full grid grid-cols-subgrid border-b pb-1.5 text-muted-foreground text-xs">
-              <span>Machine</span>
+              <span>机器</span>
               <span>T3 Code</span>
-              <span>Providers</span>
+              <span>代理提供方</span>
               <span />
             </div>
             {updating.map((row) => (
@@ -175,10 +174,10 @@ function UpdateEverythingDialogContent({
                 <span>
                   {row.app !== null ? APP_LABELS[row.app] : null}
                   {row.app === null && row.skipped !== null ? (
-                    <span className="text-muted-foreground">Skipped</span>
+                    <span className="text-muted-foreground">跳过</span>
                   ) : null}
                   {row.app === "this-app" ? (
-                    <span className="block text-muted-foreground text-xs">restarts last</span>
+                    <span className="block text-muted-foreground text-xs">上次重新启动</span>
                   ) : null}
                 </span>
                 <span>
@@ -227,14 +226,14 @@ function UpdateEverythingDialogContent({
         ) : running > 0 ? (
           <p className="self-center text-muted-foreground text-sm max-sm:order-1 max-sm:text-center sm:mr-auto">
             {stopped === 0
-              ? `${threads} will be interrupted and can resume after the restart.`
+              ? `${threads} 将中断，重启后可以恢复。`
               : continuing === 0
-                ? `${threads} will be interrupted.`
-                : `${threads} will be interrupted. ${continuing} can resume after the restart.`}
+                ? `${threads}将中断。`
+                : `${threads} 将被中断。${continuing} 可以在重启后恢复。`}
           </p>
         ) : null}
         <AlertDialogClose ref={cancelRef} render={<Button variant="outline" disabled={busy} />}>
-          Cancel
+          取消
         </AlertDialogClose>
         <Button disabled={disabledReason !== null || busy} onClick={onConfirm}>
           {confirmLabel}

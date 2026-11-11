@@ -28,7 +28,7 @@ export async function prepareLocalTrackSwitch(
   } catch (error) {
     return {
       ok: false,
-      message: error instanceof Error ? error.message : "The update track did not change.",
+      message: error instanceof Error ? error.message : "更新音轨没有改变。",
     };
   }
   if (!input.reinstall) return { ok: true, local: null };
@@ -44,8 +44,8 @@ export async function prepareLocalTrackSwitch(
     ok: false,
     message:
       found !== null
-        ? `This app found ${found}, which is older than ${input.version}. Try again in a few minutes.`
-        : (local.message ?? `This app found no build of ${input.version} to install.`),
+        ? `这个应用程序找到了${found}，它比${input.version} 年长。 几分钟后再试一次。`
+        : (local.message ?? `此应用程序找不到要安装的${input.version} build。`),
   };
 }
 

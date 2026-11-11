@@ -51,13 +51,13 @@ const MODEL_ROWS = 6;
 export function CloudVoiceSection({ environment, active }: Props) {
   const [open, setOpen] = useState(false);
   return (
-    <SettingsSection title={`Cloud via ${environment.label}`}>
+    <SettingsSection title={`云端 · ${environment.label}`}>
       <ListActionRow
-        label="Cloud providers"
+        label="云端提供方"
         description={
           active
-            ? `Using ${CLOUD_SPEECH_LABELS[active.provider]}`
-            : "Optional · use your own API key"
+            ? `正在使用 ${CLOUD_SPEECH_LABELS[active.provider]}`
+            : "可选 · 使用你自己的 API 密钥"
         }
         onPress={() => setOpen(true)}
       />
@@ -94,8 +94,8 @@ function ModelPicker({
   return (
     <>
       <TextInput
-        accessibilityLabel="Search OpenRouter models"
-        placeholder="Search transcription models"
+        accessibilityLabel="搜索 OpenRouter 模型"
+        placeholder="搜索转录模型"
         autoCapitalize="none"
         autoCorrect={false}
         editable={!disabled}
@@ -105,7 +105,7 @@ function ModelPicker({
       />
       {delisted ? (
         <Text className="mx-4 text-sm text-destructive">
-          OpenRouter no longer lists {current}. Dictation stays off until you choose another model.
+          OpenRouter 已下架 {current}。选择其他模型后才能使用语音输入。
         </Text>
       ) : null}
       {selected && !shown.some((model) => model.id === selected.id) ? (
@@ -129,10 +129,10 @@ function ModelPicker({
         />
       ))}
       {matches.length === 0 ? (
-        <Text className="mx-4 text-sm text-foreground-muted">No transcription model matches.</Text>
+        <Text className="mx-4 text-sm text-foreground-muted">找不到匹配的转录模型。</Text>
       ) : matches.length > shown.length ? (
         <ListActionRow
-          label={`Show all ${matches.length} models`}
+          label={`显示全部 ${matches.length} 个模型`}
           onPress={() => setShowAll(true)}
         />
       ) : null}
@@ -174,10 +174,7 @@ function CloudChoices({ environment, active, onClose }: Props & { onClose: () =>
     try {
       commit();
     } catch {
-      Dialog.alert(
-        "Could not enable cloud dictation",
-        "Check device storage and choose the provider again.",
-      );
+      Dialog.alert("无法启用云端语音输入", "检查设备存储后重新选择提供方。");
     }
   };
   const edit = (provider: CloudSpeechProvider, enable: boolean) => {
@@ -211,10 +208,7 @@ function CloudChoices({ environment, active, onClose }: Props & { onClose: () =>
       await runSpeech(setCloudSpeechKey(connection, provider, value));
     } catch {
       setSaving(false);
-      Dialog.alert(
-        "Could not update the API key",
-        "Check the environment connection and your settings permissions.",
-      );
+      Dialog.alert("Could not update the API key", "请检查环境连接和设置权限。");
       return;
     }
     setSaving(false);
@@ -228,10 +222,10 @@ function CloudChoices({ environment, active, onClose }: Props & { onClose: () =>
       <ListActionRow
         label={
           !connection
-            ? "Environment not connected"
+            ? "环境未连接"
             : keys._tag === "Failure"
               ? "Could not load keys · Retry"
-              : "Checking API keys…"
+              : "正在检查 API 密钥…"
         }
         disabled={!connection || keys._tag !== "Failure"}
         onPress={reload}
@@ -288,18 +282,18 @@ function CloudChoices({ environment, active, onClose }: Props & { onClose: () =>
                 disabled={saved === undefined || (!saved && !canManage) || saving}
                 description={
                   saved === undefined
-                    ? "Update the environment to use this provider"
+                    ? "更新环境以使用此提供方"
                     : isActive && routed
                       ? `${activeModel} · Tap to change model${canManage ? " or key" : ""}`
                       : isActive && saved && canManage
-                        ? "Tap to manage key"
+                        ? "轻点管理密钥"
                         : saved
                           ? routed
-                            ? "API key saved · choose a model to use it"
-                            : "API key saved on this environment"
+                            ? "API 密钥已保存 · 选择模型即可使用"
+                            : "API 密钥已保存在此环境"
                           : canManage
-                            ? "Add an API key to use this provider"
-                            : "Ask an environment administrator to add an API key"
+                            ? "添加 API 密钥以使用此提供方"
+                            : "请让环境管理员添加 API 密钥"
                 }
                 onPress={() => {
                   if (routed) return edit(provider, !isActive);
@@ -309,9 +303,9 @@ function CloudChoices({ environment, active, onClose }: Props & { onClose: () =>
                     return;
                   }
                   Dialog.confirm({
-                    title: `Use ${label} for dictation?`,
+                    title: `使用 ${label} for dictation?`,
                     message: `${disclosure} Select This device to stop sharing.`,
-                    confirmText: `Use ${label}`,
+                    confirmText: `使用 ${label}`,
                     onConfirm: () => enable(pendingCloudVoiceChoice(id, provider)),
                   });
                 }}
@@ -331,9 +325,7 @@ function CloudChoices({ environment, active, onClose }: Props & { onClose: () =>
                 ) : (
                   <ListActionRow
                     label={
-                      AsyncResult.isFailure(models)
-                        ? "Could not load models · Retry"
-                        : "Loading transcription models…"
+                      AsyncResult.isFailure(models) ? "无法加载模型 · 重试" : "正在加载转录模型…"
                     }
                     disabled={!AsyncResult.isFailure(models)}
                     onPress={reloadModels}
@@ -346,7 +338,7 @@ function CloudChoices({ environment, active, onClose }: Props & { onClose: () =>
                 {canManage && sources.length > 0 && (
                   <View className="mx-4 flex-row flex-wrap gap-2">
                     <Chip
-                      label="Value"
+                      label="值"
                       size="small"
                       selected={sourceId === null}
                       disabled={saving}
@@ -378,7 +370,7 @@ function CloudChoices({ environment, active, onClose }: Props & { onClose: () =>
                     }
                     placeholder={
                       source?.referencePlaceholder ??
-                      (routed && saved ? "Saved key · enter a new one to replace" : "API key")
+                      (routed && saved ? "密钥已保存 · 输入新密钥可替换" : "API 密钥")
                     }
                     secureTextEntry={sourceId === null}
                     autoCapitalize="none"
@@ -399,7 +391,7 @@ function CloudChoices({ environment, active, onClose }: Props & { onClose: () =>
                 )}
                 {routed && !saved && !canManage ? (
                   <ListActionRow
-                    label="Ask an administrator to add an OpenRouter key"
+                    label="请让管理员添加 OpenRouter 密钥"
                     disabled
                     onPress={() => {}}
                   />
@@ -408,18 +400,18 @@ function CloudChoices({ environment, active, onClose }: Props & { onClose: () =>
                     label={
                       routed
                         ? isActive
-                          ? "Save"
-                          : "Save and enable"
+                          ? "保存"
+                          : "保存并启用"
                         : editing.enable
-                          ? "Save and enable"
-                          : "Save key"
+                          ? "保存并启用"
+                          : "保存密钥"
                     }
                     description={
                       draft && !credential
-                        ? (source?.invalidReferenceMessage ?? "Enter a valid API key.")
+                        ? (source?.invalidReferenceMessage ?? "请输入有效的 API 密钥。")
                         : routed
                           ? saved && !credential
-                            ? "Uses the API key saved on this environment. The model choice applies only to this device."
+                            ? "使用保存在此环境上的 API 密钥。所选模型仅在当前设备上生效。"
                             : `Anyone with dictation access to ${environment.label} can bill this key.`
                           : editing.enable
                             ? `${disclosure} Anyone with dictation access to ${environment.label} can bill this key.`
@@ -435,20 +427,20 @@ function CloudChoices({ environment, active, onClose }: Props & { onClose: () =>
                 {saved && canManage && (
                   <ListActionRow
                     tone="danger"
-                    label="Remove key from environment"
+                    label="从环境中移除密钥"
                     disabled={saving}
                     onPress={() =>
                       Dialog.confirm({
                         title: `Remove the ${label} key from ${environment.label}?`,
-                        message: "Everyone using it for dictation will lose access.",
-                        confirmText: "Remove key",
+                        message: "使用此密钥进行语音输入的用户将失去访问权限。",
+                        confirmText: "移除密钥",
                         destructive: true,
                         onConfirm: () => void changeKey(provider, null),
                       })
                     }
                   />
                 )}
-                <ListActionRow label="Back to providers" disabled={saving} onPress={reset} />
+                <ListActionRow label="返回提供方" disabled={saving} onPress={reset} />
               </>
             )}
           </View>
@@ -457,7 +449,7 @@ function CloudChoices({ environment, active, onClose }: Props & { onClose: () =>
     );
   return (
     <Sheet
-      title={editing ? CLOUD_SPEECH_LABELS[editing.provider] : "Cloud providers"}
+      title={editing ? CLOUD_SPEECH_LABELS[editing.provider] : "云端提供方"}
       onClose={onClose}
       dismissDisabled={saving}
     >

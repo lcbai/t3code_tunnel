@@ -98,8 +98,8 @@ async function runOperation<T>(
       message:
         (typeof code === "string" ? nativeErrorMessages[code] : undefined) ??
         (fallbackCode === "preparation-failed"
-          ? "Voice transcription could not prepare this language. Check Google speech services and try again."
-          : "Voice transcription failed."),
+          ? "无法准备此语言的语音转录。请检查 Google 语音服务后重试。"
+          : "语音转录失败。"),
       cause: error,
     });
   } finally {

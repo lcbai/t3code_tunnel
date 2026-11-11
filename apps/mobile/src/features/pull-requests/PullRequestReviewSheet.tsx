@@ -55,11 +55,11 @@ function useActionSubmission(params: PullRequestParams) {
 }
 
 const VERDICTS = [
-  { value: "comment", title: "Comment" },
-  { value: "approve", title: "Approve" },
+  { value: "comment", title: "评论" },
+  { value: "approve", title: "批准" },
   {
     value: "request-changes",
-    title: "Request changes",
+    title: "请求修改",
   },
 ] as const;
 
@@ -141,21 +141,21 @@ export function PullRequestReviewSheet({
     });
   return (
     <SheetContent
-      title={reviewing ? "Submit review" : "Add comment"}
+      title={reviewing ? "提交审查" : "添加评论"}
       subtitle={`#${params.number}${reviewing && result.data?.headSha ? ` · reviewing ${result.data.headSha.slice(0, 7)}` : ` · ${params.repository}`}`}
       busy={submission.busy}
       footer={
         <Button
           label={
             submission.busy
-              ? "Submitting…"
+              ? "正在提交…"
               : reviewing
                 ? verdict?.value === "approve"
-                  ? "Approve"
+                  ? "批准"
                   : verdict?.value === "request-changes"
-                    ? "Request changes"
-                    : "Submit review"
-                : "Post comment"
+                    ? "请求修改"
+                    : "提交审查"
+                : "发表评论"
           }
           fullWidth
           tone={Platform.OS === "android" ? "primary" : "contrast"}
@@ -175,22 +175,16 @@ export function PullRequestReviewSheet({
           size="compact"
         />
       ) : null}
-      <Text className="px-4 text-xs text-foreground-muted">
-        {reviewing ? "Summary" : "Comment"}
-      </Text>
+      <Text className="px-4 text-xs text-foreground-muted">{reviewing ? "摘要" : "评论"}</Text>
       <PullRequestCompletionSuggestions completions={completions} />
       <TextInput
         multiline
         selection={completions.selection}
         onSelectionChange={completions.onSelectionChange}
         onBlur={completions.onBlur}
-        accessibilityLabel={reviewing ? "Review summary" : "Comment"}
+        accessibilityLabel={reviewing ? "审查摘要" : "评论"}
         placeholder={
-          reviewing
-            ? summaryRequired
-              ? "Summary required to request changes…"
-              : "Summarize your review…"
-            : "Write a comment…"
+          reviewing ? (summaryRequired ? "请填写请求修改的摘要…" : "概述你的审查意见…") : "写评论…"
         }
         placeholderTextColorClassName="accent-foreground-muted"
         editable={store.ready && !submission.busy}
@@ -203,8 +197,7 @@ export function PullRequestReviewSheet({
       {reviewing && store.draft.comments.length ? (
         <View className="gap-2">
           <Text className="text-sm font-t3-medium">
-            {store.draft.comments.length} pending line{" "}
-            {store.draft.comments.length === 1 ? "comment" : "comments"}
+            {store.draft.comments.length} 条待提交的行内评论
           </Text>
           {store.draft.comments.map((draft) => (
             <Pressable
@@ -239,9 +232,7 @@ export function PullRequestReviewSheet({
                 {draft.body}
               </Text>
               <Text className="text-2xs text-foreground-muted">
-                {draft.headSha !== result.data?.headSha
-                  ? "Branch changed · Tap to choose a new line"
-                  : "Tap to edit"}
+                {draft.headSha !== result.data?.headSha ? "分支已更改 · 轻点选择新行" : "轻点编辑"}
               </Text>
             </Pressable>
           ))}
@@ -249,14 +240,14 @@ export function PullRequestReviewSheet({
       ) : null}
       {reviewing && stale ? (
         <Text className="text-sm text-danger-foreground">
-          The branch changed since you wrote a comment. Choose its current line before submitting.
+          写下评论后分支发生了变更。请先选择当前行再提交。
         </Text>
       ) : null}
       {reviewing && !canSubmitComments ? (
         <Text className="text-sm text-danger-foreground">
-          You can no longer submit line comments on this{" "}
-          {sourceControlClients.get(result.data?.provider).changeRequest.singular}. Your drafts are
-          kept here.
+          已无法提交行内评论：{" "}
+          {sourceControlClients.get(result.data?.provider).changeRequest.singular}
+          。你的草稿保存在此设备上。
         </Text>
       ) : null}
       {submission.error || result.error || store.error ? (

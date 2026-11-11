@@ -99,7 +99,7 @@ function useAction<
         Cause.fail(
           new EnvironmentAuthorizationError({
             requiredScope: AuthSourceControlWriteScope,
-            message: "This connection cannot change source control.",
+            message: "此连接不能更改源代码管理件。",
           }),
         ),
       );
@@ -177,7 +177,7 @@ export function useVcsInitAction(scope: SourceControlActionScope) {
       input: { cwd: target.cwd },
     });
   };
-  return useAction({ kind: "init", label: "Initializing repository", scope, action });
+  return useAction({ kind: "init", label: "初始化仓库", scope, action });
 }
 
 export function useVcsPullAction(scope: SourceControlActionScope) {
@@ -210,7 +210,7 @@ export function useVcsPullAction(scope: SourceControlActionScope) {
   };
   return useAction({
     kind: "pull",
-    label: "Pulling latest changes...",
+    label: "正在调用最新的更改…",
     scope,
     action,
     onSuccess: status.refresh,
@@ -247,7 +247,7 @@ export function useGitStackedAction(scope: SourceControlActionScope) {
 
   return useAction({
     kind: "runStackedAction",
-    label: "Running source control action",
+    label: "运行源代码管理制动作",
     scope,
     action,
     onSuccess: status.refresh,
@@ -300,7 +300,7 @@ export function useSourceControlPublishRepositoryAction(scope: SourceControlActi
   };
   return useAction({
     kind: "publishRepository",
-    label: "Publishing repository",
+    label: "发布仓库",
     scope,
     action,
     onSuccess: status.refresh,
@@ -337,7 +337,7 @@ export function usePreparePullRequestThreadAction(scope: SourceControlActionScop
         Cause.fail(
           new EnvironmentAuthorizationError({
             requiredScope: AuthOrchestrationOperateScope,
-            message: "This connection cannot change threads.",
+            message: "此连接不能改变会话。",
           }),
         ),
       );
@@ -354,7 +354,7 @@ export function usePreparePullRequestThreadAction(scope: SourceControlActionScop
   };
   return useAction({
     kind: "preparePullRequestThread",
-    label: "Preparing pull request thread",
+    label: "正在准备拉取请求会话",
     scope,
     action,
   });

@@ -43,10 +43,7 @@ export function usePullRequestMaintainerEdits(
     if (AsyncResult.isFailure(response)) {
       setChoice(previousChoice);
       const cause = squashAtomCommandFailure(response);
-      Dialog.alert(
-        "Could not save maintainer access",
-        cause instanceof Error ? cause.message : "Try again.",
-      );
+      Dialog.alert("无法保存维护者权限", cause instanceof Error ? cause.message : "请重试。");
       return;
     }
     refreshDetail();
@@ -56,8 +53,8 @@ export function usePullRequestMaintainerEdits(
     value,
     saving,
     subtitle: saving
-      ? "Saving…"
-      : "Maintainers can push to this branch. If your fork has workflows, this can also give access to its secrets.",
+      ? "正在保存…"
+      : "维护者可以推送到此分支。如果你的分叉仓库包含工作流，此权限也可能允许访问其密钥。",
     toggle: () => void save(!value),
   };
 }

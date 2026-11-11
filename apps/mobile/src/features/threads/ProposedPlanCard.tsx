@@ -32,7 +32,7 @@ export function ProposedPlanCard(props: {
     const relativePath = path.trim();
     if (!canWrite || !props.workspaceRoot || inFlight.current) return;
     if (!relativePath) {
-      Dialog.alert("Enter a workspace path");
+      Dialog.alert("输入工作区路径");
       return;
     }
     inFlight.current = true;
@@ -46,7 +46,7 @@ export function ProposedPlanCard(props: {
       setSaving(false);
     });
     if (result._tag === "Success") {
-      Dialog.alert("Plan saved to workspace", result.value.relativePath);
+      Dialog.alert("计划已保存到工作区", result.value.relativePath);
     } else if (!isAtomCommandInterrupted(result)) {
       const error = squashAtomCommandFailure(result);
       Dialog.alert("Could not save plan", error instanceof Error ? error.message : String(error));
@@ -57,24 +57,23 @@ export function ProposedPlanCard(props: {
     <View className="mb-3 gap-3 rounded-[20px] border border-border bg-card-alt p-4">
       <View className="flex-row items-center gap-2">
         <Text accessibilityRole="header" className="flex-1 font-t3-bold text-base text-foreground">
-          {proposedPlanTitle(props.markdown) ?? "Proposed plan"}
+          {proposedPlanTitle(props.markdown) ?? "建议计划"}
         </Text>
-        <CopyTextButton accessibilityLabel="Copy plan" text={contents} />
+        <CopyTextButton accessibilityLabel="复制计划" text={contents} />
       </View>
       {props.renderMarkdown(stripDisplayedPlanMarkdown(props.markdown))}
       <View className="flex-row">
         <Button
-          label={saving ? "Saving..." : "Save to workspace"}
+          label={saving ? "正在保存…" : "保存到工作区"}
           tone="secondary"
           disabled={!canWrite || !props.workspaceRoot || saving}
           onPress={() =>
             Dialog.prompt({
-              title: "Save plan to workspace",
+              title: "将计划保存到工作区",
               // The write replaces an existing file, and the RPC has no create-only mode.
-              message:
-                "Enter a path relative to the thread's workspace. A file already at that path is replaced.",
+              message: "输入相对于会话工作区的路径。此路径下已有的文件将被替换。",
               initialValue: lastPath,
-              confirmText: "Save",
+              confirmText: "保存",
               onConfirm: (path) => void save(path),
             })
           }

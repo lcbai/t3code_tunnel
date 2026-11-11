@@ -28,10 +28,10 @@ export function ScheduledTaskPromptField(props: {
 
   return (
     <View className="gap-2 border-t border-border-subtle px-4 py-3">
-      <Text className="text-sm text-foreground-muted">Prompt</Text>
+      <Text className="text-sm text-foreground-muted">提示词</Text>
       <View className="flex-row items-end">
         <TextInput
-          accessibilityLabel="Prompt"
+          accessibilityLabel="提示词"
           value={props.value}
           onChangeText={props.onChange}
           selection={props.selection}
@@ -40,7 +40,7 @@ export function ScheduledTaskPromptField(props: {
           multiline
           scrollEnabled
           textAlignVertical="top"
-          placeholder="What should the agent do each time?"
+          placeholder="每次运行时，智能体应执行什么？"
           placeholderTextColorClassName="accent-foreground-muted"
           className="max-h-40 min-h-24 min-w-0 flex-1 font-sans text-base text-foreground"
         />

@@ -162,10 +162,10 @@ export function SourceControlAppSignInSettings({
     subtitle =
       account !== null && !tokenOverrides ? (
         <span className="flex min-w-0 items-center gap-1">
-          Signed in as
+          签名为
           <RedactedSensitiveText
             value={account}
-            ariaLabel="Signed-in GitHub account"
+            ariaLabel="已签名的GitHub 账户"
             revealTooltip="Show account"
             hideTooltip="Hide account"
           />
@@ -177,7 +177,7 @@ export function SourceControlAppSignInSettings({
       );
     action = (
       <Button size="xs" variant="outline" disabled={!canSignIn} onClick={() => void signOut()}>
-        Sign out
+        退出登录
       </Button>
     );
   } else if (waiting !== null) {
@@ -191,7 +191,7 @@ export function SourceControlAppSignInSettings({
           void cancel({ environmentId, input: { provider: definition.kind, host } });
         }}
       >
-        Cancel
+        取消
       </Button>
     );
   } else {
@@ -203,7 +203,7 @@ export function SourceControlAppSignInSettings({
         onClick={() => void signIn()}
       >
         {state.status === "starting" ? <Spinner /> : null}
-        {state.status === "failed" ? "Try again" : "Sign in with GitHub"}
+        {state.status === "failed" ? "重试" : "使用 GitHub 登录"}
       </Button>
     );
   }
@@ -231,7 +231,7 @@ export function SourceControlAppSignInSettings({
             <Button
               size="icon-xs"
               variant="ghost"
-              aria-label="Copy code"
+              aria-label="复制代码"
               onClick={() => copyToClipboard(waiting.userCode, undefined)}
             >
               <MorphIcon className="size-3.5" icon={isCopied ? Check : Copy} />
@@ -245,12 +245,12 @@ export function SourceControlAppSignInSettings({
               }
               onClick={() => copyToClipboard(waiting.userCode, undefined)}
             >
-              Copy code & open GitHub
+              复制代码打开GitHub
               <ExternalLinkIcon aria-hidden className="size-3.5" />
             </Button>
             <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <span aria-hidden className="size-1.5 rounded-full bg-warning" />
-              Waiting for approval · code expires at {expiryTime(waiting.expiresAt)}
+              等待批准 ^ 代码过期于 {expiryTime(waiting.expiresAt)}
             </p>
           </div>
         </div>
@@ -258,11 +258,9 @@ export function SourceControlAppSignInSettings({
 
       {signedIn ? (
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
-          <span className="min-w-0 flex-1">
-            Reaches repositories in accounts and organizations that installed the app.
-          </span>
-          <ExternalLink href={appSignIn.installUrl}>Install on an organization</ExternalLink>
-          <ExternalLink href={appSignIn.revokeUrl}>Manage on GitHub</ExternalLink>
+          <span className="min-w-0 flex-1">访问安装该应用程序的账户和组织中的存储器。</span>
+          <ExternalLink href={appSignIn.installUrl}>在组织上安装</ExternalLink>
+          <ExternalLink href={appSignIn.revokeUrl}>在 GitHub 上管理</ExternalLink>
         </div>
       ) : null}
 

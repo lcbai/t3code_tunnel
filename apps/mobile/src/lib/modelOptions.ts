@@ -207,18 +207,18 @@ export function describeUnavailableModelSelection(
       instanceId: selection.instanceId,
     });
     return {
-      title: "Provider not allowed",
+      title: "不允许使用此提供方",
       detail: `${disallowedProviderMessage(config?.managedPolicy?.organization, label)} Choose another model.`,
     };
   }
   return isDisabledForProject(config, provider, selection.instanceId, projectId)
     ? {
-        title: "Model turned off for this project",
-        detail: "Turn it back on from web or desktop, or choose another model.",
+        title: "此项目已停用该模型",
+        detail: "在网页版或桌面端重新启用它，或选择其他模型。",
       }
     : {
-        title: "Antigravity model unavailable",
-        detail: "Set up Antigravity on web or desktop, or choose another model.",
+        title: "Antigravity 模型不可用",
+        detail: "在网页版或桌面端配置 Antigravity，或选择其他模型。",
       };
 }
 

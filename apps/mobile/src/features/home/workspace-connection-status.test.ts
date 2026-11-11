@@ -40,7 +40,6 @@ describe("workspace connection status", () => {
                   environmentId: "environment-2" as never,
                   environmentLabel: "Sleeping laptop",
                   displayUrl: "",
-                  isRelayManaged: false,
                   isEnabled: true,
                   connectionState,
                   connectionError,
@@ -64,7 +63,6 @@ describe("workspace connection status", () => {
           environmentId: "environment-2" as never,
           environmentLabel: "Sleeping laptop",
           displayUrl: "",
-          isRelayManaged: false,
           isEnabled: true,
           connectionState: "reconnecting",
           connectionError: "Could not reach sleeping laptop",
@@ -74,7 +72,7 @@ describe("workspace connection status", () => {
     });
 
     expect(workspaceConnectionStatusPresentation(state)).toEqual({
-      label: "Syncing threads...",
+      label: "正在同步会话…",
       showsProgress: true,
     });
   });

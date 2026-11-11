@@ -206,7 +206,7 @@ it("stays on an unanswered question when the composer submits", async () => {
       projection={questionProjection(threadRef.threadId)}
     />,
   );
-  const submit = screen.getByRole("button", { name: "Submit" });
+  const submit = screen.getByRole("button", { name: "提交" });
   await userEvent.click(submit);
   await expect.element(screen.getByRole("status")).toHaveTextContent("Question 1");
 

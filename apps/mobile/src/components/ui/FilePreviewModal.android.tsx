@@ -51,7 +51,7 @@ function PdfDocumentPreview(props: {
             save
               ? [
                   {
-                    accessibilityLabel: "Save or share",
+                    accessibilityLabel: "保存或分享",
                     icon: "square.and.arrow.up",
                     disabled: save.disabled,
                     loading: media.sharing,
@@ -76,11 +76,7 @@ function DocumentPreview(props: {
   const onRequestClose = useEffectEvent(props.onRequestClose);
   const onOpenError = useEffectEvent((error: unknown) => {
     if (props.onOpenError) props.onOpenError(error);
-    else
-      Dialog.alert(
-        "Could not open document",
-        "A compatible viewer must be installed. Check your connection and try again.",
-      );
+    else Dialog.alert("Could not open document", "请安装兼容的查看器。检查连接后重试。");
   });
   // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- opens the attachment in an external viewer and aborts the open on cleanup
   useEffect(() => {
@@ -109,12 +105,12 @@ function DocumentPreview(props: {
     <Modal transparent animationType="fade" onRequestClose={props.onRequestClose}>
       <View className="flex-1 items-center justify-center bg-backdrop p-6">
         <View className="w-full max-w-sm gap-4 rounded-2xl bg-sheet-solid p-6">
-          <Text className="font-t3-semibold text-foreground">Opening document…</Text>
+          <Text className="font-t3-semibold text-foreground">正在打开文档…</Text>
           <Text className="text-foreground-muted" numberOfLines={2}>
-            {name ?? "Document"}
+            {name ?? "文档"}
           </Text>
           <View className="items-end">
-            <Button label="Cancel" tone="text" onPress={props.onRequestClose} />
+            <Button label="取消" tone="text" onPress={props.onRequestClose} />
           </View>
         </View>
       </View>
@@ -137,7 +133,7 @@ function ImagePreviewHeader(header: { readonly imageIndex: number }) {
   return (
     <View className="bg-black/70" style={{ paddingTop: insets.top }}>
       <MediaPreviewHeader
-        title={source?.name ?? "Image"}
+        title={source?.name ?? "图片"}
         media={mediaActions}
         closeAccessibilityLabel="Close image"
         onClose={props.onRequestClose}

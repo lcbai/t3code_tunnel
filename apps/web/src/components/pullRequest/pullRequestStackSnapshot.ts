@@ -64,9 +64,9 @@ export function pullRequestStackView(
       data === null
         ? null
         : query.error
-          ? "Stack data may be stale. We couldn’t refresh it."
+          ? "堆栈数据可能已经过时。我们不能刷新它。"
           : !query.isSuccess || query.isPending
-            ? "Refreshing stack… Showing saved data."
+            ? "刷新堆栈... 显示保存的数据。"
             : null,
   };
 }

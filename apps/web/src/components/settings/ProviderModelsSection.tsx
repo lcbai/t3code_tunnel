@@ -187,19 +187,19 @@ export function ProviderModelsSection({
     if (!canManageCustomModels || driverKind === "antigravity") return;
     const normalized = normalizeCustomModelSlug(input);
     if (!normalized) {
-      setError("Enter a model slug.");
+      setError("输入一个模型弹片。");
       return;
     }
     if (models.some((model) => !model.isCustom && model.slug === normalized)) {
-      setError("That model is already built in.");
+      setError("这个模型已经建好了。");
       return;
     }
     if (normalized.length > MAX_CUSTOM_MODEL_LENGTH) {
-      setError(`Model slugs must be ${MAX_CUSTOM_MODEL_LENGTH} characters or less.`);
+      setError(`型号的弹簧必须是${MAX_CUSTOM_MODEL_LENGTH} 字符或更少。`);
       return;
     }
     if (customModels.some((entry) => entry.slug === normalized)) {
-      setError("That custom model is already saved.");
+      setError("这个自定义模型已经保存下来了。");
       return;
     }
 
@@ -309,11 +309,11 @@ export function ProviderModelsSection({
           <Input
             value={filter}
             onChange={(event) => setFilter(event.target.value)}
-            placeholder="Filter models"
+            placeholder="过滤模型"
             size="sm"
             className="w-56 max-w-full"
             spellCheck={false}
-            aria-label="Filter models"
+            aria-label="过滤模型"
           />
         ) : null}
         <div className="flex items-center gap-2">
@@ -329,15 +329,13 @@ export function ProviderModelsSection({
                 )
               }
             >
-              {allBuiltInModelsHidden ? "Enable all" : "Disable all"}
+              {allBuiltInModelsHidden ? "全部启用" : "全部禁用"}
             </Button>
           ) : null}
           <span className="text-xs text-muted-foreground">
             {models.length} model{models.length === 1 ? "" : "s"}
-            {favoriteCount > 0
-              ? ` · ${favoriteCount} favorite${favoriteCount === 1 ? "" : "s"}`
-              : ""}
-            {hiddenCount > 0 ? ` · ${hiddenCount} hidden` : ""}
+            {favoriteCount > 0 ? `${favoriteCount} 个收藏` : ""}
+            {hiddenCount > 0 ? `*${hiddenCount} 隐藏` : ""}
           </span>
         </div>
         {driverKind !== "antigravity" && !isAdding ? (
@@ -350,7 +348,7 @@ export function ProviderModelsSection({
             onClick={() => setIsAdding(true)}
           >
             <PlusIcon className="size-3" />
-            Add custom model
+            添加自定义模型
           </Button>
         ) : null}
       </div>
@@ -360,7 +358,7 @@ export function ProviderModelsSection({
       >
         {visibleModels.length === 0 ? (
           <p className="px-2 py-2 text-xs text-muted-foreground">
-            {isFiltering ? "No models match." : "No models reported for this provider yet."}
+            {isFiltering ? "没有模型匹配。" : "这个代理提供方还没有模型报告。"}
           </p>
         ) : null}
         {visibleModels.map((model, index) => {
@@ -425,10 +423,10 @@ export function ProviderModelsSection({
           />
           <div className="flex shrink-0 gap-2">
             <Button size="sm" variant="outline" onClick={handleAdd}>
-              Add
+              添加
             </Button>
             <Button size="sm" variant="ghost" onClick={cancelAdd}>
-              Cancel
+              取消
             </Button>
           </div>
         </div>
@@ -475,10 +473,10 @@ function ProviderModelRow({
   const capLabels = describeModelCapabilities(model, flagMissingReasoning);
   const nameClassName = cn("text-xs", isHidden ? "text-muted-foreground" : "text-foreground/90");
   const pickerTooltip = model.isCustom
-    ? "Custom models are always shown in the picker"
+    ? "自定义模型总是在拾取器中显示"
     : isHidden
-      ? "Hidden from picker"
-      : "Shown in picker";
+      ? "隐藏在拾取器中"
+      : "在拾取器中显示";
 
   return (
     <div
@@ -504,9 +502,7 @@ function ProviderModelRow({
         >
           <StarIcon className={cn("size-3", isFavorite && "fill-current text-warning")} />
         </TooltipTrigger>
-        <TooltipPopup side="top">
-          {isFavorite ? "Remove from favorites" : "Add to favorites"}
-        </TooltipPopup>
+        <TooltipPopup side="top">{isFavorite ? "从最爱中删除" : "添加到最爱"}</TooltipPopup>
       </Tooltip>
       <span className="flex min-w-0 items-baseline gap-2">
         <Tooltip>
@@ -549,13 +545,13 @@ function ProviderModelRow({
                     variant="ghost-muted"
                     disabled={!canWritePreferences || !canMoveUp}
                     onClick={() => onMove(model.slug, -1)}
-                    aria-label={`Move ${model.name} up`}
+                    aria-label={`上移${model.name} label`}
                   />
                 }
               >
                 <ArrowUpIcon className="size-3" />
               </TooltipTrigger>
-              <TooltipPopup side="top">Move up</TooltipPopup>
+              <TooltipPopup side="top">向上移动</TooltipPopup>
             </Tooltip>
             <Tooltip>
               <TooltipTrigger
@@ -565,13 +561,13 @@ function ProviderModelRow({
                     variant="ghost-muted"
                     disabled={!canWritePreferences || !canMoveDown}
                     onClick={() => onMove(model.slug, 1)}
-                    aria-label={`Move ${model.name} down`}
+                    aria-label={`向下移动${model.name} label`}
                   />
                 }
               >
                 <ArrowDownIcon className="size-3" />
               </TooltipTrigger>
-              <TooltipPopup side="top">Move down</TooltipPopup>
+              <TooltipPopup side="top">向下移动</TooltipPopup>
             </Tooltip>
           </>
         ) : null}
@@ -584,14 +580,14 @@ function ProviderModelRow({
                     size="icon-micro"
                     variant="ghost-muted"
                     disabled={!canManageCustomModels}
-                    aria-label={`Edit ${model.slug}`}
+                    aria-label={`编辑 ${model.slug}`}
                     onClick={() => onToggleEdit(model.slug)}
                   />
                 }
               >
                 <PencilIcon className="size-3" />
               </TooltipTrigger>
-              <TooltipPopup side="top">Edit name and options</TooltipPopup>
+              <TooltipPopup side="top">编辑名称和选项</TooltipPopup>
             </Tooltip>
             <Tooltip>
               <TooltipTrigger
@@ -600,14 +596,14 @@ function ProviderModelRow({
                     size="icon-micro"
                     variant="ghost-muted"
                     disabled={!canManageCustomModels}
-                    aria-label={`Remove ${model.slug}`}
+                    aria-label={`删除${model.slug}`}
                     onClick={() => onRemove(model.slug)}
                   />
                 }
               >
                 <XIcon className="size-3" />
               </TooltipTrigger>
-              <TooltipPopup side="top">Remove custom model</TooltipPopup>
+              <TooltipPopup side="top">删除自定义模型</TooltipPopup>
             </Tooltip>
           </>
         ) : null}
@@ -620,7 +616,7 @@ function ProviderModelRow({
             checked={!isHidden}
             disabled={!canWritePreferences || model.isCustom}
             onCheckedChange={(checked) => onSetHidden(model.slug, !checked)}
-            aria-label={`Show ${model.name} in the model picker`}
+            aria-label={`在模型拾取器中显示${model.name}`}
           />
         </TooltipTrigger>
         <TooltipPopup side="top">{pickerTooltip}</TooltipPopup>

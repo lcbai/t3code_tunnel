@@ -96,7 +96,7 @@ export function PullRequestCommentForm({
     });
     if (result._tag === "Failure") {
       setSubmitting(null);
-      toastManager.add({ type: "error", title: "Could not post the comment" });
+      toastManager.add({ type: "error", title: "无法张贴注释" });
       return;
     }
     setBody("");
@@ -119,8 +119,8 @@ export function PullRequestCommentForm({
         readOnly={speech.freezesEditor}
         value={body}
         rows={3}
-        placeholder="Leave a comment"
-        aria-label={`Comment on this ${sourceControlClients.get(detail.provider).changeRequest.singular}`}
+        placeholder="请留言"
+        aria-label={`注释此${sourceControlClients.get(detail.provider).changeRequest.singular}`}
         onValueChange={setBody}
         onKeyDown={(event) => {
           if (event.nativeEvent.isComposing || event.keyCode === 229) return;
@@ -158,20 +158,20 @@ export function PullRequestCommentForm({
               // The longest label holds the width, so the confirming click lands on the button.
               <span className="inline-grid">
                 <span aria-hidden className="invisible col-start-1 row-start-1">
-                  Close with comment
+                  关闭注释
                 </span>
                 <span className="col-start-1 row-start-1">
                   {submitting === "close"
-                    ? "Closing..."
+                    ? "关闭…"
                     : inlineConfirm.isArmed("close")
-                      ? "Confirm close?"
-                      : "Close with comment"}
+                      ? "确认接近?"
+                      : "关闭注释"}
                 </span>
               </span>
             ) : submitting === "reopen" ? (
-              "Reopening..."
+              "正在重新打开…"
             ) : (
-              "Reopen with comment"
+              "重新打开附带注释"
             )}
           </Button>
         )}
@@ -182,7 +182,7 @@ export function PullRequestCommentForm({
           onClick={() => submitAfterDictation("comment")}
         >
           <SendIcon className="size-3.5" />
-          {submitting === "comment" ? "Posting..." : "Comment"}
+          {submitting === "comment" ? "张贴…" : "注释"}
         </Button>
       </div>
     </div>

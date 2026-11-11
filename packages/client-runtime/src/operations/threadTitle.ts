@@ -34,10 +34,7 @@ export function threadTitleTextFromPrompt(value: string): string {
     }
     return reference.label;
   });
-  return (
-    normalizeTitleSeed(modelMentionsAsSlugs(prose)) ||
-    (imageIds.size > 0 ? (imageIds.size === 1 ? "Attached image" : "Attached images") : "")
-  );
+  return normalizeTitleSeed(modelMentionsAsSlugs(prose)) || (imageIds.size > 0 ? "图片附件" : "");
 }
 
 export function deriveThreadTitleSeed(input: ThreadTitleSeedInput): string {
@@ -48,12 +45,12 @@ export function deriveThreadTitleSeed(input: ThreadTitleSeedInput): string {
 
   const images = input.attachments.filter((attachment) => attachment.type === "image");
   if (images.length > 0) {
-    return images.length === 1 ? "Attached image" : "Attached images";
+    return "图片附件";
   }
 
   const attachmentName = normalizeTitleSeed(input.attachments[0]?.name ?? "");
   if (attachmentName.length > 0) {
-    return truncate(`File: ${attachmentName}`);
+    return truncate(`文件：${attachmentName}`);
   }
 
   for (const label of input.fallbackLabels ?? []) {
@@ -63,5 +60,5 @@ export function deriveThreadTitleSeed(input: ThreadTitleSeedInput): string {
     }
   }
 
-  return "New thread";
+  return "新建会话";
 }

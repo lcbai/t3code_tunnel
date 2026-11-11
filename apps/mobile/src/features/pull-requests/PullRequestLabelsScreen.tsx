@@ -71,8 +71,8 @@ export function PullRequestLabelsScreen({ route }: StaticScreenProps<PullRequest
   };
   return (
     <PullRequestSearchSheet
-      title="Labels"
-      placeholder="Search labels"
+      title="标签"
+      placeholder="搜索标签"
       closeAccessibilityLabel="Close labels"
       clearAccessibilityLabel="Clear label search"
       query={query}
@@ -127,26 +127,23 @@ export function PullRequestLabelsScreen({ route }: StaticScreenProps<PullRequest
                     result.error
                       ? "Couldn't load labels"
                       : needle
-                        ? "No matching labels"
-                        : "This repository has no labels"
+                        ? "没有匹配的标签"
+                        : "此仓库没有标签"
                   }
                   detail={
                     result.error ??
-                    (needle
-                      ? "Try another name."
-                      : "Create labels on the provider to use them here.")
+                    (needle ? "请尝试其他名称。" : "在服务平台上创建标签后，即可在这里使用。")
                   }
                   variant="plain"
                 />
-                {result.error ? <Button label="Retry" onPress={result.refresh} /> : null}
+                {result.error ? <Button label="重试" onPress={result.refresh} /> : null}
               </View>
             )
           }
           ListFooterComponent={
             result.data?.truncated ? (
               <Text className="py-4 text-xs text-foreground-muted">
-                This repository has more labels than are listed here. Apply the rest on the
-                provider.
+                此处只显示部分仓库标签。请在服务平台上应用其余标签。
               </Text>
             ) : undefined
           }

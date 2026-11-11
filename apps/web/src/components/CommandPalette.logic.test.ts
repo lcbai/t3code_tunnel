@@ -53,7 +53,7 @@ describe("linked pull request thread navigation", () => {
       threadSearchItems: items,
     });
     expect(groups.flatMap((group) => group.items)).toEqual(items);
-    expect(items[0]?.description).toBe("Archived thread");
+    expect(items[0]?.description).toBe("已归档会话");
     await items[0]?.run();
     expect(runThread).toHaveBeenCalledWith({ environmentId, id });
   });
@@ -260,11 +260,8 @@ describe("buildThreadActionItems", () => {
         ],
       }).map((group) => [group.label, group.items.map((item) => item.title)]);
 
-    expect(search("new thread in t3code", false)[0]).toEqual([
-      "Suggestions",
-      ["New thread in t3code"],
-    ]);
-    expect(search("new thread", false).map(([label]) => label)).not.toContain("Suggestions");
+    expect(search("new thread in t3code", false)[0]).toEqual(["建议", ["New thread in t3code"]]);
+    expect(search("new thread", false).map(([label]) => label)).not.toContain("建议");
     expect(search("t3", true)).toEqual([["Projects", ["t3code"]]]);
     expect(search("add project", true)).toEqual([["Actions", ["Add project"]]]);
   });
@@ -293,10 +290,10 @@ describe("buildThreadActionItems", () => {
     const before = filter([]);
     // The server matched both; the title match stays where it was.
     const after = filter([items[0]!, items[1]!].toReversed());
-    expect(before).toEqual([["Threads", ["thread:environment-local:title"]]]);
+    expect(before).toEqual([["会话", ["thread:environment-local:title"]]]);
     expect(after).toEqual([
-      ["Threads", ["thread:environment-local:title"]],
-      ["In messages", ["thread:environment-local:message"]],
+      ["会话", ["thread:environment-local:title"]],
+      ["在消息中", ["thread:environment-local:message"]],
     ]);
   });
 
@@ -338,7 +335,7 @@ describe("buildThreadActionItems", () => {
       })[0]?.label;
 
     for (const query of ["comp", "compa", "compac", "compact", "compacti", "compaction"]) {
-      expect(firstGroup(query), query).toBe("Threads");
+      expect(firstGroup(query), query).toBe("会话");
     }
   });
 
@@ -368,7 +365,7 @@ describe("buildThreadActionItems", () => {
         threadSearchItems,
       }).map((group) => group.label);
 
-    expect(labels("upgrade")).toEqual(["Threads"]);
+    expect(labels("upgrade")).toEqual(["会话"]);
     expect(labels("upl")).toEqual(["Actions"]);
     // A short query still finds a command by a keyword it equals.
     const prGroups = filterCommandPaletteGroups({
@@ -398,8 +395,8 @@ describe("buildThreadActionItems", () => {
       "action:open-prs",
       "action:project",
     ]);
-    expect(labels("up")).toEqual(["Actions", "Threads"]);
-    expect(labels("pnpm up")).toEqual(["Threads"]);
+    expect(labels("up")).toEqual(["Actions", "会话"]);
+    expect(labels("pnpm up")).toEqual(["会话"]);
   });
 
   it("runs the command for its whole name over a thread with that title, and lists the open thread last", () => {
@@ -437,7 +434,7 @@ describe("buildThreadActionItems", () => {
       projectSearchItems: [],
       threadSearchItems,
     });
-    expect(groups.map((group) => group.label)).toEqual(["Actions", "Threads"]);
+    expect(groups.map((group) => group.label)).toEqual(["Actions", "会话"]);
     expect(groups[1]?.items.at(-1)?.title).toBe("New thread layout");
   });
 
@@ -466,8 +463,8 @@ describe("buildThreadActionItems", () => {
         projectSearchItems,
         threadSearchItems,
       }).map((group) => group.label);
-    expect(labels("lakebed")).toEqual(["Projects", "Threads"]);
-    expect(labels("lake")).toEqual(["Threads", "Projects"]);
+    expect(labels("lakebed")).toEqual(["项目", "会话"]);
+    expect(labels("lake")).toEqual(["会话", "项目"]);
   });
 
   it("keeps a command first over a thread in daily use that matches as well", () => {
@@ -507,7 +504,7 @@ describe("buildThreadActionItems", () => {
       threadSearchItems,
       now,
     });
-    expect(groups.map((group) => group.label)).toEqual(["Actions", "Threads"]);
+    expect(groups.map((group) => group.label)).toEqual(["Actions", "会话"]);
   });
 
   it("ranks an order-independent setting title match above a split context match", () => {

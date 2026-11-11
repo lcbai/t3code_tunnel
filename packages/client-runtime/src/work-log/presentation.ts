@@ -70,14 +70,11 @@ export function contextCompactionTokenCounts(
 }
 
 export function contextCompactionLabel(item: CompactionLabelItem): string {
-  if (item.status === "failed") return "Context compaction failed";
-  if (item.status === "cancelled" || item.status === "interrupted")
-    return "Context compaction stopped";
-  if (isOrchestrationV2WorkActive(item.status)) return "Compacting context";
+  if (item.status === "failed") return "上下文压缩失败";
+  if (item.status === "cancelled" || item.status === "interrupted") return "上下文压缩已停止";
+  if (isOrchestrationV2WorkActive(item.status)) return "正在压缩上下文";
   const tokens = contextCompactionTokenCounts(item);
-  return tokens
-    ? `Context compacted ${tokens.before} → ${tokens.after} tokens`
-    : "Context compacted";
+  return tokens ? `已压缩上下文（${tokens.before} → ${tokens.after} Token）` : "已压缩上下文";
 }
 
 export interface WorkLogPresentationEntry {
@@ -178,11 +175,11 @@ function resolveT3McpToolPresentation(
       : status === "completed"
         ? completed
         : status === "failed"
-          ? `Failed to ${action.toLowerCase()}`
+          ? action
           : status === "declined"
-            ? `Declined to ${action.toLowerCase()}`
+            ? `已拒绝${action}`
             : status === "stopped"
-              ? `Stopped ${running.toLowerCase()}`
+              ? `已停止${action}`
               : running;
 
   const actionKind =
@@ -209,8 +206,9 @@ function resolveT3McpToolPresentation(
     number > 0
       ? `${shortLabel} #${number}`
       : detail;
+  const separator = /^\p{Script=Han}/u.test(target) ? "" : " ";
   return {
-    displayName: `${verb} ${target}`,
+    displayName: `${verb}${separator}${target}${status === "failed" ? "失败" : ""}`,
     icon: definition.icon,
     ...(actionKind === undefined ? {} : { action: actionKind }),
   };
@@ -463,37 +461,35 @@ function toolGroupActionCount(
 function toolGroupActionLabel(action: ToolGroupAction, count: number): string {
   switch (action) {
     case "link-pr":
-      return `Linked ${count} ${count === 1 ? "pull request" : "pull requests"}`;
+      return `已关联 ${count} 个拉取请求`;
     case "unlink-pr":
-      return `Unlinked ${count} ${count === 1 ? "pull request" : "pull requests"}`;
+      return `已取消关联 ${count} 个拉取请求`;
     case "watch-pr":
-      return `Watching ${count} ${count === 1 ? "pull request" : "pull requests"}`;
+      return `正在关注 ${count} 个拉取请求`;
     case "unwatch-pr":
-      return `Stopped watching ${count} ${count === 1 ? "pull request" : "pull requests"}`;
+      return `已停止关注 ${count} 个拉取请求`;
     case "list-prs":
-      return count === 1
-        ? "Checked linked pull requests"
-        : `Checked linked pull requests ${count} times`;
+      return count === 1 ? "已查看关联的拉取请求" : `查看了 ${count} 次关联的拉取请求`;
     case "read":
-      return `Read ${count} ${count === 1 ? "file" : "files"}`;
+      return `读取了 ${count} 个文件`;
     case "edit":
-      return `Changed ${count} ${count === 1 ? "file" : "files"}`;
+      return `更改了 ${count} 个文件`;
     case "command":
-      return `Ran ${count} ${count === 1 ? "command" : "commands"}`;
+      return `运行了 ${count} 条命令`;
     case "thread-create":
-      return `Created ${count} ${count === 1 ? "thread" : "threads"}`;
+      return `创建了 ${count} 个会话`;
     case "device":
-      return `Used device controls ${count} ${count === 1 ? "time" : "times"}`;
+      return `使用了 ${count} 次设备控制`;
     case "browser":
-      return `Used browser ${count} ${count === 1 ? "time" : "times"}`;
+      return `使用了 ${count} 次浏览器`;
     case "search":
-      return `Searched the web ${count} ${count === 1 ? "time" : "times"}`;
+      return `搜索了 ${count} 次网页`;
     case "code-search":
-      return `Searched code ${count} ${count === 1 ? "time" : "times"}`;
+      return `搜索了 ${count} 次代码`;
     case "other":
-      return `Used ${count} ${count === 1 ? "tool" : "tools"}`;
+      return `使用了 ${count} 次工具`;
     case "update":
-      return `Received ${count} ${count === 1 ? "update" : "updates"}`;
+      return `收到了 ${count} 条更新`;
   }
 }
 
@@ -562,7 +558,7 @@ export function summarizeToolGroup(entries: ReadonlyArray<WorkLogPresentationEnt
   const toolEntries = entries.filter((entry) => entry.itemType !== "reasoning");
   if (entries.length > 0 && toolEntries.length === 0) {
     return {
-      summary: entries.length === 1 ? "Thought" : `Thought (×${entries.length})`,
+      summary: entries.length === 1 ? "思考" : `思考（×${entries.length}）`,
       hasFailure: false,
     };
   }
@@ -613,16 +609,8 @@ export function summarizeToolGroup(entries: ReadonlyArray<WorkLogPresentationEnt
   if (sources.size > 0) {
     const sourceValues = [...sources.values()];
     const sourceNames = [...new Set(sourceValues.map((source) => source.name))];
-    const formattedNames =
-      sourceNames.length < 2
-        ? sourceNames[0]!
-        : sourceNames.length === 2
-          ? sourceNames.join(" and ")
-          : `${sourceNames.slice(0, -1).join(", ")}, and ${sourceNames.at(-1)}`;
     const allIntegrations = sourceValues.every((source) => source.kind === "integration");
-    labels.unshift(
-      `Used ${formattedNames}${allIntegrations ? ` ${sourceNames.length === 1 ? "integration" : "integrations"}` : ""}`,
-    );
+    labels.unshift(`使用了 ${sourceNames.join("、")}${allIntegrations ? " 集成" : ""}`);
   }
   const sourcedCount = entries.filter(
     (entry) =>
@@ -632,16 +620,12 @@ export function summarizeToolGroup(entries: ReadonlyArray<WorkLogPresentationEnt
   const remainingCount =
     entries.length - sourcedCount - selected.reduce((count, group) => count + group.count, 0);
   if (remainingCount > 0) {
-    labels.push(`Performed ${remainingCount} other ${remainingCount === 1 ? "action" : "actions"}`);
+    labels.push(`执行了 ${remainingCount} 项其他操作`);
   }
-  const sentenceLabels = labels.map((label, index) =>
-    index === 0 ? label : label.charAt(0).toLowerCase() + label.slice(1),
-  );
-  const summary =
-    sentenceLabels.length < 3
-      ? sentenceLabels.join(" and ")
-      : `${sentenceLabels.slice(0, -1).join(", ")}, and ${sentenceLabels.at(-1)}`;
-  return { summary, hasFailure: summaries.some((group) => group.failedCount > 0) };
+  return {
+    summary: labels.join("，"),
+    hasFailure: summaries.some((group) => group.failedCount > 0),
+  };
 }
 
 export function toolGroupSummaryKind(

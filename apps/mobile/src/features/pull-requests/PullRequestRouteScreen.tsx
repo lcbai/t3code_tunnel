@@ -147,9 +147,7 @@ function usePullRequestActivityRows(params: PullRequestParams, filter: ActivityF
         key: "empty",
         date: "",
         content: (
-          <Text className="py-6 text-sm text-foreground-muted">
-            No activity matches these filters.
-          </Text>
+          <Text className="py-6 text-sm text-foreground-muted">没有符合这些条件的活动。</Text>
         ),
       });
     return rows;
@@ -194,16 +192,16 @@ function PullRequestIdentity(props: {
       <View className="flex-row items-center gap-2">
         <PullRequestAvatar actor={pr.author ?? null} size={20} />
         <Text className="min-w-0 flex-1 text-xs font-t3-medium" numberOfLines={1}>
-          {pr.author?.login ?? "Unknown author"}
+          {pr.author?.login ?? "未知作者"}
         </Text>
         <Text className="shrink text-right text-2xs text-foreground-muted" numberOfLines={1}>
-          Updated <RelativeTime timestamp={pr.updatedAt} /> ago
+          已更新 <RelativeTime timestamp={pr.updatedAt} /> ago
         </Text>
       </View>
       <View className="flex-row items-start gap-1.5">
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={`Copy base branch ${pr.baseBranch}`}
+          accessibilityLabel={`复制基准分支 ${pr.baseBranch}`}
           onPress={() => void Clipboard.setStringAsync(pr.baseBranch)}
           className="min-w-0 shrink active:opacity-70"
           hitSlop={8}
@@ -215,7 +213,7 @@ function PullRequestIdentity(props: {
         </View>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={`Copy head branch ${pr.headBranch}`}
+          accessibilityLabel={`复制源分支 ${pr.headBranch}`}
           onPress={() => void Clipboard.setStringAsync(pr.headBranch)}
           className="min-w-0 shrink active:opacity-70"
           hitSlop={8}
@@ -264,10 +262,10 @@ function PullRequestLabels(props: {
       })}
       {editable ? (
         <Chip
-          label={props.pr.labels.length ? "Edit" : "Add labels"}
+          label={props.pr.labels.length ? "编辑" : "添加标签"}
           icon="tag"
           size="small"
-          accessibilityLabel="Edit labels"
+          accessibilityLabel="编辑标签"
           onPress={() => navigation.navigate("PullRequestLabels", props.params)}
         />
       ) : null}
@@ -421,7 +419,7 @@ export function PullRequestRouteScreen({ route }: StaticScreenProps<PullRequestP
     action.confirm(
       "delete-branch",
       pullRequestActionLabel("delete-branch", terminology),
-      `Delete ${pr.headBranch} from ${pr.headRepositoryNameWithOwner ?? pr.repository}? Local branches and worktrees are not changed.`,
+      `删除 ${pr.headBranch} from ${pr.headRepositoryNameWithOwner ?? pr.repository}? Local branches and worktrees are not changed.`,
     );
   const stack = usePullRequestStack(params, pr);
   const refreshActivity = useAtomRefresh(composerPullRequests.activity(requestTarget(params)));
@@ -475,7 +473,7 @@ export function PullRequestRouteScreen({ route }: StaticScreenProps<PullRequestP
                   ? [
                       {
                         id: "submit-review",
-                        title: "Submit review",
+                        title: "提交审查",
                         icon: "text.bubble",
                         onPress: () =>
                           navigation.navigate("PullRequestReview", { ...params, mode: "review" }),
@@ -486,7 +484,7 @@ export function PullRequestRouteScreen({ route }: StaticScreenProps<PullRequestP
                   ? [
                       {
                         id: "add-comment",
-                        title: "Add comment",
+                        title: "添加评论",
                         icon: "plus.bubble",
                         onPress: () =>
                           navigation.navigate("PullRequestReview", { ...params, mode: "comment" }),
@@ -497,17 +495,17 @@ export function PullRequestRouteScreen({ route }: StaticScreenProps<PullRequestP
                   ? [
                       {
                         id: "edit-title",
-                        title: "Edit title",
+                        title: "编辑标题",
                         icon: "pencil",
                         onPress: () =>
                           navigation.navigate("PullRequestEdit", { ...params, field: "title" }),
                       },
                       {
                         id: "edit-description",
-                        title: "Edit description",
+                        title: "编辑描述",
                         icon: "doc.text",
                         disabled: description.pending,
-                        subtitle: description.pending ? "Saving…" : undefined,
+                        subtitle: description.pending ? "正在保存…" : undefined,
                         onPress: () =>
                           navigation.navigate("PullRequestEdit", { ...params, field: "body" }),
                       },
@@ -517,7 +515,7 @@ export function PullRequestRouteScreen({ route }: StaticScreenProps<PullRequestP
                   ? [
                       {
                         id: "maintainer-edits",
-                        title: "Allow edits from maintainers",
+                        title: "允许维护者编辑",
                         icon: "pencil",
                         selected: maintainerEdits.value,
                         disabled: maintainerEdits.saving,
@@ -536,13 +534,13 @@ export function PullRequestRouteScreen({ route }: StaticScreenProps<PullRequestP
                       },
                       {
                         id: "copy-link",
-                        title: "Copy link",
+                        title: "复制链接",
                         icon: "link",
                         onPress: () => copyPullRequestLink(identity),
                       },
                       {
                         id: "share",
-                        title: "Share…",
+                        title: "分享…",
                         icon: "square.and.arrow.up",
                         onPress: () => sharePullRequestLink(identity),
                       },
@@ -568,10 +566,10 @@ export function PullRequestRouteScreen({ route }: StaticScreenProps<PullRequestP
                         destructive: true,
                         disabled: !action.available("delete-branch"),
                         subtitle: action.busy
-                          ? "Deleting…"
+                          ? "正在删除…"
                           : connected
                             ? pr.headBranch
-                            : "Reconnect to delete this branch.",
+                            : "重新连接后可删除此分支。",
                         onPress: confirmDeleteBranch,
                       },
                     ]
@@ -779,11 +777,11 @@ export function PullRequestRouteScreen({ route }: StaticScreenProps<PullRequestP
                           {Platform.OS !== "ios" || section === tab ? (
                             <SegmentedControl
                               options={[
-                                { value: "overview", label: "Overview" },
+                                { value: "overview", label: "概览" },
                                 ...(guidesEnabled
-                                  ? [{ value: "guide" as const, label: "Guide" }]
+                                  ? [{ value: "guide" as const, label: "指南" }]
                                   : []),
-                                { value: "activity", label: "Activity" },
+                                { value: "activity", label: "活动" },
                               ]}
                               selected={section}
                               onSelect={selectSection}
@@ -826,12 +824,12 @@ export function PullRequestFileRouteScreen(props: PullRequestFileRouteProps) {
     useNavigation<NativeStackNavigationProp<ReactNavigation.RootParamList, "PullRequestFile">>();
   const ready = usePullRequestDiffEntry(navigation);
   if (ready) return <PullRequestFileRouteContent {...props} />;
-  const title = props.route.params.commit ? "Commit changes" : "Changes";
+  const title = props.route.params.commit ? "提交变更" : "变更";
   return (
     <View className="flex-1 bg-screen">
       <AppBar title={title} onBack={() => navigation.goBack()} />
       <View className="flex-1 items-center justify-center">
-        <AppActivityIndicator accessibilityLabel="Loading changes" />
+        <AppActivityIndicator accessibilityLabel="正在加载变更" />
       </View>
     </View>
   );
@@ -1012,7 +1010,7 @@ function PullRequestFileRouteContent({ route }: PullRequestFileRouteProps) {
     setSelectedRowId(null);
     filter.toggle();
   };
-  const title = commit ? "Commit changes" : "Changes";
+  const title = commit ? "提交变更" : "变更";
   const seekingFile = !targetFile && result.nextCursor !== null;
   const loadingDiff = (result.isPending && !data.rows.length) || (seekingFile && !result.error);
   return (
@@ -1023,14 +1021,14 @@ function PullRequestFileRouteContent({ route }: PullRequestFileRouteProps) {
         onBack={() => navigation.goBack()}
         menus={[
           {
-            title: "Diff options",
+            title: "差异选项",
             icon: "ellipsis",
             items: [
               ...(permissions.verdicts.length
                 ? [
                     {
                       id: "submit-review",
-                      title: "Submit review",
+                      title: "提交审查",
                       icon: "text.bubble",
                       onPress: () =>
                         navigation.navigate("PullRequestReview", {
@@ -1044,7 +1042,7 @@ function PullRequestFileRouteContent({ route }: PullRequestFileRouteProps) {
                 ? [
                     {
                       id: "comment-on-pr",
-                      title: "Add comment",
+                      title: "添加评论",
                       icon: "plus.bubble",
                       onPress: () =>
                         navigation.navigate("PullRequestReview", {
@@ -1056,14 +1054,14 @@ function PullRequestFileRouteContent({ route }: PullRequestFileRouteProps) {
                 : []),
               {
                 id: "word-wrap",
-                title: "Word wrap",
+                title: "自动换行",
                 icon: "text.alignleft",
                 selected: appearance.codeWordBreak,
                 onPress: () => setCodeWordBreak(!appearance.codeWordBreak),
               },
               {
                 id: "hide-tests",
-                title: "Hide test files",
+                title: "隐藏测试文件",
                 icon: "line.3.horizontal.decrease",
                 selected: filter.hideTestFiles,
                 onPress: toggleTestFiles,
@@ -1072,9 +1070,7 @@ function PullRequestFileRouteContent({ route }: PullRequestFileRouteProps) {
                 ? [
                     {
                       id: "comment",
-                      title: route.params.replacingDraftId
-                        ? "Move draft to this line"
-                        : "Add review comment",
+                      title: route.params.replacingDraftId ? "将草稿移到此行" : "添加审查评论",
                       icon: "bubble.left",
                       onPress: () => commentOnLine(),
                     },
@@ -1084,7 +1080,7 @@ function PullRequestFileRouteContent({ route }: PullRequestFileRouteProps) {
                 ? [
                     {
                       id: "copy",
-                      title: "Copy line",
+                      title: "复制此行",
                       icon: "document.on.document",
                       onPress: () => void Clipboard.setStringAsync(selectedRow.content ?? ""),
                     },
@@ -1096,7 +1092,7 @@ function PullRequestFileRouteContent({ route }: PullRequestFileRouteProps) {
       />
       {route.params.replacingDraftId ? (
         <Text className="px-4 py-2 text-xs text-foreground-muted">
-          Select a current line, then choose “Move draft to this line” from its menu.
+          选择当前行，然后在菜单中选择「将草稿移到此行」。
         </Text>
       ) : null}
       {viewed.error ? (
@@ -1108,10 +1104,10 @@ function PullRequestFileRouteContent({ route }: PullRequestFileRouteProps) {
           style={{ paddingTop: contentTopInset + 8 }}
         >
           <Text className="min-w-0 flex-1 text-xs text-foreground-muted">
-            The branch changed. Reload before adding line comments.
+            分支已变更。请重新加载后再添加行内评论。
           </Text>
           <Button
-            label="Reload changes"
+            label="重新加载变更"
             onPress={() => {
               result.refresh();
               setDiffHead({ scopeKey, sha: detail.data?.headSha ?? null });
@@ -1213,15 +1209,15 @@ function PullRequestFileRouteContent({ route }: PullRequestFileRouteProps) {
             !seekingFile ? (
             <View style={{ paddingTop: contentTopInset }}>
               <EmptyState
-                title="Only test files changed"
-                detail="Test files are hidden from this review."
-                action={<Button label="Show test files" tone="contrast" onPress={filter.showAll} />}
+                title="只有测试文件发生变更"
+                detail="此次审查已隐藏测试文件。"
+                action={<Button label="显示测试文件" tone="contrast" onPress={filter.showAll} />}
                 variant="plain"
               />
             </View>
           ) : !result.isPending && !result.error && !seekingFile ? (
             <EmptyState
-              title="Diff unavailable"
+              title="无法查看差异"
               detail={`Open this ${terminology.singular} on its provider to view the changes.`}
               variant="plain"
             />
@@ -1229,12 +1225,12 @@ function PullRequestFileRouteContent({ route }: PullRequestFileRouteProps) {
           {result.nextCursor && result.isPending && data.rows.length && !seekingFile ? (
             <View className="flex-row items-center justify-center gap-2 py-2">
               <AppActivityIndicator size="small" />
-              <Text className="text-xs text-foreground-muted">Loading more files…</Text>
+              <Text className="text-xs text-foreground-muted">正在加载更多文件…</Text>
             </View>
           ) : null}
           {result.error && result.nextCursor ? (
             <View className="self-center">
-              <Button label="Retry loading remaining files" tone="text" onPress={result.refresh} />
+              <Button label="重试加载剩余文件" tone="text" onPress={result.refresh} />
             </View>
           ) : null}
           {parsed.kind === "files" && parsed.notice ? (

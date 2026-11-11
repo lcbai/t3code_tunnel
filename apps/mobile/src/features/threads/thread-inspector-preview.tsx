@@ -30,7 +30,7 @@ export function ThreadInspectorHeader(
         title={props.title}
         actions={[
           {
-            accessibilityLabel: "Maximize thread",
+            accessibilityLabel: "最大化会话",
             icon: "arrow.up.left.and.arrow.down.right",
             onPress: props.onMaximize,
           },
@@ -38,9 +38,7 @@ export function ThreadInspectorHeader(
       />
     );
   }
-  return (
-    <SheetHeader title={props.title} onClose={props.onClose} accessibilityLabel="Close thread" />
-  );
+  return <SheetHeader title={props.title} onClose={props.onClose} accessibilityLabel="关闭会话" />;
 }
 
 /** A thread shown beside or over the workspace does not take the workspace's content width. */

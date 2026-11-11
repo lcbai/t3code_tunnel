@@ -12,15 +12,15 @@ export function SettingsProjectOverridesSection(props: {
   readonly onClear: () => void;
 }) {
   return (
-    <SettingsSection title="Project">
+    <SettingsSection title="项目">
       <View className="min-h-16 flex-row items-center gap-3 px-4 py-3">
         <Text className="min-w-0 flex-1 text-base text-foreground" numberOfLines={2}>
           {props.projectLabel}
         </Text>
         {!props.pending && props.hasOverrides ? (
           <Button
-            label="Use defaults"
-            accessibilityHint="Use environment defaults for this project"
+            label="使用默认值"
+            accessibilityHint="对该项目使用环境默认设置"
             tone="text"
             disabled={props.disabled}
             onPress={props.onClear}

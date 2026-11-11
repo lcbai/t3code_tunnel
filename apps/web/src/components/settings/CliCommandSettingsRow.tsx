@@ -33,7 +33,7 @@ export function useDesktopCliCommand() {
           stackedThreadToast({
             type: "error",
             title: FAILURE_TITLES[action],
-            description: error instanceof Error ? error.message : "Something went wrong.",
+            description: error instanceof Error ? error.message : "出了点问题。",
           }),
         );
       })
@@ -70,7 +70,7 @@ export function CliCommandSettingsRow() {
         <div className="flex gap-2">
           {state.pathSetup && !state.pathSetup.added ? (
             <Button size="sm" variant="outline" disabled={busy} onClick={() => run("addToPath")}>
-              Add to PATH
+              添加到路径
             </Button>
           ) : null}
           <Button
@@ -79,7 +79,7 @@ export function CliCommandSettingsRow() {
             disabled={busy || (!installed && Boolean(state.shadowedBy))}
             onClick={() => run(installed ? "uninstall" : "install")}
           >
-            {installed ? "Remove" : "Install"}
+            {installed ? "移除" : "安装"}
           </Button>
         </div>
       }

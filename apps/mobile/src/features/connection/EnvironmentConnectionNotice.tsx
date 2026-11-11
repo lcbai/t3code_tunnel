@@ -89,7 +89,7 @@ export function EnvironmentConnectionNotice(props: {
 
         {props.connection.phase !== "offline" && props.connection.phase !== "unsupported" ? (
           <View className="mt-1">
-            <Button label="Retry now" tone="secondary" onPress={props.onRetry} />
+            <Button label="立即重试" tone="secondary" onPress={props.onRetry} />
           </View>
         ) : null}
       </View>

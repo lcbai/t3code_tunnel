@@ -48,10 +48,7 @@ function clearOrphanedPendingImages(
       pendingImageCount: 0,
       unreadableImageNames: [
         ...(entry.unreadableImageNames ?? []),
-        ...Array.from(
-          { length: lostCount },
-          (_, index) => `image ${index + 1} (not saved before reload)`,
-        ),
+        ...Array.from({ length: lostCount }, (_, index) => `图像${index + 1} (重新装入前未保存)`),
       ],
     };
   });

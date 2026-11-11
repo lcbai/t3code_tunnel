@@ -22,7 +22,7 @@ export function makeRawThreadShell(
   return {
     id,
     projectId: ProjectId.make("project-test"),
-    title: "Thread",
+    title: "会话",
     providerInstanceId,
     modelSelection: { instanceId: providerInstanceId, model: "gpt-5.4" },
     runtimeMode: "full-access",

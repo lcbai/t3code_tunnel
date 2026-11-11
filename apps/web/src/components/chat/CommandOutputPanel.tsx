@@ -47,16 +47,16 @@ export function CommandOutputPanel(props: {
   });
 
   if (text.length === 0) {
-    if (error) return <div className="text-destructive">Couldn&apos;t load output: {error}</div>;
-    if (data === null) return <div className="text-muted-foreground italic">Loading output…</div>;
-    return data.running ? null : <div className="text-muted-foreground italic">No output.</div>;
+    if (error) return <div className="text-destructive">无法装入输出 : {error}</div>;
+    if (data === null) return <div className="text-muted-foreground italic">正在装入输出…</div>;
+    return data.running ? null : <div className="text-muted-foreground italic">无输出。</div>;
   }
   // Parse after all hooks to preserve the text/theme compiler cache.
   const spans = terminalOutputSpans(text, TERMINAL_PALETTES[resolvedTheme]);
   return (
     <div>
       {data?.output.truncated ? (
-        <div className="text-muted-foreground italic">Earlier output not shown</div>
+        <div className="text-muted-foreground italic">未显示较早的输出</div>
       ) : null}
       <div
         ref={scrollRef}

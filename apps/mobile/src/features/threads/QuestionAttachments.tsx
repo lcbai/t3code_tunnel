@@ -114,15 +114,11 @@ export function QuestionAttachments(props: {
           scope.active &&
           (appAtomRegistry.get(questionAttachmentPreparationAtom)[key] ?? 0) > 0
         ) {
-          if (append(key, images) > 0)
-            Dialog.alert("Could not paste image", "Too many attachments.");
+          if (append(key, images) > 0) Dialog.alert("Could not paste image", "附件过多。");
         } else await releaseUnusedComposerAttachmentFiles(images);
       })
       .catch((error) =>
-        Dialog.alert(
-          "Could not paste image",
-          error instanceof Error ? error.message : "Try again.",
-        ),
+        Dialog.alert("Could not paste image", error instanceof Error ? error.message : "请重试。"),
       )
       .finally(() => changeQuestionAttachmentPreparation(key, -1));
   });
@@ -163,12 +159,12 @@ export function QuestionAttachments(props: {
       }
       const rejected = append(key, picked);
       if (result.error || rejected > 0)
-        Dialog.alert("Could not attach file", result.error ?? "Too many attachments.");
+        Dialog.alert("Could not attach file", result.error ?? "附件过多。");
     });
     changeQuestionAttachmentPreparation(key, -1);
     if (AsyncResult.isFailure(picked)) {
       const error = squashAtomCommandFailure(picked);
-      Dialog.alert("Could not attach file", error instanceof Error ? error.message : "Try again.");
+      Dialog.alert("Could not attach file", error instanceof Error ? error.message : "请重试。");
     }
   };
   return (
@@ -224,7 +220,7 @@ export function QuestionAttachments(props: {
             focusedRef.current = false;
             onInputFocusChange?.(false);
           }}
-          placeholder="Or type a custom answer"
+          placeholder="或输入自定义回答"
           className="min-h-[54px] rounded-2xl border border-input-border bg-input px-3.5 py-3 font-sans text-base text-foreground"
         />
       </TextInputWrapper>

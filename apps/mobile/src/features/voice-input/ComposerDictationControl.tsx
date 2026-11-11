@@ -330,7 +330,7 @@ export function ComposerDictationError(props: {
         {props.error}
       </Text>
       <Pressable
-        accessibilityLabel="Dismiss voice input error"
+        accessibilityLabel="关闭语音输入错误"
         accessibilityRole="button"
         className="size-7 items-center justify-center active:opacity-70"
         hitSlop={8}
@@ -396,7 +396,7 @@ export function ComposerDictationCancelAction(props: {
   return (
     <VoiceActionButton
       size={props.size}
-      accessibilityLabel="Cancel dictation"
+      accessibilityLabel="取消语音输入"
       icon="xmark"
       onPress={props.onCancel}
     />
@@ -419,8 +419,8 @@ export function ComposerDictationPrimaryAction(props: {
         size={props.size}
         accessibilityLabel={
           props.presentation.confirmationEnabled
-            ? "Finish dictation"
-            : (props.presentation.statusLabel ?? "Preparing voice input")
+            ? "结束语音输入"
+            : (props.presentation.statusLabel ?? "正在准备语音输入")
         }
         disabled={!props.presentation.confirmationEnabled}
         icon="checkmark"
@@ -447,7 +447,7 @@ export function ComposerDictationStartAction(props: {
   return (
     <VoiceActionButton
       size={props.size}
-      accessibilityLabel={openSettings ? "Open microphone settings" : "Start dictation"}
+      accessibilityLabel={openSettings ? "打开麦克风设置" : "开始语音输入"}
       disabled={props.disabled}
       icon="mic"
       onPress={

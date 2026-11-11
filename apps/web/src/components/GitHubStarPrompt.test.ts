@@ -169,7 +169,7 @@ describe("recordPromptSent", () => {
     await (await startSession()).send();
     click(add.mock.lastCall?.[0].actionProps);
     await vi.advanceTimersByTimeAsync(0);
-    expect(update.mock.lastCall?.[1]).toMatchObject({ title: "Thanks for the star!" });
+    expect(update.mock.lastCall?.[1]).toMatchObject({ title: "谢谢你的明星!" });
     expect(store.get("t3code:github-star-prompt:dismissed")).toBe("true");
     expect(openExternal).not.toHaveBeenCalled();
 

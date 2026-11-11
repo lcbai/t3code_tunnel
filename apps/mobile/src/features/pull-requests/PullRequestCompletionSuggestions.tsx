@@ -8,13 +8,13 @@ import type { usePullRequestCompletions } from "./usePullRequestCompletions";
 
 const COPY = {
   mention: {
-    label: "Mention a user",
+    label: "提及用户",
     pending: "Searching users...",
     failed: "Couldn't search users on the host",
     none: "No matching users",
   },
   reference: {
-    label: "Reference an issue or change request",
+    label: "引用问题或变更请求",
     pending: "Searching...",
     failed: "Couldn't search the host",
     none: "No matching issues or change requests",
@@ -81,7 +81,7 @@ export function PullRequestCompletionSuggestions({
             <Pressable
               key={completion.token}
               accessibilityRole="button"
-              accessibilityLabel={`Insert ${completion.token}`}
+              accessibilityLabel={`插入 ${completion.token}`}
               onPress={() => completions.select(completion)}
               className="flex-row items-center gap-2.5 border-border px-3.5 py-2.5 active:opacity-60"
               style={{

@@ -35,7 +35,7 @@ export function useForceStopThread(environmentId: EnvironmentId) {
       const error = squashAtomCommandFailure(result);
       toastManager.add({
         type: "error",
-        title: "Could not force stop the agent",
+        title: "无法强制停止代理",
         description: error instanceof Error ? error.message : undefined,
       });
       return;
@@ -44,14 +44,14 @@ export function useForceStopThread(environmentId: EnvironmentId) {
     if (result.value.outcome === "releasing") {
       toastManager.add({
         type: "info",
-        title: "Turn stopped; the agent is still shutting down",
+        title: "转动停止; 代理仍然关闭",
       });
     }
     if (result.value.outcome === "shared") {
       toastManager.add({
         type: "info",
-        title: "Turn stopped; the agent process kept running",
-        description: `It is shared with ${others === 0 ? "other" : others} working ${others === 1 ? "thread" : "threads"}. Stop those to free it.`,
+        title: "转动已停止; 代理进程持续运行",
+        description: `此资源仍被${others === 0 ? "其他会话" : `其他 ${others} 个会话`}使用。结束使用后即可释放。`,
       });
     }
   };

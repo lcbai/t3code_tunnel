@@ -108,24 +108,24 @@ function TerminalHeader(props: {
 }) {
   return (
     <AppBar
-      title="Terminal"
+      title="终端"
       subtitle={props.subtitle}
       onBack={props.onCloseTerminal}
       backInSplitView={{
-        accessibilityLabel: "Back to chat",
+        accessibilityLabel: "返回会话",
         icon: "chevron.left",
       }}
       menus={
         props.isEnvironmentReady
           ? [
               {
-                title: "Terminal options",
+                title: "终端选项",
                 icon: "terminal",
                 status: getTerminalStatusLabel(props.status),
                 items: [
                   {
                     id: "text-size",
-                    title: "Text size",
+                    title: "文字大小",
                     icon: "textformat.size",
                     inline: true,
                     items: [
@@ -162,7 +162,7 @@ function TerminalHeader(props: {
                   {
                     id: "terminal-new",
                     disabled: !props.canOperateTerminal,
-                    title: "Open new terminal",
+                    title: "打开新终端",
                     icon: "plus",
                     subtitle: `Start another shell in ${basename(props.workspaceRoot) ?? "this workspace"}`,
                     onPress: props.onOpenNewTerminal,
@@ -305,15 +305,12 @@ export function ThreadTerminalRouteScreen(props: ThreadTerminalRouteScreenProps)
 
   if (!selectedThread) {
     if (!connectionsReady) {
-      return <LoadingScreen message="Opening terminal…" />;
+      return <LoadingScreen message="正在打开终端…" />;
     }
 
     return (
       <View className="flex-1 bg-screen">
-        <EmptyState
-          title="Thread unavailable"
-          detail="This terminal route needs an active thread and workspace."
-        />
+        <EmptyState title="会话不可用" detail="打开此终端需要活跃的会话和工作区。" />
       </View>
     );
   }
@@ -784,16 +781,13 @@ function ThreadTerminal(props: {
   if (!selectedThreadProject?.workspaceRoot) {
     return (
       <View className="flex-1 bg-screen">
-        <EmptyState
-          title="Terminal unavailable"
-          detail="This thread does not have a workspace root yet, so there is nowhere to open a shell."
-        />
+        <EmptyState title="终端不可用" detail="此会话尚无工作区根目录，无法打开 Shell。" />
       </View>
     );
   }
 
   if (!environment.isReady && environment.presentation === null) {
-    return <LoadingScreen message="Opening terminal…" />;
+    return <LoadingScreen message="正在打开终端…" />;
   }
 
   return (
@@ -862,39 +856,26 @@ function ThreadTerminal(props: {
               onRetry={handleRetryEnvironment}
             />
           ) : terminalSession.data === null && terminalSession.error === null ? (
-            <EmptyState
-              title="Checking terminal access"
-              detail="Waiting for this connection's permissions."
-            />
+            <EmptyState title="正在检查终端访问权限" detail="正在读取此连接的权限。" />
           ) : !canReadTerminal && !canOperateTerminal ? (
             <EmptyState
-              title={
-                terminalSession.error
-                  ? "Could not check terminal access"
-                  : "Terminal access unavailable"
-              }
-              detail={
-                terminalSession.error ??
-                "This connection does not have permission to view terminals."
-              }
+              title={terminalSession.error ? "无法检查终端访问权限" : "无法访问终端"}
+              detail={terminalSession.error ?? "此连接无权查看终端。"}
             />
           ) : canOperateTerminal && launchLocation === null ? (
             sessionsError !== null ? (
-              <EmptyState title="Could not load terminals" detail={sessionsError} />
+              <EmptyState title="无法加载终端" detail={sessionsError} />
             ) : (
-              <EmptyState title="Loading terminals" detail="Reading existing terminal sessions." />
+              <EmptyState title="正在加载终端" detail="正在读取现有终端会话。" />
             )
           ) : !canOperateTerminal && !hasTerminalTarget && sessionsPending ? (
-            <EmptyState title="Loading terminals" detail="Reading existing terminal sessions." />
+            <EmptyState title="正在加载终端" detail="正在读取现有终端会话。" />
           ) : !canOperateTerminal && !hasTerminalTarget && sessionsError !== null ? (
-            <EmptyState title="Could not load terminals" detail={sessionsError} />
+            <EmptyState title="无法加载终端" detail={sessionsError} />
           ) : !canOperateTerminal && !hasTerminalTarget ? (
-            <EmptyState
-              title="No terminal sessions"
-              detail="Existing terminals will appear here when another client opens one."
-            />
+            <EmptyState title="没有终端会话" detail="其他客户端打开终端后，终端将显示在这里。" />
           ) : !canOperateTerminal && terminal.error !== null ? (
-            <EmptyState title="Terminal unavailable" detail={terminal.error} />
+            <EmptyState title="终端不可用" detail={terminal.error} />
           ) : (
             <>
               <View
@@ -925,8 +906,7 @@ function ThreadTerminal(props: {
                   onCapture={(text) => {
                     setCaptureRequest(0);
                     if (text.trim()) setCapturedOutput(text);
-                    else
-                      Dialog.alert("No terminal output", "There is no visible output to attach.");
+                    else Dialog.alert("没有终端输出", "没有可附加的可见输出。");
                   }}
                   onInput={handleInput}
                   onPaste={(text) => handlePaste(async () => text)}
@@ -940,11 +920,11 @@ function ThreadTerminal(props: {
               {Platform.OS === "android" && !isKeyboardVisible ? (
                 <View className="min-h-14 flex-row items-center gap-2 bg-card-alt px-2">
                   {hasNativeTerminalSurface() ? (
-                    <Button label="Attach output" tone="text" onPress={requestCapture} />
+                    <Button label="附加输出" tone="text" onPress={requestCapture} />
                   ) : null}
                   <View className="flex-1" />
                   <IconButton
-                    accessibilityLabel="Show keyboard"
+                    accessibilityLabel="显示键盘"
                     disabled={!canOperateTerminal}
                     icon="keyboard"
                     onPress={handleShowKeyboard}
@@ -966,7 +946,7 @@ function ThreadTerminal(props: {
                         : (nativeColumnMetrics?.safeArea.bottom ?? insets.bottom)),
                   }}
                 >
-                  <Text style={{ color: terminalTheme.foreground }}>Attach visible output</Text>
+                  <Text style={{ color: terminalTheme.foreground }}>附加当前可见的输出</Text>
                 </Pressable>
               ) : null}
               {isAccessoryVisible ? (
@@ -1011,13 +991,13 @@ function ThreadTerminal(props: {
                         })}
                       </ComposerToolbarScroller>
                       <ComposerToolbarButton
-                        accessibilityLabel="Paste"
+                        accessibilityLabel="粘贴"
                         icon={{ ios: "doc.on.clipboard", android: "content_paste" }}
                         onPress={() => handlePaste(Clipboard.getStringAsync)}
                         showChevron={false}
                       />
                       <ComposerToolbarButton
-                        accessibilityLabel="Dismiss keyboard"
+                        accessibilityLabel="收起键盘"
                         icon={{ ios: "keyboard.chevron.compact.down", android: "keyboard_hide" }}
                         onPress={handleDismissKeyboard}
                         showChevron={false}
@@ -1027,7 +1007,7 @@ function ThreadTerminal(props: {
                 </KeyboardStickyView>
               ) : canOperateTerminal && !isKeyboardVisible && Platform.OS !== "android" ? (
                 <Pressable
-                  accessibilityLabel="Show keyboard"
+                  accessibilityLabel="显示键盘"
                   accessibilityRole="button"
                   onPress={handleShowKeyboard}
                   style={({ pressed }) => ({

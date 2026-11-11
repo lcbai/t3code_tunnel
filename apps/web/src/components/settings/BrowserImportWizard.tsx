@@ -82,7 +82,7 @@ export function BrowserImportWizard({
     if (importInFlight.current) return;
     const chosen = resolveWizardTarget(target, newProfileId.current, targetProfiles);
     if (chosen === undefined) {
-      setTargetError("That profile is no longer available. Choose where to import these cookies.");
+      setTargetError("该配置文件已无法使用。请选择导入这些 cookie 的位置。");
       setStep({ step: "configure" });
       return;
     }
@@ -192,16 +192,16 @@ function QuitStep({
   return (
     <>
       <DialogHeader>
-        <DialogTitle>Quit {source.name} to import</DialogTitle>
+        <DialogTitle>退出( E) {source.name} 要导入</DialogTitle>
         <DialogDescription>
-          {source.name} is open, so its cookies can&rsquo;t be read yet. Quit it, then continue.
+          {source.name} 正在打开，因此它的饼干还不能读。 退出吧，然后继续。
         </DialogDescription>
       </DialogHeader>
       <DialogFooter>
         <Button variant="outline" onClick={onCancel}>
-          Cancel
+          取消
         </Button>
-        <Button onClick={onRechecked}>I&rsquo;ve quit it</Button>
+        <Button onClick={onRechecked}>我放弃了</Button>
       </DialogFooter>
     </>
   );
@@ -209,7 +209,7 @@ function QuitStep({
 
 function cookieCountLabel(count: number | undefined): string | undefined {
   if (count === undefined) return undefined;
-  if (count === 0) return "no cookies";
+  if (count === 0) return "没有饼干";
   return `${count.toLocaleString()} ${count === 1 ? "cookie" : "cookies"}`;
 }
 
@@ -257,17 +257,16 @@ function FullDiskAccessStep({
     setOpeningError(null);
     void Promise.resolve()
       .then(onOpenSettings)
-      .catch(() => setOpeningError("Could not open System Settings. Try Allow again."))
+      .catch(() => setOpeningError("无法打开系统设置。请再试一次。"))
       .finally(() => setOpening(false));
   };
   return (
     <>
       <DialogHeader>
-        <DialogTitle>Let T3 Code read {source.name}&rsquo;s cookies</DialogTitle>
+        <DialogTitle>允许 T3 Code 读取 {source.name}饼干</DialogTitle>
         <DialogDescription>
-          To import cookies from {source.name}, T3 Code needs Full Disk Access. Turn it on in System
-          Settings, then come back to finish the import. You can revoke it again once the import is
-          done.
+          导入 cookie从 {source.name},T3 Code 需要 Full Disk
+          Access。在系统设置中打开它，然后回来完成导入。一旦导入完成，您可以再次取消它。
         </DialogDescription>
       </DialogHeader>
       <DialogPanel>
@@ -282,8 +281,8 @@ function FullDiskAccessStep({
                   aria-hidden="true"
                 />
               ),
-              title: "Full Disk Access",
-              description: `Read ${source.name}'s cookies for this import.`,
+              title: "完全磁盘访问",
+              description: `为此导入读取${source.name} 的 cookie。`,
               granted: permission.status.fullDiskAccess,
               onAllow: () => void allow(),
             },
@@ -297,21 +296,21 @@ function FullDiskAccessStep({
         {!permission.isReady(["fullDiskAccess"]) ? (
           <p className="mt-3 text-xs text-muted-foreground">
             {stillRequired
-              ? "Access is still required. Quit and reopen T3 Code if you just allowed it, then retry the import."
-              : "If access doesn't update after you allow it, quit and reopen T3 Code, then retry the import."}
+              ? "仍然需要访问。如果您允许，请退出并重新打开T3 Code，然后重试导入。"
+              : "如果您允许访问后不更新，请退出并重新打开T3 Code，然后重试导入。"}
           </p>
         ) : null}
       </DialogPanel>
       <DialogFooter>
         <Button variant="outline" onClick={onCancel}>
-          Cancel
+          取消
         </Button>
         <PermissionContinueButton
           ready={permission.isReady(["fullDiskAccess"])}
           busy={opening}
           onClick={onGranted}
         >
-          Continue
+          继续
         </PermissionContinueButton>
       </DialogFooter>
     </>
@@ -344,17 +343,13 @@ function ConfigureStep({
   return (
     <>
       <DialogHeader>
-        <DialogTitle>Import from {source.name}</DialogTitle>
-        <DialogDescription>
-          Choose which cookies to import for {destinationEnvironmentName}.
-        </DialogDescription>
+        <DialogTitle>从 {source.name}</DialogTitle>
+        <DialogDescription>选择要导入的 cookie {destinationEnvironmentName}.</DialogDescription>
       </DialogHeader>
       <DialogPanel>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
           <section className="flex-1 space-y-2">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              From
-            </p>
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">从</p>
             {source.profiles.map((profile) => (
               <SelectableTile
                 key={profile.directory}
@@ -371,13 +366,13 @@ function ConfigureStep({
           </div>
           <section className="flex-1 space-y-2">
             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Into
+              进入
             </p>
             {canCreateProfile ? (
               <SelectableTile
                 selected={target.kind === "new"}
-                title="New profile"
-                subtitle="Created for these cookies"
+                title="新建简介"
+                subtitle="为这些饼干创建的"
                 onSelect={() => onTargetChange({ kind: "new" })}
               />
             ) : null}
@@ -386,7 +381,7 @@ function ConfigureStep({
                 key={profile.id}
                 selected={target.kind === "existing" && target.profileId === profile.id}
                 title={profile.name}
-                subtitle="Existing profile"
+                subtitle="现有简介"
                 onSelect={() => onTargetChange({ kind: "existing", profileId: profile.id })}
               />
             ))}
@@ -400,13 +395,13 @@ function ConfigureStep({
       </DialogPanel>
       <DialogFooter>
         <Button variant="outline" onClick={onCancel}>
-          Cancel
+          取消
         </Button>
         <Button
           disabled={sourceProfileDirectory === "" || targetMissing || targetUncreatable}
           onClick={onImport}
         >
-          Import
+          导入
         </Button>
       </DialogFooter>
     </>
@@ -460,13 +455,13 @@ function ImportingStep() {
   return (
     <>
       <DialogHeader>
-        <DialogTitle>Importing cookies</DialogTitle>
-        <DialogDescription>This may take a moment.</DialogDescription>
+        <DialogTitle>正在导入 cookie</DialogTitle>
+        <DialogDescription>这可能需要一点时间。</DialogDescription>
       </DialogHeader>
       <DialogPanel>
         <div className="flex items-center gap-3 py-2">
           <Spinner size="md" tone="muted" />
-          <span className="text-sm text-muted-foreground">Importing…</span>
+          <span className="text-sm text-muted-foreground">正在导入…</span>
         </div>
       </DialogPanel>
     </>
@@ -483,18 +478,16 @@ function CheckingStep({
   return (
     <>
       <DialogHeader>
-        <DialogTitle>Checking {sourceName}</DialogTitle>
+        <DialogTitle>检查中 {sourceName}</DialogTitle>
         <DialogDescription>
-          {check === "fullDiskAccess"
-            ? "Checking Full Disk Access."
-            : "Checking whether the browser has closed."}
+          {check === "fullDiskAccess" ? "正在检查全磁盘访问。" : "检查浏览器是否关闭。"}
         </DialogDescription>
       </DialogHeader>
       <DialogPanel>
         <div className="flex items-center gap-3 py-2">
           <Spinner size="md" tone="muted" />
           <span className="text-sm text-muted-foreground">
-            {check === "fullDiskAccess" ? "Checking access…" : "Checking…"}
+            {check === "fullDiskAccess" ? "正在检查访问…" : "正在检查…"}
           </span>
         </div>
       </DialogPanel>
@@ -522,30 +515,28 @@ function DoneStep({
       <DialogHeader>
         <DialogTitle>
           {imported > 0
-            ? `Imported ${cookieResultCount(imported)}`
+            ? `已导入${cookieResultCount(imported)}`
             : skipped > 0
-              ? `Skipped ${cookieResultCount(skipped)}`
-              : "No cookies found"}
+              ? `跳过${cookieResultCount(skipped)}`
+              : "未找到饼干"}
         </DialogTitle>
         <DialogDescription>
           {imported > 0
-            ? `Added to ${targetName} for ${destinationEnvironmentName}.${skipped > 0 ? ` ${cookieResultCount(skipped)} skipped.` : ""}`
+            ? `添加到${targetName}为${destinationEnvironmentName}.${skipped > 0 ? ` ${cookieResultCount(skipped)} skipped.` : ""}`
             : skipped > 0
-              ? `No cookies were imported for ${destinationEnvironmentName}.`
-              : `There were no cookies to import for ${destinationEnvironmentName}.`}
+              ? `没有为${destinationEnvironmentName} 导入饼干。`
+              : `${destinationEnvironmentName}没有要导入的 cookie。`}
         </DialogDescription>
       </DialogHeader>
       {skippedDomains.length > 0 ? (
         <DialogPanel>
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            Skipped
-          </p>
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">跳过</p>
           <p className="mt-1 text-sm text-foreground">{formatSkippedDomains(skippedDomains)}</p>
         </DialogPanel>
       ) : null}
       <DialogFooter>
         <DialogClose render={<Button />} onClick={onClose}>
-          Done
+          完成
         </DialogClose>
       </DialogFooter>
     </>
@@ -568,14 +559,14 @@ function BlockedStep({
   return (
     <>
       <DialogHeader>
-        <DialogTitle>Couldn&rsquo;t import from {source.name}</DialogTitle>
+        <DialogTitle>无法从中导入 {source.name}</DialogTitle>
         <DialogDescription>{message ?? BROWSER_IMPORT_FAILURE_COPY[reason]}</DialogDescription>
       </DialogHeader>
       <DialogFooter>
         <Button variant="outline" onClick={onClose}>
-          Close
+          关闭
         </Button>
-        {onRetry ? <Button onClick={onRetry}>Try again</Button> : null}
+        {onRetry ? <Button onClick={onRetry}>重试</Button> : null}
       </DialogFooter>
     </>
   );

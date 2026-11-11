@@ -20,18 +20,16 @@ function ChildApproval({ entry }: { entry: ChildThreadApproval }) {
   const { approval } = entry;
   return (
     <section
-      aria-label={`Approval from ${entry.title}`}
+      aria-label={`核准从${entry.title}`}
       className="rounded-lg border border-border bg-background p-3 text-xs"
     >
-      <p className="mb-2 font-medium">Approval needed from {entry.title}</p>
+      <p className="mb-2 font-medium">需要从 {entry.title}</p>
       <pre className="max-h-40 overflow-auto whitespace-pre-wrap break-words font-mono">
         {approval.detail || approval.requestKind}
       </pre>
       {approval.appName ? <p className="mt-2 text-muted-foreground">{approval.appName}</p> : null}
       {approval.responseCapability !== "live" ? (
-        <p className="mt-2 text-warning">
-          Provider process is gone. Interrupt or restart the child thread to respond.
-        </p>
+        <p className="mt-2 text-warning">提供者进程已消失。 中断或重新启动子会话以响应。</p>
       ) : null}
       {approval.reason ? <p className="mt-2 text-muted-foreground">{approval.reason}</p> : null}
       {approval.fullAccessOverride ? (
@@ -57,9 +55,7 @@ function ChildApproval({ entry }: { entry: ChildThreadApproval }) {
             });
             if (result._tag === "Failure" && !isAtomCommandInterrupted(result)) {
               const failure = squashAtomCommandFailure(result);
-              setError(
-                failure instanceof Error ? failure.message : "Failed to submit approval decision.",
-              );
+              setError(failure instanceof Error ? failure.message : "未提交批准决定。");
             }
             setResponding(false);
             return result;

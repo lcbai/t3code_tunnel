@@ -104,7 +104,7 @@ function setup(branch: string | null = null) {
       act(() => state.inputs.get(label)!.onChangeText(value));
     },
     create() {
-      act(() => state.actions.get("Create worktree")!.onPress());
+      act(() => state.actions.get("创建工作树")!.onPress());
     },
     [Symbol.dispose]() {
       act(() => root.unmount());
@@ -116,7 +116,7 @@ it.each([null, "stale-branch"])(
   "uses the loaded checkout branch when thread metadata is %s",
   (branch) => {
     using screen = setup(branch);
-    screen.edit("Worktree branch name", "feature/new-worktree");
+    screen.edit("工作树分支名称", "feature/new-worktree");
     state.refName = "release/stable";
     screen.render();
     screen.create();
@@ -128,12 +128,12 @@ it.each([null, "stale-branch"])(
 
 it.each(["custom-base", ""])("preserves an edited base %j when status arrives", (base) => {
   using screen = setup();
-  screen.edit("Worktree base branch", base);
-  screen.edit("Worktree branch name", "feature/new-worktree");
+  screen.edit("工作树基准分支", base);
+  screen.edit("工作树分支名称", "feature/new-worktree");
   state.refName = "release/stable";
   screen.render();
-  expect(state.inputs.get("Worktree base branch")!.value).toBe(base);
-  expect(state.actions.get("Create worktree")!.disabled).toBe(base === "");
+  expect(state.inputs.get("工作树基准分支")!.value).toBe(base);
+  expect(state.actions.get("创建工作树")!.disabled).toBe(base === "");
   screen.create();
   expect(state.worktrees).toEqual(
     base === "" ? [] : [{ baseBranch: base, newBranch: "feature/new-worktree" }],

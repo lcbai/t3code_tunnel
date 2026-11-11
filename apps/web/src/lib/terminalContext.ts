@@ -55,8 +55,8 @@ export function filterTerminalContextsWithText<T extends { text: string }>(
 
 function formatTerminalContextRange(selection: { lineStart: number; lineEnd: number }): string {
   return selection.lineStart === selection.lineEnd
-    ? `line ${selection.lineStart}`
-    : `lines ${selection.lineStart}-${selection.lineEnd}`;
+    ? `线条${selection.lineStart}`
+    : `线条${selection.lineStart} -${selection.lineEnd}`;
 }
 
 export function formatTerminalContextLabel(selection: {

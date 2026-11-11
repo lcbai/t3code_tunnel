@@ -223,17 +223,17 @@ export function usePullRequestListFilters(props: {
   const more: MenuProps["actions"] = [
     {
       id: "drafts",
-      title: value.filters.draft ? DRAFTS[value.filters.draft] : "Drafts",
+      title: value.filters.draft ? DRAFTS[value.filters.draft] : "草稿",
       subactions: choices("draft", DRAFTS, value.filters.draft ?? "all"),
     },
     {
       id: "reviews",
-      title: value.filters.review ? REVIEWS[value.filters.review] : "Reviews",
+      title: value.filters.review ? REVIEWS[value.filters.review] : "审查记录",
       subactions: choices("review", REVIEWS, value.filters.review ?? "all"),
     },
     {
       id: "checks",
-      title: value.filters.checks ? `${CHECKS[value.filters.checks]} checks` : "Checks",
+      title: value.filters.checks ? `${CHECKS[value.filters.checks]} checks` : "检查",
       subactions: choices("checks", CHECKS, value.filters.checks ?? "all"),
     },
     {
@@ -242,7 +242,7 @@ export function usePullRequestListFilters(props: {
         projects.find(
           (project) =>
             project.id === value.projectId && project.environmentId === value.projectEnvironmentId,
-        )?.title ?? "Project",
+        )?.title ?? "项目",
       subactions: choices(
         "project",
         Object.fromEntries([
@@ -259,7 +259,7 @@ export function usePullRequestListFilters(props: {
   ];
   const reset = (withEnvironment: boolean): MenuProps["actions"][number] => ({
     id: id("reset", withEnvironment ? "environment" : ""),
-    title: "Reset filters",
+    title: "重置筛选条件",
     attributes: {
       disabled:
         count === 0 &&
@@ -282,8 +282,8 @@ export function usePullRequestListFilters(props: {
   const stateActions = choices("state", STATES, value.state);
   const involvementActions = choices("involvement", INVOLVEMENT, value.involvement);
   const labelActions: MenuProps["actions"] = [
-    { id: id("search", "labels"), title: "Search labels…", image: "magnifyingglass" },
-    { id: id("labels", ""), title: "All labels", state: selectedLabels.length ? "off" : "on" },
+    { id: id("search", "labels"), title: "搜索标签…", image: "magnifyingglass" },
+    { id: id("labels", ""), title: "所有标签", state: selectedLabels.length ? "off" : "on" },
     ...labels.map((label) => {
       const color = props.labelColors[label.toLowerCase()];
       return {
@@ -295,7 +295,7 @@ export function usePullRequestListFilters(props: {
     }),
   ];
   const authorActions: MenuProps["actions"] = [
-    { id: id("search", "authors"), title: "Search authors…", image: "magnifyingglass" },
+    { id: id("search", "authors"), title: "搜索作者…", image: "magnifyingglass" },
     ...choices(
       "author",
       Object.fromEntries([
@@ -312,11 +312,11 @@ export function usePullRequestListFilters(props: {
     Platform.OS === "android"
       ? {
           actions: [
-            { id: "environment", title: "Environment", subactions: environmentActions },
-            { id: "state", title: "State", subactions: stateActions },
-            { id: "involvement", title: "Involvement", subactions: involvementActions },
-            { id: "labels", title: "Labels", subactions: labelActions },
-            { id: "author", title: "Author", subactions: authorActions },
+            { id: "environment", title: "环境", subactions: environmentActions },
+            { id: "state", title: "状态", subactions: stateActions },
+            { id: "involvement", title: "参与方式", subactions: involvementActions },
+            { id: "labels", title: "标签", subactions: labelActions },
+            { id: "author", title: "作者", subactions: authorActions },
             ...more,
             reset(true),
           ],
@@ -368,10 +368,10 @@ export function PullRequestListFilters(props: {
     >
       {Platform.OS === "android" ? null : (
         <ListFilterMenu
-          label={count ? String(count) : "Filters"}
+          label={count ? String(count) : "筛选条件"}
           icon
           active={count > 0}
-          accessibilityLabel={count ? `Filters, ${count} active` : "More filters"}
+          accessibilityLabel={count ? `Filters, ${count} active` : "更多筛选条件"}
           actions={[...more, reset(false)]}
           onSelect={select}
         />
@@ -379,7 +379,7 @@ export function PullRequestListFilters(props: {
       {props.filters.environmentLabel !== null ? (
         <ListFilterMenu
           label={props.filters.environmentLabel}
-          accessibilityLabel="Choose pull request environment"
+          accessibilityLabel="选择拉取请求环境"
           actions={props.filters.environmentActions}
           onSelect={select}
         />
@@ -387,28 +387,28 @@ export function PullRequestListFilters(props: {
       <ListFilterMenu
         label={STATES[props.filters.state]}
         active={props.filters.state !== "open"}
-        accessibilityLabel="Filter by state"
+        accessibilityLabel="按状态筛选"
         actions={props.filters.stateActions}
         onSelect={select}
       />
       <ListFilterMenu
         label={INVOLVEMENT[props.filters.involvement]}
         active={props.filters.involvement !== "all"}
-        accessibilityLabel="Filter by involvement"
+        accessibilityLabel="按参与方式筛选"
         actions={props.filters.involvementActions}
         onSelect={select}
       />
       <ListFilterMenu
-        label={selectedLabelCount ? `Labels ${selectedLabelCount}` : "Labels"}
+        label={selectedLabelCount ? `标签 ${selectedLabelCount}` : "标签"}
         active={selectedLabelCount > 0}
-        accessibilityLabel="Filter by label"
+        accessibilityLabel="按标签筛选"
         actions={props.filters.labelActions}
         onSelect={select}
       />
       <ListFilterMenu
-        label={author === "me" ? "By you" : (author ?? "Author")}
+        label={author === "me" ? "由你创建" : (author ?? "作者")}
         active={Boolean(author)}
-        accessibilityLabel="Filter by author"
+        accessibilityLabel="按作者筛选"
         actions={props.filters.authorActions}
         onSelect={select}
       />

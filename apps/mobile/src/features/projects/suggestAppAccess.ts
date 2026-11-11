@@ -30,9 +30,9 @@ export async function suggestAppAccessForRemote(
     `Give ${target.appSignIn.appName} access to ${owner}`,
     `It isn't installed there, so GitHub requests for ${target.input.repository} use your own login and its lower rate limit.`,
     [
-      { text: "Not now", style: "cancel" },
+      { text: "暂不", style: "cancel" },
       {
-        text: "Install",
+        text: "安装",
         onPress: () => void Linking.openURL(target.appSignIn.installUrl).catch(() => undefined),
       },
     ],

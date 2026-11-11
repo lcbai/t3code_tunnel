@@ -38,15 +38,14 @@ const MAX_CITATION_PAGES = 20;
 
 const COULD_NOT_LOAD = {
   _tag: "failed",
-  title: "Could not load the cited response",
-  description:
-    "Load earlier turns, then click the citation to try again. Your saved quote is unchanged.",
+  title: "无法装入引用的响应",
+  description: "装入更早的转弯，然后单击引用符再次尝试。您所保存的引用符没有改变。",
 } as const;
 
 const UNAVAILABLE = {
   _tag: "failed",
-  title: "The cited response is unavailable",
-  description: "It may have been removed. The selected text is still saved in your citation.",
+  title: "未提供所引用的答复",
+  description: "它可能已被删除。 选中的文本仍然保存在您的引用中。",
 } as const;
 
 /**
@@ -68,8 +67,8 @@ export async function loadCitedHistory(input: {
     if (thread.message === "other") {
       return {
         _tag: "failed",
-        title: "The citation does not refer to an assistant response",
-        description: "The selected text is still saved in your citation.",
+        title: "引文未提及助理答复",
+        description: "选中的文本仍然保存在您的引用中。",
       };
     }
     if (!thread.hasMoreHistory) return UNAVAILABLE;
@@ -202,11 +201,11 @@ const citedHistoryAtom = Atom.family(
             get.registry,
             threadEnvironment.loadEarlierHistory,
             { environmentId, input: { threadId, throughEntryId: messageId } },
-            { label: "load cited thread history", reportFailure: false },
+            { label: "载入引用的会话历史", reportFailure: false },
           );
           return result._tag === "Success"
             ? result.value
-            : { _tag: "error", message: "Could not load history." };
+            : { _tag: "error", message: "无法装入历史。" };
         },
       }).then((outcome) => {
         if (outcome._tag === "aborted") return;

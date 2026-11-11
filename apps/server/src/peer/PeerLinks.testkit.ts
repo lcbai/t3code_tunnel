@@ -23,7 +23,6 @@ import * as McpOAuth from "../auth/McpOAuth.ts";
 import * as McpOAuthHttp from "../auth/mcpOAuthHttp.ts";
 import type * as SqlClient from "effect/sql/SqlClient";
 import * as ServerSecretStore from "../auth/ServerSecretStore.ts";
-import * as CloudLink from "../cloud/CloudLink.ts";
 import * as ServerConfig from "../config.ts";
 import * as ServerEnvironment from "../environment/ServerEnvironment.ts";
 import * as ServerHttp from "../http.ts";
@@ -102,23 +101,7 @@ export const servePeer = <E, R>(
     );
     const layerRoutes = Layer.mergeAll(
       HttpApiBuilder.layer(PeerTestApi).pipe(
-        Layer.provide(
-          McpOAuthHttp.layer.pipe(
-            Layer.provide(McpOAuth.layer),
-            Layer.provide(
-              Layer.mock(CloudLink.CloudLink)({
-                linkState: () =>
-                  Effect.succeed({
-                    linked: false,
-                    cloudUserId: null,
-                    relayUrl: null,
-                    relayIssuer: null,
-                    publishAgentActivity: false,
-                  }),
-              }),
-            ),
-          ),
-        ),
+        Layer.provide(McpOAuthHttp.layer.pipe(Layer.provide(McpOAuth.layer))),
         Layer.provide(ServerHttp.layerServerEnvironmentHttpApi),
         Layer.provide(AuthHttp.layerAuthenticatedAuth),
       ),

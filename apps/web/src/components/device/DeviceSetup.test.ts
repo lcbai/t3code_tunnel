@@ -35,18 +35,18 @@ describe("device setup guidance", () => {
       hosts: [{ ...deviceState().hosts[0]!, id: "remote", kind: "ssh" }],
       hostStatuses: { remote: { status: "ready", androidDiscoveryIncomplete: true } },
     });
-    expect(platformSetupStatus(state, "android").message).toContain("may be incomplete");
-    expect(platformSetupStatus(state, "ios").message).toContain("Xcode Settings");
+    expect(platformSetupStatus(state, "android").message).toContain("可能不完整");
+    expect(platformSetupStatus(state, "ios").message).toContain("Xcode 设置");
     expect(
       platformSetupStatus({ ...state, hostStatuses: { remote: { status: "ready" } } }, "android")
         .message,
-    ).toContain("Device Manager");
+    ).toContain("设备管理器");
     expect(
       platformSetupStatus(
         { ...state, hostStatuses: { remote: { status: "ready", incompletePlatforms: ["ios"] } } },
         "ios",
       ).message,
-    ).toContain("discovery reported a problem");
+    ).toContain("设备发现报告有问题");
   });
 
   it("counts a remote device host when this machine has no simulator tooling", () => {
@@ -88,7 +88,7 @@ describe("device setup guidance", () => {
     expect(deviceHubReadiness(state).ready).toBe(true);
     expect(platformSetupStatus(state, "ios")).toEqual({
       ready: true,
-      message: "Xcode and iOS Simulator are available on Mac Mini.",
+      message: "Mac Mini 上的Xcode 和 iOS 模拟器可用。",
     });
     expect(platformSetupStatus(state, "android").ready).toBe(false);
   });

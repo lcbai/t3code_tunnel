@@ -342,7 +342,7 @@ describe("bounded binary previews", () => {
     );
     await vi.waitFor(() =>
       expect(screen.container.querySelector('[role="alert"]')?.textContent).toContain(
-        "Unable to load image.",
+        "无法装入图像。",
       ),
     );
     await act(() =>
@@ -571,7 +571,7 @@ describe("large text preview recovery", () => {
         state(`${changed}#retried`);
         return changed;
       });
-      await screen.getByRole("button", { name: "Try again" }).click();
+      await screen.getByRole("button", { name: "重试" }).click();
       expect(refresh).toHaveBeenCalledOnce();
       await screen.rerender(preview("legacy-edit", 1));
       await vi.waitFor(() => expect(screen.container.textContent).toContain("changed"));
@@ -1886,7 +1886,7 @@ describe("standalone Mermaid previews", () => {
     await using screen = await render(<MermaidFilePreview text={`flowchart LR\n${node}`} />);
     await vi.waitFor(() =>
       expect(screen.container.querySelector('[role="alert"]')?.textContent).toContain(
-        "Show Mermaid source",
+        "显示美人鱼源",
       ),
     );
     expect(imageSource).not.toHaveBeenCalled();
@@ -2351,17 +2351,17 @@ it("toggles a Mermaid attachment between diagram and source through the lazy pre
   await vi.waitFor(() =>
     expect(screen.container.querySelector("[data-markdown-mermaid] svg path")).not.toBeNull(),
   );
-  await screen.getByRole("button", { name: "Expand diagram" }).click();
+  await screen.getByRole("button", { name: "扩展图" }).click();
   await vi.waitFor(() => {
     const image = document.querySelector<HTMLImageElement>('[role="dialog"] img');
     expect(image?.alt).toBe("Mermaid diagram");
     expect(image?.naturalWidth).toBeGreaterThan(0);
   });
-  await page.getByRole("button", { name: "Close image preview" }).click();
+  await page.getByRole("button", { name: "关闭图片预览" }).click();
   await vi.waitFor(() => expect(document.querySelector('[role="dialog"]')).toBeNull());
-  await screen.getByRole("button", { name: "Show Mermaid source" }).click();
+  await screen.getByRole("button", { name: "显示美人鱼源" }).click();
   await vi.waitFor(() => expect(screen.container.querySelector("pre")?.textContent).toBe(text));
-  await screen.getByRole("button", { name: "Show rendered diagram" }).click();
+  await screen.getByRole("button", { name: "显示已渲染的图表" }).click();
   await vi.waitFor(() =>
     expect(screen.container.querySelector("[data-markdown-mermaid] svg path")).not.toBeNull(),
   );
@@ -2527,8 +2527,8 @@ it("keeps a workspace PDF's page, offset and zoom when a new revision reloads it
     const offset = () =>
       region().getBoundingClientRect().top -
       region().querySelector('canvas[aria-label="Page 2"]')!.getBoundingClientRect().top;
-    await screen.getByRole("button", { name: "Zoom in", exact: true }).click();
-    await screen.getByRole("button", { name: "Next page", exact: true }).click();
+    await screen.getByRole("button", { name: "缩放", exact: true }).click();
+    await screen.getByRole("button", { name: "下一页", exact: true }).click();
     await expect.element(screen.getByText("2 / 3 pages", { exact: true })).toBeVisible();
     const zoom = screen.container.textContent!.match(/\d+%/)![0];
     const top = region().scrollTop + 100;
@@ -2568,8 +2568,8 @@ it("unwraps one text attachment without turning off the word wrap setting", asyn
       file={file}
     />,
   );
-  await screen.getByRole("button", { name: "Disable word wrap" }).click();
-  await expect.element(screen.getByRole("button", { name: "Enable word wrap" })).toBeVisible();
+  await screen.getByRole("button", { name: "禁用单词包" }).click();
+  await expect.element(screen.getByRole("button", { name: "启用文字包" })).toBeVisible();
   expect(getClientSettings().wordWrap).toBe(true);
   expect(screen.container.querySelector("pre")?.dataset.wordWrap).toBe("false");
 });

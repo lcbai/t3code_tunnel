@@ -163,7 +163,7 @@ const DEFAULT_ANNOTATION_THEME: DesktopPreviewAnnotationTheme = {
 
 const buildPreviewPictureInPictureDataUrl = (): string => {
   const html = `<!doctype html>
-<html>
+<html lang="zh-CN">
   <head>
     <meta charset="utf-8">
     <meta
@@ -178,7 +178,7 @@ const buildPreviewPictureInPictureDataUrl = (): string => {
     </style>
   </head>
   <body>
-    <img id="preview-frame" alt="Live browser preview">
+    <img id="preview-frame" alt="浏览器实时预览">
     <script>
       const frame = document.getElementById("preview-frame");
       window.previewPictureInPicture.onFrame((next) => {
@@ -2845,7 +2845,7 @@ const makeNativeOperations = Effect.fn("PreviewManager.makeOperations")(function
               height: PICTURE_IN_PICTURE_INITIAL_HEIGHT,
               minWidth: PICTURE_IN_PICTURE_MIN_WIDTH,
               minHeight: PICTURE_IN_PICTURE_MIN_HEIGHT,
-              title: title.length > 0 ? `Preview · ${title}` : "Browser preview",
+              title: title.length > 0 ? `预览 · ${title}` : "浏览器预览",
               show: false,
               alwaysOnTop: true,
               autoHideMenuBar: true,

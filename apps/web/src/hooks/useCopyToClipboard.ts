@@ -13,7 +13,7 @@ export class ClipboardApiUnavailableError extends Schema.TaggedError<ClipboardAp
   },
 ) {
   override get message(): string {
-    return `Clipboard API is unavailable while copying ${this.target}.`;
+    return `复制${this.target}时无法使用剪贴板API。`;
   }
 }
 
@@ -36,7 +36,7 @@ export class ClipboardReadUnavailableError extends Schema.TaggedError<ClipboardR
   },
 ) {
   override get message(): string {
-    return `Clipboard API is unavailable while reading ${this.target}.`;
+    return `在读取${this.target}时无法使用剪贴板API。`;
   }
 }
 
@@ -48,7 +48,7 @@ export class ClipboardReadError extends Schema.TaggedError<ClipboardReadError>()
   },
 ) {
   override get message(): string {
-    return `Failed to read ${this.target} from the clipboard.`;
+    return `从剪贴板读取${this.target} 失败。`;
   }
 }
 

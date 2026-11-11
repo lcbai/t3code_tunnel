@@ -40,10 +40,10 @@ export function usePendingTaskListActions(
 
   const confirmDeletePendingTask = useCallback((pendingTask: PendingNewTask) => {
     if (pendingTask.kind === "draft") {
-      Dialog.alert("Discard draft?", `“${pendingTask.title}” will be removed.`, [
-        { text: "Cancel", style: "cancel" },
+      Dialog.alert("放弃草稿？", `“${pendingTask.title}” will be removed.`, [
+        { text: "取消", style: "cancel" },
         {
-          text: "Discard",
+          text: "放弃",
           style: "destructive",
           onPress: () => {
             void withThreadDismissal(
@@ -61,12 +61,12 @@ export function usePendingTaskListActions(
       return;
     }
     Dialog.alert(
-      "Delete pending task?",
+      "删除待处理任务？",
       `“${pendingTask.title}” has not been sent yet and will be removed from the outbox.`,
       [
-        { text: "Cancel", style: "cancel" },
+        { text: "取消", style: "cancel" },
         {
-          text: "Delete",
+          text: "删除",
           style: "destructive",
           onPress: () => {
             // Hold delivery from confirmation so reconnects cannot send a task during removal.
@@ -90,8 +90,8 @@ export function usePendingTaskListActions(
               .catch((error) => {
                 releaseUnlessEditing();
                 Dialog.alert(
-                  "Could not delete pending task",
-                  error instanceof Error ? error.message : "The pending task could not be removed.",
+                  "无法删除待处理任务",
+                  error instanceof Error ? error.message : "无法移除待处理任务。",
                 );
               });
           },

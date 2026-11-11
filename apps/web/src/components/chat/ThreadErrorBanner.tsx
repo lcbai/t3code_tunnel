@@ -19,10 +19,10 @@ export function copyAdminRequest() {
     () =>
       toastManager.add({
         type: "success",
-        title: "Request copied",
-        description: "Send it to your workspace admin.",
+        title: "请求复制",
+        description: "把它发给你的工作空间管理员。",
       }),
-    () => toastManager.add({ type: "error", title: "Could not copy the request" }),
+    () => toastManager.add({ type: "error", title: "无法复制请求" }),
   );
 }
 
@@ -95,11 +95,11 @@ export const ThreadErrorBanner = memo(function ThreadErrorBanner({
         <AlertDescription>
           {chatGptLimit ? (
             <div className="space-y-1">
-              <p className="font-medium">ChatGPT usage limit reached</p>
+              <p className="font-medium">ChatGPT 使用限制</p>
               {workspaceLimit ? (
                 <p>
                   {
-                    "You've reached your workspace's limit for using your ChatGPT plan in other apps. Copy a request to ask your workspace admin for increased usage limits."
+                    "您已经达到了工作空间的极限，可以在其它应用程序中使用您的ChatGPT 计划。 复制一个请求，请求您的工作空间管理员增加使用限制。"
                   }
                 </p>
               ) : null}
@@ -112,13 +112,13 @@ export const ThreadErrorBanner = memo(function ThreadErrorBanner({
           <AlertAction>
             {workspaceLimit ? (
               <Button variant="default" size="sm" onClick={copyAdminRequest}>
-                Copy request for admin
+                复制管理员请求
               </Button>
             ) : chatGptLimit ? (
               <ChatGptUsageButton variant="default" size="sm" />
             ) : null}
             {onDismiss ? (
-              <Button variant="ghost" size="icon-xs" aria-label="Dismiss error" onClick={onDismiss}>
+              <Button variant="ghost" size="icon-xs" aria-label="解职错误" onClick={onDismiss}>
                 <XIcon />
               </Button>
             ) : null}

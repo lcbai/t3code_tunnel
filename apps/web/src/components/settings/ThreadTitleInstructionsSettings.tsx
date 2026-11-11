@@ -23,11 +23,11 @@ export function ThreadTitleInstructionsSettings() {
       serverScoped
       settingKeys={["threadTitleInstructions"]}
       {...searchableSetting("thread-title-instructions")}
-      description="Appended to the prompt for new and regenerated thread titles."
+      description="附加到新建和重生成的会话标题的提示中。"
       resetAction={
         mixed || settings.threadTitleInstructions !== "" ? (
           <SettingResetButton
-            label="thread title instructions"
+            label="会话标题指令"
             onClick={() => updateSettings({ threadTitleInstructions: "" })}
           />
         ) : null
@@ -36,16 +36,14 @@ export function ThreadTitleInstructionsSettings() {
       <div className="mt-3 max-w-2xl pb-3.5">
         <Textarea
           key={`${scopeKey}:${mixed}:${settings.threadTitleInstructions}`}
-          aria-label="Thread title instructions"
+          aria-label="会话标题指令"
           onChange={() => {
             edited.current = true;
           }}
           rows={4}
           defaultValue={mixed ? "" : settings.threadTitleInstructions}
           placeholder={
-            mixed
-              ? "Mixed. Enter instructions to apply to all selected targets."
-              : "Keep titles to a few words. Lead with the main subject."
+            mixed ? "混合。 输入对所有选定目标适用的指令。" : "保留几个字的标题，主题领先。"
           }
           onBlur={(event) => {
             const value = event.target.value.trim();

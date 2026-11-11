@@ -40,13 +40,13 @@ export function KeybindingsConfigWarning({
             toastManager.add(
               stackedThreadToast({
                 type: "error",
-                title: "Unable to open keybindings file",
-                description: error instanceof Error ? error.message : "Unknown error opening file.",
+                title: "无法打开快捷键文件",
+                description: error instanceof Error ? error.message : "未知错误打开文件。",
               }),
             );
           }}
         >
-          Open keybindings.json
+          打开快捷键.json
         </Button>
       </span>
     </>

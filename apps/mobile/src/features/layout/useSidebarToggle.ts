@@ -12,9 +12,9 @@ export function useSidebarToggle() {
     visible: panes.primarySidebarVisible,
     accessibilityLabel: panes.primarySidebarVisible
       ? maximizes
-        ? "Maximize content"
-        : "Hide sidebar"
-      : "Show sidebar",
+        ? "最大化内容"
+        : "隐藏侧栏"
+      : "显示侧栏",
     icon: maximizes ? "arrow.up.left.and.arrow.down.right" : "sidebar.left",
     onPress: togglePrimarySidebar,
   } as const;

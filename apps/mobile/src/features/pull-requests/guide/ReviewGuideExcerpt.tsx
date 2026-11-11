@@ -61,7 +61,7 @@ export function ReviewGuideExcerpt({
       <View className="overflow-hidden rounded-lg border border-border-subtle">
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={`Open ${excerpt.path} at line ${excerpt.start} in full diff`}
+          accessibilityLabel={`打开 ${excerpt.path} at line ${excerpt.start} in full diff`}
           onPress={onOpen}
           className="min-h-11 flex-row items-center gap-3 border-b border-border-subtle px-3 py-2 active:opacity-60"
         >
@@ -115,7 +115,7 @@ export function ReviewGuideExcerpt({
         ) : (
           <Text className="p-3 text-xs text-foreground-muted">
             {loading
-              ? `Loading ${excerpt.path}…`
+              ? `正在加载 ${excerpt.path}…`
               : `${excerpt.path}:${excerpt.start}–${excerpt.end} is not in the loaded diff.`}
           </Text>
         )}

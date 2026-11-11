@@ -54,14 +54,14 @@ async function completeProviderAuth(delivery: ProviderAuthDelivery): Promise<voi
       toastManager.add({
         type: "error",
         title: "ChatGPT sign-in couldn't finish",
-        description: "Return to the provider and try again.",
+        description: "复至供养者再试。",
       });
     }
   } catch {
     toastManager.add({
       type: "error",
       title: "ChatGPT sign-in couldn't finish",
-      description: "Reconnect to the environment and try again.",
+      description: "重新连接环境，再试一次。",
     });
   }
 }

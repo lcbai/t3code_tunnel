@@ -128,7 +128,7 @@ export function useComposerResume(input: ComposerResumeInput) {
           message: {
             messageId: newMessageId(),
             role: "user",
-            text: "Continue where you left off.",
+            text: "继续你离开的地方。",
             attachments: [],
           },
           runtimeMode,
@@ -144,10 +144,7 @@ export function useComposerResume(input: ComposerResumeInput) {
     if (result._tag === "Failure") {
       if (!isAtomCommandInterrupted(result)) {
         const error = squashAtomCommandFailure(result);
-        setThreadError(
-          threadId,
-          error instanceof Error ? error.message : "Could not resume thread.",
-        );
+        setThreadError(threadId, error instanceof Error ? error.message : "无法恢复会话。");
       }
     } else {
       clearUsageLimitsFor(routeThreadKey);

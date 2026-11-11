@@ -38,10 +38,9 @@ export function PreviewEmptyState({
         <EmptyMedia variant="icon">
           <Globe className="size-4.5 text-muted-foreground" />
         </EmptyMedia>
-        <EmptyTitle>No preview yet</EmptyTitle>
+        <EmptyTitle>尚未预览</EmptyTitle>
         <EmptyDescription>
-          Type a URL above, or run a dev script. Local servers this thread starts will show up here
-          automatically.
+          上键入URL 或运行 dev 脚本。此会话启动的本地服务器将自动显示在此。
         </EmptyDescription>
       </Empty>
     );
@@ -54,7 +53,7 @@ export function PreviewEmptyState({
           <div className="flex flex-col gap-3">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <History className="size-4 shrink-0" />
-              <h2 className="font-medium">Recently used</h2>
+              <h2 className="font-medium">最近使用</h2>
             </div>
             <DiscoveryList>
               {recents.map((entry) => (
@@ -73,7 +72,7 @@ export function PreviewEmptyState({
           <div className="flex flex-col gap-3">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <RadioTower className="size-4 shrink-0" />
-              <h2 className="font-medium">Local servers</h2>
+              <h2 className="font-medium">本地服务器</h2>
             </div>
             <DiscoveryList>
               {servers.map((server) => (
@@ -86,7 +85,7 @@ export function PreviewEmptyState({
               ))}
             </DiscoveryList>
             <p className="px-1 text-xs text-muted-foreground">
-              Select a live local server to open it in this browser tab.
+              选择本地服务器在此浏览器标签中打开。
             </p>
           </div>
         ) : null}

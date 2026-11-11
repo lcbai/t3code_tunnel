@@ -376,11 +376,11 @@ async function defaultConfirmInstallNow(): Promise<boolean> {
   const Dialog = await import("../../components/ui/Dialog");
   return new Promise<boolean>((resolve) => {
     Dialog.alert(
-      "Update ready",
-      "A new version has been downloaded and installs automatically the next time you leave the app. Install it now instead?",
+      "更新已就绪",
+      "已下载新版本，下次离开应用时会自动安装。要立即安装吗？",
       [
-        { onPress: () => resolve(false), style: "cancel", text: "Later" },
-        { onPress: () => resolve(true), text: "Install Now" },
+        { onPress: () => resolve(false), style: "cancel", text: "稍后" },
+        { onPress: () => resolve(true), text: "立即安装" },
       ],
       { cancelable: true, onDismiss: () => resolve(false) },
     );

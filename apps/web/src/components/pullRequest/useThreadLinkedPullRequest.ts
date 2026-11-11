@@ -89,8 +89,8 @@ export function useThreadLinkedPullRequest(input: {
       toastManager.add(
         stackedThreadToast({
           type: "error",
-          title: "Unable to update the thread pull request",
-          description: error instanceof Error ? error.message : "An error occurred.",
+          title: "无法更新会话拉取请求",
+          description: error instanceof Error ? error.message : "发生了错误。",
         }),
       );
     });

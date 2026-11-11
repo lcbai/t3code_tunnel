@@ -10,7 +10,7 @@ export function getTraitsSpeedDisplay(
 ): { label: string; speedIcon: "fast" | "ultrafast" | null } | null {
   if (descriptor.id === "fastMode" && descriptor.type === "boolean") {
     return {
-      label: descriptor.currentValue === true ? "Fast" : "Normal",
+      label: descriptor.currentValue === true ? "快点" : "常规",
       speedIcon: descriptor.currentValue === true ? "fast" : null,
     };
   }
@@ -26,7 +26,7 @@ export function getTraitsSpeedDisplay(
     (ultrafastTier && currentValue === ultrafastTier.id)
   ) {
     return {
-      label: descriptor.options.find(({ id }) => id === currentValue)?.label ?? "Normal",
+      label: descriptor.options.find(({ id }) => id === currentValue)?.label ?? "常规",
       speedIcon:
         ultrafastTier && currentValue === ultrafastTier.id
           ? "ultrafast"
@@ -61,9 +61,7 @@ export function TraitsSpeedIcon({
               : "text-foreground",
         )}
       />
-      <span className="sr-only">
-        {speedIcon === "ultrafast" ? "Ultrafast mode on" : "Fast mode on"}
-      </span>
+      <span className="sr-only">{speedIcon === "ultrafast" ? "打开超快模式" : "快速模式打开"}</span>
     </>
   );
 }

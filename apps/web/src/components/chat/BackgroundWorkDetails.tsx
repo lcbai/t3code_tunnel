@@ -29,10 +29,10 @@ export function BackgroundWorkDetails(props: {
   const streamsOutput = useCommandOutputStreaming(props.environmentId);
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<InlineButton />}>Details</DialogTrigger>
+      <DialogTrigger render={<InlineButton />}>细节</DialogTrigger>
       <DialogPopup>
         <DialogHeader>
-          <DialogTitle>Background work</DialogTitle>
+          <DialogTitle>背景工作情况</DialogTitle>
         </DialogHeader>
         <DialogPanel>
           <div className="space-y-5">
@@ -59,7 +59,7 @@ export function BackgroundWorkDetails(props: {
                   <div className="flex items-baseline justify-between gap-3">
                     <h3 className="font-medium">{title}</h3>
                     <span className="shrink-0 text-xs text-muted-foreground">
-                      {task.awaited ? "Waiting" : "Running"}
+                      {task.awaited ? "等待中" : "运行中"}
                     </span>
                   </div>
                   {command ? (
@@ -83,7 +83,7 @@ export function BackgroundWorkDetails(props: {
                         props.onOpenThread(childThreadId);
                       }}
                     >
-                      Open thread
+                      打开会话
                     </InlineButton>
                   ) : null}
                 </section>

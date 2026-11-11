@@ -136,14 +136,14 @@ export function PullRequestReviewersScreen({ route }: StaticScreenProps<PullRequ
         compactToolbar: true,
         value: query,
         onChangeText: search,
-        placeholder: "Search reviewers",
+        placeholder: "搜索审查者",
       }
     : undefined;
   const searchToolbarInset = useSearchToolbarInset(reviewerSearch);
   return (
     <View className="flex-1 bg-sheet">
       <AppBar
-        title="Request review"
+        title="请求审查"
         subtitle={`#${route.params.number} · ${route.params.repository}`}
         onClose={() => navigation.goBack()}
         closeAccessibilityLabel="Close request review"
@@ -163,11 +163,11 @@ export function PullRequestReviewersScreen({ route }: StaticScreenProps<PullRequ
           ListHeaderComponent={
             <View className="gap-3 px-4 py-4">
               <Text className="text-xs text-foreground-muted">
-                Tap someone to request a review. Tap a requested reviewer to remove the request.
+                轻点用户可请求审查，轻点已请求的审查者可取消请求。
               </Text>
               {!allowed ? (
                 <Text className="text-xs text-foreground-muted">
-                  Requesting reviews requires write access and an open {singular}.
+                  请求审查需要写入权限和打开的 {singular}.
                 </Text>
               ) : null}
               {error ? (
@@ -195,14 +195,14 @@ export function PullRequestReviewersScreen({ route }: StaticScreenProps<PullRequ
                   </Text>
                   <Text className="text-xs text-foreground-muted" numberOfLines={1}>
                     {item.login}
-                    {item.kind === "team" ? " · Team" : ""}
+                    {item.kind === "team" ? " · 团队" : ""}
                   </Text>
                 </View>
                 {pending === id ? (
                   <AppActivityIndicator />
                 ) : item.isRequested ? (
                   <View className="flex-row items-center gap-1.5">
-                    <Text className="text-xs text-foreground-muted">Requested</Text>
+                    <Text className="text-xs text-foreground-muted">已请求</Text>
                     <SymbolView name="checkmark" size={14} tintColorClassName="accent-icon" />
                   </View>
                 ) : (
@@ -221,15 +221,15 @@ export function PullRequestReviewersScreen({ route }: StaticScreenProps<PullRequ
                     queryError
                       ? "Couldn't load reviewers"
                       : query.trim()
-                        ? "No matching reviewers"
-                        : "No reviewers available"
+                        ? "没有匹配的审查者"
+                        : "没有可用的审查者"
                   }
-                  detail={queryError ?? "Search people and teams with access to this repository."}
+                  detail={queryError ?? "搜索有权访问此仓库的人员和团队。"}
                   variant="plain"
                 />
                 {queryError ? (
                   <Button
-                    label="Retry"
+                    label="重试"
                     onPress={result.error ? result.refresh : searchResult.refresh}
                   />
                 ) : null}
@@ -256,17 +256,17 @@ export function PullRequestReviewersScreen({ route }: StaticScreenProps<PullRequ
               <AppActivityIndicator />
             ) : (
               <Text className="text-danger-foreground">
-                {detail.error ?? `Couldn't load this ${singular}.`}
+                {detail.error ?? `无法加载此${singular}.`}
               </Text>
             )
           ) : (
             <>
               <Text className="text-sm text-foreground-muted">
-                This provider accepts a reviewer ID but cannot list candidates.
+                此服务平台接受审查者 ID，但无法列出候选人。
               </Text>
               <TextInput
-                accessibilityLabel="Reviewer ID"
-                placeholder="Reviewer login or ID"
+                accessibilityLabel="审查者 ID"
+                placeholder="审查者用户名或 ID"
                 placeholderTextColorClassName="accent-foreground-muted"
                 value={query}
                 onChangeText={search}
@@ -275,13 +275,13 @@ export function PullRequestReviewersScreen({ route }: StaticScreenProps<PullRequ
                 className="min-h-12 rounded-xl bg-grouped-card px-3 text-base"
               />
               <Button
-                label="Request review"
+                label="请求审查"
                 fullWidth
                 disabled={!allowed || !query.trim() || pending !== null}
                 onPress={() => void update({ id: query.trim(), kind: "user", isRequested: false })}
               />
               <Button
-                label="Remove review request"
+                label="移除审查请求"
                 fullWidth
                 tone="text"
                 disabled={!allowed || !query.trim() || pending !== null}

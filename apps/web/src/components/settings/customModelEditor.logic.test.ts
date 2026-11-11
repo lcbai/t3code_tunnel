@@ -164,19 +164,19 @@ describe("customModelEditor.logic", () => {
     });
 
     expect(validateDraft(draft({ descriptors: [select("", [{ id: "a" }])] }))).toBe(
-      "Option 1 needs an id.",
+      "Option 1 需要识别码。",
     );
     expect(
       validateDraft(
         draft({ descriptors: [select("effort", [{ id: "a" }]), select("effort", [{ id: "b" }])] }),
       ),
-    ).toBe('Option 2: id "effort" is used twice.');
+    ).toBe('Option 2:id "effort"使用两次。');
     expect(validateDraft(draft({ descriptors: [select("effort", [])] }))).toBe(
       "Option 1 needs at least one choice.",
     );
     expect(
       validateDraft(draft({ descriptors: [select("effort", [{ id: "a" }, { id: "a" }])] })),
-    ).toBe('Option 1: choice "a" is used twice.');
+    ).toBe('Option 1:选择"a"是两次使用。');
     expect(validateDraft(draft({ descriptors: [select("effort", [{ id: "a" }])] }))).toBeNull();
   });
 });

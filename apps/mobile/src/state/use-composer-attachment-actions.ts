@@ -79,7 +79,7 @@ export function useComposerAttachmentActions(props: {
     if (!key || props.locked) return;
     const maxBytes = capabilities?.fileAttachments?.maxUploadBytes;
     if (maxBytes === undefined) {
-      Dialog.alert("Could not attach file", "This server does not support file attachments.");
+      Dialog.alert("Could not attach file", "此服务器不支持文件附件。");
       return;
     }
     const insertion = captureComposerDraftInsertion(key);
@@ -107,10 +107,7 @@ export function useComposerAttachmentActions(props: {
         });
         report("Could not paste images", null, await append(key, signal, images, insertion));
       } catch (error) {
-        Dialog.alert(
-          "Could not paste images",
-          error instanceof Error ? error.message : "Try again.",
-        );
+        Dialog.alert("Could not paste images", error instanceof Error ? error.message : "请重试。");
       }
     });
   };
@@ -140,7 +137,7 @@ export function useComposerAttachmentActions(props: {
       } catch (error) {
         Dialog.alert(
           "Could not attach pasted text",
-          error instanceof Error ? error.message : "Try again.",
+          error instanceof Error ? error.message : "请重试。",
         );
       }
     });

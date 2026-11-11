@@ -78,7 +78,7 @@ export function ThreadPullRequestsSheet(
         }
         ListEmptyComponent={
           <Text className="pt-6 text-center text-sm text-foreground-muted">
-            No linked {actions.terminology.plural}.
+            未关联 {actions.terminology.plural}.
           </Text>
         }
       />
@@ -94,7 +94,7 @@ export function ThreadPullRequestsSheet(
           actions.canLink
             ? [
                 {
-                  accessibilityLabel: `Link ${singular}`,
+                  accessibilityLabel: `关联 ${singular}`,
                   icon: "plus",
                   onPress: actions.promptLink,
                 },

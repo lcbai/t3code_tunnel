@@ -53,14 +53,14 @@ export function SourceControlAppAccessNotice(props: {
     >
       <T3AppIcon className="size-4 shrink-0" />
       <p className="min-w-0 flex-1">
-        {appSignIn.appName} isn't installed on <span className="text-foreground">{owner}</span>, so
-        requests here use your own GitHub login and its lower rate limit.
+        {appSignIn.appName} 没有安装在 <span className="text-foreground">{owner}</span>
+        ，因此此处请求使用您自己的GitHub 登录及其下限。
       </p>
       <InlineButton
         className="shrink-0"
         render={<a href={appSignIn.installUrl} target="_blank" rel="noreferrer noopener" />}
       >
-        Install on {owner}
+        安装于 {owner}
         <ExternalLinkIcon aria-hidden className="size-3" />
       </InlineButton>
     </div>

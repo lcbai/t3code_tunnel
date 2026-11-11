@@ -84,13 +84,13 @@ export function PullRequestInlineCommentScreen({ route }: StaticScreenProps<Inli
   return (
     <PullRequestSheetContent
       busy={busy}
-      title={saved ? "Edit review comment" : "Review comment"}
+      title={saved ? "编辑审查评论" : "审查评论"}
       subtitle={`#${params.number} · ${reviewPositionLabel(params.position)}`}
       footer={
         <Button
           fullWidth
           tone="contrast"
-          label={busy ? "Saving…" : "Save draft"}
+          label={busy ? "正在保存…" : "保存草稿"}
           loading={busy}
           disabled={
             !store.ready ||
@@ -118,8 +118,8 @@ export function PullRequestInlineCommentScreen({ route }: StaticScreenProps<Inli
         onBlur={completions.onBlur}
         editable={store.ready && !busy}
         autoFocus
-        accessibilityLabel="Inline review comment"
-        placeholder="Write feedback on this line…"
+        accessibilityLabel="行内审查评论"
+        placeholder="填写对此行的反馈…"
         placeholderTextColorClassName="accent-foreground-muted"
         maxLength={65536}
         value={body}
@@ -127,12 +127,10 @@ export function PullRequestInlineCommentScreen({ route }: StaticScreenProps<Inli
         className="min-h-32 rounded-[20px] bg-grouped-card p-4 text-base text-foreground"
         style={{ textAlignVertical: "top" }}
       />
-      <Text className="text-xs text-foreground-muted">
-        Saved comments are private until you submit your review.
-      </Text>
+      <Text className="text-xs text-foreground-muted">提交审查前，已保存的评论仅你可见。</Text>
       {stale ? (
         <Text className="text-sm text-danger-foreground">
-          The branch changed. Return to the current diff and select the line again.
+          分支已变更。请返回当前差异并重新选择对应行。
         </Text>
       ) : null}
       {store.error || detail.error ? (
@@ -140,12 +138,12 @@ export function PullRequestInlineCommentScreen({ route }: StaticScreenProps<Inli
       ) : null}
       {saved ? (
         <Button
-          label="Delete draft"
+          label="删除草稿"
           onPress={() =>
-            Dialog.alert("Delete this draft?", "Your other review comments will be kept.", [
-              { text: "Cancel", style: "cancel" },
+            Dialog.alert("删除此草稿？", "其他审查评论会保留。", [
+              { text: "取消", style: "cancel" },
               {
-                text: "Delete",
+                text: "删除",
                 style: "destructive",
                 onPress: () => {
                   store.update((draft) => ({

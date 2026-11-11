@@ -110,7 +110,7 @@ export function secretProviderUses(
     ...CloudSpeechProvider.literals.flatMap((provider) => {
       const credential = settings.cloudSpeechCredentials[provider];
       return isSecretReference(credential) && credential.provider === providerId
-        ? [{ id: `voice:${provider}`, label: `Voice · ${CLOUD_SPEECH_LABELS[provider]}` }]
+        ? [{ id: `voice:${provider}`, label: `语音 ^${CLOUD_SPEECH_LABELS[provider]}` }]
         : [];
     }),
   ];

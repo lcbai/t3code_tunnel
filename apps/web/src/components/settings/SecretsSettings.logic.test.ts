@@ -53,7 +53,7 @@ it.each([
       "https://hub.test · Management Key",
       "EAS Simulator · Access Token",
       "Simlock Pool · Agent Token",
-      "Voice · OpenAI",
+      "语音 ^OpenAI",
     ],
   ],
   ["work", ["Antigravity Work · OTHER_TOKEN", "GitHub · ghe.acme.test"]],

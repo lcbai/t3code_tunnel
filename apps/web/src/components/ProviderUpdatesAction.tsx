@@ -50,7 +50,7 @@ export function useCheckProviderUpdates() {
     toastManager.add(
       stackedThreadToast({
         type: "error",
-        title: "Could not check provider updates",
+        title: "无法检查提供者更新",
         description: <span className="whitespace-pre-line">{lines.join("\n")}</span>,
       }),
     );
@@ -147,7 +147,7 @@ export function ProviderUpdatesAction() {
             disabled={isPending}
             onClick={() => void handleUpdate()}
           >
-            {isPending ? "Updating…" : "Update all"}
+            {isPending ? "更新…" : "全部更新"}
           </Button>
         }
       />

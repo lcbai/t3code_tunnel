@@ -48,15 +48,11 @@ function WorkspaceRootTitle(props: {
   const { state, settingsOpen } = useWorkspaceTabs()!;
   const maxWidth = Math.max(0, props.columnWidth - (use(HeaderItemsWidthContext) ?? 160));
   const enabled = useEnabledNavigationTabs();
-  const tabTitle = settingsOpen
-    ? "Settings"
-    : enabled.length
-      ? TAB_TITLES[state.selectedTab]
-      : "Navigation";
+  const tabTitle = settingsOpen ? "设置" : enabled.length ? TAB_TITLES[state.selectedTab] : "导航";
   return (
     <View style={{ width: maxWidth, minHeight: 32, justifyContent: "center" }}>
       <WorkspaceConnectionTitle
-        brand={<CompactBrandTitle accessibilityLabel={`T3 Code, ${tabTitle}`} fit />}
+        brand={<CompactBrandTitle accessibilityLabel={`T3 Code，${tabTitle}`} fit />}
         maxWidth={maxWidth}
         onPress={props.onOpenEnvironments}
       />
@@ -125,11 +121,7 @@ function WorkspaceRootContent() {
             enabled.length,
           ]}
           options={{
-            title: settingsOpen
-              ? "Settings"
-              : enabled.length
-                ? TAB_TITLES[state.selectedTab]
-                : "Navigation",
+            title: settingsOpen ? "设置" : enabled.length ? TAB_TITLES[state.selectedTab] : "导航",
             headerShown: true,
             headerTransparent: NATIVE_LIQUID_GLASS_SUPPORTED,
             headerStyle: NATIVE_LIQUID_GLASS_SUPPORTED

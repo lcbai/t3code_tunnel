@@ -58,7 +58,7 @@ function resolveTailscaleIpAdvertisedEndpoints(input: {
           provider: TAILSCALE_ENDPOINT_PROVIDER,
           source: "desktop-addon",
           id: `tailscale-ip:http://${address.address}:${input.port}`,
-          label: "Tailscale IP",
+          label: "Tailscale IP 地址",
           httpBaseUrl: `http://${address.address}:${input.port}`,
           reachability: "private-network",
           status: "available",

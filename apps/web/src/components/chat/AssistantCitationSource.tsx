@@ -194,8 +194,8 @@ function observeAssistantCitationSource({
             request.onComplete();
             toastManager.add({
               type: "warning",
-              title: "Could not open the cited response",
-              description: "Click the citation to try again.",
+              title: "无法打开引用的响应",
+              description: "单击引用再次尝试。",
             });
           },
         );
@@ -207,8 +207,8 @@ function observeAssistantCitationSource({
       if (!range) {
         toastManager.add({
           type: "warning",
-          title: "The quoted text has changed",
-          description: "Showing the source response. The saved quote is unchanged.",
+          title: "引用文本已更改",
+          description: "显示源响应。 已保存的引文不变。",
         });
       }
     }

@@ -42,7 +42,7 @@ export function useProjectCloneBanner(activeProjectRef: ScopedProjectRef | null)
         stackedThreadToast({
           type: "error",
           title,
-          description: error instanceof Error ? error.message : "An error occurred.",
+          description: error instanceof Error ? error.message : "发生了错误。",
         }),
       );
     }
@@ -78,7 +78,7 @@ export function useProjectCloneBanner(activeProjectRef: ScopedProjectRef | null)
         id: `project-clone:${projectId}`,
         variant: "info",
         icon: <DownloadIcon />,
-        title: `Cloning ${name}`,
+        title: `克隆${name}`,
         description: projectCloneProgressSummary(activeProjectClone),
         actions: (
           <Button
@@ -90,7 +90,7 @@ export function useProjectCloneBanner(activeProjectRef: ScopedProjectRef | null)
               )
             }
           >
-            Cancel
+            取消
           </Button>
         ),
       };
@@ -100,8 +100,8 @@ export function useProjectCloneBanner(activeProjectRef: ScopedProjectRef | null)
       id: `project-clone:${projectId}`,
       variant: cancelled ? "warning" : "error",
       icon: <DownloadIcon />,
-      title: cancelled ? `Cancelled cloning ${name}` : `Failed to clone ${name}`,
-      description: cancelled ? "Retry to bring in the repository." : activeProjectClone.error,
+      title: cancelled ? `已取消的克隆${name}` : `克隆失败${name}`,
+      description: cancelled ? "复试入藏。" : activeProjectClone.error,
       actions: (
         <>
           <Button
@@ -109,7 +109,7 @@ export function useProjectCloneBanner(activeProjectRef: ScopedProjectRef | null)
             variant="ghost"
             onClick={() => void removeClonedProject({ environmentId, projectId })}
           >
-            Remove project
+            删除工程
           </Button>
           <Button
             size="xs"
@@ -120,7 +120,7 @@ export function useProjectCloneBanner(activeProjectRef: ScopedProjectRef | null)
               )
             }
           >
-            Retry
+            重试
           </Button>
         </>
       ),

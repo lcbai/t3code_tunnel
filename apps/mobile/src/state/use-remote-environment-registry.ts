@@ -1,14 +1,10 @@
 import * as Dialog from "../components/ui/Dialog";
 import { useAtomValue } from "@effect/atom-react";
-import { useNavigation } from "@react-navigation/native";
-import { Discovery } from "@t3tools/client-runtime/relay";
 import type { EnvironmentId } from "@t3tools/contracts";
 import * as Cause from "effect/Cause";
 import { AsyncResult, Atom } from "effect/reactivity";
 import { runAtomCommand } from "@t3tools/client-runtime/state/runtime";
 
-import { hasCloudPublicConfig } from "../features/cloud/publicConfig";
-import { useConnectionController } from "../features/connection/useConnectionController";
 import { environmentPresentations } from "./presentation";
 import { useWorkspaceConnectionState, useWorkspaceEnvironments } from "./workspace";
 import type { SavedRemoteConnection } from "../lib/connection";
@@ -18,16 +14,11 @@ import { environmentSession } from "./session";
 import { environmentCatalog } from "../connection/catalog";
 import { createRemoteEnvironmentProjectionAtoms } from "./remote-environment-projections";
 import { serverEnvironment } from "./server";
-import { relayEnvironmentDiscovery } from "./relay";
-import { connectPairingUrl as connectPairingUrlCommand } from "../connection/onboarding";
-
-const RELAY_REMOVAL_ACCOUNT_NOTE: Record<Discovery.RelayEnvironmentRegistration, string> = {
-  registered:
-    "It stays on your T3 Connect account and keeps its host space. Deregister it under T3 Account → T3 Connect to free it.",
-  unregistered: "It's no longer on your T3 Connect account.",
-  unknown:
-    "This doesn't change your T3 Connect account. To deregister it there, use T3 Account → T3 Connect.",
-};
+import {
+  connectPairingUrl as connectPairingUrlCommand,
+  updateBearerConnection,
+} from "../connection/onboarding";
+import { useAtomCommand } from "./use-atom-command";
 
 const connectionPairingUrlAtom = Atom.make("").pipe(
   Atom.keepAlive,
@@ -65,14 +56,14 @@ export async function pairEnvironment(
     return { ok: true, error: null };
   }
   const error = Cause.squash(result.cause);
-  const message = error instanceof Error ? error.message : "Failed to pair with the environment.";
+  const message = error instanceof Error ? error.message : "与环境配对失败。";
   if (
     error !== null &&
     typeof error === "object" &&
     "reason" in error &&
     error.reason === "unsupported"
   ) {
-    Dialog.alert("Client not supported", message);
+    Dialog.alert("不支持此客户端", message);
     return { ok: false, error: null };
   }
   return { ok: false, error: message };
@@ -154,8 +145,10 @@ export function useRemoteConnectionStatus() {
 }
 
 export function useRemoteConnections() {
-  const controller = useConnectionController();
-  const navigation = useNavigation();
+  const removeEnvironment = useAtomCommand(environmentCatalog.remove, "移除环境");
+  const retryEnvironment = useAtomCommand(environmentCatalog.retryNow, "重新连接环境");
+  const setEnvironmentEnabled = useAtomCommand(environmentCatalog.setEnabled, "切换环境");
+  const updateEnvironment = useAtomCommand(updateBearerConnection, { reportFailure: false });
   const connectionPairingUrl = useAtomValue(connectionPairingUrlAtom);
   const { connectedEnvironments, connectionError, connectionState } = useRemoteConnectionStatus();
 
@@ -166,14 +159,13 @@ export function useRemoteConnections() {
   const onConnectPress = (pairingUrl?: string, expectedEnvironmentId?: EnvironmentId) =>
     pairEnvironment(pairingUrl ?? connectionPairingUrl, expectedEnvironmentId);
 
-  const onReconnectEnvironment = (environmentId: EnvironmentId) =>
-    controller.retryEnvironment(environmentId);
+  const onReconnectEnvironment = (environmentId: EnvironmentId) => retryEnvironment(environmentId);
   const onSetEnvironmentEnabled = (environmentId: EnvironmentId, enabled: boolean) =>
-    controller.setEnvironmentEnabled(environmentId, enabled);
+    setEnvironmentEnabled({ environmentId, enabled });
   const onUpdateEnvironment = (
     environmentId: EnvironmentId,
     updates: { readonly label: string; readonly displayUrl: string },
-  ) => controller.updateEnvironment(environmentId, updates);
+  ) => updateEnvironment({ environmentId, label: updates.label, httpBaseUrl: updates.displayUrl });
 
   const onRemoveEnvironmentPress = (environmentId: EnvironmentId) => {
     const environment = connectedEnvironments.find(
@@ -183,34 +175,16 @@ export function useRemoteConnections() {
       return;
     }
     const remove = {
-      text: "Remove",
+      text: "移除",
       style: "destructive",
       onPress: () => {
-        void controller.removeEnvironment(environmentId);
+        void removeEnvironment(environmentId);
       },
     } as const;
-    if (environment.isRelayManaged) {
-      const registration = Discovery.relayEnvironmentRegistration(
-        appAtomRegistry.get(relayEnvironmentDiscovery.stateValueAtom),
-        environmentId,
-      );
-      const openAccount = {
-        text: "Open T3 Account",
-        onPress: () => navigation.navigate("SettingsAuth"),
-      };
-      Dialog.alert(
-        "Remove from this device?",
-        `Forget ${environment.environmentLabel} and its cached threads on this device.\n\n${RELAY_REMOVAL_ACCOUNT_NOTE[registration]}`,
-        registration === "unregistered" || !hasCloudPublicConfig()
-          ? [{ text: "Cancel", style: "cancel" }, remove]
-          : [{ text: "Cancel", style: "cancel" }, openAccount, remove],
-      );
-      return;
-    }
     Dialog.alert(
-      "Remove from this device?",
-      `Forget ${environment.environmentLabel} and its cached threads on this device. Switch it off instead to keep it saved.`,
-      [{ text: "Cancel", style: "cancel" }, remove],
+      "从此设备移除？",
+      `这会移除此设备上的 ${environment.environmentLabel} 及其会话缓存。如需保留，可关闭此连接。`,
+      [{ text: "取消", style: "cancel" }, remove],
     );
   };
 

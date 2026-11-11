@@ -81,7 +81,7 @@ export function PullRequestMarkdownEditor({
       }}
     >
       <ToggleGroup
-        aria-label="Markdown editor mode"
+        aria-label="Markdown 编辑器模式"
         variant="segmented"
         value={[preview ? "preview" : "write"]}
         disabled={saving}
@@ -90,13 +90,13 @@ export function PullRequestMarkdownEditor({
           if (mode === "write" || mode === "preview") setPreview(mode === "preview");
         }}
       >
-        <Toggle value="write">Write</Toggle>
+        <Toggle value="write">写入</Toggle>
         <Toggle value="preview">Preview</Toggle>
       </ToggleGroup>
       {preview ? (
         <div className="rounded-lg border border-border/60 px-3 py-2">
           {empty ? (
-            <p className="text-xs text-muted-foreground">Nothing to preview.</p>
+            <p className="text-xs text-muted-foreground">没有什么可以预览的。</p>
           ) : (
             <PullRequestMarkdown
               text={draft}
@@ -120,7 +120,7 @@ export function PullRequestMarkdownEditor({
       )}
       <div className="flex justify-end gap-2">
         <Button size="xs" variant="ghost" disabled={saving} onClick={onCancel}>
-          Cancel
+          取消
         </Button>
         <Button
           size="xs"
@@ -136,7 +136,7 @@ export function PullRequestMarkdownEditor({
             onSave(draft);
           }}
         >
-          {saving ? "Saving..." : "Save"}
+          {saving ? "正在保存…" : "保存"}
         </Button>
       </div>
     </div>

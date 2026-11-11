@@ -135,7 +135,7 @@ export function useVoiceTranscriptionDestination() {
     grantId: grant?.id ?? null,
     label:
       provider && environment
-        ? `${CLOUD_SPEECH_LABELS[provider]} via ${environment.label}`
+        ? `${CLOUD_SPEECH_LABELS[provider]}（通过 ${environment.label}）`
         : (environment?.label ?? null),
     prepared: supported && canDictate ? connection : null,
   };
@@ -348,8 +348,8 @@ export function useEnvironmentSpeechInput(input: HookInput) {
       onPostProcessingError: () =>
         toastManager.add({
           type: "warning",
-          title: "Transcript cleanup failed",
-          description: "The original transcript was added.",
+          title: "调试清理失败",
+          description: "原抄录本被补充。",
         }),
       readDraft,
       commitDraft: (text, selection) => {
@@ -469,8 +469,8 @@ export function useEnvironmentSpeechInput(input: HookInput) {
         error: choice
           ? null
           : catalog
-            ? "No model matches your language. Choose a model or change the language in Voice settings."
-            : "Could not load transcription models. Check the connection and try again.",
+            ? "没有模型匹配您的语言。在语音设置中选择模型或更改语言。"
+            : "无法装入转写模型。请检查连接并再次尝试。",
       }));
     },
   );
@@ -506,7 +506,7 @@ export function useEnvironmentSpeechInput(input: HookInput) {
       setQueuedStart(null);
       toastManager.add({
         type: "error",
-        title: "Could not start voice input",
+        title: "无法启动语音输入",
         description: error instanceof Error ? error.message : String(error),
       });
       return;
@@ -520,7 +520,7 @@ export function useEnvironmentSpeechInput(input: HookInput) {
     if (!latestStatus.supported) {
       toastManager.add({
         type: "error",
-        title: "Voice input is not available",
+        title: "语音输入不可用",
         description: latestStatus.reason,
       });
       return;
@@ -549,7 +549,7 @@ export function useEnvironmentSpeechInput(input: HookInput) {
           setSetup((current) => ({
             ...current,
             downloading: false,
-            error: "The model downloaded, but this environment could not select it. Try again.",
+            error: "模型下载，但环境无法选择。请再试一次。",
           }));
           return;
         }
@@ -564,14 +564,14 @@ export function useEnvironmentSpeechInput(input: HookInput) {
         ...current,
         downloading: false,
         step: ready ? 1 : current.step,
-        error: ready ? null : "The model is not ready. Try downloading it again.",
+        error: ready ? null : "模型还没有准备好，请再下载一次。",
       }));
     } catch {
       if (request !== startRequestRef.current) return;
       setSetup((current) => ({
         ...current,
         downloading: false,
-        error: "Could not download the model. Check this environment's connection and try again.",
+        error: "无法下载模型。请检查此环境的连接并再次尝试。",
       }));
     }
   });

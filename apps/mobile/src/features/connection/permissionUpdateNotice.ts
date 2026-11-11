@@ -65,9 +65,9 @@ export function installPermissionUpdateNotice(): () => void {
       presentNext();
     };
     Dialog.alert(
-      `Permissions have changed for ${environment.label}`,
-      "This connection still uses the old permissions, so some actions may no longer be available. Pair again using a new link with the permissions you need.",
-      [{ text: "Got it", onPress: dismiss }],
+      `访问权限已更改：${environment.label}`,
+      "此连接仍使用旧权限，部分操作可能已不可用。请使用包含所需权限的新链接重新配对。",
+      [{ text: "知道了", onPress: dismiss }],
       { cancelable: false },
     );
   };

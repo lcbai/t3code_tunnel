@@ -11,11 +11,11 @@ export function ChatGptSharingStatus({ provider }: { provider: ServerProvider | 
     <View className="flex-row items-center justify-between gap-3 px-3 py-1">
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="ChatGPT token sharing is active"
+        accessibilityLabel="已开启 ChatGPT 词元共享"
         className="min-h-11 flex-row items-center gap-2"
         onPress={() => {
           Dialog.alert(
-            "ChatGPT sharing is on",
+            "已开启 ChatGPT 共享",
             [
               provider?.auth.email,
               "Eligible usage uses your ChatGPT plan. Credit settings and limits are managed in ChatGPT.",
@@ -27,14 +27,14 @@ export function ChatGptSharingStatus({ provider }: { provider: ServerProvider | 
         }}
       >
         <ProviderIcon provider="codex" size={14} />
-        <Text className="text-xs text-foreground-muted">Using ChatGPT plan</Text>
+        <Text className="text-xs text-foreground-muted">正在使用 ChatGPT 套餐</Text>
       </Pressable>
       <Pressable
         accessibilityRole="link"
         className="min-h-11 justify-center"
         onPress={() => void Linking.openURL(CHATGPT_USAGE_URL).catch(() => undefined)}
       >
-        <Text className="text-xs font-t3-medium text-primary">Manage usage</Text>
+        <Text className="text-xs font-t3-medium text-primary">管理用量</Text>
       </Pressable>
     </View>
   );

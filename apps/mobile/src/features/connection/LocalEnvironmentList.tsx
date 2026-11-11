@@ -36,8 +36,8 @@ export function LocalEnvironmentList({
           />
         </View>
         <Text className="text-center text-sm leading-normal text-foreground-muted">
-          No environments connected yet.{"\n"}Tap{" "}
-          <Text className="font-t3-bold text-foreground">+</Text> to add one.
+          尚未连接环境。{"\n"}轻点 <Text className="font-t3-bold text-foreground">+</Text>{" "}
+          添加环境。
         </Text>
       </View>
     );

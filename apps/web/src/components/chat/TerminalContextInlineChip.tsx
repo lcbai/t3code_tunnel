@@ -31,12 +31,12 @@ export function TerminalContextInlineChip(props: TerminalContextInlineChipProps)
               {terminalLabel}
             </span>
             <span className="ml-auto shrink-0 text-secondary-label text-xs">
-              {lineStart === lineEnd ? `Line ${lineStart}` : `Lines ${lineStart}–${lineEnd}`}
+              {lineStart === lineEnd ? `线条${lineStart}` : `第 ${lineStart}–${lineEnd} 行`}
             </span>
           </div>
           <pre
             className="max-h-80 overflow-auto whitespace-pre bg-muted p-3 font-mono text-foreground text-xs leading-relaxed outline-none [tab-size:4] focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
-            aria-label="Captured terminal output"
+            aria-label="抓取的终端输出"
             tabIndex={0}
           >
             {text}
@@ -52,11 +52,11 @@ export function TerminalContextInlineChip(props: TerminalContextInlineChipProps)
       {...(expired ? { state: "invalid" as const } : {})}
       icon={<TerminalIcon />}
       label={label}
-      aria-label={`Terminal excerpt, ${label}${expired ? ", expired" : ""}`}
+      aria-label={`终端摘录：${label}${expired ? ", expired" : ""}`}
       data-terminal-context-expired={expired ? "true" : undefined}
       tooltip={
         expired
-          ? `Terminal context expired. Remove and re-add ${label} to include it in your message.`
+          ? `终端上下文已过期。删除并重新添加${label} 将其包含在信件中。`
           : detailsMode === "none"
             ? undefined
             : text

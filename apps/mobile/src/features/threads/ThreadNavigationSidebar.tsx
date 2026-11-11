@@ -525,14 +525,14 @@ function ThreadNavigationSidebarPane(props: ThreadNavigationSidebarProps) {
   };
   const header = (
     <WorkspaceListHeader
-      accessibilityLabel="T3 Code, Threads"
+      accessibilityLabel="T3 Code，会话"
       onOpenEnvironments={props.onOpenEnvironmentSettings}
       onOpenSettings={props.onOpenSettings}
       search={{
         value: props.searchQuery,
         onChangeText: props.onSearchQueryChange,
-        placeholder: "Search",
-        accessibilityLabel: "Search threads",
+        placeholder: "搜索",
+        accessibilityLabel: "搜索会话",
       }}
       filter={{
         customized: options.selectedEnvironmentId !== null || selectedProjectKey !== null,
@@ -561,16 +561,16 @@ function ThreadNavigationSidebarPane(props: ThreadNavigationSidebarProps) {
       }
     >
       {catalogState.isLoadingConnections
-        ? "Loading threads…"
+        ? "正在加载会话…"
         : Platform.OS === "android" && !catalogState.hasConnections
-          ? "No environments connected"
+          ? "尚未连接任何环境"
           : props.searchQuery.trim().length > 0
             ? threadSearch.isPending
-              ? "Searching thread messages…"
-              : "No matching threads"
+              ? "正在搜索会话消息…"
+              : "没有匹配的会话"
             : selectedProjectScope !== null
               ? `No threads in ${selectedProjectScope.title}`
-              : "No threads yet"}
+              : "还没有会话"}
     </Text>
   );
 

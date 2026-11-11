@@ -76,7 +76,7 @@ export function useMediaActions(source: MediaActionsSource | undefined, onOpenFi
         if (!request.signal.aborted) {
           Dialog.alert(
             kind === "share" ? "Could not share file" : "Could not save image",
-            error instanceof Error ? error.message : "Try again.",
+            error instanceof Error ? error.message : "请重试。",
           );
         }
       })
@@ -151,7 +151,7 @@ export function useMediaActions(source: MediaActionsSource | undefined, onOpenFi
             ? [
                 {
                   id: "copy-full-path" as const,
-                  title: "Copy full path",
+                  title: "复制完整路径",
                   run: () => copyTextWithHaptic(formatFilePathForClipboard(reference.path)),
                 },
               ]
@@ -160,7 +160,7 @@ export function useMediaActions(source: MediaActionsSource | undefined, onOpenFi
             ? [
                 {
                   id: "copy-relative-path" as const,
-                  title: "Copy relative path",
+                  title: "复制相对路径",
                   run: () =>
                     copyTextWithHaptic(formatFilePathForClipboard(relativePath, reference.path)),
                 },
@@ -170,7 +170,7 @@ export function useMediaActions(source: MediaActionsSource | undefined, onOpenFi
             ? [
                 {
                   id: "copy-url" as const,
-                  title: "Copy URL",
+                  title: "复制网址",
                   run: () => copyTextWithHaptic(reference.url),
                 },
               ]
@@ -179,7 +179,7 @@ export function useMediaActions(source: MediaActionsSource | undefined, onOpenFi
             ? [
                 {
                   id: "open-file" as const,
-                  title: "Open in file viewer",
+                  title: "在文件查看器中打开",
                   disabled: !canReadMedia,
                   run: () => {
                     if (!canReadHostMedia(hostEnvironmentId)) return;
@@ -197,7 +197,7 @@ export function useMediaActions(source: MediaActionsSource | undefined, onOpenFi
             ? [
                 {
                   id: "save-image" as const,
-                  title: busy === "save-image" ? "Saving image…" : "Save image",
+                  title: busy === "save-image" ? "正在保存图片…" : "保存图片",
                   run: saveImage,
                   disabled: busy !== null || !canReadMedia,
                 },
@@ -207,10 +207,10 @@ export function useMediaActions(source: MediaActionsSource | undefined, onOpenFi
             id: "save" as const,
             title:
               busy === "share"
-                ? "Opening share sheet…"
+                ? "正在打开分享面板…"
                 : canSaveImageToLibrary(source.mimeType)
-                  ? "Share"
-                  : "Save or share",
+                  ? "分享"
+                  : "保存或分享",
             run: share,
             disabled: busy !== null || !canReadMedia,
           },

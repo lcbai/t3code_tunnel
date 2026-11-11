@@ -48,7 +48,7 @@ export function useThreadGuestShare(threadRef: ScopedThreadRef | null): ThreadGu
 function alertOnFailure(failureTitle: string, result: AtomCommandResult<unknown, unknown>) {
   if (result._tag === "Failure" && !isAtomCommandInterrupted(result)) {
     const error = squashAtomCommandFailure(result);
-    Dialog.alert(failureTitle, error instanceof Error ? error.message : "Try again.");
+    Dialog.alert(failureTitle, error instanceof Error ? error.message : "请重试。");
   }
 }
 
@@ -84,9 +84,9 @@ export function ThreadGuestShareBar(props: {
   const disabled = busy || !props.canOperateThread;
   const stopSharing = () =>
     Dialog.confirm({
-      title: "Stop sharing?",
-      message: "The guest loses access and the link stops working.",
-      confirmText: "Stop sharing",
+      title: "停止分享？",
+      message: "访客将失去访问权限，链接也会失效。",
+      confirmText: "停止分享",
       destructive: true,
       onConfirm: () => {
         if (disabled) return;
@@ -106,12 +106,12 @@ export function ThreadGuestShareBar(props: {
       <SymbolView name="person.2" size={12} tintColorClassName="accent-foreground-muted" />
       <Text className="min-w-0 flex-1 text-xs text-foreground-muted" numberOfLines={1}>
         {expiredAt === share.expiresAt
-          ? "Guest link expired"
+          ? "访客链接已过期"
           : share.guestName === null
-            ? "Guest link active"
+            ? "访客链接有效"
             : `${share.guestName} is a guest`}
       </Text>
-      <Button label="Stop sharing" tone="text" disabled={disabled} onPress={stopSharing} />
+      <Button label="停止分享" tone="text" disabled={disabled} onPress={stopSharing} />
     </View>
   );
 }
@@ -170,16 +170,16 @@ export function ThreadGuestPendingMessage(props: {
       {canOperate ? (
         <View className="mt-1.5 flex-row gap-2">
           <Button
-            label="Dismiss"
+            label="关闭"
             tone="secondary"
             accessibilityLabel={`Dismiss message from ${guestName}`}
             disabled={busy}
             onPress={() => void resolve("dismiss")}
           />
           <Button
-            label="Send"
+            label="发送"
             tone="primary"
-            accessibilityLabel={`Send message from ${guestName}`}
+            accessibilityLabel={`发送消息：${guestName}`}
             disabled={busy}
             onPress={() => void resolve("send")}
           />

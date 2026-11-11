@@ -78,25 +78,25 @@ export function ProviderAuthenticationSection({
     (provider.auth.type === "gemini-api-key" || provider.auth.type === "agent-platform");
   const accountDescription = active
     ? auth?.phase === "starting"
-      ? (auth.message ?? (usesCredentials ? "Connecting…" : "Starting sign-in…"))
+      ? (auth.message ?? (usesCredentials ? "正在连接…" : "开始登录…"))
       : auth?.phase === "verifying"
         ? usesCredentials
-          ? "Checking credentials and loading models…"
-          : "Checking your account…"
+          ? "正在检查证书和加载模型…"
+          : "正在检查您的账户…"
         : interaction?.type === "terminal"
-          ? "Complete sign-in in the terminal below."
+          ? "在下面的终点站完全注册"
           : interaction?.type === "credentials"
-            ? "Enter your credentials below."
-            : "Finish signing in in your browser."
+            ? "在下面输入您的证书。"
+            : "在浏览器中完成登录。"
     : signedIn
-      ? "Signed in."
+      ? "签入。"
       : isDiscovering
-        ? "Discovering sign-in methods…"
+        ? "发现登录方法…"
         : needsExternalSetup
-          ? "No in-app sign-in advertised. Follow the provider's docs to finish setup."
+          ? "没有在应用中登入的广告。 跟着代理提供方的文档完成设置。"
           : usesCredentials
-            ? `Connect on ${environmentLabel} to load models.`
-            : `Sign in on ${environmentLabel}.`;
+            ? `连接到${environmentLabel} 来装入模型。`
+            : `签名于${environmentLabel}。`;
   const statusMessage = auth?.phase === "failed" ? auth.message : null;
   const disabled = readOnly || pending || query.error !== null || isDiscovering;
   const draftId = `${auth?.flowId ?? ""}:${interaction?.id ?? ""}`;
@@ -117,12 +117,10 @@ export function ProviderAuthenticationSection({
       if (result._tag === "Success") succeeded = true;
       else if (!isAtomCommandInterrupted(result)) {
         const failure = squashAtomCommandFailure(result);
-        setError(
-          failure instanceof Error ? failure.message : "Provider sign-in failed. Try again.",
-        );
+        setError(failure instanceof Error ? failure.message : "提供方登录失败，请再试一次。");
       }
     } catch {
-      setError("Provider sign-in failed. Try again.");
+      setError("提供方登录失败，请再试一次。");
     }
     pendingRef.current = false;
     setPending(false);
@@ -155,7 +153,7 @@ export function ProviderAuthenticationSection({
       setError(null);
     } catch {
       pending?.close();
-      setError("Could not open the sign-in page. Copy the link and open it in your browser.");
+      setError("无法打开登录页面。 复制链接并在浏览器中打开。");
     }
   }
 
@@ -165,15 +163,15 @@ export function ProviderAuthenticationSection({
 
   return (
     <SettingsRow
-      title="Account"
+      title="账户"
       description={
         signedIn && !active && provider.auth.email?.trim() ? (
           <span>
-            Signed in as{" "}
+            签名为{" "}
             <RedactedSensitiveText
               key={provider.auth.email}
               value={provider.auth.email}
-              ariaLabel="Toggle account email visibility"
+              ariaLabel="切换账户电子邮件可见度"
               revealTooltip="Click to reveal email"
               hideTooltip="Click to hide email"
               className="max-w-full truncate"
@@ -198,14 +196,13 @@ export function ProviderAuthenticationSection({
               disabled={disabled}
               onValueChange={(value) => setMethodId(value ?? "")}
             >
-              <SelectTrigger size="sm" aria-label="Sign-in method" className="w-44">
+              <SelectTrigger size="sm" aria-label="登录方法" className="w-44">
                 <SelectValue>
-                  {auth?.methods?.find((method) => method.id === methodId)?.name ??
-                    "Provider default"}
+                  {auth?.methods?.find((method) => method.id === methodId)?.name ?? "提供者默认"}
                 </SelectValue>
               </SelectTrigger>
               <SelectPopup>
-                <SelectItem value="">Provider default</SelectItem>
+                <SelectItem value="">提供者默认</SelectItem>
                 {auth?.methods?.map((method) => (
                   <SelectItem key={method.id} value={method.id}>
                     {method.name}
@@ -222,13 +219,13 @@ export function ProviderAuthenticationSection({
                 disabled={disabled}
                 onClick={() => void openBrowser()}
               >
-                Open browser
+                打开浏览器
               </Button>
               <Tooltip>
                 <TooltipTrigger
                   render={
                     <Button
-                      aria-label="Copy sign-in link"
+                      aria-label="复制登录链接"
                       size="icon-sm"
                       variant="ghost-muted"
                       disabled={disabled}
@@ -240,14 +237,14 @@ export function ProviderAuthenticationSection({
                           await copied;
                           if (interaction?.type === "browser" && interaction.requiresConsent)
                             await send({ type: "browser", action: "accept" });
-                        })().catch(() => setError("Could not copy the sign-in link."));
+                        })().catch(() => setError("无法复制登录链接。"));
                       }}
                     >
                       <CopyIcon />
                     </Button>
                   }
                 />
-                <TooltipPopup>Copy sign-in link</TooltipPopup>
+                <TooltipPopup>复制登录链接</TooltipPopup>
               </Tooltip>
             </>
           ) : null}
@@ -260,13 +257,13 @@ export function ProviderAuthenticationSection({
                   <a href={provider.setup.documentationUrl} target="_blank" rel="noreferrer" />
                 }
               >
-                Open docs
+                打开文档
               </Button>
             ) : active && auth?.flowId ? (
               <Button
                 size="sm"
                 variant="ghost-muted"
-                aria-label="Cancel sign-in"
+                aria-label="取消登录"
                 disabled={disabled}
                 onClick={() =>
                   void run(() =>
@@ -274,7 +271,7 @@ export function ProviderAuthenticationSection({
                   )
                 }
               >
-                Cancel
+                取消
               </Button>
             ) : !active && !needsExternalSetup && provider.setup?.canAuthenticate !== false ? (
               <Button
@@ -296,14 +293,14 @@ export function ProviderAuthenticationSection({
                 }
               >
                 {signedIn
-                  ? "Change account"
+                  ? "更改账户"
                   : auth?.phase === "failed" || auth?.phase === "cancelled"
                     ? usesCredentials
-                      ? "Retry connection"
-                      : "Retry sign-in"
+                      ? "重试连接"
+                      : "重试登录"
                     : usesCredentials
-                      ? "Connect"
-                      : "Sign in"}
+                      ? "连接"
+                      : "登录"}
               </Button>
             ) : null}
             {!active && signedIn && (provider.auth.canLogout ?? provider.setup?.canAuthenticate) ? (
@@ -321,7 +318,7 @@ export function ProviderAuthenticationSection({
                     });
                 }}
               >
-                Sign out
+                退出登录
               </Button>
             ) : null}
           </>
@@ -337,17 +334,15 @@ export function ProviderAuthenticationSection({
         <>
           {interaction?.type === "deviceCode" ? (
             <p className="py-2 text-sm text-muted-foreground">
-              Enter code{" "}
+              输入代码{" "}
               <code className="select-all font-mono text-foreground">{interaction.userCode}</code>{" "}
-              in your browser.
+              在您的浏览器中。
             </p>
           ) : null}
           {interaction?.type === "terminal" ? (
             <div className="py-2">
               <Suspense
-                fallback={
-                  <p className="text-xs text-muted-foreground">Loading sign-in terminal…</p>
-                }
+                fallback={<p className="text-xs text-muted-foreground">正在装入登录终端…</p>}
               >
                 <ProviderAuthTerminal
                   key={`${auth?.flowId}:${interaction.id}`}
@@ -379,14 +374,14 @@ export function ProviderAuthenticationSection({
                         if (result._tag !== "Success") {
                           terminalQueue.current = [];
                           if (!isAtomCommandInterrupted(result))
-                            setError("The provider sign-in terminal is no longer available.");
+                            setError("代理提供方的登录终端已无法使用。");
                           break;
                         }
                       }
                     })()
                       .catch(() => {
                         terminalQueue.current = [];
-                        setError("Could not send input to the provider sign-in terminal.");
+                        setError("无法将输入发送到服务商的登录终端。");
                       })
                       .finally(() => {
                         terminalSending.current = false;
@@ -427,7 +422,7 @@ export function ProviderAuthenticationSection({
                 className="w-fit"
                 disabled={disabled}
               >
-                Connect
+                连接
               </Button>
             </form>
           ) : null}
@@ -448,7 +443,7 @@ export function ProviderAuthenticationSection({
               }}
             >
               <label className="grid gap-1">
-                If the final localhost page does not load, paste its full URL here.
+                如果最后的本地主机页面没有加载，请粘贴其完整URL here。
                 <Input
                   size="sm"
                   id={`provider-callback-${instanceId}`}
@@ -467,7 +462,7 @@ export function ProviderAuthenticationSection({
                 className="w-fit"
                 disabled={disabled || !values.callback?.trim()}
               >
-                Continue
+                继续
               </Button>
             </form>
           ) : null}

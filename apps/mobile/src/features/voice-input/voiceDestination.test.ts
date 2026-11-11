@@ -142,7 +142,7 @@ it("keeps local as the default and never reuses consent for an offline or resele
     chooseVoiceDestination(host);
     const current = appAtomRegistry.get(voiceRouteAtom)?.transcriber;
     await expect(first!.prepare({ signal: new AbortController().signal })).rejects.toThrow(
-      "Your transcription choice changed.",
+      "已更改转录选项。",
     );
     expect(mocks.fetch).not.toHaveBeenCalled();
     mocks.fetch
@@ -180,7 +180,7 @@ it("keeps local as the default and never reuses consent for an offline or resele
     const recorded = await cloud.prepare(options);
     chooseVoiceDestination(host, "xai");
     await expect(recorded.transcribe("file:///voice.m4a", options)).rejects.toThrow(
-      "Your transcription choice changed.",
+      "已更改转录选项。",
     );
     mocks.fetch
       .mockResolvedValueOnce(Response.json({ openai: true, xai: true }))
@@ -228,7 +228,7 @@ it("keeps local as the default and never reuses consent for an offline or resele
     mocks.write.mockImplementationOnce(failWrite);
     expect(() => chooseVoiceDestination(null)).toThrow("Device storage is unavailable");
     expect(appAtomRegistry.get(voiceGrantAtom)).toBeNull();
-    await expect(current!.prepare(options)).rejects.toThrow("Your transcription choice changed.");
+    await expect(current!.prepare(options)).rejects.toThrow("已更改转录选项。");
   } finally {
     unmount();
     appAtomRegistry.reset();

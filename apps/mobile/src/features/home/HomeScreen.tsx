@@ -152,16 +152,16 @@ function deriveEmptyState(props: {
   const { catalogState } = props;
   if (catalogState.isLoadingConnections) {
     return {
-      title: "Loading environments",
-      detail: "Checking saved environments on this device.",
+      title: "正在加载环境",
+      detail: "正在检查此设备上保存的环境。",
       loading: true,
     };
   }
 
   if (!catalogState.hasConnections) {
     return {
-      title: "No environments connected",
-      detail: "Add an environment to load projects and start coding sessions.",
+      title: "尚未连接任何环境",
+      detail: "添加环境后即可加载项目并开始编程。",
       loading: false,
     };
   }
@@ -174,13 +174,9 @@ function deriveEmptyState(props: {
     !catalogState.hasLoadedShellSnapshot
   ) {
     return {
-      title:
-        catalogState.connectionState === "unsupported"
-          ? "Client not supported"
-          : "Environment unavailable",
+      title: catalogState.connectionState === "unsupported" ? "不支持此客户端" : "环境不可用",
       detail:
-        catalogState.connectionError ??
-        "The saved environment is offline. Check the URL or start the environment, then retry.",
+        catalogState.connectionError ?? "已保存的环境处于离线状态。请检查网址或启动环境后重试。",
       loading: false,
     };
   }
@@ -191,23 +187,23 @@ function deriveEmptyState(props: {
     catalogState.connectionError === null
   ) {
     return {
-      title: "Connecting to environment",
-      detail: "Loading projects and threads from the saved environment.",
+      title: "正在连接环境",
+      detail: "正在从已保存的环境加载项目和会话。",
       loading: true,
     };
   }
 
   if (props.projectCount === 0 && catalogState.hasLoadedShellSnapshot) {
     return {
-      title: "No projects found",
-      detail: "The connected environment did not report any projects.",
+      title: "找不到项目",
+      detail: "已连接的环境未返回任何项目。",
       loading: false,
     };
   }
 
   return {
-    title: "No threads yet",
-    detail: "Create a task to start a new coding runtime in one of your connected projects.",
+    title: "还没有会话",
+    detail: "创建任务，在已连接的项目中启动新的编程会话。",
     loading: false,
   };
 }
@@ -703,7 +699,7 @@ export function HomeScreen(props: HomeScreenProps) {
                 action={
                   Platform.OS === "android" && !props.catalogState.hasReadyEnvironment ? (
                     <FloatingActionButton
-                      label="Add environment"
+                      label="添加环境"
                       icon="plus"
                       variant="extended"
                       tone="primary"
@@ -750,26 +746,26 @@ export function HomeScreen(props: HomeScreenProps) {
   const v2ListEmpty =
     hasSearchQuery && threadSearch.isPending ? undefined : hasSearchQuery ? (
       <EmptyState
-        title="No results"
+        title="无结果"
         detail={`No threads matching "${props.searchQuery}".`}
         variant={Platform.OS === "android" ? "plain" : undefined}
       />
     ) : v2ScopedProjectGroup !== null ? (
       <EmptyState
         title={`No threads in ${v2ScopedProjectGroup.title}`}
-        detail="Choose another project or create a new task."
+        detail="请选择其他项目或创建新任务。"
         variant={Platform.OS === "android" ? "plain" : undefined}
       />
     ) : selectedEnvironmentLabel ? (
       <EmptyState
         title={`No threads in ${selectedEnvironmentLabel}`}
-        detail="Choose another environment or create a new task."
+        detail="请选择其他环境或创建新任务。"
         variant={Platform.OS === "android" ? "plain" : undefined}
       />
     ) : (
       <EmptyState
-        title="No threads yet"
-        detail="Create a task to start a new coding session."
+        title="还没有会话"
+        detail="创建任务以启动新的编程会话。"
         variant={Platform.OS === "android" ? "plain" : undefined}
       />
     );

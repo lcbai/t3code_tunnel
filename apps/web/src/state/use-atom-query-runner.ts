@@ -20,7 +20,7 @@ export function useAtomQueryRunner<T, A, E>(
   return (target: T) => {
     const atom = family(target);
     return executeAtomQuery(registry, atom, {
-      label: explicitLabel ?? atom.label?.[0] ?? "atom query",
+      label: explicitLabel ?? atom.label?.[0] ?? "原子查询",
       reportFailure,
       reportDefect,
       refresh,

@@ -72,11 +72,11 @@ export function useReviewCommentSelectionController(input: {
 
   const selectionAction = hasRangeTarget
     ? {
-        title: `Comment on ${formatReviewSelectedRangeLabel(activeCommentTarget)}`,
+        title: `评论：${formatReviewSelectedRangeLabel(activeCommentTarget)}`,
         onOpenComment: openReviewCommentSheet,
       }
     : pendingRange
-      ? { title: "Select range end", onOpenComment: null }
+      ? { title: "选择范围终点", onOpenComment: null }
       : null;
 
   const onPressLine = (

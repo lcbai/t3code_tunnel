@@ -16,12 +16,10 @@ export function ConnectionTraceId({
     <>
       {" Trace ID: "}
       <Text
-        accessibilityHint={
-          activation === "longPress" ? "Long press to copy the trace ID" : "Copies the trace ID"
-        }
-        accessibilityLabel={`Copy trace ID ${traceId}`}
+        accessibilityHint={activation === "longPress" ? "长按复制跟踪 ID" : "复制跟踪 ID"}
+        accessibilityLabel={`复制跟踪 ID ${traceId}`}
         accessibilityRole="button"
-        accessibilityActions={[{ name: "activate", label: "Copy trace ID" }]}
+        accessibilityActions={[{ name: "activate", label: "复制跟踪 ID" }]}
         onAccessibilityAction={(event) => {
           event.stopPropagation();
           if (event.nativeEvent.actionName === "activate") copy();

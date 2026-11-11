@@ -61,7 +61,7 @@ describe("ProviderEnvironmentSection external settings writes", () => {
       <ProviderEnvironmentSection environment={[]} onChange={onChange} />,
     );
 
-    await userEvent.click(screen.getByRole("button", { name: "Add variable" }));
+    await userEvent.click(screen.getByRole("button", { name: "添加变量" }));
     await userEvent.type(
       screen.getByRole("textbox", { name: "Environment variable name 1" }),
       "KEEP_ME_TYPED",
@@ -87,7 +87,7 @@ describe("ProviderEnvironmentSection external settings writes", () => {
       <ProviderEnvironmentSection environment={[]} onChange={onChange} />,
     );
 
-    await userEvent.click(screen.getByRole("button", { name: "Add variable" }));
+    await userEvent.click(screen.getByRole("button", { name: "添加变量" }));
     await userEvent.fill(
       screen.getByRole("textbox", { name: "Environment variable name 1" }),
       "STORE_ME",
@@ -98,7 +98,7 @@ describe("ProviderEnvironmentSection external settings writes", () => {
       { name: "STORE_ME", value: "fake-secret", sensitive: true, valueRedacted: false },
     ]);
 
-    await userEvent.click(screen.getByRole("button", { name: "Add variable" }));
+    await userEvent.click(screen.getByRole("button", { name: "添加变量" }));
     await userEvent.type(
       screen.getByRole("textbox", { name: "Environment variable name 2" }),
       "UNPUBLISHED_ONE",
@@ -126,7 +126,7 @@ describe("ProviderEnvironmentSection external settings writes", () => {
       <ProviderEnvironmentSection environment={[]} onChange={onChange} />,
     );
 
-    await userEvent.click(screen.getByRole("button", { name: "Add variable" }));
+    await userEvent.click(screen.getByRole("button", { name: "添加变量" }));
     await userEvent.fill(
       screen.getByRole("textbox", { name: "Environment variable name 1" }),
       "KEEP-ME",
@@ -151,7 +151,7 @@ describe("ProviderEnvironmentSection external settings writes", () => {
       <ProviderEnvironmentSection environment={[]} onChange={onChange} />,
     );
 
-    await userEvent.click(screen.getByRole("button", { name: "Add variable" }));
+    await userEvent.click(screen.getByRole("button", { name: "添加变量" }));
     await userEvent.fill(
       screen.getByRole("textbox", { name: "Environment variable name 1" }),
       "PUBLISH_ME",

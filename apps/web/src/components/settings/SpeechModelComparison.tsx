@@ -101,20 +101,20 @@ export function ModelBenchmarks({
             {score ? (
               <>
                 <strong className="font-medium text-foreground">{score.grade}</strong> (
-                {score.errorPercent}% error)
+                {score.errorPercent}% 错误)
               </>
             ) : (
-              "not benchmarked"
+              "未设定基准"
             )}
           </span>
         );
       })}
       <span>
-        Speed:{" "}
+        速度 :{" "}
         {tier === "cpu" && data && data.secondsPer30s.cpu === undefined ? (
-          "update server"
+          "更新服务器"
         ) : seconds == null ? (
-          "not benchmarked"
+          "未设定基准"
         ) : (
           <>
             <strong className="font-medium text-foreground">{seconds} s</strong> / 30 s

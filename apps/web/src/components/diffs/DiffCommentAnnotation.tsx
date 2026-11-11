@@ -55,7 +55,7 @@ export function DiffCommentAnnotation({
   onCancel,
   onComment,
   onDelete,
-  placeholder = "Add a comment…",
+  placeholder = "添加注释…",
   submitLabel = "Comment",
   pending = false,
   secondaryAction,
@@ -93,12 +93,7 @@ export function DiffCommentAnnotation({
         </p>
         {onDelete ? (
           <span className="-my-1 -mr-1 flex shrink-0 opacity-0 transition-opacity group-hover/comment:opacity-100 focus-within:opacity-100 max-sm:opacity-100">
-            <Button
-              variant="ghost-muted"
-              size="icon-xs"
-              aria-label="Delete comment"
-              onClick={onDelete}
-            >
+            <Button variant="ghost-muted" size="icon-xs" aria-label="删除注释" onClick={onDelete}>
               <Trash2 className="size-3" />
             </Button>
           </span>
@@ -136,7 +131,7 @@ export function DiffCommentAnnotation({
         value={displayedText}
         dir={textDirection(displayedText)}
         placeholder={placeholder}
-        aria-label={`Comment on lines ${rangeLabel}`}
+        aria-label={`对行${rangeLabel} 注释`}
         onValueChange={onTextChange ?? setLocalDraftText}
         onFocus={(event) => {
           const end = event.currentTarget.value.length;
@@ -155,10 +150,10 @@ export function DiffCommentAnnotation({
         }}
       />
       <div className="mt-1.5 flex flex-wrap items-center gap-1">
-        <span className="mr-auto text-3xs text-muted-foreground/70">⌘/Ctrl Enter to send</span>
+        <span className="mr-auto text-3xs text-muted-foreground/70">QQ/ Ctrl 输入发送</span>
         {speech ? <TextFieldSpeechControls speech={speech} disabled={pending} /> : null}
         <Button variant="ghost-muted" size="xs" onClick={onCancel}>
-          Cancel
+          取消
         </Button>
         {secondaryAction ? (
           <Button

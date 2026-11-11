@@ -55,7 +55,7 @@ export function PullRequestCopyableCode({
             isCopied ? "opacity-100" : "opacity-0",
           )}
         >
-          Copied
+          已复制
         </span>
       </TooltipTrigger>
       <TooltipPopup variant="code" side={tooltipSide}>

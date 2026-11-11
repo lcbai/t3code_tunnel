@@ -63,7 +63,7 @@ const DROPPED_REQUEST_HEADERS = new Set([
   "dpop",
   "content-length",
   "accept-encoding",
-  // The client's HTTPS hop makes the hub reject our loopback Origin over T3 Connect.
+  // An HTTPS reverse proxy makes the hub reject our loopback Origin.
   "x-forwarded-proto",
 ]);
 

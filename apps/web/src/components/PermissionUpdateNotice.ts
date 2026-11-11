@@ -44,7 +44,7 @@ function showPermissionNotice(
   const id = toastManager.add({
     title: `Permissions have changed for ${label}`,
     description:
-      "This connection still uses the old permissions, so some actions may no longer be available. Pair again using a new link with the permissions you need.",
+      "此连接仍然使用旧权限，因此一些动作可能不再可用。再次使用您需要的权限使用新链接对等。",
     timeout: 0,
     onClose: persistDismissal,
     actionProps: {

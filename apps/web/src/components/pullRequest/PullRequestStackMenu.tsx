@@ -99,7 +99,7 @@ export function PullRequestStackMenu({
     setConfirmation(null);
     const toastId = toastManager.add({
       type: "loading",
-      title: action === "merge" ? "Merging stack..." : "Rebasing stack...",
+      title: action === "merge" ? "正在合并堆栈…" : "重定位堆栈…",
     });
     const result = await runAction({
       environmentId,
@@ -117,7 +117,7 @@ export function PullRequestStackMenu({
     if (result._tag === "Failure") {
       toastManager.update(toastId, {
         type: "error",
-        title: action === "merge" ? "Could not merge the stack" : "Could not rebase the stack",
+        title: action === "merge" ? "无法合并堆栈" : "无法重定位堆栈",
         description: readableFailure(
           squashAtomCommandFailure(result),
           action === "merge"
@@ -128,11 +128,8 @@ export function PullRequestStackMenu({
     } else {
       toastManager.update(toastId, {
         type: "success",
-        title: action === "merge" ? "Stack merge request completed" : "Stack rebased",
-        description:
-          action === "merge"
-            ? `${hostLabel} merged the stack or added it to its merge queue.`
-            : undefined,
+        title: action === "merge" ? "堆叠合并请求完成" : "堆栈重置基础",
+        description: action === "merge" ? `${hostLabel} 合并堆栈或添加到其合并队列中。` : undefined,
       });
     }
   };
@@ -148,7 +145,7 @@ export function PullRequestStackMenu({
                   <Button
                     variant="ghost"
                     size="xs"
-                    aria-label={`Stack ${stack.number}, layer ${position} of ${stack.layers.length}`}
+                    aria-label={`堆叠${stack.number}，层数${position} of${stack.layers.length}`}
                   />
                 }
               >
@@ -159,14 +156,14 @@ export function PullRequestStackMenu({
             }
           />
           <TooltipPopup>
-            View stack #{stack.number}, layer {position} of {stack.layers.length}
+            查看堆栈#{stack.number}层 {position} of {stack.layers.length}
             {notice ? ` · ${notice}` : null}
           </TooltipPopup>
         </Tooltip>
         <MenuPopup align="start">
           <MenuGroup>
             <PullRequestStackHeader number={stack.number} notice={notice} stale={!!onRetry} />
-            {onRetry ? <MenuItem onClick={onRetry}>Retry stack refresh</MenuItem> : null}
+            {onRetry ? <MenuItem onClick={onRetry}>重试堆栈刷新</MenuItem> : null}
             <PullRequestStackLayers
               stack={stack}
               reference={reference}
@@ -187,7 +184,7 @@ export function PullRequestStackMenu({
               {canMerge ? (
                 <MenuItem disabled={mergeDisabled} onClick={() => setConfirmation("merge")}>
                   <PullRequestGlyph.merged aria-hidden />
-                  Merge stack ({mergeLayers.length})
+                  合并堆栈( E){mergeLayers.length})
                 </MenuItem>
               ) : null}
               {canRebase ? (
@@ -196,12 +193,12 @@ export function PullRequestStackMenu({
                   onClick={() => setConfirmation("update-branch")}
                 >
                   <RefreshCwIcon aria-hidden />
-                  Rebase stack
+                  重置堆栈
                 </MenuItem>
               ) : null}
               {mergeHasClosed || mergeLayers.some((layer) => layer.isDraft) ? (
                 <p className="px-2 py-1 text-xs text-muted-foreground">
-                  Every layer being merged must be open and ready for review.
+                  合并的每一层必须开放，随时可以审查。
                 </p>
               ) : null}
             </>
@@ -222,7 +219,7 @@ export function PullRequestStackMenu({
                   onClick={mergeDisabled ? undefined : () => setConfirmation("merge")}
                 >
                   <PullRequestGlyph.merged aria-hidden className="size-3.5" />
-                  Merge stack
+                  合并堆栈
                 </Button>
               </span>
             }
@@ -230,7 +227,7 @@ export function PullRequestStackMenu({
           <TooltipPopup>
             {stale
               ? notice
-              : `Merge stack through #${reference.number} into ${stack.base} (${mergeLayers.length} ${mergeLayers.length === 1 ? terminology.singular : terminology.plural})`}
+              : `将截至 #${reference.number} 的堆叠请求合并到 ${stack.base}（${mergeLayers.length} ${mergeLayers.length === 1 ? terminology.singular : terminology.plural}）`}
           </TooltipPopup>
         </Tooltip>
       ) : null}
@@ -244,13 +241,13 @@ export function PullRequestStackMenu({
           <DialogHeader>
             <DialogTitle>
               {confirmation === "merge"
-                ? `Merge ${mergeLayers.length} ${mergeLayers.length === 1 ? terminology.singular : terminology.plural}?`
-                : `Rebase ${unmerged.length} ${unmerged.length === 1 ? terminology.singular : terminology.plural}?`}
+                ? `要合并 ${mergeLayers.length} ${mergeLayers.length === 1 ? terminology.singular : terminology.plural} 吗？`
+                : `要变基 ${unmerged.length} ${unmerged.length === 1 ? terminology.singular : terminology.plural} 吗？`}
             </DialogTitle>
             <DialogDescription>
               {confirmation === "merge"
                 ? `Merge #${reference.number} and its unmerged layers below into ${stack.base} using ${mergeMethod}. ${hostLabel} checks their rules before merging or queueing them and rebases the remaining stack after merging.`
-                : `Rebase the remote branches from bottom to top onto ${stack.base}. This rewrites branch history and may restart checks. If a layer fails, earlier updates remain.`}
+                : `将远程分支从下到上重新定位到${stack.base}。 这会重写分支历史，并可能重新启动检查。如果层失败，早期的更新会保留。`}
             </DialogDescription>
           </DialogHeader>
           <DialogPanel>
@@ -267,10 +264,10 @@ export function PullRequestStackMenu({
           </DialogPanel>
           <DialogFooter>
             <Button variant="outline" onClick={() => setConfirmation(null)}>
-              Cancel
+              取消
             </Button>
             <Button onClick={() => void run()}>
-              {confirmation === "merge" ? "Merge stack" : "Rebase stack"}
+              {confirmation === "merge" ? "合并堆栈" : "重置堆栈"}
             </Button>
           </DialogFooter>
         </DialogPopup>

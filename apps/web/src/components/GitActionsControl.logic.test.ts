@@ -47,7 +47,7 @@ describe("when: ref is clean, ahead, and has an open PR", () => {
       }),
       false,
     );
-    assert.deepInclude(quick, { kind: "run_action", action: "push", label: "Push" });
+    assert.deepInclude(quick, { kind: "run_action", action: "push", label: "推送" });
   });
 });
 
@@ -62,7 +62,7 @@ describe("when: ref is clean, up to date, and has no open PR", () => {
 
     const quick = resolveQuickAction(syncedFeature, false);
     assert.deepInclude(quick, {
-      label: "Create PR",
+      label: "创建 PR",
       disabled: false,
       kind: "run_action",
       action: "create_pr",
@@ -89,7 +89,7 @@ describe("when: on default ref without open PR", () => {
     assert.deepInclude(quick, {
       kind: "run_action",
       action: "commit_push",
-      label: "Commit & push",
+      label: "提交并推送",
       disabled: false,
     });
   });
@@ -99,7 +99,7 @@ describe("when: local changes are behind upstream", () => {
   it("keeps the commit action available without pushing, with or without an open PR", () => {
     const behind = status({ hasWorkingTreeChanges: true, behindCount: 2 });
     const commit = {
-      label: "Commit",
+      label: "提交",
       disabled: false,
       kind: "run_action",
       action: "commit",
@@ -138,7 +138,7 @@ describe("when: ref has no upstream configured", () => {
     assert.deepInclude(quick, {
       kind: "run_action",
       action: "create_pr",
-      label: "Push & create PR",
+      label: "推送并创建 PR",
       disabled: false,
     });
   });
@@ -156,7 +156,7 @@ describe("when: ref has no upstream configured", () => {
     );
     assert.deepEqual(quick, {
       kind: "open_publish",
-      label: "Publish repository",
+      label: "发布仓库",
       disabled: false,
     });
   });
@@ -173,12 +173,12 @@ describe("when: the ref is on GitLab", () => {
 
   it("names merge requests in actions and the default-ref dialog", () => {
     const ahead = status({ ...gitLab, hasUpstream: false, aheadCount: 2 });
-    assert.equal(resolveQuickAction(ahead, false).label, "Push & create MR");
+    assert.equal(resolveQuickAction(ahead, false).label, "推送并创建 MR");
     assert.equal(
       resolveQuickAction(status({ ...gitLab, hasWorkingTreeChanges: true }), false).label,
-      "Commit, push & MR",
+      "提交、推送并创建 MR",
     );
-    assert.equal(buildMenuItems(ahead, false).find((item) => item.id === "pr")?.label, "Create MR");
+    assert.equal(buildMenuItems(ahead, false).find((item) => item.id === "pr")?.label, "创建 MR");
 
     const copy = resolveDefaultBranchActionDialogCopy({
       action: "create_pr",
@@ -186,8 +186,8 @@ describe("when: the ref is on GitLab", () => {
       includesCommit: false,
       terminology: sourceControlClients.get("gitlab").changeRequest,
     });
-    assert.equal(copy.title, "Push & create MR from default ref?");
-    assert.include(copy.description, "create a merge request on");
+    assert.equal(copy.title, "要从默认分支推送并创建 MR 吗？");
+    assert.include(copy.description, "推送本地提交并创建 MR");
   });
 });
 

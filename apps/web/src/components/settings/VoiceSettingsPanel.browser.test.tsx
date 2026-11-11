@@ -1,10 +1,8 @@
 import {
   BearerConnectionTarget,
   PrimaryConnectionTarget,
-  RelayConnectionTarget,
   type PreparedConnection,
 } from "@t3tools/client-runtime/connection";
-import type * as Effect from "effect/Effect";
 import {
   EnvironmentId,
   type EnvironmentSpeechModel,
@@ -28,50 +26,14 @@ import { VoiceSettingsPanel } from "./VoiceSettingsPanel";
 vi.mock(import("../../speech/useEnvironmentSpeechInput"), { spy: true });
 vi.mock(import("../../state/session"), { spy: true });
 
-// The real connection runtime authorizes relay requests with a signed-in cloud session.
 vi.mock("../../connection/runtime", async () => {
-  const [{ ManagedRelay }, rpc, { Atom }, Context, Effect, Layer] = await Promise.all([
-    import("@t3tools/client-runtime/relay"),
+  const [rpc, { Atom }] = await Promise.all([
     import("@t3tools/client-runtime/rpc"),
     import("effect/reactivity"),
-    import("effect/Context"),
-    import("effect/Effect"),
-    import("effect/Layer"),
   ]);
-  type AuthorizedHttp =
-    import("@t3tools/client-runtime/authorization").AuthorizedRemoteHttpEnvironment;
-  // Services resolve by key, and client-runtime does not export this one.
-  class RemoteEnvironmentAuthorization extends Context.Service<
-    RemoteEnvironmentAuthorization,
-    {
-      readonly authorizeDpopHttp: (input: {
-        readonly expectedEnvironmentId: AuthorizedHttp["environmentId"];
-      }) => Effect.Effect<AuthorizedHttp>;
-    }
-    // @effect-diagnostics-next-line deterministicKeys:off
-  >()("@t3tools/client-runtime/authorization/service/RemoteEnvironmentAuthorization") {}
   return {
     connectionAtomRuntime: Atom.runtime(
-      Layer.mergeAll(
-        rpc.layerRemoteHttpClient((input, init) => globalThis.fetch(input, init)),
-        Layer.succeed(ManagedRelay.ManagedRelayDpopSigner, {
-          thumbprint: Effect.succeed("thumbprint"),
-          createProof: () => Effect.succeed("proof"),
-        }),
-        Layer.succeed(RemoteEnvironmentAuthorization, {
-          authorizeDpopHttp: ({ expectedEnvironmentId }) =>
-            Effect.succeed({
-              environmentId: expectedEnvironmentId,
-              label: "MacBook Pro",
-              httpBaseUrl: window.location.origin,
-              httpAuthorization: {
-                _tag: "Dpop",
-                accessToken: "relay-access-token",
-                expiresAtEpochMs: 4_102_444_800_000,
-              },
-            }),
-        }),
-      ),
+      rpc.layerRemoteHttpClient((input, init) => globalThis.fetch(input, init)),
     ),
   };
 });
@@ -319,23 +281,23 @@ it("tests the selected model after download and preserves its transcript across 
               <VoiceSettingsPanel />
             </SettingsScopeProvider>,
           );
-          const testModel = screen.getByRole("button", { name: "Test model", exact: true });
-          const download = screen.getByRole("button", { name: "Download", exact: true });
+          const testModel = screen.getByRole("button", { name: "测试模型", exact: true });
+          const download = screen.getByRole("button", { name: "下载", exact: true });
           await expect.element(download).toBeVisible();
           expect(testModel.query()).toBeNull();
-          expect(screen.getByRole("button", { name: "Set up voice input" }).query()).toBeNull();
+          expect(screen.getByRole("button", { name: "设置语音输入" }).query()).toBeNull();
           await userEvent.click(download);
           await expect.element(testModel).toBeVisible();
-          expect(screen.getByRole("button", { name: "Set up voice input" }).query()).toBeNull();
+          expect(screen.getByRole("button", { name: "设置语音输入" }).query()).toBeNull();
           await userEvent.click(testModel);
-          const result = screen.getByRole("status", { name: "Test transcript" });
+          const result = screen.getByRole("status", { name: "测试记录" });
           await expect.element(result).toHaveTextContent(transcript);
 
-          const search = screen.getByRole("textbox", { name: "Search transcription models" });
+          const search = screen.getByRole("textbox", { name: "搜索转写模型" });
           await userEvent.fill(search, "no matching model");
-          await expect.element(screen.getByText("No models match.")).toBeVisible();
+          await expect.element(screen.getByText("没有模型匹配。")).toBeVisible();
           await userEvent.clear(search);
-          await userEvent.fill(screen.getByRole("textbox", { name: "Search languages" }), "fr");
+          await userEvent.fill(screen.getByRole("textbox", { name: "搜索语言" }), "fr");
           const french = screen.getByRole("button", { name: "French", exact: true });
           await userEvent.click(french);
           await expect.element(screen.getByText("Bilingual", { exact: true })).toBeVisible();
@@ -354,10 +316,11 @@ it("tests the selected model after download and preserves its transcript across 
   );
 });
 
-it("loads the models of a relay-connected destination", async () => {
-  const target = new RelayConnectionTarget({
-    environmentId: EnvironmentId.make("voice-relay"),
+it("loads the models of a directly paired destination", async () => {
+  const target = new BearerConnectionTarget({
+    environmentId: EnvironmentId.make("voice-paired"),
     label: "MacBook Pro",
+    connectionId: "voice-paired",
   });
   const prepared = {
     environmentId: target.environmentId,
@@ -365,9 +328,8 @@ it("loads the models of a relay-connected destination", async () => {
     httpBaseUrl: window.location.origin,
     socketUrl: "ws://localhost",
     httpAuthorization: {
-      _tag: "Dpop" as const,
-      accessToken: "stale-access-token",
-      expiresAtEpochMs: 4_102_444_800_000,
+      _tag: "Bearer" as const,
+      token: "paired-access-token",
     },
     target,
   };
@@ -426,7 +388,7 @@ it("loads the models of a relay-connected destination", async () => {
   );
   await vi.waitFor(() => expect(authorizations.length + notify.mock.calls.length).not.toBe(0));
   expect(notify).not.toHaveBeenCalled();
-  expect(authorizations).toEqual(["DPoP relay-access-token"]);
+  expect(authorizations).toEqual(["Bearer paired-access-token"]);
   await expect.element(screen.getByText("Tiny", { exact: true })).toBeVisible();
 });
 
@@ -490,7 +452,7 @@ it("recovers from a failed download progress poll without notifying, but reports
         </SettingsScopeProvider>
       );
       await using screen = await render(panel("first"));
-      await expect.element(screen.getByRole("button", { name: "Use model" })).toBeVisible();
+      await expect.element(screen.getByRole("button", { name: "使用模型" })).toBeVisible();
       expect(readModels.mock.calls.map(([withBenchmarks]) => withBenchmarks)).toEqual([
         true,
         false,
@@ -526,11 +488,9 @@ it.each([
     );
     await vi.waitFor(() => expect(document.activeElement?.id).toBe(prerequisite));
     await expect
-      .element(screen.getByRole("combobox", { name: "Transcribe with" }))
-      .toHaveTextContent("Off");
-    await expect
-      .element(screen.getByRole("switch", { name: "Clean up transcripts" }))
-      .not.toBeChecked();
+      .element(screen.getByRole("combobox", { name: "转写为" }))
+      .toHaveTextContent("关闭");
+    await expect.element(screen.getByRole("switch", { name: "清理笔录" })).not.toBeChecked();
   },
 );
 
@@ -545,8 +505,8 @@ it("keeps a missing destination selected without claiming it cannot transcribe",
     </SettingsScopeProvider>,
   );
   await expect
-    .element(screen.getByRole("combobox", { name: "Transcribe with" }))
-    .toHaveTextContent("Chosen environment (unavailable)");
+    .element(screen.getByRole("combobox", { name: "转写为" }))
+    .toHaveTextContent("选择环境( 不详)");
   await expect.element(screen.getByText(/can’t transcribe audio/)).not.toBeInTheDocument();
 });
 
@@ -556,7 +516,7 @@ it("shows the model's effective language and restores the saved preference when 
   cleanup.defer(() => __setClientSettingsForTests(previous));
   __setClientSettingsForTests({ ...previous, speechLanguage: "fr" });
   await using screen = await render(<SpeechLanguageSelect model={{ languages: ["en"] }} />);
-  const picker = screen.getByRole("combobox", { name: "Transcription language" });
+  const picker = screen.getByRole("combobox", { name: "译名语言" });
   await expect.element(picker).toHaveTextContent("English (French unavailable)");
   await screen.rerender(
     <SpeechLanguageSelect model={{ languages: ["en", "de"], supportsLanguageDetection: true }} />,

@@ -32,9 +32,7 @@ export function GuideNotice({ state }: { readonly state: ReturnType<typeof useRe
           size={19}
           tintColorClassName={failed ? "accent-danger-foreground" : "accent-icon-muted"}
         />
-        <Text className="text-base font-t3-semibold">
-          {compact ? notice.title : "Review guide"}
-        </Text>
+        <Text className="text-base font-t3-semibold">{compact ? notice.title : "审查指南"}</Text>
       </View>
       <View style={compact ? undefined : { minHeight: 100 }} className="pt-3 pb-4">
         <Text className="text-sm leading-6 text-foreground-muted">{notice.description}</Text>
@@ -51,14 +49,14 @@ export function GuideNotice({ state }: { readonly state: ReturnType<typeof useRe
         ) : (
           <Text className="text-xs text-foreground-muted">
             {notice.kind === "failed"
-              ? "Reconnect or ask someone with write access to retry."
-              : "Writing a guide requires a connection and write access."}
+              ? "请重新连接，或请有写入权限的用户重试。"
+              : "编写指南需要建立连接并获得写入权限。"}
           </Text>
         )}
         {notice.kind === "writing" && state.data?.run?._tag === "Running" ? (
           <Text className="shrink text-xs text-foreground-muted">
-            Started{" "}
-            {new Date(state.data.run.startedAt).toLocaleTimeString([], {
+            已开始{" "}
+            {new Date(state.data.run.startedAt).toLocaleTimeString("zh-CN", {
               hour: "2-digit",
               minute: "2-digit",
             })}

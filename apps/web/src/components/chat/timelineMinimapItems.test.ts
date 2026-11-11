@@ -43,6 +43,6 @@ describe("resolveTimelineMinimapPreview", () => {
       assistantText:
         "Started <t3-thread://v2/env-1/thread-1> and [Fix CI](t3-thread://v2/env-1/t2).",
     });
-    expect(preview?.assistantText).toBe("Started a thread and Fix CI.");
+    expect(preview?.assistantText).toBe("Started 会话 and Fix CI.");
   });
 });

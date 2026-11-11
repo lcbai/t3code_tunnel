@@ -97,7 +97,7 @@ function GuestShareDialog({
     const error = squashAtomCommandFailure(result);
     setState({
       status: "failed",
-      message: error instanceof Error ? error.message : "Could not create a guest link.",
+      message: error instanceof Error ? error.message : "无法创建访客链接。",
     });
   };
 
@@ -110,10 +110,9 @@ function GuestShareDialog({
     >
       <DialogPopup className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Share with guest</DialogTitle>
+          <DialogTitle>与嘉宾分享</DialogTitle>
           <DialogDescription>
-            The guest sees the thread as you do, including command output and the agent&apos;s
-            reasoning. Each message they send waits for you.
+            嘉宾会像您一样看到会话，包括命令输出和代理商的推理。他们发送的每个消息都会等待您。
           </DialogDescription>
         </DialogHeader>
         <DialogPanel>
@@ -121,20 +120,20 @@ function GuestShareDialog({
             <div className="flex items-center gap-2">
               <Input
                 readOnly
-                aria-label="Guest link"
+                aria-label="来宾链接"
                 value={state.url}
                 onFocus={(event) => event.currentTarget.select()}
               />
               <Button size="sm" variant="outline" onClick={() => copyToClipboard(state.url)}>
                 {isCopied ? <CheckIcon /> : <CopyIcon />}
-                {isCopied ? "Copied" : "Copy"}
+                {isCopied ? "已复制" : "复制"}
               </Button>
             </div>
           ) : (
             <p className="text-muted-foreground text-sm">
               {activeShare !== null
-                ? "A new link ends the current one."
-                : "The link works once and expires in 24 hours."}
+                ? "一个新的链接结束当前的链接。"
+                : "连线工作一次,24小时后失效。"}
             </p>
           )}
           {state.status === "failed" ? (
@@ -146,7 +145,7 @@ function GuestShareDialog({
         <DialogFooter>
           {state.status === "created" ? (
             <Button size="sm" onClick={onClose}>
-              Done
+              完成
             </Button>
           ) : (
             <>
@@ -156,14 +155,14 @@ function GuestShareDialog({
                 onClick={onClose}
                 disabled={state.status === "creating"}
               >
-                Cancel
+                取消
               </Button>
               <Button
                 size="sm"
                 onClick={() => void create()}
                 disabled={!canCreate || state.status === "creating"}
               >
-                {state.status === "creating" ? "Creating..." : "Create link"}
+                {state.status === "creating" ? "正在创建…" : "创建链接"}
               </Button>
             </>
           )}
@@ -177,7 +176,7 @@ function GuestShareDialog({
 export function GuestShareIndicator({ threadRef }: { readonly threadRef: ScopedThreadRef }) {
   const share = useThreadGuestShare(threadRef);
   const closeGuestShare = useOrchestrationCommand(threadEnvironment.closeGuestShare, {
-    label: "stop guest share",
+    label: "停止宾客共享",
   });
   const [closing, setClosing] = useState(false);
   if (share === null) return null;
@@ -198,7 +197,7 @@ export function GuestShareIndicator({ threadRef }: { readonly threadRef: ScopedT
           setClosing(false);
         }}
       >
-        Stop sharing
+        停止共享
       </Button>
     </div>
   );
@@ -207,10 +206,8 @@ export function GuestShareIndicator({ threadRef }: { readonly threadRef: ScopedT
 function GuestShareStatus({ share }: { readonly share: ThreadGuestShare }) {
   const nowMinute = useNowMinute();
   // The share stays on the thread after it expires, until the owner clears it.
-  if (share.expiresAt.slice(0, 16) <= nowMinute) return <span>Guest link expired</span>;
-  return (
-    <span>{share.guestName !== null ? `${share.guestName} is a guest` : "Guest link active"}</span>
-  );
+  if (share.expiresAt.slice(0, 16) <= nowMinute) return <span>客机链接已过期</span>;
+  return <span>{share.guestName !== null ? `${share.guestName} 是访客` : "已激活的来宾链接"}</span>;
 }
 
 /**
@@ -229,7 +226,7 @@ export function GuestPendingMessages({
   const share = useThreadGuestShare(threadRef);
   const canOperate = useEnvironmentScope(threadRef.environmentId, AuthOrchestrationOperateScope);
   const resolveGuestMessage = useOrchestrationCommand(threadEnvironment.resolveGuestMessage, {
-    label: "resolve guest message",
+    label: "解析来宾信件",
   });
   const [busyIds, setBusyIds] = useState<ReadonlySet<GuestMessageId>>(new Set());
   const pending = share?.messages.filter((message) => message.status === "pending") ?? [];
@@ -271,7 +268,7 @@ export function GuestPendingMessages({
   return (
     <ol
       className="chat-content-lane flex flex-col gap-4 pb-4"
-      aria-label={`${pending.length} guest message${pending.length === 1 ? "" : "s"} waiting`}
+      aria-label={`${pending.length} 条访客消息等待处理`}
       aria-live="polite"
     >
       {pending.map((message) => {
@@ -303,18 +300,18 @@ export function GuestPendingMessages({
                   size="xs"
                   variant="ghost-muted"
                   disabled={busy}
-                  aria-label={`Dismiss message from ${guestName}`}
+                  aria-label={`忽略 ${guestName} 的消息`}
                   onClick={() => void resolve(message.id, "dismiss")}
                 >
-                  Dismiss
+                  开除
                 </Button>
                 <Button
                   size="xs"
                   disabled={busy}
-                  aria-label={`Send message from ${guestName}`}
+                  aria-label={`发送 ${guestName} 的消息`}
                   onClick={() => void resolve(message.id, "send")}
                 >
-                  Send
+                  发送
                 </Button>
               </div>
             ) : null}

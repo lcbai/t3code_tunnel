@@ -107,21 +107,18 @@ export function useTimelineRewind(input: TimelineRewindInput) {
     if (!message || message.role !== "user") return;
 
     if (!supportsConversationRollback) {
-      setThreadError(
-        activeThread.id,
-        "This provider does not support reverting conversation history. Start a new thread instead.",
-      );
+      setThreadError(activeThread.id, "此提供者不支持返回对话历史。 转而启动新会话。");
       return;
     }
     if (activeEnvironmentUnavailable && activeEnvironmentUnavailableLabel) {
       setThreadError(
         activeThread.id,
-        `Reconnect ${activeEnvironmentUnavailableLabel} before reverting checkpoints.`,
+        `在恢复检查站之前重新连接${activeEnvironmentUnavailableLabel}。`,
       );
       return;
     }
     if (phase === "running" || isSendBusy) {
-      setThreadError(activeThread.id, "Interrupt the current turn before reverting checkpoints.");
+      setThreadError(activeThread.id, "在恢复检查站之前中断目前的转弯。");
       return;
     }
     if (restoreFiles === undefined) {
@@ -184,16 +181,13 @@ export function useTimelineRewind(input: TimelineRewindInput) {
         sourceThreadId: input.sourceThreadId,
         targetThreadId,
         runId: input.runId,
-        title: `${activeThread.title} fork`,
+        title: `${activeThread.title} 叉门`,
       },
     });
     if (result._tag === "Failure") {
       if (!isAtomCommandInterrupted(result)) {
         const error = squashAtomCommandFailure(result);
-        setThreadError(
-          activeThread.id,
-          error instanceof Error ? error.message : "Failed to fork this response.",
-        );
+        setThreadError(activeThread.id, error instanceof Error ? error.message : "叉此响应失败。");
       }
       return;
     }
@@ -201,7 +195,7 @@ export function useTimelineRewind(input: TimelineRewindInput) {
     if (!targetThreadReady) {
       setThreadError(
         activeThread.id,
-        "The fork was created, but its thread data did not reach this client. Reconnect and try opening it from the sidebar.",
+        "叉已经创建，但是它的会话数据没有到达这个客户端。 重新连接并尝试从侧边栏打开它。",
       );
       return;
     }

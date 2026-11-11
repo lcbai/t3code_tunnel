@@ -102,10 +102,10 @@ it.each([
   );
 
   if (action === "merge") {
-    await screen.getByRole("button", { name: "Merge back to source conversation" }).click();
+    await screen.getByRole("button", { name: "合并到源头对话" }).click();
   } else {
-    await screen.getByRole("button", { name: "More thread actions" }).click();
-    await page.getByRole("menuitem", { name: "Disconnect agent session" }).click();
+    await screen.getByRole("button", { name: "更多会话动作" }).click();
+    await page.getByRole("menuitem", { name: "断开代理会话" }).click();
   }
 
   await expect.element(page.getByText(title, { exact: true })).toBeVisible();
@@ -137,10 +137,10 @@ it.each([
 
   const runAction = async () => {
     if (action === "merge") {
-      await screen.getByRole("button", { name: "Merge back to source conversation" }).click();
+      await screen.getByRole("button", { name: "合并到源头对话" }).click();
     } else {
-      await screen.getByRole("button", { name: "More thread actions" }).click();
-      await page.getByRole("menuitem", { name: "Disconnect agent session" }).click();
+      await screen.getByRole("button", { name: "更多会话动作" }).click();
+      await page.getByRole("menuitem", { name: "断开代理会话" }).click();
     }
   };
 
@@ -158,7 +158,7 @@ it.each([
     );
   });
   if (action === "disconnect") {
-    await expect.element(screen.getByRole("button", { name: "More thread actions" })).toBeEnabled();
+    await expect.element(screen.getByRole("button", { name: "更多会话动作" })).toBeEnabled();
   }
 });
 
@@ -201,7 +201,7 @@ it("opens an idle child from Lineage when its shell has not been loaded", async 
       showSideChats
     />,
   );
-  await screen.getByRole("button", { name: /Previous agents/ }).click();
+  await screen.getByRole("button", { name: /历任代理人/ }).click();
   const child = screen.getByRole("button", { name: /Idle child/ });
   await expect.element(child).toBeEnabled();
   await child.click();
@@ -318,7 +318,7 @@ it("shows a remote subagent's full title in its tooltip even when its environmen
   await expect
     .element(screen.getByRole("button", { name: new RegExp(longTitle) }))
     .not.toBeInTheDocument();
-  await screen.getByRole("button", { name: /Previous agents/ }).click();
+  await screen.getByRole("button", { name: /历任代理人/ }).click();
   const row = screen.getByRole("button", { name: new RegExp(longTitle) });
   // A long environment label must not squeeze the title out of the row.
   expect(

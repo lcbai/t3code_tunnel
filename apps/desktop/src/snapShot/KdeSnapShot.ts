@@ -108,30 +108,29 @@ export class KdeCaptureSetup {
       if (!installed || !entry)
         return {
           status: "not-installed",
-          message:
-            "Install the bundled helper to capture the window you're using without a picker.",
+          message: "安装内置助手后即可直接捕获当前窗口。",
         };
       const bundle = await regularFile(this.paths.bundle);
       if (!bundle)
         return {
           status: "error",
-          message: "The capture helper is missing from this build. Update or reinstall T3 Code.",
+          message: "当前安装包缺少捕获助手。请更新或重新安装 T3 Code。",
         };
       if (!installed.equals(bundle) || entry.toString() !== kdeCaptureDesktopEntry(executable))
         return {
           status: "update-required",
-          message: "Update the bundled capture helper to continue.",
+          message: "请更新内置捕获助手后继续。",
         };
       const capabilities = decodeCapabilities(await run(executable, ["check"]));
       return {
         status: "ready",
-        message: "KDE capture access is ready. Next, choose your shortcut.",
+        message: "KDE 捕获权限已就绪，请选择快捷键。",
         feedbackAvailable: capabilities.feedbackAvailable ?? false,
       };
     } catch (error) {
       return {
         status: "error",
-        message: error instanceof Error ? error.message : "Couldn't check KDE capture access.",
+        message: error instanceof Error ? error.message : "无法检查 KDE 捕获权限。",
       };
     }
   }
@@ -158,10 +157,7 @@ export class KdeCaptureSetup {
       });
     } else {
       const bundle = await regularFile(this.paths.bundle);
-      if (!bundle)
-        throw new Error(
-          "The capture helper is missing from this build. Update or reinstall T3 Code.",
-        );
+      if (!bundle) throw new Error("当前安装包缺少捕获助手。请更新或重新安装 T3 Code。");
       await NodeFSP.mkdir(directory, { recursive: true });
       await NodeFSP.mkdir(NodePath.dirname(desktop), { recursive: true });
       const staging = await NodeFSP.mkdtemp(NodePath.join(directory, ".install-"));

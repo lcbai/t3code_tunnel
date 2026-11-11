@@ -82,14 +82,14 @@ export function ThreadFileNavigatorPane(props: {
     <View className="flex-1 ios:bg-sheet android:bg-header android:flex-col-reverse">
       <ScreenContent insetHorizontal>{fileTree}</ScreenContent>
       <AppBar
-        title="Files"
+        title="文件"
         subtitle={props.projectName}
         search={{
           value: searchQuery,
           onChangeText: setSearchQuery,
-          placeholder: "Search files",
+          placeholder: "搜索文件",
         }}
-        refresh={{ accessibilityLabel: "Refresh files", onPress: entriesQuery.refresh }}
+        refresh={{ accessibilityLabel: "刷新文件", onPress: entriesQuery.refresh }}
       />
     </View>
   );

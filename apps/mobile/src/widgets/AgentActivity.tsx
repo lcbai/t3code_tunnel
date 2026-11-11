@@ -127,7 +127,7 @@ function AgentActivity(
       : tint;
 
   const allDone = props.activeCount === 0;
-  const doneLabel = failedRow ? "Failed" : "Done";
+  const doneLabel = failedRow ? "失败" : "完成";
   const outcomeLabel = failedRow ? "Agent work failed" : "Agent work completed";
 
   const agentWord = props.activeCount === 1 ? "agent" : "agents";
@@ -346,10 +346,10 @@ function AgentActivity(
       >
         {attentionRow
           ? attentionRow.phase === "waiting_for_approval"
-            ? "Approval"
-            : "Input"
+            ? "审批"
+            : "输入"
           : failedRow
-            ? "Failed"
+            ? "失败"
             : activeLabel}
       </Text>
     ),

@@ -11,7 +11,7 @@ export function DelimitedFilePreview(props: {
     <ScrollView className="flex-1">
       {props.table.truncated ? (
         <FilePreviewNotice>
-          Table limited to the first 100 rows and 30 columns. Source shows the rest.
+          表格仅显示前 100 行和前 30 列，完整内容可在源代码中查看。
         </FilePreviewNotice>
       ) : null}
       <ScrollView horizontal>

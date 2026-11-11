@@ -79,7 +79,7 @@ export function useProjectScriptEditing(input: {
         Cause.fail(
           new EnvironmentAuthorizationError({
             requiredScope: AuthSettingsWriteScope,
-            message: "This connection cannot change keyboard shortcuts.",
+            message: "此连接不能更改键盘快捷键。",
           }),
         ),
       );
@@ -124,8 +124,8 @@ export function useProjectScriptEditing(input: {
           new EnvironmentAuthorizationError({
             requiredScope: AuthSettingsWriteScope,
             message: isDeletingScript
-              ? "The script was deleted, but its keyboard shortcut could not be removed because permission changed."
-              : "The script was saved, but this connection can no longer change keyboard shortcuts.",
+              ? "脚本被删除，但其键盘快捷键无法删除，因为权限改变。"
+              : "脚本已保存，但此连接不能再更改键盘快捷键。",
           }),
         ),
       );
@@ -251,15 +251,15 @@ export function useProjectScriptEditing(input: {
     if (result._tag === "Success") {
       toastManager.add({
         type: "success",
-        title: `Deleted action "${deletedName ?? "Unknown"}"`,
+        title: `删除动作“${deletedName ?? "未知"} ”`,
       });
     } else if (!isAtomCommandInterrupted(result)) {
       const error = squashAtomCommandFailure(result);
       toastManager.add(
         stackedThreadToast({
           type: "error",
-          title: "Could not delete action",
-          description: error instanceof Error ? error.message : "An unexpected error occurred.",
+          title: "无法删除动作",
+          description: error instanceof Error ? error.message : "发生了意外错误。",
         }),
       );
     }

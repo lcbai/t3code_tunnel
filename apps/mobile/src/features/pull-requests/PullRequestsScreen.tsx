@@ -336,15 +336,15 @@ export function PullRequestsScreen(
             <View className="items-center py-5">
               <AppActivityIndicator
                 colorClassName="accent-icon"
-                accessibilityLabel="Loading more pull requests"
+                accessibilityLabel="正在加载更多拉取请求"
               />
             </View>
           ) : result.loadMoreError ? (
             <View className="items-center gap-2 px-8 py-4">
               <Text className="text-xs text-foreground-muted">{result.loadMoreError}</Text>
               <Button
-                label="Try again"
-                accessibilityLabel="Retry loading more pull requests"
+                label="重试"
+                accessibilityLabel="重试加载更多拉取请求"
                 onPress={() => void result.loadMore(true)}
               />
             </View>
@@ -352,8 +352,8 @@ export function PullRequestsScreen(
             // A filtered page can be too short to scroll, which leaves nothing to reach the end of.
             <View className="items-center py-4">
               <Button
-                label="Load more"
-                accessibilityLabel="Load more pull requests"
+                label="加载更多"
+                accessibilityLabel="加载更多拉取请求"
                 onPress={() => void result.loadMore()}
               />
             </View>
@@ -371,20 +371,20 @@ export function PullRequestsScreen(
                   result.error
                     ? "Couldn't load pull requests"
                     : targets.length && connectedTargets.length === 0
-                      ? "Environment offline"
+                      ? "环境离线"
                       : targets.length
                         ? query
-                          ? "No results"
-                          : "No matching pull requests"
-                        : "Connect an environment"
+                          ? "无结果"
+                          : "没有匹配的拉取请求"
+                        : "连接环境"
                 }
                 detail={
                   result.error ??
                   (targets.length && connectedTargets.length === 0
-                    ? "Reconnect to load pull requests that aren't saved on this device."
+                    ? "重新连接后可加载尚未保存在此设备上的拉取请求。"
                     : targets.length
-                      ? "Pull requests from the selected environments' projects appear here."
-                      : "Add an environment in Settings to browse its pull requests.")
+                      ? "所选环境中各项目的拉取请求将显示在这里。"
+                      : "在设置中添加环境后，即可浏览其中的拉取请求。")
                 }
                 variant="plain"
               />

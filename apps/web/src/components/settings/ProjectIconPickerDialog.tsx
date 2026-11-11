@@ -118,12 +118,12 @@ function ProjectIconPickerBody({
   return (
     <>
       <DialogHeader>
-        <DialogTitle>Choose project icon</DialogTitle>
-        <DialogDescription>Choose an icon, emoji, or monogram.</DialogDescription>
+        <DialogTitle>选择工程图标</DialogTitle>
+        <DialogDescription>选择图标, emoji，或单词。</DialogDescription>
       </DialogHeader>
       <DialogPanel className="flex min-h-0 flex-col">
         <ToggleGroup
-          aria-label="Icon type"
+          aria-label="图标类型"
           variant="segmented"
           value={[mode]}
           onValueChange={(next) => {
@@ -131,15 +131,15 @@ function ProjectIconPickerBody({
             if (value === "lucide" || value === "emoji" || value === "monogram") setMode(value);
           }}
         >
-          <Toggle value="lucide">Icons</Toggle>
-          <Toggle value="emoji">Emoji</Toggle>
-          <Toggle value="monogram">Monogram</Toggle>
+          <Toggle value="lucide">图标</Toggle>
+          <Toggle value="emoji">爱莫吉</Toggle>
+          <Toggle value="monogram">单图</Toggle>
         </ToggleGroup>
 
         {mode !== "emoji" ? (
           <div>
-            <div className="mb-2 text-xs font-medium text-muted-foreground">Color</div>
-            <div className="flex flex-wrap gap-1.5" role="group" aria-label="Icon color">
+            <div className="mb-2 text-xs font-medium text-muted-foreground">颜色</div>
+            <div className="flex flex-wrap gap-1.5" role="group" aria-label="图标颜色">
               {PROJECT_ICON_COLORS.map((option) => (
                 <button
                   key={option.value}
@@ -164,8 +164,8 @@ function ProjectIconPickerBody({
             <Input
               type="search"
               value={query}
-              aria-label="Search Lucide icons"
-              placeholder="Search all Lucide icons"
+              aria-label="搜索 Lucide 图标"
+              placeholder="搜索所有 Lucide 图标"
               onChange={(event) => setQuery(event.currentTarget.value)}
             />
             <ScrollArea scrollFade className="max-h-64">
@@ -189,7 +189,7 @@ function ProjectIconPickerBody({
               </div>
             </ScrollArea>
             {icons.length === 0 ? (
-              <p className="py-8 text-center text-sm text-muted-foreground">No icons found.</p>
+              <p className="py-8 text-center text-sm text-muted-foreground">没有找到图标。</p>
             ) : null}
           </>
         ) : mode === "monogram" ? (
@@ -201,7 +201,7 @@ function ProjectIconPickerBody({
             />
             <div className="flex-1 space-y-2">
               <label htmlFor="project-monogram" className="text-sm font-medium">
-                Letters
+                信件
               </label>
               <Input
                 id="project-monogram"
@@ -212,7 +212,7 @@ function ProjectIconPickerBody({
                 autoComplete="off"
               />
               <p id="project-monogram-hint" className="text-xs text-muted-foreground">
-                One or two letters or numbers.
+                一两个字母或数字。
               </p>
             </div>
           </div>
@@ -238,13 +238,11 @@ function ProjectIconPickerBody({
               </div>
             </ScrollArea>
             <div>
-              <div className="mb-2 text-xs font-medium text-muted-foreground">
-                Or paste any emoji
-              </div>
+              <div className="mb-2 text-xs font-medium text-muted-foreground">或贴上任何情感</div>
               <Input
                 value={customEmoji}
-                aria-label="Custom emoji"
-                placeholder="Paste an emoji"
+                aria-label="自定义 emoji"
+                placeholder="粘贴一个 emoji"
                 onChange={(event) => {
                   const value = event.currentTarget.value;
                   setCustomEmoji(value);
@@ -258,10 +256,10 @@ function ProjectIconPickerBody({
       </DialogPanel>
       <DialogFooter>
         <Button variant="outline" onClick={onClose}>
-          Cancel
+          取消
         </Button>
         <Button onClick={save} disabled={mode === "monogram" && !validMonogram}>
-          Save icon
+          保存图标
         </Button>
       </DialogFooter>
     </>

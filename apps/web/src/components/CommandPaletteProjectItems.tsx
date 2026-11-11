@@ -21,7 +21,7 @@ export interface CommandPaletteProjectLocation {
 
 const UNKNOWN_PROJECT_LOCATION: CommandPaletteProjectLocation = {
   kind: "remote",
-  label: "Remote",
+  label: "远程",
   machine: "server",
 };
 
@@ -110,7 +110,7 @@ function ProjectLocationDescription(props: {
     <span className="flex min-w-0 items-center gap-1">
       {props.current ? (
         <>
-          <span className="shrink-0">Current</span>
+          <span className="shrink-0">当前</span>
           <CommandPaletteMetaDot />
         </>
       ) : null}

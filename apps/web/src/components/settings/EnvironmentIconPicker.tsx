@@ -52,7 +52,7 @@ export function EnvironmentIconMenu({
     <MenuSub>
       <MenuSubTrigger>
         <EnvironmentMachineIcon kind={resolved} />
-        Icon
+        图标
       </MenuSubTrigger>
       <MenuSubPopup>
         {lock !== null ? (

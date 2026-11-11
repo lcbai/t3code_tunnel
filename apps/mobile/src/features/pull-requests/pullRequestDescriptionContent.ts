@@ -24,7 +24,7 @@ export function pullRequestDescriptionContent(
       if (node.url && isWebUrl(node.url) && !attachments.has(node.url)) {
         attachments.set(node.url, {
           uri: node.url,
-          caption: node.alt || node.title || "Image",
+          caption: node.alt || node.title || "图片",
           kind: "image",
         });
       }
@@ -46,7 +46,7 @@ export function pullRequestDescriptionContent(
       const name = new URL(segment.url).pathname.split("/").pop();
       attachments.set(segment.url, {
         uri: segment.url,
-        caption: segment.media === "video" ? "Video" : name || "Image",
+        caption: segment.media === "video" ? "视频" : name || "图片",
         kind: segment.media,
       });
     }

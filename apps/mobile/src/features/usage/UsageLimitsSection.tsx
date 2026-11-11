@@ -146,7 +146,7 @@ function AccountInstanceLabel({ value }: { readonly value: string }) {
     <Pressable
       className="shrink active:opacity-60"
       accessibilityRole="button"
-      accessibilityLabel={revealed ? "Hide account label" : "Reveal account label"}
+      accessibilityLabel={revealed ? "隐藏账号名称" : "显示账号名称"}
       onPress={() => setRevealed((current) => !current)}
     >
       <Text className="text-xs text-foreground-tertiary" numberOfLines={1}>
@@ -212,7 +212,7 @@ export function AccountLimits(props: {
           className="min-h-11 justify-center"
           onPress={() => void Linking.openURL(externalUsage.url).catch(() => undefined)}
         >
-          <Text className="text-sm font-t3-medium text-primary">Manage usage</Text>
+          <Text className="text-sm font-t3-medium text-primary">管理用量</Text>
         </Pressable>
       ) : null}
       {props.footer}
@@ -273,11 +273,11 @@ export function ResetCredits(props: {
   const confirm = () => {
     if (!readEnvironmentScope(environmentId, AuthProvidersManageScope)) return;
     Dialog.alert(
-      "Use a reset credit?",
-      "This redeems one credit on your account and clears the current rate-limit windows. It cannot be undone.",
+      "使用一次额度重置？",
+      "将消耗账号中的一次额度重置，清除当前限流窗口。此操作无法撤销。",
       [
-        { text: "Cancel", style: "cancel" },
-        { text: "Use credit", onPress: () => void redeem() },
+        { text: "取消", style: "cancel" },
+        { text: "使用额度", onPress: () => void redeem() },
       ],
     );
   };
@@ -304,14 +304,12 @@ export function ResetCredits(props: {
                 : "text-sm font-t3-medium text-foreground"
             }
           >
-            {busy ? "Using…" : "Use reset"}
+            {busy ? "正在使用…" : "使用重置"}
           </Text>
         </Pressable>
       ) : null}
       {!canManageProviders ? (
-        <Text className="text-xs text-foreground-tertiary">
-          This connection cannot manage provider accounts.
-        </Text>
+        <Text className="text-xs text-foreground-tertiary">此连接无权管理提供方账号。</Text>
       ) : null}
       {status ? <Text className="text-sm text-foreground">{status}</Text> : null}
     </View>

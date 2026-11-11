@@ -52,30 +52,30 @@ function ArchivedThreadsHeader(props: {
   const hasCustomFilter = props.selectedEnvironmentId !== null || props.sortOrder !== "newest";
   return (
     <AppBar
-      title="Archived threads"
+      title="已归档会话"
       onBack={() => navigation.goBack()}
       search={{
         value: props.searchQuery,
         onChangeText: props.onSearchQueryChange,
-        placeholder: "Search archived threads",
-        compactPlaceholder: "Search",
+        placeholder: "搜索已归档会话",
+        compactPlaceholder: "搜索",
         mode: "inline",
         compactToolbar: width < 700,
       }}
       menus={[
         {
-          title: "Archived thread options",
+          title: "已归档会话选项",
           icon: hasCustomFilter
             ? "line.3.horizontal.decrease.circle.fill"
             : "line.3.horizontal.decrease.circle",
           items: [
             {
               id: "environment",
-              title: "Environment",
+              title: "环境",
               items: [
                 {
                   id: "environment:all",
-                  title: "All environments",
+                  title: "所有环境",
                   selected: props.selectedEnvironmentId === null,
                   onPress: () => props.onEnvironmentChange(null),
                 },
@@ -89,17 +89,17 @@ function ArchivedThreadsHeader(props: {
             },
             {
               id: "sort",
-              title: "Sort by archived date",
+              title: "按归档日期排序",
               items: [
                 {
                   id: "sort:newest",
-                  title: "Newest first",
+                  title: "最新优先",
                   selected: props.sortOrder === "newest",
                   onPress: () => props.onSortOrderChange("newest"),
                 },
                 {
                   id: "sort:oldest",
-                  title: "Oldest first",
+                  title: "最早优先",
                   selected: props.sortOrder === "oldest",
                   onPress: () => props.onSortOrderChange("oldest"),
                 },
@@ -107,7 +107,7 @@ function ArchivedThreadsHeader(props: {
             },
             {
               id: "refresh",
-              title: "Refresh archived threads",
+              title: "刷新已归档会话",
               onPress: props.onRefresh,
             },
           ],
@@ -255,9 +255,9 @@ function ArchivedThreadRow(props: {
       onSwipeableClose={props.onSwipeableClose}
       onSwipeableWillOpen={props.onSwipeableWillOpen}
       primaryAction={{
-        accessibilityLabel: `Unarchive ${props.thread.title}`,
+        accessibilityLabel: `取消归档 ${props.thread.title}`,
         icon: "arrow.uturn.backward",
-        label: "Unarchive",
+        label: "取消归档",
         onPress: props.onUnarchive,
       }}
       simultaneousWith={props.simultaneousSwipeGesture}
@@ -271,12 +271,10 @@ function ArchivedThreadRow(props: {
 function ArchiveError(props: { readonly message: string; readonly onRetry: () => void }) {
   return (
     <View className="rounded-[20px] border border-danger-border bg-danger p-4">
-      <Text className="text-base font-t3-bold text-danger-foreground">
-        Could not load every archive
-      </Text>
+      <Text className="text-base font-t3-bold text-danger-foreground">部分归档加载失败</Text>
       <Text className="mt-1 text-sm text-foreground-muted">{props.message}</Text>
       <View className="mt-3">
-        <Button label="Try again" tone="secondary" onPress={props.onRetry} />
+        <Button label="重试" tone="secondary" onPress={props.onRetry} />
       </View>
     </View>
   );
@@ -380,19 +378,15 @@ export function ArchivedThreadsScreen(props: {
       return (
         <View className="items-center py-16">
           <AppActivityIndicator colorClassName="accent-icon" />
-          <Text className="mt-3 text-sm text-foreground-muted">Loading archive...</Text>
+          <Text className="mt-3 text-sm text-foreground-muted">正在加载归档…</Text>
         </View>
       );
     }
 
     return (
       <EmptyState
-        detail={
-          isFiltered
-            ? "Try another search or environment."
-            : "Threads you archive will appear here."
-        }
-        title={isFiltered ? "No matching threads" : "No archived threads"}
+        detail={isFiltered ? "请尝试其他搜索词或环境。" : "已归档的会话将显示在这里。"}
+        title={isFiltered ? "没有匹配的会话" : "没有已归档的会话"}
       />
     );
   }, [isFiltered, isInitialLoad]);

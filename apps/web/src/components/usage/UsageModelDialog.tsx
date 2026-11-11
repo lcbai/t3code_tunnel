@@ -58,10 +58,10 @@ export function UsageModelDialog({
   const hitRate = cacheHitRate(model);
   const perMillion = costPerMillionTokens(model);
   const stats = [
-    { label: "Cost", value: costUnknown ? "Unpriced" : formatUsd(model.costUsd) },
-    { label: "Tokens", value: formatTokens(model.totalTokens) },
-    perMillion === null ? null : { label: "Per 1M tokens", value: formatUsd(perMillion) },
-    hitRate === null ? null : { label: "Cache hit", value: formatPercent(hitRate) },
+    { label: "费用", value: costUnknown ? "Unpriced" : formatUsd(model.costUsd) },
+    { label: "键", value: formatTokens(model.totalTokens) },
+    perMillion === null ? null : { label: "每1M个令牌", value: formatUsd(perMillion) },
+    hitRate === null ? null : { label: "缓存被击中", value: formatPercent(hitRate) },
   ].filter((stat) => stat !== null);
 
   return (
@@ -83,7 +83,7 @@ export function UsageModelDialog({
           </div>
           <DialogDescription>
             {presentation.label}
-            {costUnknown ? "" : ` · ${formatPercent(model.costShare)} of cost`}
+            {costUnknown ? "" : `· 成本的${formatPercent(model.costShare)}`}
           </DialogDescription>
         </DialogHeader>
         <DialogPanel>
@@ -114,19 +114,19 @@ export function UsageModelDialog({
             <div className="grid gap-x-10 gap-y-8 sm:grid-cols-2">
               {costUnknown ? null : (
                 <UsageShareBar
-                  label="Cost by type"
+                  label="按类型分列的费用"
                   segments={costTypeSegments(usage.categoryCost)}
                   format={formatUsd}
                 />
               )}
               <UsageShareBar
-                label="Tokens by type"
+                label="按类型分类的托肯"
                 segments={tokenTypeSegments(model.tokens)}
                 format={formatTokens}
               />
               {usage.speedCost.fast + usage.speedCost.ultrafast > 0 ? (
                 <UsageShareBar
-                  label="Cost by speed"
+                  label="按速度计算的费用"
                   segments={speedCostSegments(usage.speedCost)}
                   format={formatUsd}
                   aside={<SpeedPremium premiumUsd={usage.speedCost.premium} />}
@@ -138,9 +138,9 @@ export function UsageModelDialog({
         {model.unpricedTokens > 0 ? (
           <DialogFooter variant="bare" className="items-center sm:justify-between">
             <span className="text-xs text-muted-foreground">
-              {formatTokens(model.unpricedTokens)} tokens have no known price
+              {formatTokens(model.unpricedTokens)} 代币没有已知的价格
             </span>
-            <Button onClick={onSetPrice}>Set price</Button>
+            <Button onClick={onSetPrice}>设定价格</Button>
           </DialogFooter>
         ) : null}
       </DialogPopup>

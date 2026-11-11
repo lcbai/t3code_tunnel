@@ -18,7 +18,7 @@ const CURRENCY = new Intl.NumberFormat("en-US", {
 const INTEGER = new Intl.NumberFormat("en-US");
 
 export function formatMalformedUsageWarning(count: number): string {
-  return `${count} malformed or inconsistent usage record(s) were skipped; usage may be incomplete.`;
+  return `已跳过 ${count} 条格式错误或内容不一致的记录，用量统计可能不完整。`;
 }
 
 export function usageSourceMessages(sources: readonly UsageSource[]): readonly string[] {
@@ -43,7 +43,13 @@ export function usageSourceMessages(sources: readonly UsageSource[]): readonly s
       );
       // Servers also append this warning to message; retain any preceding read failure.
       const warning = formatMalformedUsageWarning(source.malformedRecords);
-      if (message?.endsWith(warning)) message = message.slice(0, -warning.length).trim();
+      const legacyWarning = `${source.malformedRecords} malformed or inconsistent usage record(s) were skipped; usage may be incomplete.`;
+      for (const suffix of [warning, legacyWarning]) {
+        if (message?.endsWith(suffix)) {
+          message = message.slice(0, -suffix.length).trim();
+          break;
+        }
+      }
     }
     if (message) messages.add(message);
   }
@@ -90,28 +96,14 @@ export function formatUsageContractMismatch(
   mismatch: Pick<UsageContractMismatch, "direction">,
 ): string {
   return mismatch.direction === "serverBehind"
-    ? `${environmentLabel} runs an older server version and is excluded from totals.`
-    : `This client is older than the server on ${environmentLabel}; its usage is excluded from totals.`;
+    ? `${environmentLabel} 的服务器版本过旧，其用量未计入汇总。`
+    : `当前客户端的版本低于 ${environmentLabel} 的服务器，其用量未计入汇总。`;
 }
 
 export function formatDayShort(day: string): string {
   const [year, month, dayOfMonth] = day.split("-").map((part) => Number(part));
   if (year === undefined || month === undefined || dayOfMonth === undefined) return day;
-  const MONTHS = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec",
-  ];
-  return `${MONTHS[month - 1] ?? ""} ${dayOfMonth}`;
+  return `${month} 月 ${dayOfMonth} 日`;
 }
 
 export function enumerateDays(sinceDay: string, untilDay: string): readonly string[] {
@@ -158,7 +150,7 @@ export function enumerateHourStarts(sinceTime: string, untilTime: string): reado
 }
 
 function hourOptions(hour12: boolean): Intl.DateTimeFormatOptions {
-  return hour12 ? { hour: "numeric" } : { hour: "2-digit", hourCycle: "h23" };
+  return hour12 ? { hour: "numeric", hour12: true } : { hour: "2-digit", hourCycle: "h23" };
 }
 
 function formatHour(formatter: Intl.DateTimeFormat, date: Date, hour12: boolean): string {
@@ -166,8 +158,13 @@ function formatHour(formatter: Intl.DateTimeFormat, date: Date, hour12: boolean)
   // Rolling buckets can start between whole hours, but their labels always name the hour.
   return formatter
     .formatToParts(date)
-    .map((part) => (part.type === "hour" ? `${part.value}:00` : part.value))
-    .join("");
+    .map((part) => {
+      if (part.type === "hour") return `${part.value}:00`;
+      if (part.type === "timeZoneName") return ` ${part.value} `;
+      return part.value === "时" ? "" : part.value;
+    })
+    .join("")
+    .trim();
 }
 
 /**
@@ -178,7 +175,7 @@ export function formatHourShort(hourStart: string, timeZone?: string, hour12 = t
   const instant = new Date(hourStart);
   if (Number.isNaN(instant.getTime())) return hourStart;
   const options = timeZone === undefined ? {} : { timeZone };
-  const hourFormat = dateTimeFormatter("en-US", {
+  const hourFormat = dateTimeFormatter("zh-CN", {
     ...options,
     ...hourOptions(hour12),
   });
@@ -196,7 +193,7 @@ export function formatHourShort(hourStart: string, timeZone?: string, hour12 = t
   );
 
   if (!isRepeatedHour) return formatHour(hourFormat, instant, hour12);
-  const zonedHourFormat = dateTimeFormatter("en-US", {
+  const zonedHourFormat = dateTimeFormatter("zh-CN", {
     ...options,
     ...hourOptions(hour12),
     timeZoneName: "short",
@@ -207,7 +204,7 @@ export function formatHourShort(hourStart: string, timeZone?: string, hour12 = t
 export function formatDateTimeShort(instant: string, timeZone?: string, hour12 = true): string {
   const date = new Date(instant);
   if (Number.isNaN(date.getTime())) return instant;
-  const dateHourFormat = dateTimeFormatter("en-US", {
+  const dateHourFormat = dateTimeFormatter("zh-CN", {
     ...(timeZone === undefined ? {} : { timeZone }),
     month: "short",
     day: "numeric",
@@ -239,8 +236,8 @@ export function formatRelativeHourShort(
   const calendarDaysAgo = Math.round((referenceDay - instantDay) / (24 * HOUR_MS));
   const hour = formatHourShort(hourStart, timeZone, hour12);
 
-  if (calendarDaysAgo === 0) return `${hour} today`;
-  if (calendarDaysAgo === 1) return `${hour} yesterday`;
+  if (calendarDaysAgo === 0) return `今天 ${hour}`;
+  if (calendarDaysAgo === 1) return `昨天 ${hour}`;
   return formatDateTimeShort(hourStart, timeZone, hour12);
 }
 

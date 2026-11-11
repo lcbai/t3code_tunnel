@@ -45,7 +45,7 @@ async function readAttachmentText(key: AttachmentTextKey, signal: AbortSignal) {
       key.environmentId === null
         ? null
         : await refreshAssetUrl(key.environmentId, key.resource, signal);
-    if (!refreshed) throw new Error("Reconnect to this environment and try again.");
+    if (!refreshed) throw new Error("请重新连接此环境后重试。");
     target = refreshed;
   }
   const response = await fetch(target, {
@@ -165,10 +165,7 @@ export function useAttachmentDocument(input: {
     setSharing(false);
     if (AsyncResult.isFailure(result)) {
       const cause = squashAtomCommandFailure(result);
-      Dialog.alert(
-        "Could not share file",
-        cause instanceof Error ? cause.message : "Please try again.",
-      );
+      Dialog.alert("Could not share file", cause instanceof Error ? cause.message : "请重试。");
     }
   };
   return {

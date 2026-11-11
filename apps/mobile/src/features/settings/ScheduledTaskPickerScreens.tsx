@@ -28,8 +28,8 @@ import { moveDraftToThread, unbindDraftFromThread } from "./scheduledTaskDraft";
 
 function MissingTaskDraft() {
   return (
-    <SettingsScreen title="Scheduled task">
-      <Text className="p-5 text-base text-foreground-muted">Open a scheduled task form first.</Text>
+    <SettingsScreen title="定时任务">
+      <Text className="p-5 text-base text-foreground-muted">请先打开定时任务表单。</Text>
     </SettingsScreen>
   );
 }
@@ -142,7 +142,7 @@ export function ScheduledTaskBranchPickerRouteScreen() {
 
   return (
     <BranchPickerScreen
-      title="Base branch"
+      title="基准分支"
       project={project}
       branches={visibleBranches}
       selectedBranchName={editor.draft.baseRef}
@@ -195,8 +195,8 @@ export function ScheduledTaskThreadPickerRouteScreen() {
     value: query,
     onChangeText: setQuery,
     placeholder: THREAD_SEARCH_PLACEHOLDER,
-    accessibilityLabel: "Search threads",
-    clearAccessibilityLabel: "Clear thread search",
+    accessibilityLabel: "搜索会话",
+    clearAccessibilityLabel: "清除会话搜索",
     mode: "inline" as const,
     compactToolbar: true,
   };
@@ -229,14 +229,14 @@ export function ScheduledTaskThreadPickerRouteScreen() {
       .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt))
       .map((thread) => ({
         key: thread.id,
-        title: thread.title.trim() || "Untitled thread",
+        title: thread.title.trim() || "未命名会话",
         thread,
       })),
   ];
   const selectedKey = threadId ?? (editor.draft.threadMode === "new_thread" ? "new-thread" : null);
 
   return (
-    <SettingsScreen title="Destination" search={search}>
+    <SettingsScreen title="目标位置" search={search}>
       <FlatList
         data={rows}
         keyExtractor={(row) => row.key}
@@ -254,7 +254,7 @@ export function ScheduledTaskThreadPickerRouteScreen() {
             : Math.max(insets.bottom, 16) + 16,
         }}
         ListEmptyComponent={
-          <Text className="p-5 text-center text-sm text-foreground-muted">No matching threads</Text>
+          <Text className="p-5 text-center text-sm text-foreground-muted">没有匹配的会话</Text>
         }
         renderItem={({ item, index }) => (
           <SelectionRow

@@ -236,7 +236,7 @@ export function useComposerMenuItems({
           type: "slash-command",
           command: "model",
           label: "/model",
-          description: "Switch response model for this thread",
+          description: "切换此会话的响应模型",
         },
         ...(sideChatAvailable
           ? ([
@@ -245,14 +245,14 @@ export function useComposerMenuItems({
                 type: "slash-command",
                 command: "side",
                 label: "/side",
-                description: sideChatDisabledReason ?? "Ask a side question in a new side chat",
+                description: sideChatDisabledReason ?? "在新的侧面聊天中询问一个侧面问题",
               },
               {
                 id: "slash:btw",
                 type: "slash-command",
                 command: "btw",
                 label: "/btw",
-                description: sideChatDisabledReason ?? "Same as /side",
+                description: sideChatDisabledReason ?? "与/侧相同",
               },
             ] as const)
           : []),
@@ -263,7 +263,7 @@ export function useComposerMenuItems({
                 type: "slash-command",
                 command: "clear",
                 label: "/clear",
-                description: "Start a fresh session; earlier messages stay visible",
+                description: "启动新会话; 早期信件保持可见",
               },
             ] as const)
           : []),
@@ -281,7 +281,7 @@ export function useComposerMenuItems({
         provider: selectedProvider,
         command,
         label: `/${command.name}`,
-        description: command.description ?? command.input?.hint ?? "Run provider command",
+        description: command.description ?? command.input?.hint ?? "运行提供者命令",
       }));
       const query = composerTrigger.query.trim().toLowerCase();
       const skillItems = slashMenuSkills.map((skill) => ({
@@ -291,9 +291,7 @@ export function useComposerMenuItems({
         skill,
         label: `/skill:${skill.name}`,
         description:
-          skill.shortDescription ??
-          skill.description ??
-          (skill.scope ? `${skill.scope} skill` : ""),
+          skill.shortDescription ?? skill.description ?? (skill.scope ? `${skill.scope} 技能` : ""),
       }));
       // T3's `/clear` replaces the provider's, which would clear a session T3 still treats as live.
       const visibleProviderSlashCommandItems = providerSlashCommandItems.filter(
@@ -317,7 +315,7 @@ export function useComposerMenuItems({
         description:
           skill.shortDescription ??
           skill.description ??
-          (skill.scope ? `${skill.scope} skill` : "Run provider skill"),
+          (skill.scope ? `${skill.scope} 技能` : "运行提供者技能"),
       }));
     }
     if (
@@ -409,7 +407,7 @@ export function useComposerMenuItems({
         return "Pull requests could not be read for this project.";
       }
       return composerTrigger?.query
-        ? `No pull request matches ${composerTrigger.query}.`
+        ? `拉取请求与${composerTrigger.query} 匹配。`
         : "No pull requests found in this repository.";
     }
     return composerTriggerKind === "path"

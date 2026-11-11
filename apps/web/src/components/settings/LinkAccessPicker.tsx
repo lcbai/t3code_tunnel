@@ -19,7 +19,7 @@ export function LinkAccessPicker({
   return (
     <div className="space-y-1.5">
       <span id={labelId} className="block text-xs font-medium">
-        What agents here may do there
+        这儿的特工可能在那里做什么
       </span>
       <Select
         value={value}
@@ -54,9 +54,8 @@ export function LinkAccessPicker({
         </SelectPopup>
       </Select>
       <p className="text-xs text-muted-foreground">
-        {selected.description} An agent never gets more access there than its own mode here. Below
-        full access, it can change only threads this link started, not that machine's own threads,
-        projects or settings.
+        {selected.description}{" "}
+        一个代理从没有比它自己的模式更多的访问。在完全访问下，它只能改变启动的链接的会话，而不是机器自己的会话、工程或设置。
       </p>
     </div>
   );

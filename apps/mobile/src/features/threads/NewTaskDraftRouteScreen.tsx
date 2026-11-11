@@ -68,7 +68,7 @@ const branchCheckouts = makeNewTaskBranchCheckouts({
       const error = squashAtomCommandFailure(result);
       Dialog.alert(
         "Could not switch branch",
-        error instanceof Error ? error.message : "The branch could not be checked out.",
+        error instanceof Error ? error.message : "无法检出此分支。",
       );
     }
     rootNavigationRef.dispatch({
@@ -199,9 +199,9 @@ export function NewTaskDraftRouteScreen({ route }: StaticScreenProps<NewTaskDraf
   return (
     <>
       {preparingBranch ? (
-        <ThreadScreenFallback header={<AppBar title="New thread" onBack={goBack} />}>
+        <ThreadScreenFallback header={<AppBar title="新建会话" onBack={goBack} />}>
           <View className="flex-1 items-center justify-center bg-screen">
-            <Text className="text-foreground">Switching branch...</Text>
+            <Text className="text-foreground">正在切换分支…</Text>
           </View>
         </ThreadScreenFallback>
       ) : (

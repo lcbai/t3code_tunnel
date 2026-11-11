@@ -28,7 +28,7 @@ export function VideoAttachmentTile(props: {
       identifier={props.sourceIdentifier}
       accessible={Platform.OS === "ios"}
       accessibilityRole="button"
-      accessibilityLabel={`Play ${props.name}`}
+      accessibilityLabel={`播放 ${props.name}`}
       accessibilityState={{ disabled: props.disabled ?? false }}
       onAccessibilityTap={() => {
         if (!props.disabled) props.onPress(props.sourceIdentifier);
@@ -45,8 +45,8 @@ export function VideoAttachmentTile(props: {
       <MediaActionsMenu media={mediaActions}>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={`Play ${props.name}`}
-          accessibilityHint={hasActions ? "Touch and hold for media actions" : undefined}
+          accessibilityLabel={`播放 ${props.name}`}
+          accessibilityHint={hasActions ? "长按查看媒体操作" : undefined}
           accessibilityState={{ disabled: props.disabled ?? false }}
           disabled={props.disabled}
           onPress={() => props.onPress(props.sourceIdentifier)}

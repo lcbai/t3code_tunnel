@@ -58,8 +58,8 @@ export function createWorkspaceListHeaderItems(input: {
           withNativeGlassHeaderItem({
             type: "button",
             axisBehavior: "horizontalOnly",
-            label: "Settings",
-            accessibilityLabel: "Open settings",
+            label: "设置",
+            accessibilityLabel: "打开设置",
             icon: sfSymbolIcon("gearshape"),
             onPress: input.onOpenSettings,
           }),

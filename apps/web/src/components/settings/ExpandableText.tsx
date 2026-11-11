@@ -39,7 +39,7 @@ export function ExpandableText({
           className="mt-1"
           onClick={() => setExpanded((value) => !value)}
         >
-          {expanded ? "Show less" : expandLabel}
+          {expanded ? "显示少一点" : expandLabel}
         </InlineButton>
       ) : null}
     </div>

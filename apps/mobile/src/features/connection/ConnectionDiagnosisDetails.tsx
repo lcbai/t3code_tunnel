@@ -3,15 +3,13 @@ import {
   AVAILABLE_CONNECTION_STATE,
   type ConnectionDiagnosis,
   connectionDiagnosisText,
-  connectionRoutes,
-  hasRelayRoute,
   presentConnectionDiagnosis,
   type EnvironmentPresentation,
 } from "@t3tools/client-runtime/connection";
 import type { EnvironmentId } from "@t3tools/contracts";
 import Constants from "expo-constants";
 import { AsyncResult } from "effect/reactivity";
-import { Linking, View } from "react-native";
+import { View } from "react-native";
 
 import { AppText as Text } from "../../components/ui/AppText";
 import { Button } from "../../components/ui/Button";
@@ -34,12 +32,9 @@ export function useConnectionDiagnosis(
   if (presentation === null || !presentation.entry.enabled) return { diagnosis: null, state };
   const phase = presentation.connection.phase;
   if (phase === "connected" || phase === "unsupported") return { diagnosis: null, state };
-  const relayOnly =
-    connectionRoutes(presentation.entry).length === 1 && hasRelayRoute(presentation.entry);
   const diagnosis = presentConnectionDiagnosis({
     hostLabel: presentation.entry.target.label,
     state,
-    via: relayOnly ? "relay" : "direct",
     clientVersion: Constants.expoConfig?.version,
     serverVersion: presentation.serverConfig?.environment.serverVersion,
   });
@@ -51,7 +46,6 @@ export function ConnectionDiagnosisDetails(props: {
   readonly diagnosis: ConnectionDiagnosis;
 }) {
   const { diagnosis } = props;
-  const { moreInfoUrl } = diagnosis;
   return (
     <View className="gap-3">
       <View className="gap-0.5">
@@ -68,7 +62,7 @@ export function ConnectionDiagnosisDetails(props: {
         ))}
       </View>
       <View className="gap-0.5">
-        <Text className="text-sm font-t3-bold text-foreground">What to try</Text>
+        <Text className="text-sm font-t3-bold text-foreground">可尝试的操作</Text>
         {diagnosis.steps.map((step, index) => (
           <Text key={step} className="text-sm text-foreground-muted">
             {`${index + 1}. ${step}`}
@@ -79,7 +73,7 @@ export function ConnectionDiagnosisDetails(props: {
         {diagnosis.facts.map(([label, value]) => `${label}: ${value}`).join("\n")}
       </Text>
       <Button
-        label="Copy diagnostics"
+        label="复制诊断信息"
         icon="doc.on.doc"
         onPress={() => {
           copyTextWithHaptic(connectionDiagnosisText(props.hostLabel, diagnosis), {
@@ -87,14 +81,6 @@ export function ConnectionDiagnosisDetails(props: {
           });
         }}
       />
-      {moreInfoUrl ? (
-        <Button
-          label="More info"
-          icon="safari"
-          tone="secondary"
-          onPress={() => void Linking.openURL(moreInfoUrl).catch(() => undefined)}
-        />
-      ) : null}
     </View>
   );
 }

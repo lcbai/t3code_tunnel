@@ -59,7 +59,7 @@ async function runCloneAction(
       stackedThreadToast({
         type: "error",
         title,
-        description: error instanceof Error ? error.message : "An error occurred.",
+        description: error instanceof Error ? error.message : "发生了错误。",
       }),
     );
   }
@@ -120,7 +120,7 @@ function EnvironmentCloneToasts({ environmentId }: { environmentId: EnvironmentI
       if (clone.phase === "running") {
         const options = stackedThreadToast({
           type: "loading",
-          title: `Cloning ${name}`,
+          title: `克隆${name}`,
           description: projectCloneProgressSummary(clone),
           timeout: 0,
           actionProps: {
@@ -146,7 +146,7 @@ function EnvironmentCloneToasts({ environmentId }: { environmentId: EnvironmentI
       if (clone.phase === "done") {
         const options = stackedThreadToast({
           type: "success",
-          title: `Cloned ${name}`,
+          title: `克隆的${name}`,
           description: clone.destinationPath,
           timeout: 8_000,
           actionProps: {
@@ -171,8 +171,8 @@ function EnvironmentCloneToasts({ environmentId }: { environmentId: EnvironmentI
       const cancelled = clone.phase === "cancelled";
       const options = stackedThreadToast({
         type: cancelled ? "info" : "error",
-        title: cancelled ? `Cancelled cloning ${name}` : `Failed to clone ${name}`,
-        description: cancelled ? clone.destinationPath : (clone.error ?? "The clone failed."),
+        title: cancelled ? `已取消的克隆${name}` : `克隆失败${name}`,
+        description: cancelled ? clone.destinationPath : (clone.error ?? "克隆失败。"),
         timeout: 0,
         actionProps: {
           children: "Retry",

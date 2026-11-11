@@ -124,7 +124,7 @@ export function runSpeech<A, E>(
             if (signal?.aborted || !canSend())
               throw new VoiceTranscriptionError({
                 code: "cancelled",
-                message: "Your transcription choice changed.",
+                message: "已更改转录选项。",
               });
             return expoFetch(url, { ...options, redirect: "error" });
           }),
@@ -155,8 +155,7 @@ function environmentTranscriber(
       if (status.state === "missing-model")
         throw new VoiceTranscriptionError({
           code: "unavailable",
-          message:
-            "Install a transcription model for this environment in Settings → Voice, then try again.",
+          message: "在「设置 → 语音」为此环境安装转录模型后重试。",
         });
       return status.languages
         ? effectiveSpeechLanguage(
@@ -172,7 +171,7 @@ function environmentTranscriber(
       if (!native?.decodeRecording)
         throw new VoiceTranscriptionError({
           code: "unavailable",
-          message: "Update T3 Code to transcribe on an environment.",
+          message: "更新 T3 Code 后即可在环境中转录。",
         });
       return native.decodeRecording(uri);
     },

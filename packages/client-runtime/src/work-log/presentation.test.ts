@@ -119,9 +119,7 @@ describe("resolveWorkEntryToolPresentation", () => {
       itemType: "dynamic_tool",
       toolData: { output: { isError: true } },
     };
-    expect(resolveWorkEntryToolPresentation(entry)?.displayName).toBe(
-      "Failed to clone a repository",
-    );
+    expect(resolveWorkEntryToolPresentation(entry)?.displayName).toBe("克隆仓库失败");
     expect(workEntryDisplayIndicatesToolFailure(entry)).toBe(true);
     const childFailure = {
       ...entry,
@@ -141,7 +139,7 @@ describe("resolveWorkEntryToolPresentation", () => {
     "preview_click",
   ])("recognizes browser tool names across providers: %s", (label) => {
     expect(resolveWorkEntryToolPresentation({ label })).toEqual({
-      displayName: "Clicking in the preview browser",
+      displayName: "正在点击预览浏览器",
       icon: "browser",
     });
   });
@@ -153,25 +151,25 @@ describe("resolveWorkEntryToolPresentation", () => {
         toolTitle: "Inspect the current page",
         toolData: { server: "t3-code", tool: "preview_snapshot", result: { title: "Example" } },
       }),
-    ).toEqual({ displayName: "Taking a snapshot of the preview page", icon: "browser" });
+    ).toEqual({ displayName: "正在查看预览页面", icon: "browser" });
   });
 
   it("uses the summary's state only when the provider omitted a lifecycle status", () => {
     const entry = { label: "T3-code.preview_click" };
     expect(resolveWorkEntryToolPresentation(entry, "inProgress")?.displayName).toBe(
-      "Clicking in the preview browser",
+      "正在点击预览浏览器",
     );
     expect(resolveWorkEntryToolPresentation(entry, "completed")?.displayName).toBe(
-      "Clicked in the preview browser",
+      "已点击预览浏览器",
     );
     expect(
       resolveWorkEntryToolPresentation({ ...entry, toolLifecycleStatus: "completed" }, "inProgress")
         ?.displayName,
-    ).toBe("Clicked in the preview browser");
+    ).toBe("已点击预览浏览器");
     expect(
       resolveWorkEntryToolPresentation({ ...entry, toolLifecycleStatus: "failed" }, "completed")
         ?.displayName,
-    ).toBe("Failed to click in the preview browser");
+    ).toBe("点击预览浏览器失败");
   });
 
   it.each([

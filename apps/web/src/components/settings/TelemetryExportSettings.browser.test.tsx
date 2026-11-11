@@ -131,7 +131,7 @@ describe("TelemetryExportSettings", () => {
     });
     expect(screen.container.querySelector<HTMLInputElement>("#otlpTracesUrl")!.value).toBe("");
 
-    await userEvent.click(screen.getByRole("button", { name: "Test" }).first());
+    await userEvent.click(screen.getByRole("button", { name: "测试" }).first());
 
     expect(checkOtlpEndpoint).toHaveBeenCalledTimes(2);
     expect(checkOtlpEndpoint).toHaveBeenLastCalledWith({

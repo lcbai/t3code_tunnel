@@ -11,7 +11,7 @@ import {
 } from "./baseSchemas.ts";
 
 /**
- * A guest share lets one unauthenticated browser watch a thread over T3 Connect and propose
+ * A guest share lets one unauthenticated browser watch a thread and propose
  * messages the owner must send or dismiss. The thread projection holds this public state; the
  * credentials are derived from the share id with a server key and never stored.
  */
@@ -42,7 +42,7 @@ export type ThreadGuestMessage = typeof ThreadGuestMessage.Type;
 
 export const ThreadGuestShare = Schema.Struct({
   id: GuestShareId,
-  /** The T3 Connect tunnel hostname the link points at. Guest routes require it to still serve. */
+  /** The HTTPS host the guest link was issued for. */
   host: TrimmedNonEmptyString,
   createdAt: IsoDateTime,
   expiresAt: IsoDateTime,
@@ -65,11 +65,11 @@ export const GuestShareCreateResult = Schema.Struct({
 export type GuestShareCreateResult = typeof GuestShareCreateResult.Type;
 
 const GUEST_SHARE_CREATE_MESSAGES = {
-  disabled: "Guest links are off. Turn them on in Settings > Labs.",
-  connect_unavailable: "Guest links need a running T3 Connect tunnel.",
-  thread_unavailable: "This thread cannot be shared.",
-  read_failed: "Failed to read the shared thread.",
-  changed: "The guest link changed while it was being created.",
+  disabled: "访客链接已关闭。可前往「设置 → 实验功能」开启。",
+  connect_unavailable: "请配置可访问的 HTTPS 地址后再创建访客链接。",
+  thread_unavailable: "无法分享此会话。",
+  read_failed: "无法读取共享会话。",
+  changed: "访客链接在创建期间已更改。",
 } as const;
 
 export class GuestShareCreateError extends Schema.TaggedError<GuestShareCreateError>()(

@@ -133,10 +133,10 @@ export function SkillChipPopover(props: {
     >
       <div className="space-y-3 p-2 text-sm">
         <p className="font-medium">{props.label}</p>
-        <p>{props.description || "No description is available for this skill."}</p>
+        <p>{props.description || "没有关于此技能的描述。"}</p>
         {props.onViewInstructions ? (
           <Button variant="outline" size="sm" onClick={props.onViewInstructions}>
-            View instructions
+            查看指令
           </Button>
         ) : null}
       </div>

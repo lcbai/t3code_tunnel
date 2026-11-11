@@ -63,7 +63,7 @@ function modifierKeyLabel(modifier: SnapShotModifier, platform: string): string 
     if (modifier === "control") return "⌃";
     return "⌥";
   }
-  if (modifier === "meta") return isWindowsPlatform(platform) ? "⊞" : "Super";
+  if (modifier === "meta") return isWindowsPlatform(platform) ? "⊞" : "超级";
   return modifier === "control" ? "Ctrl" : "Alt";
 }
 

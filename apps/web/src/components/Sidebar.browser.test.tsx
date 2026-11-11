@@ -73,7 +73,7 @@ describe("sidebar header new thread", () => {
       </SidebarProvider>,
     );
 
-    await userEvent.click(screen.getByRole("button", { name: "New thread", exact: true }), {
+    await userEvent.click(screen.getByRole("button", { name: "新建会话", exact: true }), {
       modifiers: scenario.shift ? ["Shift"] : [],
     });
 

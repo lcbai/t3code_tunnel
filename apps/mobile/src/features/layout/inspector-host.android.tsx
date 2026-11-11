@@ -20,9 +20,7 @@ function PaneContent(props: {
     <WorkspaceSlotOptionsContext value={slot}>
       <RenderErrorBoundary
         resetKeys={props.resetKeys}
-        renderFallback={(fallback) => (
-          <RenderFailureView {...fallback} title="The inspector couldn't be displayed" />
-        )}
+        renderFallback={(fallback) => <RenderFailureView {...fallback} title="无法显示检查器" />}
       >
         {props.pane.render()}
       </RenderErrorBoundary>

@@ -8,11 +8,9 @@ import {
   resolveEnvironmentMachineKind,
   type ServerConfig,
 } from "@t3tools/contracts";
-import * as Option from "effect/Option";
 
 import type { EnvironmentPresentation } from "./connection/presentation.ts";
 import { connectionRoutes, routeHttpBaseUrl } from "./connection/routes.ts";
-import type { RelayDiscoveredEnvironment } from "./relay/discovery.ts";
 
 export type LinkRequestItem = Extract<OrchestrationV2TurnItem, { readonly type: "link_request" }>;
 
@@ -52,7 +50,7 @@ export const linkRequestDefaultAccess = (
 
 /** What the card calls the other environment: its own name, else the address asked for. */
 export const linkRequestTargetName = (item: Pick<LinkRequestItem, "label" | "url">): string =>
-  item.label?.trim() || item.url || "a machine";
+  item.label?.trim() || item.url || "一台设备";
 
 /** A machine the user could link a thread's environment to. */
 export interface LinkableMachine {
@@ -60,37 +58,28 @@ export interface LinkableMachine {
   readonly label: string;
   readonly machine: EnvironmentMachineKind;
   readonly connected: boolean;
-  /** Found on the user's T3 Connect account rather than saved in this client. */
-  readonly connectOnly: boolean;
   /** Whether the thread's environment already has a link to it. */
   readonly linked: boolean;
   /**
    * Where the client knows it answers, most preferred first: the addresses it
-   * reports, then its saved routes, then its T3 Connect address. The server
+   * reports, then its saved routes. The server
    * keeps only those that answer as this machine. Empty for a machine reached
    * only over SSH, whose forward lives in this client.
    */
   readonly urls: ReadonlyArray<string>;
 }
 
-/**
- * The catalog's machines other than the thread's own, in catalog order, then those only T3
- * Connect knows. `links` are the thread environment's; an expired one no longer counts as
- * linked. `connect` is what relay discovery found, and a server reaches a machine there as a
- * browser does, so its Connect address is usable.
- */
 export function linkableMachines(input: {
   readonly environments: ReadonlyArray<
     EnvironmentPresentation & { readonly environmentId: EnvironmentId }
   >;
   readonly threadEnvironmentId: EnvironmentId;
   readonly links: ReadonlyArray<Pick<PeerLinkSummary, "environmentId" | "status">>;
-  readonly connect: ReadonlyMap<string, RelayDiscoveredEnvironment>;
 }): ReadonlyArray<LinkableMachine> {
   const linkedIds = new Set(
     input.links.flatMap((link) => (link.status === "expired" ? [] : [link.environmentId])),
   );
-  const saved = input.environments
+  return input.environments
     .filter((environment) => environment.environmentId !== input.threadEnvironmentId)
     .map((environment) => {
       const reported = (environment.serverConfig?.directEndpoints ?? []).map(
@@ -100,45 +89,15 @@ export function linkableMachines(input: {
         const url = route.target._tag === "RelayConnectionTarget" ? null : routeHttpBaseUrl(route);
         return url === null ? [] : [url];
       });
-      const connect = input.connect.get(environment.environmentId)?.environment.endpoint;
       return {
         environmentId: environment.environmentId,
         label: environment.entry.target.label,
         machine: resolveEnvironmentMachineKind(environment.serverConfig),
         connected: environment.connection.phase === "connected",
-        connectOnly: false,
         linked: linkedIds.has(environment.environmentId),
-        urls: [
-          ...new Set([
-            ...reported,
-            ...routes,
-            ...(connect === undefined ? [] : [connect.httpBaseUrl]),
-          ]),
-        ],
+        urls: [...new Set([...reported, ...routes])],
       };
     });
-  const savedIds = new Set<string>(saved.map((machine) => machine.environmentId));
-  const connectOnly = [...input.connect.values()]
-    .filter(
-      ({ environment }) =>
-        environment.environmentId !== input.threadEnvironmentId &&
-        !savedIds.has(environment.environmentId),
-    )
-    .map(({ environment, status }) => {
-      const descriptor = Option.getOrUndefined(status)?.descriptor;
-      return {
-        environmentId: environment.environmentId,
-        label: environment.label,
-        machine: resolveEnvironmentMachineKind(
-          descriptor === undefined ? null : { environment: descriptor },
-        ),
-        connected: false,
-        connectOnly: true,
-        linked: linkedIds.has(environment.environmentId),
-        urls: [environment.endpoint.httpBaseUrl],
-      };
-    });
-  return [...saved, ...connectOnly];
 }
 
 const words = (text: string) =>
@@ -219,25 +178,25 @@ export function linkRequestDisplay(
     case "pending":
       return visibility === "local"
         ? { kind: "pending" }
-        : { kind: "pending-elsewhere", label: "Waiting for an answer in the original thread" };
+        : { kind: "pending-elsewhere", label: "正在等待原会话处理请求" };
     case "linked":
       return {
         kind: "answered",
         outcome: "linked",
-        label: `Linked ${item.linkedLabel ?? linkRequestTargetName(item)}${
+        label: `已关联 ${item.linkedLabel ?? linkRequestTargetName(item)}${
           item.linkedAccess === undefined ? "" : ` · ${accessLabel(item.linkedAccess)}`
         }`,
       };
     case "declined":
-      return { kind: "answered", outcome: "declined", label: "Declined" };
+      return { kind: "answered", outcome: "declined", label: "已拒绝" };
     case "failed":
       return {
         kind: "answered",
         outcome: "failed",
-        label: `Could not link: ${item.failure ?? "the other environment refused"}`,
+        label: `无法关联：${item.failure ?? "对方环境拒绝了请求"}`,
       };
     case "cancelled":
-      return { kind: "answered", outcome: "ended", label: "Request ended" };
+      return { kind: "answered", outcome: "ended", label: "请求已结束" };
   }
 }
 
@@ -310,5 +269,5 @@ export function linkRequestFailureMessage(failure: unknown): string {
   ) {
     return failure.message;
   }
-  return "Could not answer the request. Try again.";
+  return "无法处理请求，请重试。";
 }

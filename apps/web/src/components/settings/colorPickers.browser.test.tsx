@@ -160,7 +160,7 @@ describe("provider accent color picker", () => {
     );
 
     await open("Add accent color for Example provider");
-    await userEvent.click(page.getByRole("button", { name: "Add color", exact: true }));
+    await userEvent.click(page.getByRole("button", { name: "添加颜色", exact: true }));
 
     expect(onCommit).toHaveBeenCalledExactlyOnceWith("#2563eb");
     await expect
@@ -208,7 +208,7 @@ describe("provider accent color picker", () => {
     await open("Change accent color for Example provider");
     await press(HUE, "ArrowRight", true);
     expect(onCommit).toHaveBeenLastCalledWith("#ff2a00");
-    await userEvent.click(page.getByRole("button", { name: "Clear color", exact: true }));
+    await userEvent.click(page.getByRole("button", { name: "清除颜色", exact: true }));
     expect(onCommit).toHaveBeenLastCalledWith("");
     await expect
       .element(screen.getByRole("button", { name: "Add accent color for Example provider" }))
@@ -252,7 +252,7 @@ describe("provider accent color picker", () => {
     expect(byLabel<HTMLInputElement>("Custom hex accent color").value).toBe("#ff0000");
     await screen.echo("");
     expect(byLabel<HTMLInputElement>("Custom hex accent color").value).toBe("#2563eb");
-    await userEvent.click(page.getByRole("button", { name: "Add color", exact: true }));
+    await userEvent.click(page.getByRole("button", { name: "添加颜色", exact: true }));
     expect(screen.onCommit).toHaveBeenLastCalledWith("#2563eb");
 
     expect(byLabel("Change accent color for Codex").style.backgroundColor).toBe("rgb(37, 99, 235)");

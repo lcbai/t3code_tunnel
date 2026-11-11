@@ -121,7 +121,7 @@ export function buildComposerSlashCommandItems(input: {
           type: "slash-command",
           command: "model",
           label: "/model",
-          description: "Switch model",
+          description: "切换模型",
         },
       ]
     : [];
@@ -150,7 +150,7 @@ export function buildComposerSlashCommandItems(input: {
       type: "slash-command",
       command: "clear",
       label: "/clear",
-      description: "Start a fresh session",
+      description: "启动全新会话",
     });
   }
   for (const command of input.selectedProviderStatus?.slashCommands ?? []) {
@@ -549,7 +549,7 @@ export function useComposerCommandMenu({
       const existing = getComposerDraftSnapshot(ownerKey).context?.records ?? [];
       const alreadyAttached = existing.some((entry) => entry.contextId === record.contextId);
       if (!alreadyAttached && existing.length >= COMPOSER_CONTEXT_MAX_RECORDS) {
-        Dialog.alert("Too many context items", "Remove some context from the draft and try again.");
+        Dialog.alert("上下文项目过多", "请移除草稿中的部分上下文后重试。");
         return;
       }
       const result = replaceTextRange(
@@ -581,7 +581,7 @@ export function useComposerCommandMenu({
       const existing = getComposerDraftSnapshot(ownerKey).context?.records ?? [];
       const alreadyAttached = existing.some((entry) => entry.contextId === record.contextId);
       if (!alreadyAttached && existing.length >= COMPOSER_CONTEXT_MAX_RECORDS) {
-        Dialog.alert("Too many context items", "Remove some context from the draft and try again.");
+        Dialog.alert("上下文项目过多", "请移除草稿中的部分上下文后重试。");
         return;
       }
       const result = replaceTextRange(
@@ -613,7 +613,7 @@ export function useComposerCommandMenu({
         (getComposerDraftSnapshot(ownerKey).context?.records.length ?? 0) >=
         COMPOSER_CONTEXT_MAX_RECORDS
       ) {
-        Dialog.alert("Too many context items", "Remove some context from the draft and try again.");
+        Dialog.alert("上下文项目过多", "请移除草稿中的部分上下文后重试。");
         return;
       }
       const result = replaceTextRange(

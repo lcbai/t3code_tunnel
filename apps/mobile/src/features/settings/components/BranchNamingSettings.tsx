@@ -7,14 +7,14 @@ import { ListChoiceRow as SettingsChoiceRow } from "../../../components/ui/ListC
 import { SettingsSection } from "./SettingsSection";
 
 const MODES = {
-  static: { label: "Static prefix", description: "Add your prefix to the generated branch name." },
+  static: { label: "固定前缀", description: "给生成的分支名称添加前缀。" },
   semantic: {
-    label: "Semantic prefix",
-    description: "Let the model choose feat/, fix/, refactor/, or another prefix.",
+    label: "语义前缀",
+    description: "让模型选择 feat/、fix/、refactor/ 或其他前缀。",
   },
   custom: {
-    label: "Custom instructions",
-    description: "Generate the complete name with no added prefix or suffix.",
+    label: "自定义指令",
+    description: "生成完整名称，无需添加前缀或后缀。",
   },
 } satisfies Record<BranchNamingMode, { label: string; description: string }>;
 
@@ -55,9 +55,9 @@ export function BranchNamingSettings(props: {
   useEffect(() => () => saveDrafts(), []);
   return (
     <SettingsSection
-      title="Worktree branch naming"
+      title="工作树分支命名"
       trailing={
-        props.mode === null ? <Text className="text-xs text-foreground-muted">Mixed</Text> : null
+        props.mode === null ? <Text className="text-xs text-foreground-muted">混合</Text> : null
       }
     >
       {BranchNamingMode.literals.map((mode, index) => (
@@ -74,14 +74,14 @@ export function BranchNamingSettings(props: {
       {props.mode === "static" ? (
         <View className="gap-2 px-4 py-3">
           <Text className="text-sm text-foreground-muted">
-            Use t3 or t3/ for t3/add-search. Leave empty for no prefix.
+            如果需要 t3/add-search 这样的分支名，可填写 t3 或 t3/。留空表示不添加前缀。
           </Text>
           <AppTextInput
             key={props.prefix}
-            accessibilityLabel="Branch prefix"
+            accessibilityLabel="分支前缀"
             onChangeText={(text) => edit("branchNamePrefix", text)}
             defaultValue={props.prefix ?? ""}
-            placeholder={props.prefix === null ? "Mixed" : "No prefix"}
+            placeholder={props.prefix === null ? "混合" : "无前缀"}
             editable={!props.disabled.prefix}
             autoCapitalize="none"
             autoCorrect={false}
@@ -92,18 +92,16 @@ export function BranchNamingSettings(props: {
       ) : null}
       {props.mode === "custom" ? (
         <View className="gap-2 px-4 py-3">
-          <Text className="text-sm text-foreground-muted">
-            Append instructions to the naming prompt.
-          </Text>
+          <Text className="text-sm text-foreground-muted">将指令添加到命名提示词。</Text>
           <AppTextInput
             key={props.instructions}
-            accessibilityLabel="Branch naming instructions"
+            accessibilityLabel="分支命名说明"
             onChangeText={(text) => edit("branchNameInstructions", text)}
             defaultValue={props.instructions ?? ""}
             placeholder={
               props.instructions === null
-                ? "Mixed. Enter instructions for all selected targets."
-                : "Use julius/ followed by the issue ID and a short description."
+                ? "设置不同。请输入适用于所有选中目标的指令。"
+                : "使用 julius/，后接问题 ID 和简短描述。"
             }
             editable={!props.disabled.instructions}
             multiline

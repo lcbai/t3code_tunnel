@@ -14,7 +14,7 @@ export function getCompactBrandHeaderOptions(
   return {
     headerTitle: renderCompactBrandTitle,
     headerTitleStyle: fallbackTitleStyle,
-    title: "Threads",
+    title: "会话",
     unstable_headerLeftItems: undefined,
   };
 }

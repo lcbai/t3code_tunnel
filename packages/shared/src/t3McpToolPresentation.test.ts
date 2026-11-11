@@ -36,7 +36,7 @@ describe("resolveT3McpToolPresentation", () => {
   it("matches OpenCode 2's per-thread server names, whose thread ids hold underscores", () => {
     expect(
       resolveT3McpToolPresentation("t3-code-thread_opencode2-adapter_delegate_task")?.displayName,
-    ).toBe("Delegate a child task");
+    ).toBe("委派子任务");
     expect(resolveT3McpToolPresentation("t3-code-thread_opencode2-adapter_not_a_tool")).toBeNull();
   });
 });
@@ -50,7 +50,7 @@ describe("resolveT3McpToolDefinition", () => {
       resolveT3McpToolDefinition("t3_thread_fork")?.displayName,
     );
     expect(resolveT3McpToolDefinition("preview_act", { action: "unknown" })?.labels[2]).toBe(
-      "Used",
+      "已使用",
     );
   });
 });

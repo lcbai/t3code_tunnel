@@ -13,14 +13,14 @@ export function LinkMachineBadge({ machine }: { readonly machine: LinkableMachin
   if (machine.linked) {
     return (
       <Badge variant="success" size="sm">
-        Linked
+        链接
       </Badge>
     );
   }
   if (machine.connected) return null;
   return (
     <Badge variant="outline" size="sm">
-      {machine.connectOnly ? "T3 Connect" : "Not connected"}
+      未连接
     </Badge>
   );
 }
@@ -34,7 +34,7 @@ function MachineName({ machine }: { readonly machine: LinkableMachine }) {
   );
 }
 
-/** The user's other machines, including those on their T3 Connect account, then an address. */
+/** The user's other machines, then an address. */
 export function LinkMachineSelect({
   machines,
   value,
@@ -50,7 +50,7 @@ export function LinkMachineSelect({
   return (
     <div className="space-y-1.5">
       <span id={labelId} className="block text-xs font-medium text-foreground">
-        Machine
+        机器
       </span>
       <Select
         value={value}
@@ -78,7 +78,7 @@ export function LinkMachineSelect({
             </SelectItem>
           ))}
           <SelectItem value={ANOTHER_ADDRESS} hideIndicator>
-            Another address…
+            另一个地址…
           </SelectItem>
         </SelectPopup>
       </Select>

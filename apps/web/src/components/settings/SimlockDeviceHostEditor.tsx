@@ -139,16 +139,16 @@ export function SimlockDeviceHostEditor(props: {
           }}
         >
           <DialogHeader>
-            <DialogTitle>{props.isNew ? "Add Simlock host" : "Edit Simlock host"}</DialogTitle>
+            <DialogTitle>{props.isNew ? "添加Simlock主机" : "编辑Simlock主机"}</DialogTitle>
             <DialogDescription>
               {several
-                ? "Each selected environment's server leases devices from your Simlock gateway with its own agent token, and releases them when they close."
-                : "The environment's server leases devices from your Simlock gateway and releases them when they close."}
+                ? "每个选定的环境服务器租赁设备来自您的Simlock 网关，并带有自己的代理代号，关闭后释放它们。"
+                : "环境服务器从您的Simlock 网关中租赁设备，并在关闭时释放它们。"}
             </DialogDescription>
           </DialogHeader>
           <DialogPanel>
             <label className="block space-y-1.5 text-sm">
-              <span>Name</span>
+              <span>名称</span>
               <Input
                 autoFocus
                 required
@@ -161,7 +161,7 @@ export function SimlockDeviceHostEditor(props: {
               />
             </label>
             <label className="block space-y-1.5 text-sm">
-              <span>Gateway URL</span>
+              <span>网关URL</span>
               <Input
                 required
                 type="url"
@@ -182,7 +182,7 @@ export function SimlockDeviceHostEditor(props: {
                   environmentId={environment.environmentId}
                   hostId={props.isNew ? null : props.host.id}
                   gatewayUrl={checkUrl}
-                  label={several ? `Agent token · ${environment.label}` : "Agent token"}
+                  label={several ? `代理符号 ^${environment.label}` : "代理代号"}
                   token={tokens.get(environment.environmentId) ?? { kind: "cleared" }}
                   saved={savedValue(environment)}
                   busy={props.busy}
@@ -200,11 +200,11 @@ export function SimlockDeviceHostEditor(props: {
                 />
               ))}
               <p className="text-xs text-muted-foreground">
-                Leases, drives, and streams devices. Create one{several ? " per environment" : ""}{" "}
-                with <code>simlock --gateway token create --role agent</code>, or leave it blank to
-                add it later. A blank token uses the machine's{" "}
-                <code>AGENT_DEVICE_DAEMON_AUTH_TOKEN</code> when its{" "}
-                <code>AGENT_DEVICE_DAEMON_BASE_URL</code> is this gateway.
+                租赁、驱动和流设备。创建一个{several ? " 每个环境" : ""} with{" "}
+                <code>simlock -- gateway 令牌创建 -- 作用代理</code>
+                ，或者留空以待日后添加。空白的符号使用机器的{" "}
+                <code>AGENT_DEVICE_DAEMON_AUTH_TOKEN</code> 时{" "}
+                <code>AGENT_DEVICE_DAEMON_BASE_URL</code> 是这个通道。
               </p>
             </div>
             <div className="grid grid-cols-2 gap-3 text-sm">
@@ -212,8 +212,8 @@ export function SimlockDeviceHostEditor(props: {
               {limit("maxLeaseMinutes", "Lease minutes", 5, 240)}
             </div>
             <p className="text-xs text-muted-foreground">
-              A lease ends after the lease minutes even while in use.
-              {props.isNew ? null : " Saving restarts this host, which releases its devices."}
+              即使在使用期间，租赁在租赁分钟后结束。
+              {props.isNew ? null : " 保存重新启动此主机，该主机将释放其设备。"}
             </p>
             {problem === null || !gatewayUrl ? null : (
               <p className="text-xs text-destructive" role="alert">
@@ -223,10 +223,10 @@ export function SimlockDeviceHostEditor(props: {
           </DialogPanel>
           <DialogFooter>
             <Button type="button" variant="ghost" disabled={props.busy} onClick={props.onClose}>
-              Cancel
+              取消
             </Button>
             <Button type="submit" disabled={props.busy || problem !== null}>
-              {props.busy ? <Spinner size="xs" /> : null} Save host
+              {props.busy ? <Spinner size="xs" /> : null} 保存主机
             </Button>
           </DialogFooter>
         </form>
@@ -277,12 +277,12 @@ function SimlockTokenField(props: {
   const identity = AsyncResult.isSuccess(check) ? check.value : null;
   const status =
     props.gatewayUrl === null ? null : check._tag === "Initial" || check.waiting ? (
-      <span className="text-muted-foreground">Checking…</span>
+      <span className="text-muted-foreground">正在检查…</span>
     ) : identity ? (
       <span className="text-muted-foreground">
         {identity.tokenSource === "env"
-          ? `Using this machine's agent-device token (${identity.signedInAs}).`
-          : `Accepted as ${identity.signedInAs}.`}
+          ? `使用此机的代理设备代号 (${identity.signedInAs})。`
+          : `被接受为${identity.signedInAs}。`}
       </span>
     ) : AsyncResult.isFailure(check) ? (
       <span
@@ -300,7 +300,7 @@ function SimlockTokenField(props: {
         <SecretSourceInput
           key={inputKey}
           id={id}
-          aria-label="Agent token"
+          aria-label="代理代号"
           className="min-w-0 flex-1"
           configured={props.token.kind === "saved" && typeof props.saved === "string"}
           value={
@@ -339,7 +339,7 @@ function SimlockTokenField(props: {
             type="button"
             size="icon-sm"
             variant="ghost-destructive"
-            aria-label="Clear agent token"
+            aria-label="清除代理代理符"
             disabled={props.busy}
             onClick={() => {
               props.onChange({ kind: "cleared" });

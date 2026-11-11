@@ -1,5 +1,9 @@
 # T3 Code
 
+本仓库的桌面端、网页端、Android 和 iOS 客户端使用简体中文。打开桌面端即可使用本机环境；手机或其他电脑可通过配对链接连接到服务器。局域网、Tailscale 和桌面端 SSH 的设置见[远程连接](./docs/user/remote-access.md)。原先只通过官方 T3 Connect 中继访问的设备，需要用可达地址重新配对。Codex、Claude 等代理供应商仍使用各自的授权。
+
+下文的官方安装链接指向上游发行版。要使用此版本，请从本仓库构建。
+
 T3 Code is an "agent harness control surface". It enables control of the agents on your machine with a best-in-class mobile app ([iOS](https://apps.apple.com/us/app/t3-code-remote-claude-more/id6787819824), [Android](https://play.google.com/store/apps/details?id=com.t3tools.t3code)), [web app](https://app.t3.codes) and [Electron-based desktop app](https://t3.codes).
 
 Works with your subscriptions on Claude Code, Codex, Cursor, Grok Build, OpenCode, Google Antigravity, and fx. If they're set up on your computer, T3 Code can control them.

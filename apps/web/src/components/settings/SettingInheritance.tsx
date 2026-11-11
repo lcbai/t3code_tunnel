@@ -110,7 +110,7 @@ export function settingInheritanceLayers(
   if (target.projectId !== null && isProjectScopedSettingKey(key)) {
     layers.push({
       key: "project",
-      label: "Project",
+      label: "项目",
       value: source === "project" ? formatValue(key, target.settings[key]) : "Inherits",
       effective: source === "project",
       set: source === "project",
@@ -138,7 +138,7 @@ export function settingInheritanceLayers(
     : DEFAULT_SERVER_SETTINGS[key];
   layers.push({
     key: "built-in",
-    label: "Default",
+    label: "默认",
     value: formatValue(key, builtIn),
     effective: source === "environment" && !environmentSet,
     set: true,
@@ -252,7 +252,7 @@ export function SettingInheritance({
                 <Button
                   size="icon-micro"
                   variant="ghost-muted"
-                  aria-label={`${overrideSummary}. Show where this value comes from`}
+                  aria-label={`${overrideSummary}. 显示此值来自何处`}
                 />
               }
             />
@@ -290,7 +290,7 @@ export function SettingInheritance({
                         layer.effective ? "font-medium text-foreground" : "text-muted-foreground",
                       )}
                     >
-                      {layer.key === "environment" ? "Environment" : layer.label}
+                      {layer.key === "environment" ? "环境" : layer.label}
                     </span>
                     <span
                       className={cn(
@@ -342,9 +342,7 @@ export function SettingInheritance({
                             {winningLayer?.value}
                           </span>
                           <span className="text-xs text-muted-foreground">
-                            {winningLayer?.key === "environment"
-                              ? "Environment"
-                              : winningLayer?.label}
+                            {winningLayer?.key === "environment" ? "环境" : winningLayer?.label}
                           </span>
                           <ChevronRightIcon
                             aria-hidden
@@ -376,9 +374,7 @@ export function SettingInheritance({
                   <>
                     {chain}
                     {hasMultipleEnvironments ? (
-                      <p className="px-2 pt-1.5 text-xs text-muted-foreground">
-                        Same on all machines
-                      </p>
+                      <p className="px-2 pt-1.5 text-xs text-muted-foreground">所有机器都一样</p>
                     ) : null}
                   </>
                 )}
@@ -396,14 +392,14 @@ export function SettingInheritance({
                             aria-hidden
                             className="size-3 [[data-panel-open]_&]:rotate-90"
                           />
-                          Overridden by
+                          被击败
                         </CollapsibleTrigger>
                       ) : (
-                        <span>Overridden by</span>
+                        <span>被击败</span>
                       )}
                       {onClearOverrides ? (
                         <InlineButton onClick={() => onClearOverrides(overriding)}>
-                          Reset {overriding.length === 1 ? "it" : "all"}
+                          重置 {overriding.length === 1 ? "it" : "all"}
                         </InlineButton>
                       ) : null}
                     </div>

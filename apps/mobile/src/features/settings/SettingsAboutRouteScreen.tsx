@@ -23,7 +23,7 @@ export function SettingsAboutRouteScreen() {
   const insets = useSafeAreaInsets();
 
   return (
-    <SettingsScreen title="About">
+    <SettingsScreen title="关于">
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         showsVerticalScrollIndicator={false}
@@ -66,7 +66,7 @@ function AppSettingsSection() {
     await settlePromise(() =>
       runAppUpdateCheck({
         applyMode: "immediate",
-        onFailure: (message) => Dialog.alert("Update failed", message),
+        onFailure: (message) => Dialog.alert("更新失败", message),
         onStateChange: (state) =>
           setCheckState({
             state,
@@ -92,7 +92,7 @@ function AppSettingsSection() {
       : updateState === "downloading"
         ? "Downloading…"
         : updateState === "ready"
-          ? "Update ready"
+          ? "更新已就绪"
           : updateState === "restarting"
             ? "Restarting…"
             : updateState === "current"
@@ -108,7 +108,7 @@ function AppSettingsSection() {
         type="monochrome"
         weight="regular"
       />
-      <Text className="flex-1 text-lg text-foreground">Version</Text>
+      <Text className="flex-1 text-lg text-foreground">版本</Text>
       <View className="items-end">
         <Text className="text-lg text-foreground-muted">{versionLabel}</Text>
         {statusLabel ? (
@@ -119,18 +119,14 @@ function AppSettingsSection() {
   );
 
   return (
-    <SettingsSection title="App">
-      <SettingsRow icon="internaldrive" label="Client Storage" target="SettingsClientStorage" />
-      <SettingsRow icon="stethoscope" label="Diagnostics" target="SettingsDiagnostics" />
-      <SettingsRow
-        icon="doc.on.doc"
-        label="Open source licenses"
-        target="SettingsOpenSourceLicenses"
-      />
-      <SettingsRow icon="doc.text" label="Legal" fullScreenTarget="SettingsLegal" />
+    <SettingsSection title="应用">
+      <SettingsRow icon="internaldrive" label="客户端存储" target="SettingsClientStorage" />
+      <SettingsRow icon="stethoscope" label="诊断" target="SettingsDiagnostics" />
+      <SettingsRow icon="doc.on.doc" label="开源许可证" target="SettingsOpenSourceLicenses" />
+      <SettingsRow icon="doc.text" label="法律信息" fullScreenTarget="SettingsLegal" />
       {updateCheckAvailable ? (
         <Pressable
-          accessibilityLabel={`Version ${versionLabel}`}
+          accessibilityLabel={`版本 ${versionLabel}`}
           accessibilityRole="text"
           disabled={busy}
           onPress={handleVersionPress}

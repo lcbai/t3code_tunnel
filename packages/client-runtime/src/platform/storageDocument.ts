@@ -1,6 +1,7 @@
 import { EnvironmentId } from "@t3tools/contracts";
 import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
+import * as SchemaTransformation from "effect/SchemaTransformation";
 
 import {
   type ConnectionRegistration,
@@ -8,7 +9,6 @@ import {
   ConnectionProfile,
 } from "../connection/catalog.ts";
 import { type ConnectionTarget, PersistedConnectionTarget } from "../connection/model.ts";
-import * as TokenStore from "../authorization/tokenStore.ts";
 import { StoredPullRequestRoutingPermission } from "../connection/pullRequestRoutingPermissions.ts";
 
 export const StoredConnectionCredential = Schema.Struct({
@@ -17,12 +17,11 @@ export const StoredConnectionCredential = Schema.Struct({
 });
 export type StoredConnectionCredential = typeof StoredConnectionCredential.Type;
 
-export const ConnectionCatalogDocument = Schema.Struct({
+const ConnectionCatalogDocumentFields = Schema.Struct({
   schemaVersion: Schema.Literal(1),
   targets: Schema.Array(PersistedConnectionTarget),
   profiles: Schema.Array(ConnectionProfile),
   credentials: Schema.Array(StoredConnectionCredential),
-  remoteDpopTokens: Schema.Array(TokenStore.RemoteDpopAccessToken),
   // Pull request routing grants. The field name predates the rename and stays, so older and
   // newer clients sharing this document keep reading and revoking the same grants.
   githubRoutingPermissions: Schema.optionalKey(Schema.Array(StoredPullRequestRoutingPermission)),
@@ -30,6 +29,15 @@ export const ConnectionCatalogDocument = Schema.Struct({
     Schema.withDecodingDefaultKey(Effect.succeed([])),
   ),
 });
+export const ConnectionCatalogDocument = ConnectionCatalogDocumentFields.pipe(
+  Schema.decodeTo(
+    Schema.toType(ConnectionCatalogDocumentFields),
+    SchemaTransformation.transform({
+      decode: pruneLegacyRelayRoutes,
+      encode: pruneLegacyRelayRoutes,
+    }),
+  ),
+);
 export type ConnectionCatalogDocument = typeof ConnectionCatalogDocument.Type;
 
 export const EMPTY_CONNECTION_CATALOG_DOCUMENT: ConnectionCatalogDocument = Object.freeze({
@@ -37,7 +45,6 @@ export const EMPTY_CONNECTION_CATALOG_DOCUMENT: ConnectionCatalogDocument = Obje
   targets: [],
   profiles: [],
   credentials: [],
-  remoteDpopTokens: [],
   disabledEnvironmentIds: [],
 });
 
@@ -78,15 +85,10 @@ function removeRouteMetadata(
   removed: ReadonlyArray<ConnectionTarget>,
 ): ConnectionCatalogDocument {
   const connectionIds = new Set(removed.flatMap((target) => connectionIdOf(target) ?? []));
-  const relayRemoved = removed.some((target) => target._tag === "RelayConnectionTarget");
-  const environmentIds = new Set(removed.map((target) => target.environmentId));
   return {
     ...document,
     profiles: document.profiles.filter((value) => !connectionIds.has(value.connectionId)),
     credentials: document.credentials.filter((value) => !connectionIds.has(value.connectionId)),
-    remoteDpopTokens: relayRemoved
-      ? document.remoteDpopTokens.filter((value) => !environmentIds.has(value.environmentId))
-      : document.remoteDpopTokens,
   };
 }
 
@@ -158,11 +160,6 @@ export function removeConnectionFromCatalog(
   const next = setRoutesInCatalog(document, environmentId, []);
   return {
     ...next,
-    remoteDpopTokens: removeCatalogValue(
-      next.remoteDpopTokens,
-      (value) => value.environmentId,
-      environmentId,
-    ),
     disabledEnvironmentIds: removeCatalogValue(
       next.disabledEnvironmentIds,
       (value) => value,
@@ -195,23 +192,36 @@ export function setConnectionEnabledInCatalog(
   };
 }
 
-export function putRemoteDpopTokenInCatalog(
-  document: ConnectionCatalogDocument,
-  token: TokenStore.RemoteDpopAccessToken,
-): ConnectionCatalogDocument {
-  const registered = document.targets.some(
-    (target) =>
-      target._tag === "RelayConnectionTarget" && target.environmentId === token.environmentId,
-  );
-  if (!registered) {
-    return document;
-  }
-  return {
-    ...document,
-    remoteDpopTokens: replaceCatalogValue(
-      document.remoteDpopTokens,
-      (value) => value.environmentId,
-      token,
+function pruneLegacyRelayRoutes(
+  document: typeof ConnectionCatalogDocumentFields.Type,
+): typeof ConnectionCatalogDocumentFields.Type {
+  const legacyProfileIds = new Set(
+    document.profiles.flatMap((profile) =>
+      profile._tag === "BearerConnectionProfile" && profile.authorization === "t3-connect"
+        ? [profile.connectionId]
+        : [],
     ),
+  );
+  const dropped = document.targets.filter(
+    (target) =>
+      target._tag === "RelayConnectionTarget" ||
+      (target._tag === "BearerConnectionTarget" && legacyProfileIds.has(target.connectionId)),
+  );
+  if (dropped.length === 0) return document;
+
+  const droppedSet = new Set(dropped);
+  const targets = document.targets.filter((target) => !droppedSet.has(target));
+  const active = new Set(targets.map((target) => target.environmentId));
+  return {
+    ...removeRouteMetadata(document, dropped),
+    targets,
+    disabledEnvironmentIds: document.disabledEnvironmentIds.filter((id) => active.has(id)),
+    ...(document.githubRoutingPermissions === undefined
+      ? {}
+      : {
+          githubRoutingPermissions: document.githubRoutingPermissions.filter((grant) =>
+            active.has(grant.environmentId),
+          ),
+        }),
   };
 }

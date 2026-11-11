@@ -192,7 +192,7 @@ it("stream-assistant-turn", async () => {
   await using screen = await render(timeline("thread-a", streamed("")), {
     container: sizedContainer(),
   });
-  await expect.element(screen.getByText("Continue")).toBeVisible();
+  await expect.element(screen.getByText("继续")).toBeVisible();
   await quiet();
 
   startCounting();

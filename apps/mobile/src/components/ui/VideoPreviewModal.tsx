@@ -128,7 +128,7 @@ function NativeVideoPreview(props: {
       Dialog.alert(
         "Could not open video",
         ready
-          ? "This video couldn't be loaded or played. Check the connection, or touch and hold the video to save or share the original."
+          ? "无法加载或播放视频。请检查连接，或长按视频保存或分享原文件。"
           : error instanceof Error
             ? error.message
             : "Could not load this video.",

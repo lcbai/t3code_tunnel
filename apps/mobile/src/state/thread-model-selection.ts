@@ -46,8 +46,8 @@ export function selectThreadModel(
     } else {
       const error = squashAtomCommandFailure(result);
       Dialog.alert(
-        "Could not apply model selection",
-        `This model pick was not saved. ${error instanceof Error ? error.message : "Try again."}`,
+        "无法应用模型选择",
+        `未保存模型选择。${error instanceof Error ? error.message : "Try again."}`,
       );
     }
   });

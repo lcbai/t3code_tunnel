@@ -58,7 +58,7 @@ async function resolvePreviewUri(
   // Refresh expired URLs before handing them to Quick Look or ACTION_VIEW, which retain them.
   const url = await refreshAssetUrl(item.environmentId, item.resource, signal)
     .then((value) => {
-      if (!value) throw new Error("Reconnect to this environment and try again.");
+      if (!value) throw new Error("请重新连接此环境后重试。");
       return value;
     })
     .catch((error: unknown) => {
@@ -161,11 +161,11 @@ function ResolvedFilePreview(
   const onOpenError = (error: unknown) => {
     if (props.onOpenError) return props.onOpenError(error);
     Dialog.alert("Could not open preview", nativeViewerErrorMessage(error), [
-      { text: "Cancel", style: "cancel" },
+      { text: "取消", style: "cancel" },
       ...(selected.kind === "document"
         ? [
             {
-              text: "Save or share",
+              text: "保存或分享",
               onPress: () => {
                 const input = {
                   attachment: {
@@ -177,7 +177,7 @@ function ResolvedFilePreview(
                 const sharing = /^(file|content):/.test(uri)
                   ? shareLocalAttachment({ ...input, uri })
                   : downloadAndShareAttachment({ ...input, url: uri });
-                void sharing.catch(() => Dialog.alert("Could not share file", "Please try again."));
+                void sharing.catch(() => Dialog.alert("Could not share file", "请重试。"));
               },
             },
           ]

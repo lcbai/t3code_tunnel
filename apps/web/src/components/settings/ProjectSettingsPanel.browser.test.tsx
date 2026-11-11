@@ -337,7 +337,7 @@ describe("project organization", () => {
   it("archives the checkout on every machine while one machine is picked", async () => {
     setup();
     await using _screen = await mountPanel({ machine: primaryId });
-    await userEvent.click(page.getByRole("button", { name: "Archive" }));
+    await userEvent.click(page.getByRole("button", { name: "归档" }));
     await vi.waitFor(() => expect(state.update).toHaveBeenCalledTimes(2));
     expect(
       state.update.mock.calls.map(([request]) => [request.environmentId, request.input.archived]),
@@ -356,9 +356,7 @@ describe("project settings permissions", () => {
 
     expect(nameInput(screen).disabled).toBe(true);
     expect(removeAll(screen).disabled).toBe(true);
-    expect(screen.container.textContent).toContain(
-      "Shared settings require permission to change every checkout in this group.",
-    );
+    expect(screen.container.textContent).toContain("共享设置需要权限来更改此组中的每次检出。");
     expect(state.update).not.toHaveBeenCalled();
   });
 
@@ -571,7 +569,7 @@ it("opens the fallback search target across all environments from a checkout", a
     </RegistryContext.Provider>,
     { router: false },
   );
-  await userEvent.click(page.getByRole("button", { name: "Open all environments" }));
+  await userEvent.click(page.getByRole("button", { name: "打开所有环境" }));
   await vi.waitFor(() => expect(router.state.location.search).toEqual({}));
   expect(router.state.location.hash).toBe("fallback-model");
 });
@@ -596,7 +594,7 @@ describe("project settings scope", () => {
     state.projects = state.projects.filter((project) => project.environmentId === primaryId);
     await using _screen = await mountSettings({ project: projectKey() });
 
-    await expect.element(page.getByRole("textbox", { name: "Project name" })).toBeVisible();
+    await expect.element(page.getByRole("textbox", { name: "项目名称" })).toBeVisible();
     await userEvent.click(environmentMenu());
     await expect.element(primaryOption()).toBeVisible();
     await expect.element(remoteOption()).not.toBeInTheDocument();
@@ -640,19 +638,17 @@ describe("project settings scope", () => {
     await expect
       .element(page.getByRole("button", { name: "Environment scope: remote" }))
       .toBeVisible();
-    await userEvent.click(page.getByRole("button", { name: "Show all environments" }));
+    await userEvent.click(page.getByRole("button", { name: "显示所有环境" }));
 
     await expect
-      .element(page.getByRole("textbox", { name: "Project name" }))
+      .element(page.getByRole("textbox", { name: "项目名称" }))
       .toHaveValue("Shared repo");
     expect(screen.router.state.location.search).toEqual({ project: key });
     await expect
       .element(page.getByRole("button", { name: "Environment scope: All environments" }))
       .toBeVisible();
     await expect.element(page.getByText(message, { exact: true })).not.toBeInTheDocument();
-    await expect
-      .element(page.getByRole("button", { name: "Remove project", exact: true }))
-      .toBeEnabled();
+    await expect.element(page.getByRole("button", { name: "删除工程", exact: true })).toBeEnabled();
   });
 });
 

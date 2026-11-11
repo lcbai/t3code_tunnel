@@ -30,8 +30,8 @@ import { useAppearancePreferences } from "../settings/appearance/AppearancePrefe
 import { MOBILE_THEME_IDS } from "../../lib/mobileTheme";
 
 const CHOICES = [
-  { value: "overview", label: "Overview" },
-  { value: "activity", label: "Activity" },
+  { value: "overview", label: "概览" },
+  { value: "activity", label: "活动" },
 ];
 
 export function ComponentCatalogScreen() {
@@ -50,23 +50,23 @@ export function ComponentCatalogScreen() {
   const announceAction = () => setNotice(true);
   const confirm = () => {
     Dialog.confirm({
-      title: "Discard changes?",
-      message: "This example only changes local catalog state.",
-      confirmText: "Discard",
+      title: "放弃变更？",
+      message: "此示例仅更改本地目录状态。",
+      confirmText: "放弃",
       destructive: true,
       onConfirm: () => setText(""),
     });
   };
   return (
     <View className="flex-1 bg-screen">
-      <AppBar title="UI components" onBack={() => navigation.goBack()} />
+      <AppBar title="界面组件" onBack={() => navigation.goBack()} />
       <ScreenScrollView
         contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={{ padding: 16, gap: 20, paddingBottom: 40 }}
         keyboardShouldPersistTaps="handled"
       >
         <View className="gap-3">
-          <AppText className="text-sm text-foreground-muted">Theme preview</AppText>
+          <AppText className="text-sm text-foreground-muted">主题预览</AppText>
           <View className="flex-row flex-wrap gap-2">
             {MOBILE_THEME_IDS.filter(
               (id) => id !== "material-you" || appearance.systemColorsAvailable,
@@ -81,8 +81,8 @@ export function ComponentCatalogScreen() {
           </View>
           <SegmentedControl
             options={[
-              { value: "light", label: "Light" },
-              { value: "dark", label: "Dark" },
+              { value: "light", label: "浅色" },
+              { value: "dark", label: "深色" },
             ]}
             selected={appearance.themeAppearance}
             onSelect={appearance.setThemeMode}
@@ -91,9 +91,9 @@ export function ComponentCatalogScreen() {
         </View>
         <SegmentedControl
           options={[
-            { value: "controls", label: "Controls" },
-            { value: "forms", label: "Forms" },
-            { value: "feedback", label: "Feedback" },
+            { value: "controls", label: "控制" },
+            { value: "forms", label: "表单" },
+            { value: "feedback", label: "反馈" },
           ]}
           selected={page}
           onSelect={setPage}
@@ -102,7 +102,7 @@ export function ComponentCatalogScreen() {
         {page === "controls" ? (
           <>
             <View className="gap-3">
-              <AppText className="text-lg font-t3-semibold">Lists and selection</AppText>
+              <AppText className="text-lg font-t3-semibold">列表和选择</AppText>
               <ListSection>
                 <View className="p-4">
                   <SegmentedControl
@@ -114,21 +114,16 @@ export function ComponentCatalogScreen() {
                     role="tab"
                   />
                 </View>
-                <ListRow icon="folder" label="Projects" detail="4" onPress={() => setSheet(true)} />
+                <ListRow icon="folder" label="项目" detail="4" onPress={() => setSheet(true)} />
                 <ListToggleRow
                   icon="bell.badge"
-                  label="Notifications"
-                  description="Updates from your active threads"
+                  label="通知"
+                  description="活跃会话的更新"
                   value={enabled}
                   onValueChange={setEnabled}
                 />
-                <ListChoiceRow label="Selected option" selected onPress={announceAction} />
-                <ListActionRow
-                  icon="trash"
-                  label="Discard changes"
-                  tone="danger"
-                  onPress={confirm}
-                />
+                <ListChoiceRow label="已选选项" selected onPress={announceAction} />
+                <ListActionRow icon="trash" label="放弃变更" tone="danger" onPress={confirm} />
               </ListSection>
               <SegmentedControl
                 options={CHOICES}
@@ -139,27 +134,27 @@ export function ComponentCatalogScreen() {
               />
               <View className="flex-row flex-wrap gap-2">
                 <Chip
-                  label="Selected filter"
+                  label="已选筛选条件"
                   selected={enabled}
                   onPress={() => setEnabled(!enabled)}
                 />
-                <Chip label="Label" size="small" />
-                <Chip label="Disabled" disabled onPress={announceAction} />
+                <Chip label="名称" size="small" />
+                <Chip label="已停用" disabled onPress={announceAction} />
               </View>
             </View>
             <View className="gap-3">
               <NativeAppBarExample />
-              <AppText className="text-lg font-t3-semibold">Buttons</AppText>
+              <AppText className="text-lg font-t3-semibold">按钮</AppText>
               <View className="flex-row flex-wrap gap-2">
-                <Button label="Primary" tone="primary" onPress={announceAction} />
-                <Button label="Secondary" onPress={announceAction} />
-                <Button label="Contrast" tone="contrast" onPress={announceAction} />
+                <Button label="主要" tone="primary" onPress={announceAction} />
+                <Button label="次要" onPress={announceAction} />
+                <Button label="对比度" tone="contrast" onPress={announceAction} />
               </View>
               <View className="flex-row flex-wrap gap-2">
-                <Button label="Disabled" disabled onPress={announceAction} />
-                <Button label="Loading" loading onPress={announceAction} />
+                <Button label="已停用" disabled onPress={announceAction} />
+                <Button label="正在加载" loading onPress={announceAction} />
                 <IconButton
-                  accessibilityLabel="Open example sheet"
+                  accessibilityLabel="打开面板示例"
                   icon="plus"
                   variant="tonal"
                   onPress={() => setSheet(true)}
@@ -170,28 +165,28 @@ export function ComponentCatalogScreen() {
         ) : null}
         {page === "forms" ? (
           <View className="gap-3">
-            <AppText className="text-lg font-t3-semibold">Forms</AppText>
+            <AppText className="text-lg font-t3-semibold">表单</AppText>
             <AppTextInput
-              accessibilityLabel="Example name"
-              placeholder="Name"
+              accessibilityLabel="名称示例"
+              placeholder="名称"
               value={text}
               onChangeText={setText}
             />
             <View className="flex-row">
               <SearchField
                 inputRef={searchRef}
-                accessibilityLabel="Search examples"
+                accessibilityLabel="搜索示例"
                 clearAccessibilityLabel="Clear examples search"
-                placeholder="Search examples"
+                placeholder="搜索示例"
                 value={search}
                 onChangeText={setSearch}
                 autoFocus={false}
               />
             </View>
             <View className="flex-row items-center justify-between">
-              <AppText>Count</AppText>
+              <AppText>数量</AppText>
               <NumberField
-                label="Example count"
+                label="计数示例"
                 min={1}
                 max={10}
                 value={value}
@@ -201,7 +196,7 @@ export function ComponentCatalogScreen() {
             <ListSection>
               <SliderRow
                 icon="textformat.size"
-                label="Example slider"
+                label="滑块示例"
                 valueLabel={String(value)}
                 min={1}
                 max={10}
@@ -214,55 +209,54 @@ export function ComponentCatalogScreen() {
         ) : null}
         {page === "feedback" ? (
           <View className="gap-3">
-            <AppText className="text-lg font-t3-semibold">Feedback and presentation</AppText>
-            <Notice message="This action could not finish. Try again." tone="danger" />
-            <Button label="Show notice" onPress={announceAction} />
+            <AppText className="text-lg font-t3-semibold">反馈与展示</AppText>
+            <Notice message="操作未完成。请重试。" tone="danger" />
+            <Button label="显示提示" onPress={announceAction} />
             <View className="flex-row flex-wrap gap-2">
-              <Button label="Sheet" onPress={() => setSheet(true)} />
-              <Button label="Dialog" onPress={confirm} />
+              <Button label="底部面板" onPress={() => setSheet(true)} />
+              <Button label="对话框" onPress={confirm} />
               <Button
-                label="Alert"
+                label="提示"
                 onPress={() =>
-                  Dialog.alert("Example alert", "Choose an action.", [
+                  Dialog.alert("提示示例", "请选择操作。", [
                     {
-                      text: "More info",
-                      onPress: () =>
-                        Dialog.alert("More information", "This second alert stays open."),
+                      text: "更多信息",
+                      onPress: () => Dialog.alert("更多信息", "第二条提示保持打开。"),
                     },
-                    { text: "Cancel", style: "cancel" },
-                    { text: "Continue", onPress: announceAction },
+                    { text: "取消", style: "cancel" },
+                    { text: "继续", onPress: announceAction },
                   ])
                 }
               />
               <Button
-                label="Prompt"
+                label="提示词"
                 onPress={() =>
                   Dialog.prompt({
-                    title: "Rename example",
+                    title: "重命名示例",
                     initialValue: text,
-                    confirmText: "Rename",
+                    confirmText: "重命名",
                     onConfirm: setText,
                   })
                 }
               />
               <Menu
-                title="Example menu"
+                title="菜单示例"
                 actions={[
-                  { id: "copy", title: "Copy", image: "doc.on.doc" },
-                  { id: "discard", title: "Discard", attributes: { destructive: true } },
+                  { id: "copy", title: "复制", image: "doc.on.doc" },
+                  { id: "discard", title: "放弃", attributes: { destructive: true } },
                 ]}
                 onPressAction={({ nativeEvent }) =>
                   nativeEvent.event === "discard" ? confirm() : announceAction()
                 }
               >
-                <Chip label="Menu" trailingIcon="chevron.down" />
+                <Chip label="菜单" trailingIcon="chevron.down" />
               </Menu>
             </View>
-            <Progress value={0.6} label="Example upload" />
-            <Progress label="Connecting" />
+            <Progress value={0.6} label="上传示例" />
+            <Progress label="正在连接" />
             <View className="items-start">
               <FloatingActionButton
-                label="New thread"
+                label="新建会话"
                 icon="plus"
                 variant="extended"
                 tone="primary"
@@ -280,11 +274,11 @@ export function ComponentCatalogScreen() {
           pointerEvents="box-none"
         >
           <Toast
-            message="Changes are ready to review."
+            message="变更已准备好，可以审查。"
             tone="success"
             dismissMode="swipe"
             action={{
-              label: "Undo",
+              label: "撤销",
               onPress: () => {
                 setNotice(false);
                 setText("Restored example");
@@ -295,19 +289,19 @@ export function ComponentCatalogScreen() {
         </View>
       ) : null}
       {sheet ? (
-        <Sheet title="Example sheet" onClose={() => setSheet(false)}>
+        <Sheet title="底部面板示例" onClose={() => setSheet(false)}>
           <ScreenScrollView
             contentInsetAdjustmentBehavior="automatic"
             contentContainerClassName="p-4"
           >
             <ListSection>
               <ListChoiceRow
-                label="Overview"
+                label="概览"
                 selected={tab === "overview"}
                 onPress={() => setTab("overview")}
               />
               <ListChoiceRow
-                label="Activity"
+                label="活动"
                 selected={tab === "activity"}
                 onPress={() => setTab("activity")}
               />

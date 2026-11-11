@@ -250,9 +250,9 @@ export const make = Effect.gen(function* BrowserSessionMake() {
     promptPermission(
       requester,
       {
-        buttons: ["Open", "Cancel"],
-        message: `Open this ${new URL(url).protocol.slice(0, -1)} link?`,
-        detail: `A page in the browser wants to open another application:\n\n${truncateForPrompt(url)}`,
+        buttons: ["打开", "取消"],
+        message: `要打开此 ${new URL(url).protocol.slice(0, -1)} 链接吗？`,
+        detail: `浏览器中的网页请求打开其他应用：\n\n${truncateForPrompt(url)}`,
       },
       (answer) => callback(answer === true),
     );
@@ -309,8 +309,8 @@ export const make = Effect.gen(function* BrowserSessionMake() {
             promptPermission(
               requester,
               {
-                buttons: ["Allow", "Block"],
-                message: `${truncateForPrompt(origin)} wants to see text and images copied to the clipboard`,
+                buttons: ["允许", "阻止"],
+                message: `${truncateForPrompt(origin)} 请求读取剪贴板中的文字和图片`,
               },
               (answer) => {
                 if (answer !== undefined) clipboardReadDecisions.set(origin, answer);

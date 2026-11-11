@@ -160,8 +160,8 @@ export function useComposerStash(input: {
     if (filesToVerify.some((file) => file.environmentId !== environmentId)) {
       toastManager.add({
         type: "error",
-        title: "Stashed files belong to another environment",
-        description: "Restore this prompt in the environment that received its files.",
+        title: "存储文件属于另一个环境",
+        description: "在接收文件的环境中恢复此提示。",
       });
       return;
     }
@@ -197,9 +197,8 @@ export function useComposerStash(input: {
     if (!durable) {
       toastManager.add({
         type: "warning",
-        title: "Restored prompt may reappear in the stash",
-        description:
-          "Browser storage rejected the update, so this entry could still be there after a reload.",
+        title: "恢复的提示可能重新出现在隐藏中",
+        description: "浏览器存储器拒绝了更新，因此本条目在重新装入后仍可能存在。",
         data: { hideCopyButton: true },
       });
     }
@@ -405,7 +404,7 @@ export function useComposerStash(input: {
     if (missingImageReasons.length > 0) {
       toastManager.add({
         type: "warning",
-        title: "Some attachments were not restored",
+        title: "未恢复一些附件",
         description: missingImageReasons.join(" "),
       });
     }
@@ -435,9 +434,8 @@ export function useComposerStash(input: {
     if (!durable) {
       toastManager.add({
         type: "warning",
-        title: "Stash entry may come back",
-        description:
-          "Browser storage rejected the delete, so this prompt could reappear after a reload.",
+        title: "Stash 入口可能会回来的",
+        description: "浏览器存储器拒绝删除，因此此提示可以在重新装入后重新出现。",
         data: { hideCopyButton: true },
       });
     }
@@ -450,8 +448,8 @@ export function useComposerStash(input: {
     if (pendingDraftWork.has(attachmentTargetKey)) {
       toastManager.add({
         type: "info",
-        title: "Still bringing attached context into this message.",
-        description: "Stash again once its chip resolves.",
+        title: "仍然将所附的背景纳入这一信息。",
+        description: "它的芯片再次粉碎",
       });
       return;
     }
@@ -486,7 +484,7 @@ export function useComposerStash(input: {
       if (composerFileNeedsReattach(file)) {
         toastManager.add({
           type: "error",
-          title: "Attach dropped files again or remove them before stashing",
+          title: "再次附加已丢弃的文件，或是在隐藏前将其删除",
         });
         return;
       }
@@ -494,7 +492,7 @@ export function useComposerStash(input: {
       if (upload?.status !== "ready" || upload.environmentId !== environmentId) {
         toastManager.add({
           type: "error",
-          title: "Wait for file uploads before stashing this prompt",
+          title: "待文件上传后再隐藏此提示",
         });
         return;
       }
@@ -543,9 +541,8 @@ export function useComposerStash(input: {
       if (!written) {
         toastManager.add({
           type: "error",
-          title: "Could not stash this prompt",
-          description:
-            "Browser storage rejected the write, so the composer was left as-is. Free up site data and try again.",
+          title: "无法隐藏此提示",
+          description: "浏览器存储器拒绝写入，因此消息输入框被保留为-is。 释放站点数据并再次尝试。",
           data: { hideCopyButton: true },
         });
         return;
@@ -553,9 +550,8 @@ export function useComposerStash(input: {
       if (!durable) {
         toastManager.add({
           type: "warning",
-          title: "Stashed prompt will not survive a reload",
-          description:
-            "Browser storage is unavailable, so this stash is kept in memory only for this session.",
+          title: "被困的急件无法幸存",
+          description: "浏览器存储器无法使用，因此此存储只保存为内存中。",
           data: { hideCopyButton: true },
         });
       }
@@ -589,8 +585,8 @@ export function useComposerStash(input: {
         }
         toastManager.add({
           type: "warning",
-          title: "Oldest stashed prompt discarded",
-          description: `The stash holds ${MAX_STASH_ENTRIES} prompts; the oldest was removed to make room.`,
+          title: "最旧的隐藏提示已丢弃",
+          description: `藏书的${MAX_STASH_ENTRIES} 提示;最老的被移走以腾出空间。`,
           data: { hideCopyButton: true },
         });
       }
@@ -631,17 +627,16 @@ export function useComposerStash(input: {
         if (!imagesDurable && durable && images.length > 0) {
           toastManager.add({
             type: "warning",
-            title: "Stashed images were not saved",
-            description:
-              "The prompt was stashed, but browser storage rejected its images. They will be missing if you reload.",
+            title: "未保存已封存的图像",
+            description: "提示被隐藏，但浏览器存储拒绝其图像。如果您重新装入，将丢失它们。",
             data: { hideCopyButton: true },
           });
         }
       } else if (kept.length > 0) {
         toastManager.add({
           type: "warning",
-          title: "Stashed images did not attach",
-          description: `That prompt was restored or deleted before ${kept.length} image${kept.length === 1 ? "" : "s"} finished saving. Re-attach ${kept.length === 1 ? "it" : "them"} if you still need ${kept.length === 1 ? "it" : "them"}.`,
+          title: "已封存的图像没有附加",
+          description: `此提示词恢复或移除时，有 ${kept.length} 张图片尚未保存。如果仍需要这些图片，请重新添加。`,
           data: { hideCopyButton: true },
         });
       }

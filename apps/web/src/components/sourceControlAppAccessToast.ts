@@ -19,14 +19,14 @@ export async function suggestAppAccessForRemote(
     appAtomRegistry,
     sourceControlEnvironment.checkAppAccess,
     { environmentId, input: target.input },
-    { label: "check app access", reportFailure: false, reportDefect: false },
+    { label: "检查应用程序访问", reportFailure: false, reportDefect: false },
   );
   if (result._tag !== "Success" || result.value.status !== "not-covered") return;
   const owner = target.input.repository.split("/")[0] ?? target.input.repository;
   const id = toastManager.add({
     type: "info",
     title: `Give ${target.appSignIn.appName} access to ${owner}`,
-    description: `It isn't installed there, so GitHub requests for ${target.input.repository} use your own login and its lower rate limit.`,
+    description: `它没有安装在那里，所以GitHub 请求${target.input.repository} 使用您自己的登录和它的下限速率。`,
     actionProps: {
       children: "Install",
       onClick: () => {

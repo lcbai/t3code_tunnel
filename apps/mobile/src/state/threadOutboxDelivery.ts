@@ -79,7 +79,6 @@ import {
   getComposerDraftSnapshot,
   mergeComposerDraftContent,
   replaceComposerDraftAttachments,
-  removeDeliveredCloudQueuedMessage,
   undoComposerDraftMerge,
   updateComposerDraftSettings,
   waitForComposerDraftsLoaded,
@@ -258,12 +257,6 @@ export async function completeQueuedMessageDelivery(
     queuedMessage.messageId,
   );
   try {
-    await removeDeliveredCloudQueuedMessage(queuedMessage).catch((error) => {
-      console.warn("[thread-outbox] could not update sign-out snapshot after delivery", {
-        messageId: queuedMessage.messageId,
-        error,
-      });
-    });
     // Editors can acquire entries during startTurn without bumping revisions; CAS alone would lose unsaved edits.
     if (appAtomRegistry.get(editingQueuedMessageIdsAtom)[queuedMessage.messageId]) {
       return "edited";
@@ -303,12 +296,6 @@ export async function removeAcknowledgedExistingThreadMessage(
   acknowledgedMessageIds: Set<MessageId>,
 ): Promise<boolean> {
   try {
-    await removeDeliveredCloudQueuedMessage(queuedMessage).catch((error) => {
-      console.warn("[thread-outbox] could not update sign-out snapshot after delivery", {
-        messageId: queuedMessage.messageId,
-        error,
-      });
-    });
     const removed = await removeThreadOutboxMessage(queuedMessage);
     if (removed) {
       acknowledgedMessageIds.delete(queuedMessage.messageId);
@@ -655,7 +642,7 @@ function reportCommandFailure(
   });
   return {
     action,
-    message: error instanceof Error ? error.message : "The message could not be sent.",
+    message: error instanceof Error ? error.message : "无法发送消息。",
   };
 }
 
@@ -1423,14 +1410,10 @@ export function createThreadOutboxDelivery(): {
 function loadThreadOutbox(isActive: () => boolean): void {
   void threadOutboxManager.load().then((loaded) => {
     if (loaded || !isActive()) return;
-    Dialog.alert(
-      "Some queued messages could not be loaded",
-      "Unreadable records and attachment files are still saved. Other messages can still be sent.",
-      [
-        { text: "Dismiss", style: "cancel" },
-        { text: "Retry", onPress: () => loadThreadOutbox(isActive) },
-      ],
-    );
+    Dialog.alert("部分待发送消息无法加载", "无法读取的记录和附件仍然保留。其他消息仍可发送。", [
+      { text: "关闭", style: "cancel" },
+      { text: "重试", onPress: () => loadThreadOutbox(isActive) },
+    ]);
   });
 }
 

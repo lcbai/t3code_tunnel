@@ -8,9 +8,9 @@ export function navigationCustomizationAvailable(
 }
 
 export const NAVIGATION_TAB_LABELS: Readonly<Record<NavigationTab, string>> = {
-  threads: "Threads",
-  pullRequests: "Pulls",
-  usage: "Usage",
+  threads: "会话",
+  pullRequests: "拉取请求",
+  usage: "用量",
 };
 
 function isNavigationTab(value: unknown): value is NavigationTab {

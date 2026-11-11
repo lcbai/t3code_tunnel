@@ -3,9 +3,8 @@ import { ScreenScrollView as ScrollView } from "../../components/ui/ScreenScroll
 import * as Application from "expo-application";
 import Constants from "expo-constants";
 import * as Updates from "expo-updates";
-import { useAtomSet, useAtomValue } from "@effect/atom-react";
+import { useAtomValue } from "@effect/atom-react";
 import * as Effect from "effect/Effect";
-import * as Exit from "effect/Exit";
 import * as Schema from "effect/Schema";
 import { AsyncResult, Atom } from "effect/reactivity";
 import { useState } from "react";
@@ -15,12 +14,9 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { SymbolView } from "../../components/ui/AppSymbol";
 import { AppText as Text } from "../../components/ui/AppText";
 import { tryCopyTextWithHaptic } from "../../lib/copyTextWithHaptic";
-import { mobilePreferencesAtom, updateMobilePreferencesAtom } from "../../state/preferences";
-import { crashReportingAvailable, setCrashReportsEnabled } from "../observability/observe";
 import { ListActionRow as SettingsActionRow } from "../../components/ui/ListActionRow";
 import { SettingsScreen } from "../settings/components/SettingsScreen";
 import { SettingsSection } from "../settings/components/SettingsSection";
-import { SettingsSwitchRow } from "../settings/components/SettingsSwitchRow";
 import {
   formatStartupCrashReport,
   parseStartupCrashRecords,
@@ -93,7 +89,7 @@ export function SettingsDiagnosticsRouteScreen() {
   };
 
   return (
-    <SettingsScreen title="Diagnostics">
+    <SettingsScreen title="诊断">
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         contentInset={{ bottom: Math.max(insets.bottom, 18) }}
@@ -101,25 +97,23 @@ export function SettingsDiagnosticsRouteScreen() {
         className="flex-1"
         contentContainerClassName="gap-6 px-5 pt-4 pb-[18px]"
       >
-        {crashReportingAvailable ? <CrashReportsSetting /> : null}
-
-        <SettingsSection title="Startup crashes">
+        <SettingsSection title="启动崩溃">
           {state.status === "loading" ? (
             <View className="items-center gap-3 px-6 py-8">
               <AppActivityIndicator />
-              <Text className="text-center text-sm text-foreground-muted">Reading crash log…</Text>
+              <Text className="text-center text-sm text-foreground-muted">正在读取崩溃日志…</Text>
             </View>
           ) : state.status === "unavailable" ? (
             <EmptyState
               icon="exclamationmark.triangle"
-              title="Crash log unavailable"
-              detail="Startup crash records are only kept in store and TestFlight builds."
+              title="崩溃日志不可用"
+              detail="仅在应用商店和 TestFlight 版本中记录启动崩溃。"
             />
           ) : records.length === 0 ? (
             <EmptyState
               icon="checkmark.circle"
-              title="No startup crashes"
-              detail="Nothing has taken the app down during launch in the last 7 days."
+              title="没有启动崩溃记录"
+              detail="最近 7 天没有发生启动崩溃。"
             />
           ) : (
             records.map((record, index) => (
@@ -129,70 +123,21 @@ export function SettingsDiagnosticsRouteScreen() {
         </SettingsSection>
 
         <View className="gap-3">
-          <SettingsSection title="Actions">
+          <SettingsSection title="操作">
             <SettingsActionRow
               icon={copied ? "checkmark" : "doc.on.doc"}
-              label={copied ? "Copied" : "Copy crash report"}
+              label={copied ? "已复制" : "复制崩溃报告"}
               disabled={state.status !== "ready"}
               onPress={() => void copyReport()}
             />
           </SettingsSection>
           <Text className="px-2 text-sm leading-normal text-foreground-muted">
-            Paste the report into a GitHub issue. It contains the app version, the JavaScript error
-            message, and the component stack. Error messages can quote values from the app, so read
-            it over before sharing.
+            将报告粘贴到 GitHub 问题中。报告包含应用版本、JavaScript
+            错误消息和组件堆栈。错误消息可能包含应用内的数据，请在分享前检查。
           </Text>
         </View>
       </ScrollView>
     </SettingsScreen>
-  );
-}
-
-function CrashReportsSetting() {
-  const preferences = useAtomValue(mobilePreferencesAtom);
-  const savePreferences = useAtomSet(updateMobilePreferencesAtom, { mode: "promiseExit" });
-  // One change at a time, so a slow save never turns sending back on after a later opt-out.
-  const [saving, setSaving] = useState(false);
-  const ready = AsyncResult.isSuccess(preferences) && !preferences.waiting;
-  const enabled = AsyncResult.isSuccess(preferences)
-    ? preferences.value.crashReportsEnabled !== false
-    : true;
-
-  const change = (value: boolean) => {
-    setSaving(true);
-    // Sending stops before the save and starts only after it.
-    if (!value) void setCrashReportsEnabled(false);
-    savePreferences({ crashReportsEnabled: value })
-      .then((exit) => {
-        if (Exit.isFailure(exit)) {
-          console.warn("[diagnostics] could not save the crash report setting", exit.cause);
-          return value ? undefined : setCrashReportsEnabled(true);
-        }
-        return value ? setCrashReportsEnabled(true) : undefined;
-      })
-      .catch((error: unknown) => {
-        console.warn("[diagnostics] could not apply the crash report setting", error);
-      })
-      .finally(() => setSaving(false));
-  };
-
-  return (
-    <View className="gap-3">
-      <SettingsSection title="Crash reports">
-        <SettingsSwitchRow
-          icon="tray.and.arrow.up"
-          label="Send crash reports"
-          disabled={!ready || saving}
-          value={enabled}
-          onValueChange={change}
-        />
-      </SettingsSection>
-      <Text className="px-2 text-sm leading-normal text-foreground-muted">
-        When the app crashes or hits an error, it sends the error message, the stack trace, the app
-        version, and the device model and OS version to the T3 Code team. Each launch also sends
-        startup timings. Reports carry a random ID for this install.
-      </Text>
-    </View>
   );
 }
 
@@ -221,7 +166,7 @@ function CrashRow(props: { readonly record: StartupCrashRecord; readonly first: 
   return (
     <View className={props.first ? "gap-1.5 p-4" : "gap-1.5 border-t border-border-subtle p-4"}>
       <Text className="text-xs text-foreground-muted">
-        {new Date(record.timestamp).toLocaleString()}
+        {new Date(record.timestamp).toLocaleString("zh-CN")}
       </Text>
       <Text selectable className="text-base leading-snug text-danger-foreground">
         {record.description}

@@ -270,7 +270,7 @@ export function ComposerSpeechRecordingPill(props: {
           onClick={props.onSkipPostProcessing}
           className="shrink-0"
         >
-          Skip
+          跳过
         </Button>
       ) : (
         <Tooltip>

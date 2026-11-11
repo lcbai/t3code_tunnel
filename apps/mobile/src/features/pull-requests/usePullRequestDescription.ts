@@ -41,10 +41,7 @@ export function usePullRequestDescription(
     setDraft((current) => settleDescriptionSave(current, detail.url, saved));
     if (AsyncResult.isFailure(response)) {
       const cause = squashAtomCommandFailure(response);
-      Dialog.alert(
-        "Could not save the description",
-        cause instanceof Error ? cause.message : "Try again.",
-      );
+      Dialog.alert("无法保存描述", cause instanceof Error ? cause.message : "请重试。");
     }
     if (savesRunning.current === 0) refreshDetail();
   };

@@ -156,7 +156,7 @@ function groupLabel(
 
 function emptyText(triggerKind: ComposerTriggerKind | null, isLoading: boolean): string {
   if (isLoading) {
-    return triggerKind === "path" ? "Searching files…" : "Loading…";
+    return triggerKind === "path" ? "正在搜索文件…" : "正在加载…";
   }
   switch (triggerKind) {
     case "pull-request":

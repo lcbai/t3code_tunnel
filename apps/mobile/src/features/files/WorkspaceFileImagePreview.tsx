@@ -25,10 +25,8 @@ function ResolvedWorkspaceFileImagePreview(props: {
       <MediaActionsMenu media={mediaActions} style={{ flex: 1 }}>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={`Open full-screen preview of ${props.accessibilityLabel}`}
-          accessibilityHint={
-            mediaActions.actions.length > 0 ? "Touch and hold for media actions" : undefined
-          }
+          accessibilityLabel={`全屏预览 ${props.accessibilityLabel}`}
+          accessibilityHint={mediaActions.actions.length > 0 ? "长按查看媒体操作" : undefined}
           disabled={loadError !== null}
           className="flex-1 p-4 active:bg-subtle-strong"
           onPress={() =>
@@ -60,7 +58,7 @@ function ResolvedWorkspaceFileImagePreview(props: {
           pointerEvents="none"
           className="absolute inset-0 items-center justify-center bg-card px-6"
         >
-          <EmptyState title="Image unavailable" detail={loadError} />
+          <EmptyState title="图片不可用" detail={loadError} />
         </View>
       ) : null}
       <FilePreviewModal source={preview} onRequestClose={() => setPreview(null)} />
@@ -74,7 +72,7 @@ export function WorkspaceFileImagePreview(props: {
   readonly actionsSource?: MediaActionsSource;
 }) {
   if (props.uri === null) {
-    return <FilePreviewLoading message="Preparing image preview..." background="card" />;
+    return <FilePreviewLoading message="正在准备图片预览…" background="card" />;
   }
 
   return (

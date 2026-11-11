@@ -2,8 +2,6 @@ import { RegistryContext } from "@effect/atom-react";
 import {
   AuthOrchestrationOperateScope,
   AuthOrchestrationReadScope,
-  AuthRelayReadScope,
-  AuthRelayWriteScope,
   EnvironmentId,
   ProjectId,
   ProviderDriverKind,
@@ -11,7 +9,6 @@ import {
   type AgentSessionProjectCandidate,
   type AuthEnvironmentScope,
   type AuthSessionState,
-  type EnvironmentCloudLinkStateResult,
   type ServerProvider,
 } from "@t3tools/contracts";
 import { AsyncResult, Atom } from "effect/reactivity";
@@ -40,11 +37,6 @@ const state = vi.hoisted(() => ({
   scan: vi.fn(),
   refreshScan: vi.fn(),
   waitForProject: vi.fn(),
-  cloud: false,
-  auth: { isLoaded: true, isSignedIn: false, userId: null as string | null },
-  linkState: null as unknown,
-  linkError: null as string | null,
-  refreshLinkState: vi.fn(),
   scanError: null as string | null,
   scanPending: false,
 }));
@@ -56,30 +48,6 @@ vi.mock(import("@t3tools/client-runtime/state/session"), async (original) => {
     createEnvironmentSessionAtoms: ((runtime: never) => ({
       ...actual.createEnvironmentSessionAtoms(runtime),
       sessionStateAtom: (id: EnvironmentId) => state.sessions.get(id),
-    })) as never,
-  };
-});
-vi.mock(import("../../cloud/publicConfig"), async (original) => ({
-  ...(await original()),
-  hasCloudPublicConfig: () => state.cloud,
-}));
-vi.mock(import("@clerk/react"), async (original) => ({
-  ...(await original()),
-  useAuth: (() => state.auth) as never,
-}));
-vi.mock(import("../clerk/useT3ConnectAuthPrompt"), async (original) => ({
-  ...(await original()),
-  useT3ConnectAuthPrompt: (() => ({ openAuthPrompt: () => {} })) as never,
-}));
-vi.mock(import("../../cloud/cloudLinkState"), async (original) => {
-  const { useAtomValue } = await import("@effect/atom-react");
-  return {
-    ...(await original()),
-    useCloudLinkState: (() => ({
-      data: useAtomValue(state.linkState as Atom.Atom<EnvironmentCloudLinkStateResult | null>),
-      error: state.linkError,
-      isPending: false,
-      refresh: state.refreshLinkState,
     })) as never,
   };
 });
@@ -169,7 +137,7 @@ const readyClaude: ServerProvider = {
   slashCommands: [],
   skills: [],
 };
-const permissionMessage = "This connection cannot import projects or thread history.";
+const permissionMessage = "当前连接无法导入项目或会话历史。";
 
 function session(scopes: ReadonlyArray<AuthEnvironmentScope>): AuthSessionState {
   return {
@@ -316,11 +284,6 @@ function setup() {
   state.scan.mockReset();
   state.refreshScan.mockReset();
   state.waitForProject.mockReset().mockImplementation(waitForRecordedProject);
-  state.cloud = false;
-  state.auth = { isLoaded: true, isSignedIn: false, userId: null };
-  state.linkState = Atom.make<EnvironmentCloudLinkStateResult | null>(null).pipe(Atom.keepAlive);
-  state.linkError = null;
-  state.refreshLinkState.mockReset();
   state.scanError = null;
   state.scanPending = false;
   localStorage.removeItem(welcomeImportSelectionKey(primaryId));
@@ -335,7 +298,7 @@ it("rechecks after project creation and can retry its history without recreating
     return recordProject(input);
   });
   await using _screen = await mountWelcome();
-  await click("Import 2 projects and start");
+  await click("导入 2 个项目并开始");
   expect(state.createProject).toHaveBeenCalledOnce();
   await act(async () => {
     setGrant(primaryId, false);
@@ -349,7 +312,7 @@ it("rechecks after project creation and can retry its history without recreating
 
   await act(async () => setGrant(primaryId, true));
   // The first project now exists, so only the second counts as new.
-  await click("Import 1 project and start");
+  await click("导入 1 个项目并开始");
   expect(state.createProject).toHaveBeenCalledTimes(2);
   expect(state.importThreads).toHaveBeenCalledTimes(2);
   expect(state.onDone).toHaveBeenCalledOnce();
@@ -363,7 +326,7 @@ it("completes accepted imports when permission is revoked after the final server
     AsyncResult.success(await imported.promise),
   );
   await using _screen = await mountWelcome();
-  await click("Import 1 project and start");
+  await click("导入 1 个项目并开始");
   await act(async () => {
     setGrant(primaryId, false);
     imported.resolve({ importedCount: 1, skippedCount: 0 });
@@ -385,19 +348,19 @@ it("finishes setup without landing when the imported project never reaches the c
   await using _screen = await mountWelcome();
   using toastAdd = vi.spyOn(toastManager, "add");
 
-  await click("Import 1 project and start");
+  await click("导入 1 个项目并开始");
   await vi.waitFor(() => expect(state.completeOnboarding).toHaveBeenCalledOnce());
   // A failed completion hands the step back instead of leaving it importing.
-  await vi.waitFor(() => expect(button("Import 1 project and start").disabled).toBe(false));
+  await vi.waitFor(() => expect(button("导入 1 个项目并开始").disabled).toBe(false));
   expect(state.onDone).not.toHaveBeenCalled();
 
-  await click("Import 1 project and start");
+  await click("导入 1 个项目并开始");
   await vi.waitFor(() => expect(state.onDone).toHaveBeenCalledOnce());
   expect(state.onDone).toHaveBeenCalledWith(undefined);
   // The retry skips the project it already imported, but still counts its thread.
   await vi.waitFor(() =>
     expect(toastAdd).toHaveBeenCalledWith(
-      expect.objectContaining({ type: "success", title: "Imported 1 thread" }),
+      expect.objectContaining({ type: "success", title: "已导入 1 个会话" }),
     ),
   );
 });
@@ -406,9 +369,9 @@ it("waits for a ready agent to start, and Start without an agent still finishes 
   using _now = setup();
   appAtomRegistry.set(state.providers as Atom.Writable<ReadonlyArray<ServerProvider>>, []);
   await using _screen = await mountWelcome();
-  expect(button("Import 2 projects and start").disabled).toBe(true);
+  expect(button("导入 2 个项目并开始").disabled).toBe(true);
 
-  await click("Start without an agent");
+  await click("暂不设置代理");
   await vi.waitFor(() => expect(state.onDone).toHaveBeenCalledOnce());
   expect(state.createProject).toHaveBeenCalledTimes(2);
 });
@@ -428,7 +391,7 @@ it("blocks leaving the page until the imported projects have landed", async () =
     },
   );
   await using screen = await mountWelcome();
-  await click("Import 2 projects and start");
+  await click("导入 2 个项目并开始");
 
   // A blocked navigation never settles, so it is not awaited.
   const leave = () =>
@@ -475,15 +438,15 @@ it("gives projects a later scan finds the default, unless the main box was unche
       ]),
     );
 
-  await click("Review all 2");
-  await click("Select none");
+  await click("查看全部 2 项");
+  await click("取消全选");
   await findProject("/projects/third");
-  await vi.waitFor(() => expect(button("Import 1 project and start").disabled).toBe(false));
+  await vi.waitFor(() => expect(button("导入 1 个项目并开始").disabled).toBe(false));
 
   const importProjects = document.querySelector<HTMLElement>('[role="checkbox"]');
   await act(async () => importProjects?.click());
   await findProject("/projects/fourth");
-  await vi.waitFor(() => expect(button("Start").disabled).toBe(false));
+  await vi.waitFor(() => expect(button("开始").disabled).toBe(false));
 });
 
 it("keeps the project choice across a visit to Settings until setup finishes", async () => {
@@ -492,18 +455,18 @@ it("keeps the project choice across a visit to Settings until setup finishes", a
     await using _first = await mountWelcome();
     const importProjects = document.querySelector<HTMLElement>('[role="checkbox"]');
     await act(async () => importProjects?.click());
-    await vi.waitFor(() => expect(button("Start").disabled).toBe(false));
+    await vi.waitFor(() => expect(button("开始").disabled).toBe(false));
   }
   // Coming back from Settings mounts the page again.
   {
     await using _second = await mountWelcome();
-    expect(button("Start").disabled).toBe(false);
-    await click("Start");
+    expect(button("开始").disabled).toBe(false);
+    await click("开始");
     await vi.waitFor(() => expect(state.onDone).toHaveBeenCalledOnce());
     expect(state.createProject).not.toHaveBeenCalled();
   }
   await using _third = await mountWelcome();
-  expect(button("Import 2 projects and start").disabled).toBe(false);
+  expect(button("导入 2 个项目并开始").disabled).toBe(false);
 });
 
 it("stays busy while setup saves after an import with nothing to open", async () => {
@@ -514,9 +477,9 @@ it("stays busy while setup saves after an import with nothing to open", async ()
   state.completeOnboarding.mockImplementationOnce(() => saved.promise);
   await using _screen = await mountWelcome();
 
-  await click("Import 1 project and start");
+  await click("导入 1 个项目并开始");
   await vi.waitFor(() => expect(state.completeOnboarding).toHaveBeenCalledOnce());
-  expect(button("Importing…").disabled).toBe(true);
+  expect(button("正在导入…").disabled).toBe(true);
   await act(async () => {
     saved.resolve();
     await saved.promise;
@@ -541,7 +504,7 @@ it("leaves projects already in T3 Code out of the default import, unless the box
   ]);
   {
     await using _screen = await mountWelcome();
-    await vi.waitFor(() => expect(pageText()).toContain("Import 1 project and their threads"));
+    await vi.waitFor(() => expect(pageText()).toContain("导入 1 个项目及其会话"));
   }
 
   // With every project already in T3 Code, checking the box still picks them.
@@ -549,8 +512,8 @@ it("leaves projects already in T3 Code out of the default import, unless the box
   await using _screen = await mountWelcome();
   const importProjects = document.querySelector<HTMLElement>('[role="checkbox"]');
   await act(async () => importProjects?.click());
-  await vi.waitFor(() => expect(pageText()).toContain("Import 2 projects and their threads"));
-  expect(button("Import threads and start").disabled).toBe(false);
+  await vi.waitFor(() => expect(pageText()).toContain("导入 2 个项目及其会话"));
+  expect(button("导入会话并启动").disabled).toBe(false);
 });
 
 it("keeps the started projects checked when the page opens again after a quit", async () => {
@@ -561,7 +524,7 @@ it("keeps the started projects checked when the page opens again after a quit", 
   );
   {
     await using _first = await mountWelcome();
-    await click("Import 2 projects and start");
+    await click("导入 2 个项目并开始");
     await vi.waitFor(() => expect(state.importThreads).toHaveBeenCalledOnce());
   }
   // The app quit during the first project's history; it now exists in T3 Code.
@@ -571,7 +534,7 @@ it("keeps the started projects checked when the page opens again after a quit", 
     candidate("/projects/second"),
   ]);
   await using _second = await mountWelcome();
-  await vi.waitFor(() => expect(pageText()).toContain("Import 2 projects and their threads"));
+  await vi.waitFor(() => expect(pageText()).toContain("导入 2 个项目及其会话"));
 });
 
 it("keeps the project controls when a later scan fails", async () => {
@@ -581,9 +544,9 @@ it("keeps the project controls when a later scan fails", async () => {
   await act(async () =>
     appAtomRegistry.set(candidatesAtom(), [...appAtomRegistry.get(candidatesAtom())]),
   );
-  await vi.waitFor(() => expect(pageText()).toContain("Could not check projects again."));
-  expect(button("Import 2 projects and start").disabled).toBe(false);
-  expect(button("Retry").disabled).toBe(false);
+  await vi.waitFor(() => expect(pageText()).toContain("无法再次检查项目。"));
+  expect(button("导入 2 个项目并开始").disabled).toBe(false);
+  expect(button("重试").disabled).toBe(false);
 });
 
 it("keeps saved picks when Start comes before the project list loads", async () => {
@@ -593,7 +556,7 @@ it("keeps saved picks when Start comes before the project list loads", async () 
   state.scanPending = true;
   await using _screen = await mountWelcome();
 
-  await click("Start");
+  await click("开始");
   await vi.waitFor(() => expect(state.onDone).toHaveBeenCalledOnce());
   // An import a quit cut short is still checked on the next visit.
   expect(localStorage.getItem(welcomeImportSelectionKey(primaryId))).toBe(saved);
@@ -615,10 +578,10 @@ it("offers Update for a signed-in agent whose version is broken, and keeps Start
   await using _screen = await mountWelcome();
   await vi.waitFor(() => expect(pageText()).toContain("Update Claude Code to 2.0 or later."));
   const update = [...document.querySelectorAll("a")].find(
-    (element) => element.textContent?.trim() === "Update",
+    (element) => element.textContent?.trim() === "更新",
   );
   expect(update?.getAttribute("href")).toContain("/settings/providers");
-  expect(button("Import 2 projects and start").disabled).toBe(true);
+  expect(button("导入 2 个项目并开始").disabled).toBe(true);
 });
 
 it("keeps an import opt-out on the page when storage cannot save it", async () => {
@@ -630,7 +593,7 @@ it("keeps an import opt-out on the page when storage cannot save it", async () =
   const importProjects = document.querySelector<HTMLElement>('[role="checkbox"]');
   await act(async () => importProjects?.click());
 
-  await click("Start");
+  await click("开始");
   await vi.waitFor(() => expect(state.onDone).toHaveBeenCalledOnce());
   expect(state.createProject).not.toHaveBeenCalled();
 });
@@ -654,7 +617,7 @@ it("opens the list of agents to add once the checks find none, even after a wron
   );
   const fold = () =>
     [...document.querySelectorAll("button")].find((element) =>
-      element.textContent?.startsWith("Set up an agent"),
+      element.textContent?.startsWith("设置代理"),
     );
   await vi.waitFor(() => expect(fold()?.getAttribute("aria-expanded")).toBe("true"));
 
@@ -671,71 +634,9 @@ it("starts without importing when this connection cannot import projects", async
   using _now = setup();
   setGrant(primaryId, false);
   await using _screen = await mountWelcome();
-  expect(pageText()).not.toContain("Review all");
+  expect(pageText()).not.toContain("查看全部");
 
-  await click("Start");
+  await click("开始");
   await vi.waitFor(() => expect(state.onDone).toHaveBeenCalledOnce());
   expect(state.createProject).not.toHaveBeenCalled();
-});
-
-it("says the phone is set up only once this computer is shared with the signed-in account", async () => {
-  using _now = setup();
-  state.cloud = true;
-  state.auth = { isLoaded: true, isSignedIn: true, userId: "user_1" };
-  appAtomRegistry.set(
-    sessionAtom(primaryId),
-    AsyncResult.success(
-      session([AuthOrchestrationOperateScope, AuthRelayReadScope, AuthRelayWriteScope]),
-    ),
-  );
-  state.linkError = "Could not read T3 Connect link state.";
-  await using _screen = await mountWelcome();
-  await click("Set up");
-  // A failed read says so instead of asking to share the computer again.
-  await vi.waitFor(() => expect(pageText()).toContain("Could not check T3 Connect."));
-  expect(pageText()).not.toContain("Set up T3 Connect");
-
-  state.linkError = null;
-  await act(async () =>
-    appAtomRegistry.set(state.linkState as Atom.Writable<EnvironmentCloudLinkStateResult | null>, {
-      linked: false,
-      cloudUserId: null,
-      relayUrl: null,
-      relayIssuer: null,
-      publishAgentActivity: false,
-    }),
-  );
-  // Signed in, but "Not now" on the share step left this computer unreachable.
-  await vi.waitFor(() => expect(pageText()).toContain("Set up T3 Connect"));
-
-  const share = (reachability: EnvironmentCloudLinkStateResult["reachability"]) =>
-    act(async () =>
-      appAtomRegistry.set(
-        state.linkState as Atom.Writable<EnvironmentCloudLinkStateResult | null>,
-        {
-          linked: true,
-          cloudUserId: "user_1",
-          relayUrl: null,
-          relayIssuer: null,
-          managedTunnelActive: true,
-          publishAgentActivity: true,
-          reachability,
-        },
-      ),
-    );
-  const checkedAt = "2026-01-01T00:00:00.000Z";
-  await share({
-    status: "unreachable",
-    checkedAt,
-    cause: "connector_not_running",
-    reason: "The tunnel is not running.",
-    hint: null,
-    fix: "Turn T3 Connect off and on.",
-  });
-  await vi.waitFor(() => expect(pageText()).toContain("Check T3 Connect"));
-  expect(pageText()).not.toContain("Your phone can reach this computer.");
-
-  await share({ status: "reachable", checkedAt, readyConnections: 4, protocol: "quic" });
-  await vi.waitFor(() => expect(pageText()).toContain("Your phone can reach this computer."));
-  expect(pageText()).not.toContain("Check T3 Connect");
 });

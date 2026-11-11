@@ -34,9 +34,7 @@ export function DeviceLoadingView(props: {
         {!props.error ? (
           <div
             className="flex w-24 gap-1"
-            aria-label={
-              props.stage === "opening" ? "Step 1 of 2: open device" : "Step 2 of 2: connect video"
-            }
+            aria-label={props.stage === "opening" ? "第2步:打开设备" : "第2步:连接视频"}
           >
             <span className="h-1 flex-1 rounded-full bg-foreground/60" />
             <span

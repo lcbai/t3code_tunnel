@@ -159,8 +159,8 @@ export function ZoomableImage({
       <div
         ref={attachViewport}
         role="region"
-        aria-label={`${name}, zoomable image`}
-        aria-description="Click to zoom in or return to fit. Pinch or Ctrl+scroll to zoom, scroll or drag to pan. Use Enter to toggle zoom, plus or minus to zoom, and 0 to fit."
+        aria-label={`${name}，可缩放的图片`}
+        aria-description="单击可缩放或返回适中。 Pinch 或 Ctrl+scroll 缩放、滚动或拖曳到平板。使用 Enter 来切换适中缩放，增减适中缩放, 0 适中。"
         tabIndex={0}
         className="max-w-[var(--media-width)] overflow-auto overscroll-contain rounded-lg bg-background shadow-2xl ring-1 ring-border/70 outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:-outline-offset-2 focus-visible:outline-ring"
         style={{
@@ -254,7 +254,7 @@ export function ZoomableImage({
         />
       </div>
       <span className="sr-only" aria-live="polite">
-        {Math.round(zoom * 100)}% zoom
+        {Math.round(zoom * 100)}缩放%
       </span>
     </div>
   );

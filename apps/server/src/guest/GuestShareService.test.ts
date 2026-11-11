@@ -17,6 +17,7 @@ import {
   ThreadId,
   TurnItemId,
 } from "@t3tools/contracts";
+import * as ConfigProvider from "effect/ConfigProvider";
 import * as Context from "effect/Context";
 import * as DateTime from "effect/DateTime";
 import * as Deferred from "effect/Deferred";
@@ -38,7 +39,6 @@ import {
   sweepStalePendingAttachments,
 } from "../attachmentStore.ts";
 import * as ServerSecretStore from "../auth/ServerSecretStore.ts";
-import { CloudManagedEndpointRuntime } from "../cloud/ManagedEndpointRuntime.ts";
 import * as ServerConfig from "../config.ts";
 import * as SqlitePersistence from "../persistence/Sqlite.ts";
 import { CodexProviderCapabilitiesV2 } from "../orchestration-v2/Adapters/CodexAdapterV2.ts";
@@ -76,16 +76,6 @@ const layerOrchestration = Layer.mergeAll(
   ),
 );
 
-// The Connect hostname the fake tunnel reports. Tests set it to null to simulate an unlink.
-const hostname = Ref.makeUnsafe<string | null>("env.t3.test");
-const layerConnect = Layer.mock(CloudManagedEndpointRuntime)({
-  inspectConnector: Effect.map(Ref.get(hostname), (value) => ({
-    pid: 1,
-    readyConnections: 1,
-    hostname: value,
-    protocol: "http2",
-  })),
-});
 const layerProviders = Layer.mock(ProviderRegistry.ProviderRegistry)({
   getProviders: Effect.succeed([]),
 });
@@ -143,7 +133,12 @@ const layerTest = GuestShareService.layer.pipe(
   ),
   Layer.provide(layerProviders),
   Layer.provideMerge(ServerSettings.layerTest({ guestSharingEnabled: true })),
-  Layer.provide(layerConnect),
+  Layer.provide(
+    Layer.succeed(
+      ConfigProvider.ConfigProvider,
+      ConfigProvider.fromEnv({ env: { T3CODE_GUEST_SHARE_ORIGIN: "https://env.t3.test" } }),
+    ),
+  ),
   Layer.provideMerge(layerAnalytics),
   Layer.provide(ServerSecretStore.layer),
   Layer.provideMerge(layerConfig),
@@ -153,7 +148,6 @@ const layerTest = GuestShareService.layer.pipe(
 const threadId = ThreadId.make("thread:guest-share-service");
 
 const shareThreadFor = Effect.fn(function* (threadId: ThreadId) {
-  yield* Ref.set(hostname, "env.t3.test");
   const orchestrator = yield* Orchestrator.OrchestratorV2;
   yield* orchestrator.dispatch({
     type: "thread.create",
@@ -299,42 +293,6 @@ it.effect("redeems only a short invite whose signature and share id are both cur
     assert.isTrue(
       Exit.isSuccess(yield* Effect.exit(guestShares.redeem({ credential, name: "Sam" }))),
     );
-  }).pipe(Effect.provide(layerTest)),
-);
-
-it.effect("refuses guest requests once T3 Connect no longer serves the link's host", () =>
-  Effect.gen(function* () {
-    const { guestShares, credential } = yield* shareThread;
-    const { token: session } = yield* guestShares.redeem({ credential, name: "Sam" });
-    const { id: shareId } = (yield* Orchestrator.OrchestratorV2.use((orchestrator) =>
-      orchestrator.getThreadRecords(threadId, []),
-    )).thread.guestShare!;
-    yield* Ref.set(hostname, null);
-    const submitted = yield* Effect.exit(
-      guestShares.submit(session, { shareId, text: "Hello" }, []),
-    );
-    assert.isTrue(Exit.isFailure(submitted));
-  }).pipe(Effect.provide(layerTest)),
-);
-
-it.effect("closes an open guest stream when T3 Connect stops serving the link's host", () =>
-  Effect.gen(function* () {
-    const { guestShares, credential } = yield* shareThread;
-    const { token: session } = yield* guestShares.redeem({ credential, name: "Sam" });
-    const collecting = yield* Stream.runCollect(yield* guestShares.stream(session)).pipe(
-      Effect.forkChild,
-    );
-    yield* Ref.set(hostname, null);
-    yield* TestClock.adjust("30 seconds");
-    // No `ended`: the browser reconnects, and the host check refuses it while Connect is gone.
-    const received = Array.from(yield* Fiber.join(collecting));
-    assert.deepEqual(
-      received.map((event) => (event.type === "thread" ? event.item.kind : event.type)),
-      ["view", "snapshot"],
-    );
-    assert.isTrue(Exit.isFailure(yield* Effect.exit(guestShares.stream(session))));
-    yield* Ref.set(hostname, "env.t3.test");
-    assert.isTrue(Exit.isSuccess(yield* Effect.exit(guestShares.stream(session))));
   }).pipe(Effect.provide(layerTest)),
 );
 

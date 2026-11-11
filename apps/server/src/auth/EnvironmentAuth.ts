@@ -253,88 +253,6 @@ export class ServerAuthDpopReplayKeyCalculationError extends Schema.TaggedError<
   }
 }
 
-export class ServerAuthLinkedCloudAccountVerificationError extends Schema.TaggedError<ServerAuthLinkedCloudAccountVerificationError>()(
-  "ServerAuthLinkedCloudAccountVerificationError",
-  {
-    ...serverAuthInternalErrorContext,
-  },
-) {
-  override get message(): string {
-    return "Could not verify the linked cloud account.";
-  }
-}
-
-export class ServerAuthLinkedCloudAccountReadError extends Schema.TaggedError<ServerAuthLinkedCloudAccountReadError>()(
-  "ServerAuthLinkedCloudAccountReadError",
-  {
-    ...serverAuthInternalErrorContext,
-  },
-) {
-  override get message(): string {
-    return "Could not read the linked cloud account.";
-  }
-}
-
-export class ServerAuthLinkedCloudAccountMissingError extends Schema.TaggedError<ServerAuthLinkedCloudAccountMissingError>()(
-  "ServerAuthLinkedCloudAccountMissingError",
-  {},
-) {
-  override get message(): string {
-    return "Cloud linked user is not installed for this environment.";
-  }
-}
-
-export class ServerAuthCloudLinkJwtSigningError extends Schema.TaggedError<ServerAuthCloudLinkJwtSigningError>()(
-  "ServerAuthCloudLinkJwtSigningError",
-  {
-    ...serverAuthInternalErrorContext,
-  },
-) {
-  override get message(): string {
-    return "Failed to sign cloud link JWT.";
-  }
-}
-
-export class ServerAuthCloudMintPublicKeyMissingError extends Schema.TaggedError<ServerAuthCloudMintPublicKeyMissingError>()(
-  "ServerAuthCloudMintPublicKeyMissingError",
-  {},
-) {
-  override get message(): string {
-    return "Cloud mint public key is not installed for this environment.";
-  }
-}
-
-export class ServerAuthCloudRelayIssuerMissingError extends Schema.TaggedError<ServerAuthCloudRelayIssuerMissingError>()(
-  "ServerAuthCloudRelayIssuerMissingError",
-  {},
-) {
-  override get message(): string {
-    return "Cloud relay issuer is not installed for this environment.";
-  }
-}
-
-export class ServerAuthCloudHealthJwtSigningError extends Schema.TaggedError<ServerAuthCloudHealthJwtSigningError>()(
-  "ServerAuthCloudHealthJwtSigningError",
-  {
-    ...serverAuthInternalErrorContext,
-  },
-) {
-  override get message(): string {
-    return "Failed to sign cloud health JWT.";
-  }
-}
-
-export class ServerAuthCloudMintJwtSigningError extends Schema.TaggedError<ServerAuthCloudMintJwtSigningError>()(
-  "ServerAuthCloudMintJwtSigningError",
-  {
-    ...serverAuthInternalErrorContext,
-  },
-) {
-  override get message(): string {
-    return "Failed to sign cloud mint JWT.";
-  }
-}
-
 export const ServerAuthInternalError = Schema.Union([
   ServerAuthBootstrapCredentialValidationError,
   ServerAuthSessionCredentialValidationError,
@@ -350,14 +268,6 @@ export const ServerAuthInternalError = Schema.Union([
   ServerAuthWebSocketTokenIssueError,
   ServerAuthDpopReplayStateRecordError,
   ServerAuthDpopReplayKeyCalculationError,
-  ServerAuthLinkedCloudAccountVerificationError,
-  ServerAuthLinkedCloudAccountReadError,
-  ServerAuthLinkedCloudAccountMissingError,
-  ServerAuthCloudLinkJwtSigningError,
-  ServerAuthCloudMintPublicKeyMissingError,
-  ServerAuthCloudRelayIssuerMissingError,
-  ServerAuthCloudHealthJwtSigningError,
-  ServerAuthCloudMintJwtSigningError,
 ]);
 export type ServerAuthInternalError = typeof ServerAuthInternalError.Type;
 export const isServerAuthInternalError = Schema.is(ServerAuthInternalError);
@@ -1381,7 +1291,7 @@ export const make = Effect.gen(function* () {
       Effect.withSpan("EnvironmentAuth.consumeMcpApprovalCode"),
     );
 
-  yield* revokePairedClientsThePolicyDisallows(managedPolicy, {
+  yield* revokeUnsupportedPairedClients(managedPolicy, {
     sessions,
     pairingLinks: bootstrapCredentials,
   });
@@ -1424,53 +1334,44 @@ const mcpApprovalLevel = (subject: string): AuthMcpClientAccess | undefined => {
   return isMcpClientAccess(level) ? level : undefined;
 };
 
-/** Subjects of sessions and links a pairing link created, keyed by how the client paired. */
-const LINK_PAIRED_SUBJECTS = { link: "one-time-token", connect: "cloud-connect" } as const;
-
-/**
- * Revokes sessions and unused links from pairing the policy no longer allows, so a policy rolled
- * out to a machine that already had phones paired takes effect on the next start.
- */
-const revokePairedClientsThePolicyDisallows = Effect.fn(
-  "EnvironmentAuth.revokePairedClientsThePolicyDisallows",
-)(function* (
-  policy: ManagedPolicy.ManagedPolicy["Service"],
-  stores: {
-    readonly sessions: SessionStore.SessionStore["Service"];
-    readonly pairingLinks: PairingGrantStore.PairingGrantStore["Service"];
-  },
-) {
-  const remoteAllowed = ManagedLimits.allowsRemoteClients(policy);
-  const disallowed = new Set<string>();
-  if (!remoteAllowed) disallowed.add(LINK_PAIRED_SUBJECTS.link);
-  if (!ManagedLimits.allowsConnect(policy)) disallowed.add(LINK_PAIRED_SUBJECTS.connect);
-  if (disallowed.size === 0) return;
-  const sessions = (yield* stores.sessions.listActive()).filter(
-    (session) =>
-      disallowed.has(session.subject) ||
-      // The startup link also pairs browsers on this machine; only a device elsewhere goes.
-      (!remoteAllowed &&
-        session.subject === INTERNAL_ADMINISTRATIVE_BOOTSTRAP_SUBJECT &&
-        session.client.ipAddress !== undefined &&
-        !isLocalLoopbackHost(session.client.ipAddress)),
-  );
-  const links = (yield* stores.pairingLinks.listActive()).filter(
-    (link) =>
-      disallowed.has(link.subject) ||
-      // Approval codes let an agent elsewhere sign in, as plain codes do.
-      (!remoteAllowed && link.subject.startsWith(MCP_APPROVAL_SUBJECT_PREFIX)),
-  );
-  yield* Effect.forEach(sessions, (session) => stores.sessions.revoke(session.sessionId), {
-    discard: true,
-  });
-  yield* Effect.forEach(links, (link) => stores.pairingLinks.revoke(link.id), { discard: true });
-  if (sessions.length > 0 || links.length > 0) {
-    yield* Effect.logInfo("Revoked clients the managed policy does not allow.", {
-      sessions: sessions.length,
-      pairingLinks: links.length,
+const revokeUnsupportedPairedClients = Effect.fn("EnvironmentAuth.revokeUnsupportedPairedClients")(
+  function* (
+    policy: ManagedPolicy.ManagedPolicy["Service"],
+    stores: {
+      readonly sessions: SessionStore.SessionStore["Service"];
+      readonly pairingLinks: PairingGrantStore.PairingGrantStore["Service"];
+    },
+  ) {
+    const remoteAllowed = ManagedLimits.allowsRemoteClients(policy);
+    const sessions = (yield* stores.sessions.listActive()).filter(
+      (session) =>
+        session.subject === "cloud-connect" ||
+        (!remoteAllowed && session.subject === "one-time-token") ||
+        // The startup link also pairs browsers on this machine; only a device elsewhere goes.
+        (!remoteAllowed &&
+          session.subject === INTERNAL_ADMINISTRATIVE_BOOTSTRAP_SUBJECT &&
+          session.client.ipAddress !== undefined &&
+          !isLocalLoopbackHost(session.client.ipAddress)),
+    );
+    const links = (yield* stores.pairingLinks.listActive()).filter(
+      (link) =>
+        link.subject === "cloud-connect" ||
+        (!remoteAllowed && link.subject === "one-time-token") ||
+        // Approval codes let an agent elsewhere sign in, as plain codes do.
+        (!remoteAllowed && link.subject.startsWith(MCP_APPROVAL_SUBJECT_PREFIX)),
+    );
+    yield* Effect.forEach(sessions, (session) => stores.sessions.revoke(session.sessionId), {
+      discard: true,
     });
-  }
-});
+    yield* Effect.forEach(links, (link) => stores.pairingLinks.revoke(link.id), { discard: true });
+    if (sessions.length > 0 || links.length > 0) {
+      yield* Effect.logInfo("Revoked unsupported client sessions and pairing links.", {
+        sessions: sessions.length,
+        pairingLinks: links.length,
+      });
+    }
+  },
+);
 
 export const layer = Layer.effect(EnvironmentAuth, make).pipe(
   Layer.provideMerge(PairingGrantStore.layer),

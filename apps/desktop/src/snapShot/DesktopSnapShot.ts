@@ -100,7 +100,7 @@ const MAX_CAPTURE_WIDTH = 2_560;
 const MAX_CAPTURE_HEIGHT = 1_600;
 const SHORTCUT_COOLDOWN_NS = 200_000_000n;
 const WAYLAND_MODIFIER_PAIR_UNAVAILABLE_MESSAGE =
-  "Modifier-pair shortcuts aren't available in this Wayland session. Choose another shortcut or use Take snapshot from the command palette.";
+  "当前 Wayland 会话不支持双修饰键快捷键。请选择其他快捷键，或在命令面板中使用「拍摄快照」。";
 const FLASH_ANIMATION_DURATION_MS = 180;
 const FLASH_STATIC_DURATION_MS = 60;
 const FLASH_FRAME_INTERVAL_MS = 16;
@@ -745,13 +745,13 @@ function probeGlobalShortcut(accelerator: string): DesktopSnapShotShortcutAvaila
     if (!Electron.globalShortcut.register(accelerator, () => undefined)) {
       return {
         available: false,
-        message: "This shortcut is already used by the system or another app.",
+        message: "此快捷键已被系统或其他应用占用。",
       };
     }
     Electron.globalShortcut.unregister(accelerator);
     return { available: true, message: null };
   } catch {
-    return { available: false, message: "The system could not register this shortcut." };
+    return { available: false, message: "系统无法注册此快捷键。" };
   }
 }
 
@@ -1062,18 +1062,18 @@ export const make = Effect.gen(function* () {
   ) {
     const mode = captureMode(environment.platform);
     if (mode === "unavailable") {
-      return { available: false, message: "SnapShots are not supported on this platform." };
+      return { available: false, message: "此平台不支持窗口快照。" };
     }
     if (mode === "portal" && niriSocketPath()) {
       return {
         available: false,
-        message: "Configure the capture shortcut in your Niri config, not in T3 Code.",
+        message: "请在 Niri 配置中设置捕获快捷键。",
       };
     }
     if (mode === "portal" && isHyprlandCaptureSession()) {
       return {
         available: false,
-        message: "Change the capture binding in your Hyprland config, then save it.",
+        message: "请在 Hyprland 配置中修改捕获快捷键并保存。",
       };
     }
     if (isModifierPairShortcut(shortcut)) {
@@ -1110,11 +1110,11 @@ export const make = Effect.gen(function* () {
         Effect.match({
           onSuccess: () => ({
             available: true,
-            message: "Your desktop will confirm this shortcut when you save it.",
+            message: "保存时，桌面环境会请你确认此快捷键。",
           }),
           onFailure: (error) => ({
             available: false,
-            message: error.cause instanceof Error ? error.cause.message : "Unsupported shortcut.",
+            message: error.cause instanceof Error ? error.cause.message : "不支持此快捷键。",
           }),
         }),
       );
@@ -1193,8 +1193,8 @@ export const make = Effect.gen(function* () {
         message:
           mode === "unavailable"
             ? environment.platform === "linux"
-              ? "SnapShots require a Wayland session. X11 capture is not supported."
-              : "SnapShots are not supported on this platform."
+              ? "窗口快照需要 Wayland 会话，暂不支持 X11 捕获。"
+              : "此平台不支持窗口快照。"
             : null,
       });
       return;
@@ -1629,7 +1629,7 @@ export const make = Effect.gen(function* () {
                   message:
                     error.cause instanceof Error
                       ? error.cause.message
-                      : "Could not check desktop capture support. Check your desktop session and try again.",
+                      : "无法检查桌面捕获支持。请检查桌面会话后重试。",
                 }),
               ),
             )

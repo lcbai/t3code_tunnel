@@ -235,9 +235,9 @@ function reportRefreshFailure(cause: unknown) {
     cause instanceof Error ? cause.cause : null,
   );
   const error = cause instanceof Error ? cause : new Error("Could not import shared content.");
-  Dialog.alert("Could not import shared content", error.message, [
-    { text: "Dismiss", style: "cancel" },
-    { text: "Retry", onPress: () => void refreshIncomingShares() },
+  Dialog.alert("无法导入共享内容", error.message, [
+    { text: "关闭", style: "cancel" },
+    { text: "重试", onPress: () => void refreshIncomingShares() },
   ]);
 }
 
@@ -318,19 +318,19 @@ export const incomingShareImports = makeIncomingShareImports({
     }),
   releaseUnusedAttachments: scheduleUnusedComposerAttachmentCleanup,
   onWarnings: (warnings) => {
-    Dialog.alert("Some shared content was skipped", warnings.join("\n"));
+    Dialog.alert("已跳过部分共享内容", warnings.join("\n"));
   },
   onImportFailure: (target, error) => {
     Dialog.alert(
-      "Could not import shared content",
-      error instanceof Error ? error.message : "The shared content could not be saved.",
+      "无法导入共享内容",
+      error instanceof Error ? error.message : "无法保存共享内容。",
       [
         {
-          text: "Cancel import",
+          text: "取消导入",
           style: "cancel",
           onPress: () => void incomingShareImports.cancel(target),
         },
-        { text: "Retry", onPress: () => incomingShareImports.retry(target) },
+        { text: "重试", onPress: () => incomingShareImports.retry(target) },
       ],
       { cancelable: false },
     );
@@ -338,10 +338,10 @@ export const incomingShareImports = makeIncomingShareImports({
   onCancelFailure: (target, error) => {
     Dialog.alert(
       "Could not cancel import",
-      error instanceof Error ? error.message : "The shared content could not be restored safely.",
+      error instanceof Error ? error.message : "无法安全恢复共享内容。",
       [
-        { text: "Retry import", onPress: () => incomingShareImports.retry(target) },
-        { text: "Retry cancel", onPress: () => void incomingShareImports.cancel(target) },
+        { text: "重试导入", onPress: () => incomingShareImports.retry(target) },
+        { text: "重试取消", onPress: () => void incomingShareImports.cancel(target) },
       ],
       { cancelable: false },
     );

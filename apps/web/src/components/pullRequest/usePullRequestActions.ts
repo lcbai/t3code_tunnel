@@ -231,8 +231,8 @@ export function usePullRequestCloseBatch(
       type: failures.length > 0 ? "error" : "success",
       title:
         failures.length > 0
-          ? `Closed ${closed} of ${batch.length} pull requests`
-          : `Closed ${closed} pull request${closed === 1 ? "" : "s"}`,
+          ? `关闭${closed} of${batch.length}拉取请求`
+          : `已关闭 ${closed} 个拉取请求`,
       ...(failures.length > 0 ? { description: failures.slice(0, 3).join("\n") } : {}),
     });
   };
@@ -310,18 +310,18 @@ export function usePullRequestHandoffs({
     if (opened === null) {
       toastManager.add({
         type: "error",
-        title: "Could not open a thread",
-        description: "Try again from the project, or open a thread first.",
+        title: "无法打开会话",
+        description: "从项目中再试一次，或者先打开一条会话。",
       });
       return;
     }
     toastManager.add({
       type: "success",
-      title: "Asked in a thread",
+      title: "被问到线条上",
       description:
         task.prompt.length > 0
-          ? "The question is in the composer. Read it over, then send."
-          : `The ${terminology.singular} is in the composer. Type your question, then send.`,
+          ? "问题在于消息输入框，再读一遍，然后发送。"
+          : `${terminology.singular}在消息输入框中。请输入您的问题，然后发送。`,
     });
   };
 
@@ -335,7 +335,7 @@ export function usePullRequestHandoffs({
     // Explicit timeouts survive toast updates and would pin the result after loading.
     const toastId = toastManager.add({
       type: "loading",
-      title: `Preparing the ${terminology.singular} checkout...`,
+      title: `正在准备${terminology.singular} 退出…`,
     });
     const projectRef = scopeProjectRef(environmentId, detail.projectId);
     // Checkout setup requires the thread to exist first.
@@ -347,8 +347,8 @@ export function usePullRequestHandoffs({
       setHandoff(null);
       toastManager.update(toastId, {
         type: "error",
-        title: "Could not open a thread for the checkout",
-        description: "Try again from the project, or open a thread first.",
+        title: "无法打开退出的会话",
+        description: "从项目中再试一次，或者先打开一条会话。",
       });
       return;
     }
@@ -361,7 +361,7 @@ export function usePullRequestHandoffs({
       setHandoff(null);
       toastManager.update(toastId, {
         type: "error",
-        title: `Could not prepare the ${terminology.singular} checkout`,
+        title: `无法准备${terminology.singular} label`,
         description: checkoutFailureDescription(
           isAtomCommandInterrupted(prepared) ? undefined : squashAtomCommandFailure(prepared),
         ),
@@ -380,8 +380,8 @@ export function usePullRequestHandoffs({
       setHandoff(null);
       toastManager.update(toastId, {
         type: "error",
-        title: "Checked out, but the thread stayed where it was",
-        description: `The checkout is ready on \`${prepared.value.branch}\`. Point a thread at it from the branch picker, then ask again.`,
+        title: "检查过了，但线留在原地",
+        description: `退票准备在\`${prepared.value.branch}\`。从树枝采摘器中指向一条线条，然后再问一次。`,
       });
       return;
     }
@@ -392,11 +392,11 @@ export function usePullRequestHandoffs({
         prepared.value.isOnPullRequestHead
           ? {
               type: "success",
-              title: mode === "local" ? "Checked out here" : "Checked out",
+              title: mode === "local" ? "已经在这里登记了" : "报到",
               description:
                 mode === "local"
-                  ? `This repository is on the ${terminology.singular}'s branch, with a thread open on it.`
-                  : `The ${terminology.singular} is in its own worktree, with a thread open on it.`,
+                  ? `此寄存器位于${terminology.singular} 的分支上，上面有一条会话。`
+                  : `${terminology.singular}在自己的工作树上,`,
             }
           : offHeadPullRequestCheckoutToast(terminology),
       );
@@ -408,8 +408,8 @@ export function usePullRequestHandoffs({
       prepared.value.isOnPullRequestHead
         ? {
             type: "success",
-            title: "Checkout ready",
-            description: "The task is in the composer. Read it over, then send.",
+            title: "离职准备",
+            description: "任务在于消息输入框，再读一遍，然后发送。",
           }
         : offHeadPullRequestCheckoutToast(terminology),
     );

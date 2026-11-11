@@ -20,7 +20,7 @@ export function SpeechLanguageSelect({ model }: { readonly model: ModelLanguages
         preference,
       )
     : preference;
-  const effectiveLabel = resolved === "auto" ? "Auto-detect" : languageLabel(resolved);
+  const effectiveLabel = resolved === "auto" ? "自动检测" : languageLabel(resolved);
   const unavailable =
     preference !== "auto" && preference !== resolved
       ? `${languageLabel(preference)} unavailable`
@@ -38,11 +38,11 @@ export function SpeechLanguageSelect({ model }: { readonly model: ModelLanguages
         if (value) void updateClientSettings({ speechLanguage: value });
       }}
     >
-      <SelectTrigger size="sm" aria-label="Transcription language" className="max-w-64">
+      <SelectTrigger size="sm" aria-label="译名语言" className="max-w-64">
         <SelectValue>{label}</SelectValue>
       </SelectTrigger>
       <SelectPopup align="end" alignItemWithTrigger={false}>
-        <SelectItem value="auto">Auto</SelectItem>
+        <SelectItem value="auto">自动</SelectItem>
         {unavailable ? (
           <SelectItem value={preference} disabled>
             {unavailable}

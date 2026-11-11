@@ -39,7 +39,7 @@ it.each(["gnome-extension", "picker"] as const)(
 
     expect(DEFAULT_CLIENT_SETTINGS.snapShotEnabled).toBe(false);
     expect(snapShotStatus(state, false)).toBe("Turn this on to set up snapshots.");
-    expect(snapShotStatus(state, true)).toBe("Capture needs attention");
+    expect(snapShotStatus(state, true)).toBe("需要注意抓获");
   },
 );
 
@@ -53,19 +53,19 @@ it("distinguishes saved shortcuts from observed delivery without making users re
     message: null,
     gnomeExtension: { status: "enabled", message: "Running" },
   };
-  expect(snapShotSetupSummary(state, true)).toBe("Shortcut saved");
-  expect(snapShotSetupButtonLabel(state)).toBe("Manage capture");
-  expect(snapShotSetupSummary({ ...state, shortcutVerified: true }, true)).toBe("Ready to capture");
-  expect(snapShotSetupButtonLabel({ ...state, shortcutVerified: true })).toBe("Manage capture");
-  expect(snapShotSetupButtonLabel({ ...state, shortcutRegistered: false })).toBe("Manage capture");
+  expect(snapShotSetupSummary(state, true)).toBe("快捷键已保存");
+  expect(snapShotSetupButtonLabel(state)).toBe("管理抓取");
+  expect(snapShotSetupSummary({ ...state, shortcutVerified: true }, true)).toBe("准备捕捉");
+  expect(snapShotSetupButtonLabel({ ...state, shortcutVerified: true })).toBe("管理抓取");
+  expect(snapShotSetupButtonLabel({ ...state, shortcutRegistered: false })).toBe("管理抓取");
   expect(
     snapShotSetupButtonLabel({
       ...state,
       gnomeExtension: { status: "disabled", message: "Enable the extension" },
     }),
-  ).toBe("Set up GNOME capture");
+  ).toBe("设置GNOME 抓取");
   expect(snapShotSetupSummary({ ...state, shortcutVerified: true }, false)).toContain(
-    "Enable capture",
+    "允许继续抓取",
   );
   expect(
     snapShotSetupSummary(
@@ -76,19 +76,19 @@ it("distinguishes saved shortcuts from observed delivery without making users re
       },
       true,
     ),
-  ).toBe("Set up active-window snapshots");
+  ).toBe("设置活动窗口快照");
   expect(
     snapShotSetupSummary(
       { ...state, linuxBackend: "niri", gnomeExtension: undefined, shortcutRegistered: false },
       true,
     ),
-  ).toBe("Finish shortcut setup");
+  ).toBe("完成快捷键设置");
   expect(
     snapShotSetupSummary(
       { ...state, linuxBackend: "picker", gnomeExtension: undefined, shortcutVerified: true },
       true,
     ),
-  ).toBe("Manual capture only. You'll choose a window each time");
+  ).toBe("仅手动抓取。每次您会选择窗口。");
   expect(
     snapShotSetupSummary(
       {
@@ -99,7 +99,7 @@ it("distinguishes saved shortcuts from observed delivery without making users re
       },
       true,
     ),
-  ).toBe("Ready to capture");
+  ).toBe("准备捕捉");
 });
 
 it("reports pending, denied, and assigned shortcuts without inferring consent from saved keys", () => {
@@ -112,7 +112,7 @@ it("reports pending, denied, and assigned shortcuts without inferring consent fr
     shortcutMessage: null,
     message: null,
   };
-  expect(snapShotStatus(state, true)).toContain("Waiting for shortcut permission");
+  expect(snapShotStatus(state, true)).toContain("等待快捷键权限");
   expect(snapShotShortcutStatus(state)).toContain("Approve the shortcut permission prompt");
   const denied = { ...state, shortcutPending: false, shortcutMessage: "Permission wasn't granted" };
   expect(snapShotShortcutStatus(denied)).toBe("Permission wasn't granted");
@@ -122,7 +122,7 @@ it("reports pending, denied, and assigned shortcuts without inferring consent fr
     shortcutLabel: "Press <Shift><Control>2",
     shortcutMessage: "Desktop shortcut: Press <Shift><Control>2",
   };
-  expect(snapShotStatus(approved, true)).toBe("Ready to capture");
+  expect(snapShotStatus(approved, true)).toBe("准备捕捉");
   expect(snapShotShortcutStatus(approved)).toBeNull();
   expect(snapShotShortcutStatus({ ...approved, shortcutPending: true })).toContain(
     "Approve the shortcut permission prompt",
@@ -154,8 +154,8 @@ it("hides macOS setup only while permissions and the shortcut are all in place",
     message: "Allow Accessibility in System Settings, then restart T3 Code.",
   };
   expect(snapShotSetupComplete(revoked, true)).toBe(false);
-  expect(snapShotStatus(revoked, true)).toBe("Capture needs attention");
-  expect(snapShotSetupButtonLabel(revoked)).toBe("Continue setup");
+  expect(snapShotStatus(revoked, true)).toBe("需要注意抓获");
+  expect(snapShotSetupButtonLabel(revoked)).toBe("继续设置");
   expect(snapShotSetupComplete({ ...revoked, message: null }, false)).toBe(true);
   expect(
     snapShotSetupComplete(

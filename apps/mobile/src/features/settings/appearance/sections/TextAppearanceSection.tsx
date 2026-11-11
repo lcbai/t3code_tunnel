@@ -17,13 +17,13 @@ export function TextAppearanceSection() {
     useAppearancePreferences();
 
   return (
-    <SettingsSection title="Text">
+    <SettingsSection title="文本">
       <TextAppearancePreview fontSize={appearance.baseFontSize} />
       <AppearancePreviewSeparator />
       <FontSizeSliderRow
         disabled={!isReady}
         icon="textformat.size"
-        label="Text size"
+        label="文字大小"
         max={MAX_BASE_FONT_SIZE}
         min={MIN_BASE_FONT_SIZE}
         onChange={setBaseFontSize}
@@ -34,7 +34,7 @@ export function TextAppearanceSection() {
       <SettingsSwitchRow
         disabled={!isReady}
         icon="plusminus"
-        label="Render math"
+        label="渲染数学公式"
         value={mathRenderingEnabled}
         onValueChange={setMathRenderingEnabled}
       />

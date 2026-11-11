@@ -11,13 +11,13 @@ export function resolveUserMessageIntentBadge(
   switch (intent) {
     case "steer":
       return {
-        label: "Steer",
-        accessibilityLabel: "Steered the active turn",
+        label: "引导",
+        accessibilityLabel: "已引导当前轮次",
       };
     case "promoted_queued_to_steer":
       return {
-        label: "Steer",
-        accessibilityLabel: "Originally queued, then promoted to steer the active turn",
+        label: "引导",
+        accessibilityLabel: "最初在队列中等待，后来用于引导当前轮次",
       };
     case "queued_turn":
     case "turn_start":

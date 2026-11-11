@@ -427,7 +427,7 @@ describe("ChatMarkdown skill chips", () => {
 
     await userEvent.click(screen.getByRole("button", { name: "Skill Review. Show details" }));
     await expect.element(page.getByText("Reviews the current branch.")).toBeVisible();
-    await userEvent.click(page.getByRole("button", { name: "View instructions" }));
+    await userEvent.click(page.getByRole("button", { name: "查看指令" }));
 
     expect(openFile).toHaveBeenCalledExactlyOnceWith(threadRef, "/skills/review/SKILL.md");
   });

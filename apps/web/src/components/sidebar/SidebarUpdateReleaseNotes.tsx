@@ -76,9 +76,7 @@ export function SidebarUpdateReleaseNotes({
       <div className="shrink-0 px-1">
         {state.status === "available" ? (
           <div>
-            <div className="whitespace-nowrap text-sm leading-5 font-medium">
-              Update ready to download
-            </div>
+            <div className="whitespace-nowrap text-sm leading-5 font-medium">更新准备下载</div>
             {state.availableVersion ? (
               <div className="mt-0.5 text-xs leading-4 text-muted-foreground">
                 {releasedAt
@@ -98,7 +96,7 @@ export function SidebarUpdateReleaseNotes({
           const linkLabel =
             releaseNote.stats ??
             (omittedItemCount === 0
-              ? "View release on GitHub"
+              ? "查看在GitHub 上的发布"
               : `${omittedItemCount} more ${omittedItemCount === 1 ? "change" : "changes"} on GitHub`);
 
           const generated = releaseNote.stats !== undefined || releaseNote.intro !== undefined;
@@ -114,7 +112,7 @@ export function SidebarUpdateReleaseNotes({
                 )
               ) : (
                 <h3 className="mb-2 text-foreground text-xs leading-4 font-semibold">
-                  {index === 0 ? "What's changed" : `Changes in ${releaseNote.version}`}
+                  {index === 0 ? "事情变了" : `${releaseNote.version} 的更改`}
                 </h3>
               )}
               {releaseNote.intro ? (

@@ -104,11 +104,11 @@ export function whenAstToExpression(node: KeybindingWhenNode | undefined): strin
 }
 
 export function whenNodeRemoveLabel(node: KeybindingWhenNode, depth: number): string {
-  if (depth === 0) return "Clear all conditions";
+  if (depth === 0) return "清除所有条件";
   if (node.type === "identifier" || (node.type === "not" && node.node.type === "identifier")) {
-    return "Remove condition";
+    return "删除条件";
   }
-  return "Remove group and its conditions";
+  return "删除组及其条件";
 }
 
 function wrapWhenExpression(node: KeybindingWhenNode): string {
@@ -126,7 +126,7 @@ export function parseWhenExpressionDraft(
   if (!ast) {
     return {
       ok: false,
-      message: "Use variables with !, &&, ||, and parentheses.",
+      message: "使用变量与 !, QQ, QQ，和括号。",
     };
   }
 
@@ -211,17 +211,17 @@ export interface KeybindingGroup {
 const KEYBINDING_GROUPS = [
   {
     id: "navigation",
-    title: "Navigation",
+    title: "导航",
     prefixes: ["sidebar", "rightPanel", "commandPalette", "filePicker", "projectSearch", "editor"],
   },
-  { id: "threads", title: "Threads", prefixes: ["thread", "chat", "pullRequest"] },
-  { id: "composer", title: "Composer", prefixes: ["composer", "modelPicker"] },
-  { id: "terminal", title: "Terminal", prefixes: ["terminal"] },
-  { id: "preview", title: "Preview & diff", prefixes: ["preview", "diff"] },
-  { id: "appearance", title: "Appearance", prefixes: ["theme", "appearance", "themeEditor"] },
-  { id: "scripts", title: "Project scripts", prefixes: ["script"] },
+  { id: "threads", title: "会话", prefixes: ["thread", "chat", "pullRequest"] },
+  { id: "composer", title: "消息输入框", prefixes: ["composer", "modelPicker"] },
+  { id: "terminal", title: "终端", prefixes: ["terminal"] },
+  { id: "preview", title: "预览 diff( D)", prefixes: ["preview", "diff"] },
+  { id: "appearance", title: "外观", prefixes: ["theme", "appearance", "themeEditor"] },
+  { id: "scripts", title: "项目脚本", prefixes: ["script"] },
 ] as const;
-const OTHER_KEYBINDING_GROUP = { id: "other", title: "Other" } as const;
+const OTHER_KEYBINDING_GROUP = { id: "other", title: "其他" } as const;
 
 function keybindingGroupFor(command: KeybindingCommand): { id: string; title: string } {
   const prefix = String(command).split(".")[0] ?? "";
@@ -369,24 +369,24 @@ export function buildKeybindingCommandOptions(
 }
 
 export function commandLabel(command: KeybindingCommand): string {
-  if (command === "workspace.focusNext") return "Focus Next Workspace Area";
-  if (command === "workspace.focusPrevious") return "Focus Previous Workspace Area";
-  if (command === "composer.sendAlternate") return "Composer: Opposite Queue or Steer Action";
-  if (command === "composer.sendBackground") return "Composer: Start in Background";
-  if (command === "composer.sendAndNewThread") return "Composer: Send and Start New Thread";
-  if (command === "composer.dictation") return "Composer: Start or Finish Dictation";
-  if (command === "thread.steerQueuedMessage") return "Queue: Send First Queued Message";
-  if (command === "thread.editQueuedMessage") return "Queue: Edit Last Queued Message";
-  if (command === "thread.copyReference") return "Pull Request: Copy Link or Thread";
+  if (command === "workspace.focusNext") return "聚焦下一个工作空间区域";
+  if (command === "workspace.focusPrevious") return "聚焦上一个工作空间区域";
+  if (command === "composer.sendAlternate") return "消息输入框:对面的队列或引导动作";
+  if (command === "composer.sendBackground") return "消息输入框: 开始于背景";
+  if (command === "composer.sendAndNewThread") return "消息输入框: 发送并启动新会话";
+  if (command === "composer.dictation") return "消息输入框: 开始或完成拼写";
+  if (command === "thread.steerQueuedMessage") return "队列: 发送第一个队列的信件";
+  if (command === "thread.editQueuedMessage") return "队列: 编辑最后的队列信件";
+  if (command === "thread.copyReference") return "拉取请求:复制链接或会话";
   const usageMetric = METRIC_OPTIONS.find((option) => option.command === command);
-  if (usageMetric) return `Usage: ${usageMetric.label}`;
+  if (usageMetric) return `用法 :${usageMetric.label}`;
   const usagePeriod = WINDOW_OPTIONS.find((option) => option.command === command);
-  if (usagePeriod) return `Usage: Period: ${usagePeriod.label}`;
-  if (command === "view.reopenClosed") return "Reopen Closed Tab";
-  if (command === "preview.focusUrl") return "Preview: Focus URL";
+  if (usagePeriod) return `用法: 期间 :${usagePeriod.label}`;
+  if (command === "view.reopenClosed") return "重新打开已关闭标签";
+  if (command === "preview.focusUrl") return "预览: 聚焦URL";
   const raw = String(command);
   if (raw.startsWith("script.") && raw.endsWith(".run")) {
-    return `Run Script: ${titleCaseCommandSegment(raw.slice("script.".length, -".run".length))}`;
+    return `运行脚本 :${titleCaseCommandSegment(raw.slice("script.".length, -".run".length))}`;
   }
   return raw.split(".").map(titleCaseCommandSegment).join(": ");
 }

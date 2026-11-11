@@ -48,8 +48,8 @@ const ACCESS_CHOICES: ReadonlyArray<{
 }> = [
   {
     access: "read-only",
-    label: "Read only",
-    description: "Read projects and threads. Cannot start, message or change anything.",
+    label: "只读",
+    description: "可读取项目和会话。启动任务、发送消息和修改内容需要额外权限。",
   },
   ...RUNTIME_MODE_CHOICES.map((choice) => ({ ...choice, access: choice.mode })),
 ];
@@ -134,9 +134,7 @@ function PendingLinkRequest(props: {
     <View className="mb-3 gap-3 rounded-[20px] border border-border bg-card-alt p-4">
       <View className="gap-1">
         <Text className="font-t3-bold text-base text-foreground">
-          {picksMachine(item)
-            ? "Link a machine to this environment"
-            : `Link ${target} to this environment`}
+          {picksMachine(item) ? "将设备关联到此环境" : `关联 ${target} to this environment`}
         </Text>
         {item.reason.trim() ? (
           <Text className="font-sans text-sm leading-5 text-foreground-muted">{item.reason}</Text>
@@ -159,7 +157,7 @@ function PendingLinkRequest(props: {
       {canAnswer ? (
         <>
           <Button
-            label={picksMachine(item) ? "Choose machine…" : "Review link…"}
+            label={picksMachine(item) ? "选择设备…" : "审查链接…"}
             disabled={declining}
             onPress={() => setOpen(true)}
             tone="primary"
@@ -174,13 +172,13 @@ function PendingLinkRequest(props: {
               className="px-1 py-1 active:opacity-60 disabled:opacity-50"
               onPress={() => void decline()}
             >
-              <Text className="font-sans text-xs text-foreground-muted">Decline</Text>
+              <Text className="font-sans text-xs text-foreground-muted">拒绝</Text>
             </Pressable>
           </View>
         </>
       ) : (
         <Text className="font-sans text-xs text-foreground-muted">
-          Only a session that manages access here can answer this.
+          只有具备此环境访问管理权限的会话可以回答。
         </Text>
       )}
       {open ? (
@@ -318,7 +316,7 @@ function LinkRequestSheet(props: {
 
   return (
     <Sheet
-      title={pickMachine ? "Link a machine" : `Link ${targetName}`}
+      title={pickMachine ? "连接设备" : `关联 ${targetName}`}
       onClose={props.onClose}
       // An answer that lands after a close would still link, and would close a reopened sheet.
       dismissDisabled={busy}
@@ -332,8 +330,7 @@ function LinkRequestSheet(props: {
       >
         <View className="gap-1">
           <Text className="font-sans text-sm leading-5 text-foreground-muted">
-            Agents here can then launch, message and wait on threads there. It appears in that
-            machine's Connections, where it can be revoked.
+            此处的智能体随后可在目标环境启动会话、发送消息并等待结果。可在目标设备的「连接」中撤销。
           </Text>
           {!pickMachine && item.url !== undefined ? (
             <Text className="font-sans text-xs text-foreground-muted" numberOfLines={1}>
@@ -342,7 +339,7 @@ function LinkRequestSheet(props: {
           ) : null}
         </View>
         {pickMachine ? (
-          <SettingsSection title="Machine">
+          <SettingsSection title="设备">
             {machines.map((machine, index) => (
               <MachineRow
                 key={machine.environmentId}
@@ -357,8 +354,8 @@ function LinkRequestSheet(props: {
               />
             ))}
             <SettingsChoiceRow
-              label="Another address…"
-              description="Link a machine this app does not know, by its https or Tailscale address."
+              label="其他地址…"
+              description="使用 HTTPS 或 Tailscale 地址关联尚未连接的设备。"
               selected={selected === ANOTHER_ADDRESS}
               separated={machines.length > 0}
               disabled={busy}
@@ -372,7 +369,7 @@ function LinkRequestSheet(props: {
         {needsAddress && !(item.url !== undefined && item.environmentId === undefined) ? (
           <View className="gap-2">
             <TextInput
-              accessibilityLabel="Address"
+              accessibilityLabel="地址"
               placeholder="https://machine.tailnet.ts.net"
               value={address}
               onChangeText={setAddress}
@@ -384,24 +381,23 @@ function LinkRequestSheet(props: {
             />
             {target.kind === "machine" ? (
               <Text className="font-sans text-xs text-foreground-muted">
-                This app has no address for {target.label} that another machine can reach. Enter its
-                https or Tailscale address.
+                此应用没有以下地址： {target.label} 应可从其他设备访问。请输入它的 HTTPS 或
+                Tailscale 地址。
               </Text>
             ) : null}
           </View>
         ) : null}
         {useExisting ? (
           <Text className="font-sans text-sm leading-5 text-foreground-muted">
-            This environment is already linked to {targetName}. The agent can use that link as it
-            is; change its access in Settings → Connections.
+            此环境已关联到 {targetName}。智能体可使用现有链接。前往「设置 → 连接」更改访问权限。
           </Text>
         ) : target.kind === "none" ? null : (
           <>
             {canMint ? null : (
               <View className="gap-2">
                 <TextInput
-                  accessibilityLabel="Pairing code"
-                  placeholder="Paste the code"
+                  accessibilityLabel="配对码"
+                  placeholder="粘贴代码"
                   value={pairingCode}
                   onChangeText={setPairingCode}
                   editable={!busy}
@@ -412,12 +408,12 @@ function LinkRequestSheet(props: {
                   spellCheck={false}
                 />
                 <Text className="font-sans text-xs text-foreground-muted">
-                  Create a link on {targetName}: Settings → Connections → Create link, then paste
-                  its code here.
+                  请在以下环境创建链接 {targetName}：前往「设置 → 连接 →
+                  创建链接」，然后将代码粘贴到这里。
                 </Text>
               </View>
             )}
-            <SettingsSection title="What agents here may do there">
+            <SettingsSection title="此处智能体在目标环境的权限">
               {ACCESS_CHOICES.map((choice, index) => (
                 <SettingsChoiceRow
                   key={choice.access}
@@ -431,8 +427,7 @@ function LinkRequestSheet(props: {
               ))}
             </SettingsSection>
             <Text className="font-sans text-xs text-foreground-muted">
-              An agent here never gets more there than its own mode here either. Threads it starts
-              there cannot change that environment's own threads, projects or settings.
+              目标环境授予的权限受此处运行模式限制。在目标环境启动的会话无法更改那里的现有会话、项目或设置。
             </Text>
           </>
         )}
@@ -446,13 +441,13 @@ function LinkRequestSheet(props: {
           </Text>
         ) : null}
         <Button
-          label={busy ? "Linking…" : useExisting ? "Use this link" : "Link"}
+          label={busy ? "正在关联…" : useExisting ? "使用此链接" : "链接"}
           disabled={busy || !ready}
           onPress={() => void submit()}
           tone="primary"
           fullWidth
         />
-        <Button label="Cancel" tone="secondary" disabled={busy} onPress={props.onClose} fullWidth />
+        <Button label="取消" tone="secondary" disabled={busy} onPress={props.onClose} fullWidth />
       </ScrollView>
     </Sheet>
   );
@@ -467,13 +462,7 @@ function MachineRow(props: {
   readonly onPress: () => void;
 }) {
   const { machine } = props;
-  const status = machine.linked
-    ? "Linked"
-    : machine.connected
-      ? null
-      : machine.connectOnly
-        ? "T3 Connect"
-        : "Not connected";
+  const status = machine.linked ? "已关联" : machine.connected ? null : "未连接";
   return (
     <Pressable
       accessibilityRole="radio"

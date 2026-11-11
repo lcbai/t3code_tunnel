@@ -253,9 +253,7 @@ describe("EnvironmentProviderSettings routing", () => {
     await setup();
     await setProviders([provider()]);
     await using _screen = await render(panel({ targetInstanceId: customId }));
-    await expect
-      .element(page.getByText("This provider instance is no longer available on this device."))
-      .toBeVisible();
+    await expect.element(page.getByText("此设备已无法使用此提供者实例。")).toBeVisible();
     expect(state.updateSettings).not.toHaveBeenCalled();
   });
 
@@ -311,7 +309,7 @@ describe("EnvironmentProviderSettings routing", () => {
       },
     ]);
     await using _screen = await render(panel({ targetInstanceId: instanceId }));
-    const link = page.getByRole("link", { name: "Continue authentication" });
+    const link = page.getByRole("link", { name: "继续认证" });
     link.element().addEventListener("click", (event) => event.preventDefault());
     await userEvent.click(link);
 
@@ -351,8 +349,8 @@ describe("EnvironmentProviderSettings routing", () => {
       },
     ]);
     await using _screen = await render(panel({ targetInstanceId: codexId }));
-    await expect.element(page.getByRole("button", { name: "Reconnect account" })).toBeVisible();
-    await userEvent.click(page.getByRole("button", { name: "Use existing CLI" }).element());
+    await expect.element(page.getByRole("button", { name: "重新连接账户" })).toBeVisible();
+    await userEvent.click(page.getByRole("button", { name: "使用已有的 CLI" }).element());
 
     expect(state.mutateProviderInstance).toHaveBeenCalledWith(
       {

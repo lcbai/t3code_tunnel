@@ -48,8 +48,8 @@ it.each(["blur", "Enter"] as const)(
   async (finish) => {
     persisted.title = "New thread";
     await using screen = await render(header(persisted.title));
-    await screen.getByRole("button", { name: "Thread actions for New thread" }).dblClick();
-    const input = screen.getByRole("textbox", { name: "Thread title" });
+    await screen.getByRole("button", { name: "New thread 的会话操作" }).dblClick();
+    const input = screen.getByRole("textbox", { name: "会话标题" });
     await expect.element(input).toHaveValue("New thread");
 
     persisted.title = "Fix login redirect";
@@ -61,14 +61,12 @@ it.each(["blur", "Enter"] as const)(
     expect(persisted.title).toBe("Fix login redirect");
 
     await screen.rerender(header(persisted.title));
-    await screen.getByRole("button", { name: "Thread actions for Fix login redirect" }).dblClick();
-    await screen.getByRole("textbox", { name: "Thread title" }).fill("My edited title");
+    await screen.getByRole("button", { name: "Fix login redirect 的会话操作" }).dblClick();
+    await screen.getByRole("textbox", { name: "会话标题" }).fill("My edited title");
     persisted.title = "Another concurrent title";
     await screen.rerender(header(persisted.title));
     await userEvent.keyboard("{Enter}");
-    await expect
-      .element(screen.getByRole("textbox", { name: "Thread title" }))
-      .not.toBeInTheDocument();
+    await expect.element(screen.getByRole("textbox", { name: "会话标题" })).not.toBeInTheDocument();
     expect(persisted.title).toBe("My edited title");
   },
 );
@@ -77,6 +75,6 @@ it("opens the thread menu on a desktop title click without waiting", async () =>
   openMenu.mockClear();
   using _bridge = stubGlobal("desktopBridge", {});
   await using screen = await render(header("New thread"));
-  await screen.getByRole("button", { name: "Thread actions for New thread" }).click();
+  await screen.getByRole("button", { name: "New thread 的会话操作" }).click();
   expect(openMenu).toHaveBeenCalledOnce();
 });

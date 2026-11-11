@@ -30,7 +30,7 @@ export function AdvancedSettings({
           aria-hidden
           className="size-3.5 shrink-0 transition-transform duration-150 group-data-panel-open:rotate-90 motion-reduce:transition-none"
         />
-        Advanced
+        高级
       </CollapsibleTrigger>
       <CollapsiblePanel>
         <div className="border-t border-border/50 [&>*+*]:border-t [&>*+*]:border-border/50">

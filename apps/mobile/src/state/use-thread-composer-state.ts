@@ -135,7 +135,7 @@ export function appendReviewCommentToDraft(input: {
       reidentifyComposerContext(upgraded.text, upgraded.records, uuidv4),
     )
   ) {
-    Dialog.alert("Too many context items", "Remove some context from the draft and try again.");
+    Dialog.alert("上下文项目过多", "请移除草稿中的部分上下文后重试。");
     return;
   }
   if (input.attachments && input.attachments.length > 0) {
@@ -415,7 +415,7 @@ export function useThreadComposerState(input: {
       edit.existingAttachments.length === 0 &&
       draft.attachments.length === 0
     ) {
-      Dialog.alert("Add a message", "A queued message cannot be left empty.");
+      Dialog.alert("添加消息", "待发送的消息不能为空。");
       return;
     }
     if (
@@ -423,7 +423,7 @@ export function useThreadComposerState(input: {
       PROVIDER_SEND_TURN_MAX_ATTACHMENTS
     ) {
       Dialog.alert(
-        "Too many attachments",
+        "附件过多",
         `Remove attachments until there are at most ${PROVIDER_SEND_TURN_MAX_ATTACHMENTS}.`,
       );
       return;
@@ -446,8 +446,8 @@ export function useThreadComposerState(input: {
       finishSave(false);
       const error = squashAtomCommandFailure(prepared);
       Dialog.alert(
-        "Could not save the queued message",
-        error instanceof Error ? error.message : "Your edit is still in the composer.",
+        "无法保存待发送消息",
+        error instanceof Error ? error.message : "你编辑的内容仍在消息输入框中。",
       );
       return;
     }
@@ -481,10 +481,7 @@ export function useThreadComposerState(input: {
     if (result._tag !== "Success") {
       // The run left the queue during the save; its exit already told the composer what happened.
       if (!finishSave(false)) return;
-      Dialog.alert(
-        "Could not save the queued message",
-        "It may have already started. Your edit is still in the composer.",
-      );
+      Dialog.alert("无法保存待发送消息", "任务可能已经开始。你编辑的内容仍在消息输入框中。");
       return;
     }
     // False when the edit was cancelled or begun again meanwhile; its draft is the newer edit's.
@@ -560,14 +557,11 @@ export function useThreadComposerState(input: {
     const sideChatCommand = beforeDispatch === undefined ? parseSideChatCommand(text) : null;
     if (sideChatCommand) {
       if (sideChatUnavailableReason !== null) {
-        Dialog.alert("Side chat not started", sideChatUnavailableReason);
+        Dialog.alert("尚未开始旁支会话", sideChatUnavailableReason);
       } else if (attachments.length > 0 || (draft.context?.records.length ?? 0) > 0) {
-        Dialog.alert(
-          "Side chats take text only",
-          "Remove the attachments and context, then send it again.",
-        );
+        Dialog.alert("旁支会话只支持文本", "请移除附件和上下文后重新发送。");
       } else if (sideChatCommand.prompt.length === 0) {
-        Dialog.alert("Ask a side question", "Type the question after /side, then send it.");
+        Dialog.alert("在旁支会话提问", "在 /side 后输入问题并发送。");
       } else if (modelUnavailable) {
         alertModelUnavailable();
       } else if (!startingSideChatRef.current) {
@@ -613,7 +607,7 @@ export function useThreadComposerState(input: {
     // Recovery preserves over-cap attachments; require trimming or outbox delivery would reject indefinitely.
     if (attachments.length > PROVIDER_SEND_TURN_MAX_ATTACHMENTS) {
       Dialog.alert(
-        "Too many attachments",
+        "附件过多",
         `Remove attachments until there are at most ${PROVIDER_SEND_TURN_MAX_ATTACHMENTS}.`,
       );
       return null;
@@ -621,7 +615,7 @@ export function useThreadComposerState(input: {
 
     const contextBlockReason = composerContextSendBlockReason(draft.context);
     if (contextBlockReason) {
-      Dialog.alert("Too much context", contextBlockReason);
+      Dialog.alert("上下文过多", contextBlockReason);
       return null;
     }
 
@@ -640,7 +634,7 @@ export function useThreadComposerState(input: {
       if (!readEnvironmentScope(selectedThreadShell.environmentId, AuthOrchestrationOperateScope))
         return null;
       if (thread.activeProviderThreadId === null) {
-        Dialog.alert("Start a Codex thread first", "Send a message before you submit feedback.");
+        Dialog.alert("请先启动一个 Codex 会话", "请先填写消息再提交反馈。");
         return null;
       }
       const metadata = makeQueuedMessageMetadata();

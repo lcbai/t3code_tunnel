@@ -225,7 +225,7 @@ async function openProjectDraft(project: EnvironmentProject, request: LinkedDraf
   try {
     await waitForComposerDraftsLoaded();
   } catch {
-    Dialog.alert("Could not open link", "Drafts could not be loaded, so the prompt was not added.");
+    Dialog.alert("Could not open link", "无法加载草稿，提示词未添加。");
     return;
   }
   const draftKey = createNewTaskDraft({
@@ -294,10 +294,7 @@ async function openScratchDraft(request: LinkedDraftRequest) {
       .map((environment) => environment.environmentId),
   );
   if (environmentId === null) {
-    Dialog.alert(
-      "Could not start without a project",
-      "No connected environment offers threads without a project.",
-    );
+    Dialog.alert("无法在没有项目的情况下启动", "已连接的环境均不支持创建无项目会话。");
     return;
   }
   const result = await runAtomCommand(
@@ -310,10 +307,8 @@ async function openScratchDraft(request: LinkedDraftRequest) {
     if (!isAtomCommandInterrupted(result)) {
       const error = squashAtomCommandFailure(result);
       Dialog.alert(
-        "Could not start without a project",
-        error instanceof Error
-          ? error.message
-          : "The folder for threads without a project could not be created.",
+        "无法在没有项目的情况下启动",
+        error instanceof Error ? error.message : "无法创建无项目会话的文件夹。",
       );
     }
     return;
@@ -328,7 +323,7 @@ function cloneRepository(repository: PromptLinkRepository, request: LinkedDraftR
     appAtomRegistry.get(workspaceConnections.environmentsAtom)[0]?.environmentId ??
     null;
   if (environmentId === null) {
-    Dialog.alert("Could not clone", "Connect an environment first.");
+    Dialog.alert("Could not clone", "请先连接环境。");
     return;
   }
   const prompt =
@@ -409,11 +404,11 @@ function resolveLink(linkSearch: string) {
     })();
     return;
   }
-  Dialog.alert(`You don't have ${promptLinkRepositoryName(repository)}`, undefined, [
-    { text: "Cancel", style: "cancel" },
+  Dialog.alert(`缺少 ${promptLinkRepositoryName(repository)}`, undefined, [
+    { text: "取消", style: "cancel" },
     ...(request.prompt
-      ? [{ text: "Use without project", onPress: () => void openScratchDraft(request) }]
+      ? [{ text: "不使用项目", onPress: () => void openScratchDraft(request) }]
       : []),
-    { text: "Clone", onPress: () => cloneRepository(repository, request) },
+    { text: "克隆", onPress: () => cloneRepository(repository, request) },
   ]);
 }

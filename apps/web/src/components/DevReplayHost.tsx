@@ -124,13 +124,13 @@ export function DevReplayHost() {
       <DialogPopup className="sm:max-w-sm">
         <DialogHeader>
           <DialogTitle>
-            {project === undefined ? "Replay a recorded turn" : `Replay in ${project.title}`}
+            {project === undefined ? "Replay一个有记录的回合" : `在 ${project.title} 中重放`}
           </DialogTitle>
         </DialogHeader>
         <DialogPanel>
           {scenarios.length === 0 || project === undefined ? (
             <p className="text-sm text-muted-foreground">
-              Needs a project and the Replay (dev) provider, which dev servers start.
+              需要一个项目和Replay (dev) 提供者, Dev 服务器启动。
             </p>
           ) : (
             <div className="flex flex-col items-start gap-1">

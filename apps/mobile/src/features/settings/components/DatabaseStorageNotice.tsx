@@ -30,7 +30,7 @@ export function DatabaseStorageNotice({
   if (visible.length === 0) return null;
   return (
     <SettingsSection
-      title="Reclaim database space"
+      title="回收数据库空间"
       footer="These databases still hold space freed by history cleanup. Run the command on each machine to reclaim it. It restarts the background service. Quit the desktop app first if it hosts the environment."
     >
       {visible.map(({ environmentId, status }) => (
@@ -45,7 +45,7 @@ export function DatabaseStorageNotice({
       ))}
       <SettingsActionRow
         icon="xmark"
-        label="Dismiss"
+        label="关闭"
         onPress={() =>
           updatePreferences({
             transform: (current) => ({

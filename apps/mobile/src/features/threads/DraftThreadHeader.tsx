@@ -41,12 +41,11 @@ export function DraftThreadHeader(props: {
       projectName: props.project.title,
     });
   };
-  const requiresThread = () =>
-    Dialog.alert("Available after the first message", "This action needs a saved thread.");
+  const requiresThread = () => Dialog.alert("发送第一条消息后可用", "此操作需要已保存的会话。");
   return (
     <ThreadHeader
       draft
-      title="New thread"
+      title="新建会话"
       subtitle=""
       hasThreadCwd={props.cwd !== null}
       inspectorMode={null}
@@ -84,7 +83,7 @@ export function DraftThreadHeader(props: {
             actionId: uuidv4(),
           });
           if (AsyncResult.isFailure(result)) {
-            Dialog.alert("Git action failed", String(Cause.squash(result.cause)));
+            Dialog.alert("Git 操作失败", String(Cause.squash(result.cause)));
             return null;
           }
           return result.value;

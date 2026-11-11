@@ -144,7 +144,7 @@ function Discussion({ params }: { params: PullRequestParams & { readonly discuss
     <PullRequestMarkdownRepository params={params} changeRequest={detail.data}>
       <KeyboardAvoidingView automaticOffset behavior="height" className="flex-1 bg-screen">
         <AppBar
-          title="Discussion"
+          title="讨论"
           subtitle={`#${params.number}`}
           onBack={() => navigation.goBack()}
           actions={
@@ -178,25 +178,25 @@ function Discussion({ params }: { params: PullRequestParams & { readonly discuss
                   {thread.line ? `:${thread.line}` : ""}
                 </Text>
                 <Text className="text-xs text-foreground-muted">
-                  {thread.isResolved ? "Resolved" : "Unresolved"}
-                  {thread.isOutdated ? " · Outdated" : ""}
+                  {thread.isResolved ? "已解决" : "未解决"}
+                  {thread.isOutdated ? " · 版本过旧" : ""}
                 </Text>
                 <Button
-                  label="View file diff"
+                  label="查看文件差异"
                   onPress={() =>
                     navigation.navigate("PullRequestFile", { ...params, path: thread.path })
                   }
                 />
               </View>
             ) : !activity.isPending ? (
-              <Text>This discussion is no longer available.</Text>
+              <Text>此讨论已不可用。</Text>
             ) : null}
             {comments.map((comment) => (
               <View key={comment.id} className="gap-3 border-b border-border-subtle py-4">
                 <View className="flex-row items-center gap-2">
                   <PullRequestAvatar actor={comment.author} size={28} />
                   <Text className="min-w-0 flex-1 text-sm font-t3-medium">
-                    {comment.author?.login ?? "Unknown author"}
+                    {comment.author?.login ?? "未知作者"}
                   </Text>
                   <Text className="text-2xs text-foreground-muted">
                     {relativeTime(comment.createdAt)}
@@ -217,7 +217,7 @@ function Discussion({ params }: { params: PullRequestParams & { readonly discuss
             ))}
             {nextCursor ? (
               <Button
-                label={busy ? "Loading…" : "Load more replies"}
+                label={busy ? "正在加载…" : "加载更多回复"}
                 disabled={busy}
                 onPress={() => void more()}
               />
@@ -242,13 +242,13 @@ function Discussion({ params }: { params: PullRequestParams & { readonly discuss
               className="flex-row items-end gap-1 p-1"
             >
               <TextInput
-                accessibilityLabel="Discussion reply"
+                accessibilityLabel="讨论回复"
                 selection={completions.selection}
                 onSelectionChange={completions.onSelectionChange}
                 onBlur={completions.onBlur}
                 multiline
                 maxLength={65536}
-                placeholder="Reply…"
+                placeholder="回复…"
                 placeholderTextColorClassName="accent-foreground-muted"
                 value={body}
                 onChangeText={setBody}
@@ -257,7 +257,7 @@ function Discussion({ params }: { params: PullRequestParams & { readonly discuss
               />
               <View>
                 <Button
-                  label={busy ? "Posting…" : "Reply"}
+                  label={busy ? "正在发布…" : "回复"}
                   tone="contrast"
                   disabled={busy || !body.trim()}
                   onPress={() => void post()}

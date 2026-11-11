@@ -11,7 +11,7 @@ export function NewThreadButton(props: ComponentProps<typeof SharedNewThreadButt
     <FloatingActionButton
       {...props}
       icon="square.and.pencil"
-      label="New thread"
+      label="新建会话"
       tone="primary"
       variant={props.extended ? "extended" : "large"}
     />

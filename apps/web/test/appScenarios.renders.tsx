@@ -150,7 +150,7 @@ async function report(
 }
 
 // A first mount loads lazy route chunks, fonts and the connection at varying times. The diff
-// panel and settings load more chunks on first open (the T3 Connect sidebar, the terminal
+// panel and settings load more chunks on first open (the terminal
 // preview's renderer), which can land after a window has gone quiet, so the warm-up opens
 // each once and lets it settle.
 it("warm up", async () => {
@@ -189,7 +189,7 @@ it("app-stream-assistant-turn", async () => {
       payload: userItem(LIVE, live.id, "live-user", HISTORY_TURNS * 2, "Continue"),
     });
   });
-  await expect.element(page.getByText("Continue", { exact: true })).toBeVisible();
+  await expect.element(page.getByText("继续", { exact: true })).toBeVisible();
   const counted = await measure(async () => {
     let text = "";
     for (let delta = 0; delta < STREAM_DELTAS; delta++) {
@@ -287,7 +287,7 @@ it("app-switch-thread", async () => {
 // Through the diff.toggle shortcut, the same handler as the header's diff button.
 const toggleDiff = (to: "open" | "close") => async () => {
   await userEvent.keyboard("{Control>}d{/Control}");
-  const diff = page.getByRole("group", { name: "Diff layout" });
+  const diff = page.getByRole("group", { name: "diff 版式" });
   if (to === "open") await expect.element(diff).toBeVisible();
   else await expect.element(diff).not.toBeInTheDocument();
 };

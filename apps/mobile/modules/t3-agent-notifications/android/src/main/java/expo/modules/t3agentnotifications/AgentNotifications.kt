@@ -8,25 +8,9 @@ import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.content.SharedPreferences
 import android.net.Uri
 import android.os.Build
 import androidx.core.app.NotificationCompat
-import androidx.core.app.NotificationManagerCompat
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.ProcessLifecycleOwner
-import com.google.firebase.messaging.RemoteMessage
-import expo.modules.notifications.service.ExpoFirebaseMessagingService
-
-class AgentMessagingService : ExpoFirebaseMessagingService() {
-  override fun onMessageReceived(remoteMessage: RemoteMessage) {
-    if (remoteMessage.data["t3_kind"] == "agent_activity") {
-      AgentNotifications.receive(this, remoteMessage.data)
-    } else {
-      super.onMessageReceived(remoteMessage)
-    }
-  }
-}
 
 class AgentActivityDismissReceiver : BroadcastReceiver() {
   override fun onReceive(context: Context, intent: Intent) {
@@ -40,7 +24,6 @@ class AgentActivityExpiryReceiver : BroadcastReceiver() {
   }
 }
 
-/** Handles data pushes natively so delivery does not depend on a running JS bridge. */
 object AgentNotifications {
   private const val STORE = "t3-agent-notifications"
   private const val ACTIVITY_CHANNEL = "agent-activity"
@@ -48,61 +31,10 @@ object AgentNotifications {
   private const val ACTIVITY_TAG = "t3-agent-activity"
   private const val ALERT_TAG = "t3-agent-alert"
   private const val ACTIVITY_ID = 73001
-  private const val MAX_MESSAGE_AGE_MS = 10 * 60 * 1000L
   private const val RUNNING_LIFETIME_MS = 2 * 60 * 60 * 1000L
-  private const val MAX_LIFETIME_MS = 24 * 60 * 60 * 1000L
-
-  @Synchronized
-  fun configure(
-    context: Context,
-    deviceId: String,
-    userId: String,
-    scheme: String,
-    ongoingEnabled: Boolean
-  ) {
-    val prefs = context.getSharedPreferences(STORE, Context.MODE_PRIVATE)
-    // JS identity is empty on a cold start. Compare the durable identity here
-    // so reopening preserves cards, dismissal and replay history for this user.
-    if (prefs.getString("userId", null) != userId ||
-      prefs.getString("deviceId", null) != deviceId
-    ) {
-      clear(context)
-    }
-    val wasEnabled = prefs.getBoolean("ongoing", false)
-    prefs.edit().putString(
-      "deviceId",
-      deviceId
-    ).putString("userId", userId).putString("scheme", scheme)
-      .putBoolean("enabled", true).putBoolean("ongoing", ongoingEnabled).apply()
-    if (ongoingEnabled && !wasEnabled) prefs.edit().putBoolean("dismissed", false).apply()
-    if (!ongoingEnabled) cancelActivity(context)
-    channels(context)
-  }
-
-  @Synchronized
-  fun clear(context: Context) {
-    cancelActivity(context)
-    context.getSharedPreferences(STORE, Context.MODE_PRIVATE).edit().clear().apply()
-    val manager = manager(context)
-    manager.activeNotifications.filter {
-      it.tag == ACTIVITY_TAG || it.tag == ALERT_TAG ||
-        it.tag?.startsWith("$ALERT_TAG-summary:") == true
-    }
-      .forEach { manager.cancel(it.tag, it.id) }
-  }
-
-  @Volatile private var threadOnScreen: String? = null
-
-  fun setThreadOnScreen(path: String?) {
-    threadOnScreen = path
-  }
 
   @Synchronized
   fun dismiss(context: Context) {
-    context.getSharedPreferences(
-      STORE,
-      Context.MODE_PRIVATE
-    ).edit().putBoolean("dismissed", true).apply()
     cancelActivity(context)
   }
 
@@ -114,57 +46,6 @@ object AgentNotifications {
     ).getLong("expiresAt", 0)
     // An already-dispatched alarm must not remove a newer run's card.
     if (expiresAt > 0 && expiresAt <= now) cancelActivity(context)
-  }
-
-  @Synchronized
-  fun receive(context: Context, data: Map<String, String>) {
-    val prefs = context.getSharedPreferences(STORE, Context.MODE_PRIVATE)
-    val updatedAt = data["updated_at"]?.toLongOrNull() ?: return
-    val registered = prefs.getBoolean("enabled", false) &&
-      data["device_id"] == prefs.getString("deviceId", null) &&
-      data["user_id"] == prefs.getString("userId", null)
-    val fresh = System.currentTimeMillis() - updatedAt in -MAX_MESSAGE_AGE_MS..MAX_MESSAGE_AGE_MS
-    if (registered && fresh && NotificationManagerCompat.from(context).areNotificationsEnabled()) {
-      channels(context)
-      val scheme = prefs.getString("scheme", "t3code") ?: "t3code"
-      val alerted = showAlert(context, prefs, scheme, data)
-      updateActivity(context, prefs, data, updatedAt, alerted)
-    }
-  }
-
-  private fun showAlert(
-    context: Context,
-    prefs: SharedPreferences,
-    scheme: String,
-    data: Map<String, String>
-  ): Boolean {
-    // Queue retries carry the same alert id. Keep a bounded history even when
-    // notification A is retried after notification B has already arrived.
-    val alertId = data["alert_id"]
-    val seen = prefs.getString("seenAlertsOrdered", null)?.split('\n')
-      ?: prefs.getStringSet("seenAlerts", emptySet()).orEmpty().toList()
-    if (alertId != null && alertId !in seen) {
-      // Consume suppressed alerts so retries cannot resurface them later.
-      val resumed = ProcessLifecycleOwner.get().lifecycle.currentState.isAtLeast(
-        Lifecycle.State.RESUMED
-      )
-      val visibleThread = threadOnScreen
-      val onScreen = resumed && visibleThread != null && data["alert_path"] == visibleThread
-      if (!onScreen) {
-        postAlert(context, scheme, data, alertId)
-      }
-      prefs.edit().remove("seenAlerts").putString(
-        "seenAlertsOrdered",
-        (seen.takeLast(63) + alertId).joinToString("\n")
-      ).apply()
-      // Android drops posts to a blocked channel, so that alert shows nothing.
-      return !onScreen && (
-        Build.VERSION.SDK_INT < 26 ||
-          manager(context).getNotificationChannel(ALERT_CHANNEL)?.importance !=
-          NotificationManager.IMPORTANCE_NONE
-        )
-    }
-    return false
   }
 
   private fun postAlert(
@@ -208,78 +89,11 @@ object AgentNotifications {
     }
   }
 
-  /**
-   * Renders a relay-shaped payload without the registration, freshness and
-   * foreground checks, for the showcase capture's staged notifications.
-   */
   @Synchronized
   fun showcase(context: Context, scheme: String, data: Map<String, String>) {
     channels(context)
     data["alert_id"]?.let { postAlert(context, scheme, data, it) }
     showActivity(context, scheme, data, data["active"] == "true", RUNNING_LIFETIME_MS)
-  }
-
-  private fun updateActivity(
-    context: Context,
-    prefs: SharedPreferences,
-    data: Map<String, String>,
-    updatedAt: Long,
-    alerted: Boolean
-  ) {
-    val terminal = singleTerminal(data)
-    // Only a one-row card on the alert's own thread is known to show nothing more
-    // than the alert. Grouped alerts and cards with other rows stay visible.
-    val covered = terminal?.takeIf { alerted && data["alert_path"] == data["activity_path"] }
-    if (covered != null) coverTerminal(prefs, covered, updatedAt)
-    if (updatedAt < prefs.getLong("lastUpdate", 0)) {
-      // A newer replay of this same finish may already show the card.
-      if (isCovered(prefs, prefs.getString("lastTerminal", null))) cancelActivity(context)
-      return
-    }
-    prefs.edit().putLong("lastUpdate", updatedAt).putString("lastTerminal", terminal).apply()
-    val active = data["active"] == "true"
-    // Use absolute state expiry: a replay must not extend a finished card or
-    // make an abandoned host look active indefinitely. Older relays omit it.
-    val expiresAt = data["activity_expires_at"]?.toLongOrNull()
-      ?: if (active) updatedAt + RUNNING_LIFETIME_MS else 0L
-    val remainingMs = (expiresAt - System.currentTimeMillis()).coerceAtMost(MAX_LIFETIME_MS)
-    val wasActive = prefs.getBoolean("lastActive", false)
-    prefs.edit().putBoolean("lastActive", active).apply()
-    if (remainingMs <= 0 || !prefs.getBoolean("ongoing", false)) {
-      cancelActivity(context)
-      prefs.edit().putBoolean("dismissed", false).apply()
-      return
-    }
-    // Dismissing a run includes its finished card. A new run, or toggling
-    // activity off/on, arms it again; terminal replays stay dismissed.
-    if (active && !wasActive) prefs.edit().putBoolean("dismissed", false).apply()
-    if (prefs.getBoolean("dismissed", false) || isCovered(prefs, terminal)) {
-      cancelActivity(context)
-    } else {
-      val scheme = prefs.getString("scheme", "t3code") ?: "t3code"
-      showActivity(context, scheme, data, active, remainingMs)
-    }
-  }
-
-  /** Identifies a finished one-thread card by its path, phase and absolute expiry. */
-  private fun singleTerminal(data: Map<String, String>): String? {
-    val phase = data["activity_phase"]
-    val finished = phase == "completed" || phase == "failed"
-    val single = data.containsKey("activity_line_0") && !data.containsKey("activity_line_1")
-    val expiresAt = data["activity_expires_at"]
-    return "${data["activity_path"]}\n$phase\n$expiresAt"
-      .takeIf { finished && single && expiresAt != null }
-  }
-
-  private fun isCovered(prefs: SharedPreferences, terminal: String?) =
-    terminal != null && terminal == prefs.getString("coveredTerminal", null)
-
-  private fun coverTerminal(prefs: SharedPreferences, terminal: String?, updatedAt: Long) {
-    if (updatedAt >= prefs.getLong("lastUpdate", 0) ||
-      prefs.getString("lastTerminal", null) == terminal
-    ) {
-      prefs.edit().putString("coveredTerminal", terminal).apply()
-    }
   }
 
   private fun showActivity(
@@ -311,7 +125,7 @@ object AgentNotifications {
     presentation.applyTo(builder, context)
     val action = presentation.action
     if (action != null && openThread != null) builder.addAction(0, action, openThread)
-    if (ongoing) builder.addAction(0, "Dismiss", dismissIntent)
+    if (ongoing) builder.addAction(0, "关闭", dismissIntent)
     manager(context).notify(ACTIVITY_TAG, ACTIVITY_ID, builder.build())
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
       // Notification timeouts were added in API 26. One inexact alarm also
@@ -347,10 +161,10 @@ object AgentNotifications {
     if (Build.VERSION.SDK_INT >= 26) {
       manager(context).createNotificationChannels(
         listOf(
-          NotificationChannel(ALERT_CHANNEL, "Agent alerts", NotificationManager.IMPORTANCE_HIGH),
+          NotificationChannel(ALERT_CHANNEL, "智能体通知", NotificationManager.IMPORTANCE_HIGH),
           NotificationChannel(
             ACTIVITY_CHANNEL,
-            "Ongoing agent activity",
+            "智能体活动",
             NotificationManager.IMPORTANCE_LOW
           ),
         )

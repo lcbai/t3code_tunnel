@@ -78,7 +78,7 @@ export function WorkspaceListHeader(props: WorkspaceListHeaderProps) {
         connectionState.hasConnections
           ? [
               {
-                title: "Filter threads",
+                title: "筛选会话",
                 icon: workspaceListFilterIcon(props.filter.customized),
                 items: props.filter.items,
               },

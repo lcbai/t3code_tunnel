@@ -122,12 +122,12 @@ function EnvironmentPickerRow(props: {
           )}
           {state.retryAt ? (
             <Text className="text-sm text-foreground-muted">
-              Next reconnect at {new Date(state.retryAt).toLocaleTimeString()}
+              下次重连时间 {new Date(state.retryAt).toLocaleTimeString("zh-CN")}
             </Text>
           ) : null}
           {connection?.phase !== "connected" ? (
             <Button
-              label="Reconnect now"
+              label="立即重新连接"
               onPress={() => onReconnectEnvironment(props.environmentId)}
             />
           ) : null}
@@ -182,7 +182,7 @@ export function NewTaskEnvironmentPickerRouteScreen() {
   const insets = useSafeAreaInsets();
   return (
     <View className="flex-1 bg-sheet" collapsable={false}>
-      <AppBar title="Environment" hideBottomBorder onBack={() => navigation.goBack()} />
+      <AppBar title="环境" hideBottomBorder onBack={() => navigation.goBack()} />
       <ScreenContent>
         <ScrollView
           contentInsetAdjustmentBehavior="automatic"
@@ -282,7 +282,7 @@ export function NewTaskBranchPickerRouteScreen() {
         const error = squashAtomCommandFailure(result);
         Dialog.alert(
           "Could not switch branch",
-          error instanceof Error ? error.message : "The branch could not be checked out.",
+          error instanceof Error ? error.message : "无法检出此分支。",
         );
       }
       return;
@@ -300,7 +300,7 @@ export function NewTaskBranchPickerRouteScreen() {
 
   return (
     <BranchPickerScreen
-      title={flow.workspaceMode === "worktree" ? "Base branch" : "Branch"}
+      title={flow.workspaceMode === "worktree" ? "基准分支" : "分支"}
       project={flow.selectedProject}
       branches={filterNewTaskBranches(branchState.refs, branchQuery)}
       selectedBranchName={
@@ -356,7 +356,7 @@ export function BranchPickerScreen(props: {
   const search: AppBarSearch = {
     value: props.query,
     onChangeText: props.onQueryChange,
-    placeholder: "Find a branch",
+    placeholder: "查找分支",
     clearAccessibilityLabel: "Clear branch search",
     mode: "inline",
     compactToolbar: true,
@@ -399,7 +399,7 @@ export function BranchPickerScreen(props: {
     >
       <ToggleRow
         onValueChange={props.worktree.onChangeStartFromOrigin}
-        title="Start from remote"
+        title="从远端开始"
         value={props.worktree.startFromOrigin}
       />
     </View>
@@ -424,16 +424,16 @@ export function BranchPickerScreen(props: {
           {props.loading ? <AppActivityIndicator /> : null}
           <Text className="text-center text-sm text-foreground-muted">
             {props.loading
-              ? "Loading branches…"
+              ? "正在加载分支…"
               : props.error
                 ? props.error
                 : props.query
-                  ? "No matching branches"
-                  : "No branches available"}
+                  ? "没有匹配的分支"
+                  : "没有可用的分支"}
           </Text>
           {!props.loading && props.error ? (
             <View className="self-center">
-              <Button label="Try again" tone="secondary" onPress={props.onRefresh} />
+              <Button label="重试" tone="secondary" onPress={props.onRefresh} />
             </View>
           ) : null}
         </View>

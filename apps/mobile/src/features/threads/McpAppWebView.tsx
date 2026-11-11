@@ -70,8 +70,7 @@ const commandFailure = (result: {
 }) => {
   const error = squashAtomCommandFailure(result);
   return new McpAppHostRefusal({
-    message:
-      error instanceof Error && error.message.trim() !== "" ? error.message : "Request failed.",
+    message: error instanceof Error && error.message.trim() !== "" ? error.message : "请求失败。",
   });
 };
 
@@ -81,7 +80,7 @@ const confirm = (title: string, message: string, action: string) =>
       title,
       message,
       [
-        { text: "Cancel", style: "cancel", onPress: () => resolve(false) },
+        { text: "取消", style: "cancel", onPress: () => resolve(false) },
         { text: action, onPress: () => resolve(true) },
       ],
       // Android dismisses earlier alerts when showing another; decline dismissed requests to release their slots.
@@ -322,16 +321,16 @@ export function ThreadMcpApp(props: {
         const info = await latest.current.toolInfo({ environmentId, input: { ...input, name } });
         if (info._tag !== "Success") throw commandFailure(info);
         if (!info.value.callable)
-          throw new McpAppHostRefusal({ message: "This app cannot call that tool." });
+          throw new McpAppHostRefusal({ message: "此应用无法调用该工具。" });
         if (
           !info.value.readOnly &&
           !(await confirm(
             `Allow ${app.server} to run ${info.value.title ?? name}?`,
             JSON.stringify(args, null, 2),
-            "Allow",
+            "允许",
           ))
         ) {
-          throw new McpAppHostRefusal({ message: "Declined by the user." });
+          throw new McpAppHostRefusal({ message: "用户已拒绝。" });
         }
         const result = await latest.current.callTool({
           environmentId,
@@ -351,16 +350,16 @@ export function ThreadMcpApp(props: {
       },
       openLink: async (url) => {
         // WebViews cannot prove user activation; confirm links to prevent timer-driven navigation out of T3.
-        if (!(await confirm(`Open a link from ${app.server}?`, url, "Open"))) {
-          throw new McpAppHostRefusal({ message: "Declined by the user." });
+        if (!(await confirm(`Open a link from ${app.server}?`, url, "打开"))) {
+          throw new McpAppHostRefusal({ message: "用户已拒绝。" });
         }
         if (!(await tryOpenExternalUrl(url, "mcp-app"))) {
-          throw new McpAppHostRefusal({ message: "The link could not be opened." });
+          throw new McpAppHostRefusal({ message: "无法打开链接。" });
         }
       },
       sendMessage: async (text) => {
-        if (!(await confirm(`Send this message from ${app.server}?`, text, "Send"))) {
-          throw new McpAppHostRefusal({ message: "Declined by the user." });
+        if (!(await confirm(`Send this message from ${app.server}?`, text, "发送"))) {
+          throw new McpAppHostRefusal({ message: "用户已拒绝。" });
         }
         await enqueueThreadOutboxMessage({
           environmentId: latest.current.props.environmentId,
@@ -423,8 +422,8 @@ export function ThreadMcpApp(props: {
       },
       downloadFile: async (files) => {
         const names = files.map((file) => file.name).join(", ");
-        if (!(await confirm(`Save a file from ${app.server}?`, names, "Save"))) {
-          throw new McpAppHostRefusal({ message: "Declined by the user." });
+        if (!(await confirm(`Save a file from ${app.server}?`, names, "保存"))) {
+          throw new McpAppHostRefusal({ message: "用户已拒绝。" });
         }
         for (const file of files) {
           let bytes: Uint8Array | undefined;
@@ -453,8 +452,7 @@ export function ThreadMcpApp(props: {
             attachment: { name: file.name, mimeType },
             signal: new AbortController().signal,
           });
-          if (!shared)
-            throw new McpAppHostRefusal({ message: "Sharing is not available on this device." });
+          if (!shared) throw new McpAppHostRefusal({ message: "此设备不支持分享。" });
         }
       },
       onRequestTeardown: () => {
@@ -490,9 +488,7 @@ export function ThreadMcpApp(props: {
         style={{ height, marginBottom: ROW_BOTTOM_MARGIN }}
         className="items-center justify-center rounded-lg border border-border"
       >
-        <Text className="text-sm text-foreground-muted">
-          The {app.server} app is open full screen
-        </Text>
+        <Text className="text-sm text-foreground-muted">{app.server} 应用已全屏打开</Text>
       </View>
     );
   }
@@ -503,10 +499,10 @@ export function ThreadMcpApp(props: {
         style={{ height, marginBottom: ROW_BOTTOM_MARGIN }}
         className="items-center justify-center gap-2 rounded-lg border border-border"
       >
-        <Text className="text-sm text-foreground-muted">The {app.server} app was closed</Text>
+        <Text className="text-sm text-foreground-muted">{app.server} 应用已关闭</Text>
         <View className="items-center">
           <Button
-            label="Show app"
+            label="显示应用"
             tone="secondary"
             onPress={() => {
               reopenDocument();
@@ -523,7 +519,7 @@ export function ThreadMcpApp(props: {
       {navigatedAway ? (
         <View className="flex-1 items-center justify-center">
           <Text className="text-sm text-foreground-muted">
-            The {app.server} app left its page and was stopped
+            {app.server} 应用已离开页面并停止运行
           </Text>
         </View>
       ) : uri !== null && !crashed ? (
@@ -568,7 +564,7 @@ export function ThreadMcpApp(props: {
         />
       ) : asset._tag === "Failure" || crashed ? (
         <View className="flex-1 items-center justify-center">
-          <Text className="text-sm text-foreground-muted">Unable to load the {app.server} app</Text>
+          <Text className="text-sm text-foreground-muted">无法加载 {app.server} app</Text>
         </View>
       ) : null}
       {uri !== null && !loaded && !crashed && !navigatedAway ? (

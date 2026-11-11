@@ -11,7 +11,7 @@ export function PullRequestMoreReplies({
       <span>
         {moreReplies > 0
           ? `${moreReplies.toLocaleString()} more ${moreReplies === 1 ? "reply" : "replies"}`
-          : "More replies"}
+          : "更多答复"}
       </span>
       {url ? (
         <a
@@ -20,7 +20,7 @@ export function PullRequestMoreReplies({
           rel="noopener noreferrer"
           className="hover:text-foreground hover:underline"
         >
-          View on host
+          在主机上查看
         </a>
       ) : null}
     </div>

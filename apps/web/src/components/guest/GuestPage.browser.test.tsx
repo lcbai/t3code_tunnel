@@ -237,7 +237,7 @@ describe("GuestPage", () => {
     await userEvent.click(screen.getByText("vp run check:changed"));
     await expect.element(screen.getByText("4 files checked")).toBeVisible();
     await expect
-      .element(screen.getByTitle("Chart"))
+      .element(screen.getByTitle("图表"))
       .toHaveAttribute(
         "src",
         expect.stringContaining(`${GUEST_RENDER_ROUTE}?share=${SHARE_ID}&item=visual`),
@@ -259,11 +259,11 @@ describe("GuestPage", () => {
       .mockImplementation(fakeEventSource(opening([run("run-1", 1, "completed")], items)) as never);
     await using screen = await render(<GuestPage />);
 
-    await expect.element(screen.getByLabelText("Attach files")).toBeVisible();
+    await expect.element(screen.getByLabelText("附加文件")).toBeVisible();
     const notes = new File(["hello"], "notes.txt", { type: "text/plain" });
-    await userEvent.upload(screen.getByLabelText("Files to attach"), notes);
+    await userEvent.upload(screen.getByLabelText("要附加的文件"), notes);
     await expect.element(screen.getByText("notes.txt")).toBeVisible();
-    await userEvent.click(screen.getByRole("button", { name: "Send" }));
+    await userEvent.click(screen.getByRole("button", { name: "发送" }));
     await vi.waitFor(() =>
       expect(fetchSpy).toHaveBeenCalledWith(
         `/api/guest/messages?share=${SHARE_ID}`,
@@ -348,8 +348,8 @@ describe("GuestPage", () => {
       status: "pending" as const,
       submittedAt: "2026-10-23T10:01:00.000Z",
     };
-    await userEvent.type(screen.getByRole("textbox", { name: "Message" }), waiting.text);
-    await userEvent.click(screen.getByRole("button", { name: "Send" }));
+    await userEvent.type(screen.getByRole("textbox", { name: "消息" }), waiting.text);
+    await userEvent.click(screen.getByRole("button", { name: "发送" }));
     send({ type: "view", view: { ...view, messages: [waiting] } });
     await expect.element(screen.getByText(waiting.text)).toBeInTheDocument();
     await expectAtEnd();

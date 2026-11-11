@@ -84,7 +84,7 @@ export function PullRequestSpeedActions<Entry extends PullRequestSpeedActionEntr
     <SpeedModeGroup
       busy={busy}
       pending={actionPending || closing}
-      label={`Quick actions for ${terminology.singular} #${entry.number}`}
+      label={`${terminology.singular} #${entry.number} 的快捷操作`}
     >
       {actions.map((action) => {
         const label = ACTIONS[action].label;
@@ -112,10 +112,10 @@ export function PullRequestSpeedActions<Entry extends PullRequestSpeedActionEntr
             </TooltipTrigger>
             <TooltipPopup>
               {action === "merge" && entry.stack
-                ? `Open this ${terminology.singular} to merge its stack`
+                ? `打开此${terminology.singular} 将其堆栈合并`
                 : action === "close" && onCloseSweepStart
-                  ? "Close immediately, or drag across rows to close several"
-                  : `${label} immediately`}
+                  ? "立即关闭，或跨行拖动以关闭数个"
+                  : `${label} 即时`}
             </TooltipPopup>
           </Tooltip>
         );
@@ -164,8 +164,8 @@ function SpeedModeGroup({
 }
 
 const ACTIONS = {
-  close: { label: "Close", Icon: PullRequestGlyph.closed },
-  merge: { label: "Merge", Icon: PullRequestGlyph.merged },
-  ready: { label: "Ready for review", Icon: PullRequestGlyph.pullRequest },
-  reopen: { label: "Reopen", Icon: PullRequestGlyph.reopen },
+  close: { label: "关闭", Icon: PullRequestGlyph.closed },
+  merge: { label: "合并", Icon: PullRequestGlyph.merged },
+  ready: { label: "准备接受审查", Icon: PullRequestGlyph.pullRequest },
+  reopen: { label: "重新打开", Icon: PullRequestGlyph.reopen },
 } as const;

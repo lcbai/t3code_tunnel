@@ -6,9 +6,9 @@ describe("desktop-approved window capture shortcut labels", () => {
   it.each([
     ["Press <Shift><Control>2", ["Ctrl", "⇧", "2"]],
     ["Ctrl+Shift+8", ["Ctrl", "⇧", "8"]],
-    ["Meta+F12", ["Super", "F12"]],
+    ["Meta+F12", ["超级", "F12"]],
     ["<Primary><Alt>Return", ["Ctrl", "Alt", "Enter"]],
-    ["<Super>Left", ["Super", "Left"]],
+    ["<Super>Left", ["超级", "左箭头"]],
     ["<Control>space", ["Ctrl", "Space"]],
     ["<Control>plus", ["Ctrl", "+"]],
     ["Ctrl++", ["Ctrl", "+"]],

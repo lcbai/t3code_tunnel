@@ -163,7 +163,7 @@ const freshAssetUrlFamily = Atom.family((key: FreshAssetUrlKey) =>
           : await refreshAssetUrl(key.environmentId, key.resource, signal),
       catch: (cause) =>
         new AssetUrlUnavailableError({
-          message: cause instanceof Error ? cause.message : "The attachment is unavailable.",
+          message: cause instanceof Error ? cause.message : "附件不可用。",
           cause,
         }),
     }).pipe(
@@ -175,7 +175,7 @@ const freshAssetUrlFamily = Atom.family((key: FreshAssetUrlKey) =>
             }))
           : Effect.fail(
               new AssetUrlUnavailableError({
-                message: "Reconnect to this environment and try again.",
+                message: "请重新连接此环境后重试。",
               }),
             ),
       ),

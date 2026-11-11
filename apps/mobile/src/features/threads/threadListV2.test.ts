@@ -1583,7 +1583,7 @@ describe("buildThreadListV2ListItems row-state stamps", () => {
       const row = buildTickList([thread], BASE_MS, [])[0]!;
       return row.type === "v2-thread" ? row.timeLabel : null;
     };
-    expect(label(isoAt(BASE_MS - 40 * MINUTE_MS), isoAt(BASE_MS - 2 * MINUTE_MS))).toBe("2m");
+    expect(label(isoAt(BASE_MS - 40 * MINUTE_MS), isoAt(BASE_MS - 2 * MINUTE_MS))).toBe("2 分钟");
   });
 
   it("stamps queued outbox messages onto the matching row and notices removal", () => {

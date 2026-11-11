@@ -438,8 +438,8 @@ export function useUpdateEnvironmentModelPreferences(environmentId: EnvironmentI
     } catch {
       toastManager.add({
         type: "error",
-        title: "Model preferences not saved",
-        description: "Could not load saved model preferences. Try again.",
+        title: "未保存的模型首选项",
+        description: "无法装入保存的模型首选项。请再试一次。",
       });
       return;
     }
@@ -465,8 +465,8 @@ export function useToggleEnvironmentModelFavorite(environmentId: EnvironmentId |
       } catch {
         toastManager.add({
           type: "error",
-          title: "Favorites not saved",
-          description: "Could not load saved model preferences. Try again.",
+          title: "未保存的爱好",
+          description: "无法装入保存的模型首选项。请再试一次。",
         });
         return;
       }
@@ -547,7 +547,7 @@ export function usePrimarySettings<T = UnifiedSettings>(
 }
 
 export const PRIMARY_SETTINGS_UNAVAILABLE_MESSAGE =
-  "This setting is saved on a server, and the hosted app is not anchored to one. Change it from the desktop app or from the server's own address.";
+  "此设置保存在服务器上，而主机应用程序不是固定在服务器上。从桌面应用程序或服务器自己的地址更改它。";
 
 /** Hosted clients have no primary: usePrimarySettings reads defaults and cannot write. */
 export function usePrimarySettingsAvailable(): boolean {
@@ -577,7 +577,7 @@ function useSharedSettingsSyncTargetIds(includePending = false): ReadonlyArray<E
 function useUpdateSettingsTarget(environmentId: EnvironmentId | null) {
   useEnvironmentScope(environmentId, AuthSettingsWriteScope);
   const persist = useAtomCommand(serverEnvironment.updateSettings, {
-    label: "server settings update",
+    label: "服务器设置更新",
     reportFailure: false,
   });
   const { environments } = useEnvironments();
@@ -594,7 +594,7 @@ function useUpdateSettingsTarget(environmentId: EnvironmentId | null) {
       const error = squashAtomCommandFailure(result);
       toastManager.add({
         type: "error",
-        title: "Setting not saved",
+        title: "未保存的设置",
         description: `Could not save on ${label}: ${error instanceof Error ? error.message : "The save failed. Try reconnecting and saving again."}`,
       });
     }
@@ -616,8 +616,8 @@ function useUpdateSettingsTarget(environmentId: EnvironmentId | null) {
       options?.onFailed?.();
       toastManager.add({
         type: "warning",
-        title: "Setting not saved",
-        description: `This connection lacks permission to change settings on ${environments.find((target) => target.environmentId === environmentId)?.label ?? "the selected environment"}.`,
+        title: "未保存的设置",
+        description: `此连接缺乏更改在${environments.find((target) => target.environmentId === environmentId)?.label ?? "the selected environment"} 上的设置的权限。`,
       });
     }
     if (Object.keys(serverPatch).length > 0 && canWriteServerPatch) {
@@ -627,7 +627,7 @@ function useUpdateSettingsTarget(environmentId: EnvironmentId | null) {
         options?.onFailed?.();
         return toastManager.add({
           type: "warning",
-          title: "Setting not saved",
+          title: "未保存的设置",
           description,
         });
       };
@@ -718,7 +718,7 @@ function useUpdateSettingsTarget(environmentId: EnvironmentId | null) {
               .map(({ label }) => label);
             toastManager.add({
               type: "error",
-              title: saved.length > 0 ? "Setting saved on some environments" : "Setting not saved",
+              title: saved.length > 0 ? "设置保存在一些环境中" : "未保存的设置",
               description: [
                 ...failures,
                 ...(saved.length > 0 ? [`Saved on ${saved.join(", ")}.`] : []),

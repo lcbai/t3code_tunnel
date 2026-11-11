@@ -55,8 +55,8 @@ describe("startKeybindingsUpdateToasts", () => {
       });
 
       expect(mocks.addToast.mock.calls.map(([toast]) => toast.title)).toEqual([
-        "Keybindings updated",
-        "Invalid keybindings configuration",
+        "更新快捷键",
+        "无效的快捷键配置",
       ]);
     } finally {
       stop();

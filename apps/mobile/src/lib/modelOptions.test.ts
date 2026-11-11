@@ -649,7 +649,7 @@ describe("mobile model options", () => {
       expect(isModelSelectionUnavailable(configWith(settings), selection, projectId)).toBe(true);
       expect(
         describeUnavailableModelSelection(configWith(settings), selection, projectId).title,
-      ).toBe("Model turned off for this project");
+      ).toBe("此项目已停用该模型");
       expect(isModelSelectionUnavailable(configWith(settings), selection, null)).toBe(true);
     });
 
@@ -850,7 +850,7 @@ describe("synchronized mobile model visibility", () => {
       ).toBe(true);
       expect(isModelSelectionUnavailable(config, disallowed, null)).toBe(true);
       expect(describeUnavailableModelSelection(config, disallowed, null)).toEqual({
-        title: "Provider not allowed",
+        title: "不允许使用此提供方",
         detail: "Example Corp's policy does not allow the Claude provider. Choose another model.",
       });
     });

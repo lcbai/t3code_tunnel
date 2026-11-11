@@ -14,7 +14,7 @@ export function SheetCloseButton(props: SheetCloseButtonProps) {
   return (
     <IconButton
       icon="xmark"
-      accessibilityLabel={props.accessibilityLabel ?? (props.onCancel ? "Cancel" : "Close")}
+      accessibilityLabel={props.accessibilityLabel ?? (props.onCancel ? "取消" : "关闭")}
       disabled={props.disabled}
       onPress={props.onCancel ?? props.onClose}
     />
@@ -44,7 +44,7 @@ function SheetDismissGuard(props: { readonly dismissDisabled: boolean | undefine
 function NativeSheetHeader(props: SheetHeaderProps) {
   const { colors } = useControlTheme();
   const onDismiss = props.onCancel ?? props.onClose;
-  const dismissLabel = props.accessibilityLabel ?? (props.onCancel ? "Cancel" : "Close");
+  const dismissLabel = props.accessibilityLabel ?? (props.onCancel ? "取消" : "关闭");
   const confirmation = props.confirm;
 
   // Toolbar children are parsed as native items, so keep the actual Button

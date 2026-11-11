@@ -42,7 +42,7 @@ export default function ProviderAuthTerminal({
         if (/^https?:\/\//i.test(url))
           void ensureLocalApi()
             .shell.openExternal(url)
-            .catch(() => setError("Could not open the provider link."));
+            .catch(() => setError("无法打开提供者链接。"));
       },
     })
       .then((terminal) => {
@@ -54,7 +54,7 @@ export default function ProviderAuthTerminal({
         written.current = 0;
         setSurface(terminal);
       })
-      .catch(() => setError("Could not load the sign-in terminal. Cancel and retry sign-in."));
+      .catch(() => setError("无法加载登录终端。 取消并重试登录。"));
     return () => {
       disposed = true;
       created?.dispose();
@@ -65,7 +65,7 @@ export default function ProviderAuthTerminal({
     <>
       <div
         ref={mountSurface}
-        aria-label="Provider sign-in terminal"
+        aria-label="代理提供方登录终端"
         className="relative h-64 overflow-hidden rounded-md border border-border"
       />
       {error ? (

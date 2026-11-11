@@ -13,7 +13,7 @@ export class DiffWorkerError extends Schema.TaggedError<DiffWorkerError>()("Diff
   cause: Schema.Defect(),
 }) {
   override get message(): string {
-    return `Diff worker operation ${this.operation} failed for theme ${this.themeName}.`;
+    return `Diff 工人操作${this.operation} 失败主题${this.themeName}。`;
   }
 }
 
@@ -115,7 +115,7 @@ function DiffWorkerReady({ children }: { children?: ReactNode }) {
       role="status"
       className="flex min-h-0 flex-1 items-center justify-center p-4 text-xs text-muted-foreground"
     >
-      Loading code...
+      正在装入代码…
     </div>
   );
 }

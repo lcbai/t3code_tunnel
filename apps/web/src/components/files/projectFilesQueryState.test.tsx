@@ -148,12 +148,12 @@ describe("project query refresh", () => {
       const query = useProjectFileQuery(environmentId, "/repo", "src/preview.ts");
       expect(projectMocks.readFile).not.toHaveBeenCalled();
       expect(query.data).toBeNull();
-      expect(query.error).toBe("This connection cannot read host files.");
+      expect(query.error).toBe("此连接无法读取主机文件。");
       expect(query.isPending).toBe(false);
       const entries = useProjectEntriesQuery(environmentId, "/repo");
       expect(projectMocks.listEntries).not.toHaveBeenCalled();
       expect(entries.data).toBeNull();
-      expect(entries.error).toBe("This connection cannot read host files.");
+      expect(entries.error).toBe("此连接无法读取主机文件。");
       expect(entries.isPending).toBe(false);
     } finally {
       registry.dispose();

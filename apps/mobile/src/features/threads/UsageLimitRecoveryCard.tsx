@@ -60,10 +60,14 @@ export function UsageLimitRecoveryCard({
   )
     return null;
   const resetText = displayAt
-    ? `${canSchedule && scheduled ? "Resumes" : "Resets"} ${new Date(displayAt).toLocaleString(
-        undefined,
-        { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" },
-      )}.`
+    ? `${canSchedule && scheduled ? "恢复时间：" : "重置时间："} ${new Date(
+        displayAt,
+      ).toLocaleString("zh-CN", {
+        month: "short",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+      })}.`
     : null;
   const snoozed =
     limitRecoveryOwnsSnooze({
@@ -99,7 +103,7 @@ export function UsageLimitRecoveryCard({
   }
   const action = workspaceLimit
     ? {
-        label: "Copy request for admin",
+        label: "复制请求以发给管理员",
         role: "button" as const,
         run: () => {
           setError(null);
@@ -114,7 +118,7 @@ export function UsageLimitRecoveryCard({
         },
       }
     : {
-        label: "Manage usage",
+        label: "管理用量",
         role: "link" as const,
         run: () => {
           setError(null);
@@ -136,9 +140,7 @@ export function UsageLimitRecoveryCard({
       ) : null}
       <View className="min-w-0 flex-1 gap-1">
         {chatGptLimit ? (
-          <Text className="text-sm font-t3-medium text-foreground">
-            ChatGPT usage limit reached
-          </Text>
+          <Text className="text-sm font-t3-medium text-foreground">已达到 ChatGPT 用量上限</Text>
         ) : null}
         <Text
           className={
@@ -147,13 +149,13 @@ export function UsageLimitRecoveryCard({
         >
           {workspaceLimit
             ? copied
-              ? "Request copied. Send it to your workspace admin."
-              : "You've reached your workspace's limit for using your ChatGPT plan in other apps. Copy a request to ask your workspace admin for increased usage limits."
+              ? "请求已复制。请发送给你的工作区管理员。"
+              : "你已达到工作区中其他应用共享 ChatGPT 套餐的用量上限。请复制请求并发送给工作区管理员，以申请提高限额。"
             : chatGptLimit
-              ? (resetText ?? "Review your usage settings in ChatGPT.")
+              ? (resetText ?? "请在 ChatGPT 中查看用量设置。")
               : resetText
-                ? `Usage limit reached. ${resetText}`
-                : "Usage limit reached. The provider did not report a reset time. Retry manually when your limit is available."}
+                ? `已达到用量上限。${resetText}`
+                : "已达到用量上限。提供方未报告重置时间，请在额度恢复后手动重试。"}
         </Text>
         {chatGptLimit || canSchedule ? (
           // The margins cancel the 44pt touch height so the links sit 8pt under the text.
@@ -169,12 +171,12 @@ export function UsageLimitRecoveryCard({
             {canSchedule ? (
               <>
                 <RecoveryAction
-                  label={scheduled ? "Cancel auto-resume" : "Resume at reset"}
+                  label={scheduled ? "取消自动恢复" : "额度重置时恢复"}
                   disabled={pending}
                   onPress={() => void toggle("resume")}
                 />
                 <RecoveryAction
-                  label={snoozed ? "Wake now" : "Snooze until reset"}
+                  label={snoozed ? "立即唤醒" : "推迟至重置"}
                   disabled={pending || (!snoozed && resetPassed)}
                   onPress={() => void toggle("snooze")}
                 />

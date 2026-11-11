@@ -30,12 +30,12 @@ export function ConnectionsRouteScreen() {
   return (
     <View collapsable={false} className="flex-1 bg-sheet">
       <AppBar
-        title="Environments"
+        title="环境"
         onClose={() => navigation.goBack()}
-        closeAccessibilityLabel="Close environments"
+        closeAccessibilityLabel="关闭环境列表"
         actions={[
           {
-            accessibilityLabel: "Add environment",
+            accessibilityLabel: "添加环境",
             icon: "plus",
             onPress: () => navigation.navigate("ConnectionsNew"),
           },

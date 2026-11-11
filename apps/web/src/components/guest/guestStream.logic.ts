@@ -190,8 +190,8 @@ export function unplacedGuestMessages(
 /** "23h left" or "5m left", rounded down, for the guest page header. */
 export function formatGuestExpiry(expiresAt: string, nowMs: number): string {
   const minutes = Math.floor((Date.parse(expiresAt) - nowMs) / 60_000);
-  if (minutes <= 0) return "Expired";
-  return minutes >= 60 ? `${Math.floor(minutes / 60)}h left` : `${minutes}m left`;
+  if (minutes <= 0) return "已过期";
+  return minutes >= 60 ? `剩余 ${Math.floor(minutes / 60)} 小时` : `剩余 ${minutes} 分钟`;
 }
 
 /**
@@ -219,7 +219,7 @@ export function guestFilesProblem(
   files: ReadonlyArray<Pick<File, "type" | "size">>,
 ): string | null {
   if (files.length > GUEST_MESSAGE_MAX_ATTACHMENTS) {
-    return `Attach up to ${GUEST_MESSAGE_MAX_ATTACHMENTS} files to a message.`;
+    return `每条消息最多附加 ${GUEST_MESSAGE_MAX_ATTACHMENTS} 个文件。`;
   }
   if (files.reduce((total, file) => total + file.size, 0) > GUEST_MESSAGE_MAX_ATTACHMENT_BYTES) {
     return "Attached files can total up to 10 MB per message.";
@@ -230,9 +230,7 @@ export function guestFilesProblem(
       (file.type.toLowerCase().startsWith("image/") &&
         !isProviderSendTurnSupportedImageMimeType(file.type)),
   );
-  return unsupported
-    ? "This file cannot be attached. Images must be PNG, JPEG, GIF, or WebP."
-    : null;
+  return unsupported ? "无法附加此文件。图片须为 PNG、JPEG、GIF 或 WebP。" : null;
 }
 
 /**

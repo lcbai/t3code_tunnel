@@ -18,7 +18,7 @@ export class PreviewWebviewBridgeUnavailableError extends Schema.TaggedError<Pre
   { environmentId: Schema.String },
 ) {
   override get message(): string {
-    return `Desktop preview configuration is unavailable for environment "${this.environmentId}".`;
+    return `桌面预览配置对于环境"${this.environmentId}"是无法使用的。`;
   }
 }
 

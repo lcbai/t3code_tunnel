@@ -114,7 +114,7 @@ function AppSignInRow(props: {
   const attempt = useRef<SourceControlSignInPrompt | null>(null);
   const input = { provider: definition.kind, host };
   const updateSettings = useAtomCommand(serverEnvironment.updateSettings, {
-    label: `sign out of ${appSignIn.appName}`,
+    label: `退出 ${appSignIn.appName} 登录`,
   });
   const [pending, setPending] = useState<SourceControlSignInPrompt | "starting" | null>(null);
 
@@ -122,10 +122,10 @@ function AppSignInRow(props: {
     void Clipboard.setStringAsync(prompt.userCode).catch(() => undefined);
     Dialog.alert(
       prompt.userCode,
-      `Enter this code on GitHub, then approve ${appSignIn.appName}. It is copied. The server finishes signing in even if you leave the app.`,
+      `代码已复制。请在 GitHub 上输入此代码，然后批准 ${appSignIn.appName}。离开应用后，服务器会继续完成登录。`,
       [
         {
-          text: "Cancel",
+          text: "取消",
           style: "cancel",
           onPress: () => {
             attempt.current = null;
@@ -133,7 +133,7 @@ function AppSignInRow(props: {
             void cancel({ environmentId, input });
           },
         },
-        { text: "Open GitHub", onPress: () => openUrl(prompt.verificationUri) },
+        { text: "打开 GitHub", onPress: () => openUrl(prompt.verificationUri) },
       ],
     );
   };
@@ -143,7 +143,7 @@ function AppSignInRow(props: {
     const started = await start({ environmentId, input });
     if (started._tag !== "Success") {
       setPending(null);
-      Dialog.alert("Could not start the sign-in", failureMessage(started.cause));
+      Dialog.alert("无法开始登录", failureMessage(started.cause));
       return;
     }
     const prompt = started.value;
@@ -155,7 +155,7 @@ function AppSignInRow(props: {
     attempt.current = null;
     setPending(null);
     if (finished._tag !== "Success") {
-      Dialog.alert("Sign-in did not finish", failureMessage(finished.cause));
+      Dialog.alert("登录尚未完成", failureMessage(finished.cause));
     }
   };
 
@@ -174,11 +174,11 @@ function AppSignInRow(props: {
     if (signedIn) {
       Dialog.alert(
         appSignIn.appName,
-        "Signed in. GitHub requests use the app's higher rate limit, in repositories where the app is installed.",
+        "已登录。对于已安装此应用的仓库，GitHub 请求可使用应用的较高频率上限。",
         [
-          { text: "Install on an organization", onPress: () => openUrl(appSignIn.installUrl) },
-          { text: "Sign out", style: "destructive", onPress: signOut },
-          { text: "Cancel", style: "cancel" },
+          { text: "为组织安装", onPress: () => openUrl(appSignIn.installUrl) },
+          { text: "退出登录", style: "destructive", onPress: signOut },
+          { text: "取消", style: "cancel" },
         ],
       );
     } else if (pending !== null && pending !== "starting") {
@@ -199,7 +199,7 @@ function AppSignInRow(props: {
             ? "Starting…"
             : pending !== null
               ? `Enter ${pending.userCode}`
-              : "Sign in"
+              : "登录"
       }
       disabled={props.disabled}
       onPress={onPress}

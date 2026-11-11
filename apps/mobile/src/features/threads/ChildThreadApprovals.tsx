@@ -21,9 +21,7 @@ function ChildApproval({ entry }: { entry: ChildThreadApproval }) {
   const [error, setError] = useState<string | null>(null);
   return (
     <View className="mx-3.5 my-2 gap-2">
-      <AppText className="font-t3-bold text-sm text-foreground">
-        Approval from {entry.title}
-      </AppText>
+      <AppText className="font-t3-bold text-sm text-foreground">批准方 {entry.title}</AppText>
       <PendingApprovalCard
         canOperateThread={canRespond}
         approval={entry.approval}

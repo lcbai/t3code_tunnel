@@ -8,8 +8,8 @@ export function WorkspaceNoTabs() {
   return (
     <View className="flex-1 items-center justify-center bg-screen">
       <EmptyState
-        title="All sections are hidden"
-        detail="Show a section to add it back to navigation."
+        title="所有分区均已隐藏"
+        detail="显示某个分区可将其添加回导航栏。"
         actionLabel="Edit navigation tabs"
         variant="plain"
         onAction={() => openSettings(navigation, "SettingsNavigation")}

@@ -64,7 +64,7 @@ export function PullRequestChangeBreakdownStat({
           <ChangeBreakdownGrid breakdown={breakdown} total={{ additions, deletions }} />
         </TooltipPopup>
       ) : query.isPending ? (
-        <TooltipPopup side="bottom">Loading breakdown</TooltipPopup>
+        <TooltipPopup side="bottom">正在装入分解</TooltipPopup>
       ) : null}
     </Tooltip>
   );
@@ -117,7 +117,7 @@ function ChangeBreakdownGrid({
       {total ? (
         <>
           <div className="col-span-3 border-t border-border" />
-          <BreakdownRow label="Total" additions={total.additions} deletions={total.deletions} />
+          <BreakdownRow label="共计" additions={total.additions} deletions={total.deletions} />
         </>
       ) : null}
     </div>

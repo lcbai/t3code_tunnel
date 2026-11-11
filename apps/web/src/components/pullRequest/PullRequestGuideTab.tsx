@@ -95,7 +95,7 @@ export function PullRequestGuideTab({
     canWrite ? (
       <Button size={size} variant="outline" disabled={running} onClick={() => void write()}>
         {running ? <Spinner /> : <SparklesIcon aria-hidden className="size-3.5" />}
-        {running ? "Reading the change..." : label}
+        {running ? "读取更改…" : label}
       </Button>
     ) : null;
 
@@ -110,18 +110,13 @@ export function PullRequestGuideTab({
     return (
       <div className="scrollbar-gutter-both flex h-full flex-col items-center justify-center-safe gap-2 overflow-y-auto px-4 py-10 text-center">
         <p className="text-sm font-medium text-foreground">
-          {running
-            ? "Writing a review guide"
-            : failure === null
-              ? "No review guide yet"
-              : "Could not write a review guide"}
+          {running ? "编写审查指南" : failure === null ? "还没有审查指南" : "无法编写审查指南"}
         </p>
         <p className="max-w-md text-xs text-muted-foreground">
           {running
-            ? "An agent is reading the change. A large one takes a few minutes. You can leave; you will be told when it is ready."
+            ? "代理正在读取更改。 大型更改需要几分钟。您可以离开，准备就绪时会被告知。"
             : failure === null
-              ? (query.error ??
-                "A guide is a tour of the change: stops through the code in reading order, with the calls only a maintainer can make.")
+              ? (query.error ?? "向导是指对变化的巡视:按读取顺序通过代码停止，只有维护者才能拨打。")
               : FAILURE_HINT}
         </p>
         {writeButton(failure === null ? "Write guide" : "Try again", "sm")}
@@ -136,12 +131,12 @@ export function PullRequestGuideTab({
         {running ? <Spinner /> : <TriangleAlertIcon />}
         <AlertDescription>
           {running ? (
-            "Rewriting this guide. You will be told when the new one is ready."
+            "重写这个向导，新向导准备好后，你就会被告知。"
           ) : failure === null ? (
-            "Written before the latest push."
+            "在最新的推前写成。"
           ) : (
             <>
-              {`Could not rewrite this guide. ${FAILURE_HINT}`}
+              {`无法重写此指南。${FAILURE_HINT}`}
               <FailureDetails detail={failure} />
             </>
           )}
@@ -180,7 +175,7 @@ function FailureDetails({ detail }: { detail: string }) {
   return (
     <details className="w-full max-w-lg text-xs text-muted-foreground">
       <summary className="cursor-pointer rounded-sm -outline-offset-2 hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring">
-        Technical details
+        技术细节
       </summary>
       <pre className="scrollbar-gutter-both mt-2 max-h-40 overflow-auto whitespace-pre-wrap break-words rounded-lg border border-border bg-muted/40 p-3 text-left font-mono text-xs">
         {detail}

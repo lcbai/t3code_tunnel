@@ -26,7 +26,7 @@ export function useOpenThreadPullRequests() {
     }).then((opened) => {
       if (!opened)
         Dialog.alert(
-          `Unable to open ${pr.changeRequest.shortLabel}`,
+          `无法打开 ${pr.changeRequest.shortLabel}`,
           `The ${pr.changeRequest.singular} could not be opened.`,
         );
     });

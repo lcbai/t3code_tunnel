@@ -122,10 +122,10 @@ function useThreadGitControlModel(props: ThreadGitMenuProps) {
   const quickAction = (() => {
     if (!isRepo) {
       return {
-        label: "Git unavailable",
+        label: "Git 不可用",
         disabled: true,
         kind: "show_hint" as const,
-        hint: "This workspace is not a git repository.",
+        hint: "此工作区不是 Git 仓库。",
       };
     }
     const action = resolveQuickAction(gitStatus, busy, isDefaultRef, hasPrimaryRemote);
@@ -133,7 +133,7 @@ function useThreadGitControlModel(props: ThreadGitMenuProps) {
       ? {
           ...action,
           disabled: true,
-          hint: "This connection cannot change source control.",
+          hint: "此连接无权修改版本控制设置。",
         }
       : action;
   })();
@@ -163,7 +163,7 @@ function useThreadGitControlModel(props: ThreadGitMenuProps) {
       return;
     }
     if (!(await openPullRequest(prUrl))) {
-      Dialog.alert(`Unable to open ${shortLabel}`, `The ${singular} could not be opened.`);
+      Dialog.alert(`无法打开 ${shortLabel}`, `The ${singular} could not be opened.`);
     }
   };
 
@@ -184,10 +184,7 @@ function useThreadGitControlModel(props: ThreadGitMenuProps) {
       requiresDefaultBranchConfirmation(input.action, isDefaultRef)
     ) {
       if (props.hasThread === false) {
-        Dialog.alert(
-          "Choose a feature branch",
-          "Switch branches before publishing changes from this draft.",
-        );
+        Dialog.alert("选择功能分支", "请先切换分支，再发布此草稿中的变更。");
         return;
       }
       navigation.navigate("GitConfirm", {
@@ -251,7 +248,7 @@ function useThreadGitControlModel(props: ThreadGitMenuProps) {
 export function threadTerminalMenu(props: ThreadGitControlsProps): AppBarMenu | null {
   if (!props.canOpenTerminal) return null;
   return {
-    title: "Terminal",
+    title: "终端",
     icon: "terminal",
     separateBackground: false,
     items: [
@@ -267,9 +264,9 @@ export function threadTerminalMenu(props: ThreadGitControlsProps): AppBarMenu | 
         : [
             {
               id: "script-none",
-              title: "No project scripts",
+              title: "没有项目脚本",
               icon: "play",
-              subtitle: "This project has no saved scripts yet",
+              subtitle: "此项目尚未保存脚本",
               disabled: true,
               onPress: () => {},
             },
@@ -291,9 +288,9 @@ export function threadTerminalMenu(props: ThreadGitControlsProps): AppBarMenu | 
       })),
       {
         id: "terminal-new",
-        title: "Open new terminal",
+        title: "打开新终端",
         icon: "plus",
-        subtitle: "Start another shell for this thread",
+        subtitle: "为此会话打开另一个 Shell",
         disabled: !props.canOperateTerminal,
         onPress: props.onOpenNewTerminal,
       },
@@ -305,7 +302,7 @@ export function threadTerminalMenu(props: ThreadGitControlsProps): AppBarMenu | 
 export function useThreadGitMenuDefinition(props: ThreadGitMenuProps): AppBarMenu | null {
   const model = useThreadGitControlModel(props);
   return {
-    title: "Git controls",
+    title: "Git 控制",
     icon: "point.topleft.down.curvedto.point.bottomright.up",
     separateBackground: false,
     items: [
@@ -329,35 +326,29 @@ export function useThreadGitMenuDefinition(props: ThreadGitMenuProps): AppBarMen
       },
       {
         id: "git-review",
-        title: "Review changes",
+        title: "审查变更",
         icon: "text.bubble",
         disabled: !model.isRepo || props.hasThread === false,
-        subtitle:
-          props.hasThread === false
-            ? "Available after the first message"
-            : "Turn diffs and worktree changes",
+        subtitle: props.hasThread === false ? "发送第一条消息后可用" : "轮次差异与工作树变更",
         onPress: model.openReview,
       },
       ...(props.onMergeBack
         ? [
             {
               id: "git-merge-back",
-              title: "Merge back to source",
+              title: "合并回源分支",
               icon: PullRequestGlyph.merged,
-              subtitle: "Bring this thread's latest turn into its source",
+              subtitle: "将此会话的最新一轮合并回来源会话",
               onPress: props.onMergeBack,
             },
           ]
         : []),
       {
         id: "git-more",
-        title: "More",
+        title: "更多",
         icon: "ellipsis",
         disabled: props.hasThread === false,
-        subtitle:
-          props.hasThread === false
-            ? "Available after the first message"
-            : "Commit, files, branches",
+        subtitle: props.hasThread === false ? "发送第一条消息后可用" : "提交、文件、分支",
         onPress: model.openGitInspector,
       },
     ],

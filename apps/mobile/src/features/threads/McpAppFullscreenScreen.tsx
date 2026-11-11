@@ -110,7 +110,7 @@ export function McpAppFullscreenScreen({ route }: McpAppFullscreenScreenProps) {
   return (
     <View className="flex-1 bg-screen">
       <AppBar
-        title={app?.server ?? "App"}
+        title={app?.server ?? "应用"}
         onClose={onClose}
         closeAccessibilityLabel="Exit full screen"
       />
@@ -126,7 +126,7 @@ export function McpAppFullscreenScreen({ route }: McpAppFullscreenScreenProps) {
       >
         {app === undefined ? (
           detail.data === undefined ? null : (
-            <Text className="m-6 text-sm text-foreground-muted">This app cannot be shown.</Text>
+            <Text className="m-6 text-sm text-foreground-muted">无法显示此应用。</Text>
           )
         ) : size.width > 0 ? (
           <ThreadMcpApp

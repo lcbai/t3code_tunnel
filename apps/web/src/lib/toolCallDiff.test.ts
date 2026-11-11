@@ -70,7 +70,7 @@ describe("toolCallDiff", () => {
         }).content,
       ).toEqual([
         {
-          label: operation === "add" ? "Recorded content after" : "Recorded content before",
+          label: operation === "add" ? "已记录的修改后内容" : "已记录的修改前内容",
           text: "",
         },
       ]);
@@ -78,13 +78,13 @@ describe("toolCallDiff", () => {
     expect(toolCallDiff({ fileName: "a.ts", oldStr: "before", newStr: "" })).toEqual({
       patch: undefined,
       content: [
-        { label: "Recorded content before", text: "before" },
-        { label: "Recorded content after", text: "" },
+        { label: "已记录的修改前内容", text: "before" },
+        { label: "已记录的修改后内容", text: "" },
       ],
       truncated: false,
     });
     expect(toolCallDiff({ fileName: "a.ts", newStr: "after" }).content).toEqual([
-      { label: "Recorded content after", text: "after" },
+      { label: "已记录的修改后内容", text: "after" },
     ]);
   });
 
@@ -99,7 +99,7 @@ describe("toolCallDiff", () => {
     expect(diff.patch).not.toContain("output truncated");
     expect(getRenderablePatch(diff.patch)?.kind).toBe("files");
     expect(toolCallDiff({ fileName: "a.ts", newStr: `content${suffix}` })).toMatchObject({
-      content: [{ label: "Recorded content after", text: "content" }],
+      content: [{ label: "已记录的修改后内容", text: "content" }],
       truncated: true,
     });
   });

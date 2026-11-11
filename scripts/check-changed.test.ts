@@ -18,7 +18,6 @@ import * as TestClock from "effect/testing/TestClock";
 import {
   comparisonBase,
   defaultConcurrency,
-  docReaderTests,
   gitLines,
   runSteps,
   splitTests,
@@ -35,17 +34,6 @@ describe("check:changed", () => {
     assert.strictEqual(defaultConcurrency(4, 15 * GiB), 2);
     assert.strictEqual(defaultConcurrency(4, 2 * GiB), 1);
     assert.strictEqual(defaultConcurrency(1, 64 * GiB), 1);
-  });
-
-  it("runs the server tests for the one guide they read and leaves other docs inert", () => {
-    const packages = readWorkspace();
-    assert.isTrue(
-      decide(["docs/user/t3-connect-troubleshooting.md"], packages, false).outputs.test_server,
-    );
-    assert.deepStrictEqual(docReaderTests(["docs/user/t3-connect-troubleshooting.md"]), [
-      "apps/server/src/cloud/ConnectReachability.test.ts",
-    ]);
-    assert.deepStrictEqual(decide(["docs/user/install.md"], packages, false).affected, []);
   });
 
   it.effect(

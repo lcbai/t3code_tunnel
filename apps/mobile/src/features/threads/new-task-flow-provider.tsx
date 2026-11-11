@@ -604,9 +604,7 @@ export function NewTaskFlowProvider(
       const error = squashAtomCommandFailure(result);
       Dialog.alert(
         "Could not switch machine",
-        error instanceof Error
-          ? error.message
-          : "The folder for threads without a project could not be created.",
+        error instanceof Error ? error.message : "无法创建无项目会话的文件夹。",
       );
     }
     return false;

@@ -484,7 +484,7 @@ describe("deriveMessagesTimelineRows", () => {
       });
       expect(runningRows.find((row) => row.kind === "context-compaction")).toMatchObject({
         active: true,
-        label: "Compacting context",
+        label: "正在压缩上下文",
       });
       expect(runningRows.some((row) => row.kind === "thinking")).toBe(false);
 
@@ -503,7 +503,7 @@ describe("deriveMessagesTimelineRows", () => {
       });
       expect(completedRows.find((row) => row.kind === "context-compaction")).toMatchObject({
         active: false,
-        label: "Context compacted 899K → 19K tokens",
+        label: "已压缩上下文（899K → 19K Token）",
         tokenCounts: { before: "899K", after: "19K" },
       });
       expect(completedRows.at(-1)?.kind).toBe("thinking");
@@ -776,13 +776,13 @@ describe("deriveMessagesTimelineRows", () => {
       { kind: "working", compacting: true, createdAt: DateTime.formatIso(compactionStartedAt) },
     ]);
     expect(liveRows("completed")).toMatchObject([
-      { kind: "context-compaction", title: "Context compacted after 1h 5m idle" },
+      { kind: "context-compaction", title: "闲置 1h 5m 后压缩上下文" },
     ]);
     const laterRows = rowsFor("running", true);
     const dividers = laterRows.filter((row) => row.kind === "context-compaction");
     expect(dividers).toHaveLength(2);
     expect(dividers[0]).toMatchObject({
-      title: "Context compacted after 1h 5m idle",
+      title: "闲置 1h 5m 后压缩上下文",
       active: false,
     });
     expect(dividers[1]).toMatchObject({ active: true });
@@ -840,7 +840,7 @@ describe("deriveMessagesTimelineRows", () => {
     };
 
     expect(liveRowsFor([prompt, compaction, interruptResult])).toMatchObject([
-      { kind: "context-compaction", label: "Context compaction stopped" },
+      { kind: "context-compaction", label: "上下文压缩已停止" },
     ]);
     // Stopped before the provider started: no compaction row says so, so the interrupt stays.
     expect(liveRowsFor([prompt, interruptResult]).map((row) => row.id)).toContain(
@@ -1448,7 +1448,7 @@ describe("deriveMessagesTimelineRows", () => {
       "final",
     ]);
     expect(collapsed[1]).toMatchObject({ label: "Worked for 30s" });
-    expect(collapsed[3]).toMatchObject({ label: "Continued for 20s", createdAt: time(10) });
+    expect(collapsed[3]).toMatchObject({ label: "继续20s", createdAt: time(10) });
 
     expect(rows(new Set([segmentKey])).map((row) => row.id)).toEqual([
       "prompt",
@@ -2610,8 +2610,8 @@ describe("deriveMessagesTimelineRows", () => {
       expect(rows.find((row) => row.kind === "work-toggle")).toMatchObject({
         hiddenCount: statuses.some((status) => status === "error") ? 2 : 3,
         summary: statuses.some((status) => status === "error")
-          ? "Received 1 update and used 1 tool"
-          : "Used 2 tools and received 1 update",
+          ? "收到了 1 条更新，使用了 1 次工具"
+          : "使用了 2 次工具，收到了 1 条更新",
         hasFailure,
       });
       if (statuses.some((status) => status === "error")) {
@@ -3033,7 +3033,7 @@ describe("v2 run and attempt history", () => {
     expect(collapsedRows.find((row) => row.kind === "attempt-fold")).toMatchObject({
       attemptId: supersededAttemptId,
       runId,
-      label: "Superseded attempt",
+      label: "被取代的尝试",
       expanded: false,
       deferredWorkItemIds: ["old-work-anchor"],
     });
@@ -3217,7 +3217,7 @@ describe("v2 run and attempt history", () => {
       const rows = rowsFor(11, "running");
       expect(rows.find((row) => row.kind === "attempt-fold")).toMatchObject({
         attemptId: supersededAttempt.id,
-        label: "Superseded attempt",
+        label: "被取代的尝试",
       });
       expect(rows.map((row) => row.id)).not.toContain("old-reply-entry");
     });

@@ -130,15 +130,15 @@ describe("deriveComposerSendState", () => {
 describe("buildExpiredTerminalContextToastCopy", () => {
   it("refers to several expired contexts as them", () => {
     expect(buildExpiredTerminalContextToastCopy(2, "empty")).toEqual({
-      title: "Expired terminal contexts won't be sent",
-      description: "Remove them or re-add them to include terminal output.",
+      title: "2 个终端上下文已过期，无法发送",
+      description: "请移除过期的引用，或重新添加以包含终端输出。",
     });
     expect(buildExpiredTerminalContextToastCopy(2, "omitted")).toEqual({
-      title: "Expired terminal contexts omitted from message",
-      description: "Re-add them if you want that terminal output included.",
+      title: "已略过过期的2 个终端上下文",
+      description: "如需包含终端输出，请重新添加过期的引用。",
     });
     expect(buildExpiredTerminalContextToastCopy(1, "omitted").description).toBe(
-      "Re-add it if you want that terminal output included.",
+      "如需包含终端输出，请重新添加过期的引用。",
     );
   });
 });
@@ -611,7 +611,7 @@ describe("resolveComposerProviderSelection", () => {
     expect(selection.selectedProviderEntry?.instanceId).toBe(signedOutEntry.instanceId);
     expect(
       getAntigravitySendBlockReason(selection.selectedProviderEntry?.snapshot, "gemini-pro"),
-    ).toBe("Sign in to Antigravity in provider settings before sending.");
+    ).toBe("请先在代理提供方设置中登录 Antigravity，再发送消息。");
   });
 
   it("blocks a saved model that a ready catalog no longer lists", () => {
@@ -621,7 +621,7 @@ describe("resolveComposerProviderSelection", () => {
     }).snapshot;
 
     expect(getAntigravitySendBlockReason(provider, "saved-model-not-in-current-catalog")).toBe(
-      "That Antigravity model is no longer available. Choose another model.",
+      "Antigravity 模型已经无法使用。 选择另一个模型。",
     );
     expect(getAntigravitySendBlockReason(provider, "gemini-pro")).toBeNull();
   });

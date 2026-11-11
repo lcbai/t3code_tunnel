@@ -83,9 +83,9 @@ export function useVoiceModels(environmentId: EnvironmentId, label: string) {
     download: (model: EnvironmentSpeechModel) => {
       if (!ready) return;
       Dialog.confirm({
-        title: `Download ${model.name}?`,
+        title: `下载 ${model.name}?`,
         message: `${label} will download ${formatBytes(model.size)} and use it as its transcription model.`,
-        confirmText: "Download",
+        confirmText: "下载",
         onConfirm: () =>
           void run(
             "Could not download the model",
@@ -245,7 +245,7 @@ export function VoiceModelRow(props: {
           label={model.name}
           description={
             model.state === "verifying"
-              ? "Verifying download…"
+              ? "正在验证下载…"
               : `${Math.round((progress ?? 0) * 100)}% downloaded · Tap to cancel`
           }
           disabled={!voice.canManage || voice.busy}
@@ -303,15 +303,15 @@ export function VoiceModelSection(props: {
       }
     >
       <ListRow
-        label={active?.model ?? "No model selected"}
+        label={active?.model ?? "未选择模型"}
         description={
           pending
             ? pending.state === "verifying"
-              ? `Verifying ${pending.name}…`
-              : `Downloading ${pending.name} · ${Math.round((progress ?? 0) * 100)}%`
+              ? `正在验证 ${pending.name}…`
+              : `正在下载 ${pending.name} · ${Math.round((progress ?? 0) * 100)}%`
             : active
               ? formatBytes(active.size)
-              : "Choose a transcription model to dictate on this environment."
+              : "选择此环境中的语音转录模型。"
         }
         onPress={() =>
           navigation.navigate("SettingsVoiceModels", { environmentId: props.environmentId })

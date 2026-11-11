@@ -27,12 +27,12 @@ type ActionDetail = Pick<
 };
 
 export const MERGE_METHODS = {
-  squash: { title: "Squash and merge", description: "Combine the commits into one commit." },
+  squash: { title: "压缩提交并合并", description: "将这些提交压缩为一个提交。" },
   merge: {
-    title: "Create a merge commit",
-    description: "Keep the commits and add a merge commit.",
+    title: "创建合并提交",
+    description: "保留现有提交，并添加合并提交。",
   },
-  rebase: { title: "Rebase and merge", description: "Add the commits without a merge commit." },
+  rebase: { title: "变基并合并", description: "应用这些提交，无需创建合并提交。" },
 } as const satisfies Record<PullRequestMergeMethod, { title: string; description: string }>;
 
 export function pullRequestActionLabel(

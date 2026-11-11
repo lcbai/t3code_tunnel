@@ -69,10 +69,10 @@ export function GitCommitSheet(_props: GitCommitSheetProps) {
   const android = Platform.OS === "android";
   const header = (
     <SheetHeader
-      title="Commit changes"
+      title="提交变更"
       subtitle={gitStatus.data?.refName ?? "(detached HEAD)"}
       onCancel={() => navigation.goBack()}
-      accessibilityLabel="Cancel commit"
+      accessibilityLabel="取消提交"
     />
   );
 
@@ -97,28 +97,26 @@ export function GitCommitSheet(_props: GitCommitSheetProps) {
         >
           {isDefaultRef ? (
             <Text className="text-sm text-warning-foreground">
-              You’re on the default branch. You can create a new branch when committing.
+              当前位于默认分支。提交时可创建新分支。
             </Text>
           ) : null}
           <View className="gap-2">
-            <Text className="text-sm font-t3-medium text-foreground">Commit message</Text>
+            <Text className="text-sm font-t3-medium text-foreground">提交信息</Text>
             <TextInput
               multiline
-              accessibilityLabel="Commit message"
+              accessibilityLabel="提交信息"
               value={dialogCommitMessage}
               onChangeText={setDialogCommitMessage}
-              placeholder="Describe your changes…"
+              placeholder="描述你的变更…"
               textAlignVertical="top"
               className="min-h-24 rounded-xl bg-subtle px-4 py-3 text-base"
             />
-            <Text className="text-xs text-foreground-muted">
-              Leave empty to generate a message automatically.
-            </Text>
+            <Text className="text-xs text-foreground-muted">留空可自动生成提交信息。</Text>
           </View>
           <View>
             <View className="flex-row items-center justify-between gap-2 pb-2">
               <View className="flex-1 gap-1">
-                <Text className="text-base font-t3-bold text-foreground">Changed files</Text>
+                <Text className="text-base font-t3-bold text-foreground">已修改的文件</Text>
                 <Text className="text-xs text-foreground-muted">
                   {selectedFiles.length} of {allFiles.length} selected · +
                   {formatDiffCount(selectedInsertions)} −{formatDiffCount(selectedDeletions)}
@@ -126,7 +124,7 @@ export function GitCommitSheet(_props: GitCommitSheetProps) {
               </View>
               {allFiles.length > 0 ? (
                 <Button
-                  label={allSelected ? "Deselect all" : "Select all"}
+                  label={allSelected ? "取消全选" : "全选"}
                   tone="text"
                   onPress={() =>
                     setExcludedFiles(
@@ -137,9 +135,7 @@ export function GitCommitSheet(_props: GitCommitSheetProps) {
               ) : null}
             </View>
             {allFiles.length === 0 ? (
-              <Text className="py-4 text-sm text-foreground-muted">
-                No changed files to commit.
-              </Text>
+              <Text className="py-4 text-sm text-foreground-muted">没有可提交的文件变更。</Text>
             ) : (
               allFiles.map((file) => {
                 const included = !excludedFiles.has(file.path);
@@ -209,7 +205,7 @@ export function GitCommitSheet(_props: GitCommitSheetProps) {
           </View>
           <View className="gap-2">
             <Button
-              label="Commit changes"
+              label="提交变更"
               icon="checkmark"
               tone="primary"
               fullWidth
@@ -217,7 +213,7 @@ export function GitCommitSheet(_props: GitCommitSheetProps) {
               onPress={() => void runCommitAction(false)}
             />
             <Button
-              label="Commit on a new branch"
+              label="提交到新分支"
               icon="arrow.branch"
               tone="text"
               fullWidth

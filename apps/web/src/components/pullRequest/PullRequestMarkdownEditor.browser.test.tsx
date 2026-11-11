@@ -90,7 +90,7 @@ function button(screen: Screen, label: string) {
   return match!;
 }
 
-const clickSave = (screen: Screen) => act(async () => button(screen, "Save").click());
+const clickSave = (screen: Screen) => act(async () => button(screen, "保存").click());
 
 async function grant(allowed: boolean) {
   await act(async () => {
@@ -109,7 +109,7 @@ it("keeps an edited draft through revocation and saves it after access returns w
   await userEvent.type(textarea, "Keep these unsaved edits");
 
   await grant(false);
-  expect(button(screen, "Save").disabled).toBe(true);
+  expect(button(screen, "保存").disabled).toBe(true);
   expect(screen.container.querySelector("textarea")).toBe(textarea);
 
   await grant(true);
@@ -137,7 +137,7 @@ it("completes @mentions and !references on Enter, and Escape closes the list unt
   await expect.element(page.getByRole("option", { name: /theo/ })).toBeVisible();
 
   await userEvent.type(textarea, " fixes !1");
-  await expect.element(page.getByRole("option", { name: /Fix/ })).toBeVisible();
+  await expect.element(page.getByRole("option", { name: /修补/ })).toBeVisible();
   await userEvent.keyboard("{Enter}");
   expect(textarea.value).toBe("Thanks @julius and @t fixes !12 ");
   expect(onCancel).not.toHaveBeenCalled();

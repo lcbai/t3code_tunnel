@@ -80,7 +80,7 @@ it("continues on the resumed thread's model after the composer moves to another 
     <ResumeButton composerRef={composerRef} persistSettings={() => settingsPersisted.promise} />,
   );
 
-  await screen.getByRole("button", { name: "Resume" }).click();
+  await screen.getByRole("button", { name: "继续" }).click();
   composerRef.current = composerShowing(threadBModel);
   settingsPersisted.resolve(AsyncResult.success(undefined));
 

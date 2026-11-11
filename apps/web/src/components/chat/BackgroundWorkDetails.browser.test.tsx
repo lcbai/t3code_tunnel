@@ -76,14 +76,14 @@ it("opens full command details for short labels and keeps pending tasks current"
     />
   );
   await using screen = await render(view("Audit"));
-  await screen.getByRole("button", { name: "Details", exact: true }).click();
+  await screen.getByRole("button", { name: "细节", exact: true }).click();
   await vi.waitFor(() => expect(page.getByRole("dialog").element().textContent).toContain(command));
   await expect.element(page.getByText("Command output stream")).not.toBeInTheDocument();
 
   await screen.rerender(view(command));
-  await expect.element(page.getByRole("heading", { name: "Command", exact: true })).toBeVisible();
+  await expect.element(page.getByRole("heading", { name: "命令", exact: true })).toBeVisible();
   await screen.rerender(view());
-  await expect.element(page.getByRole("heading", { name: "Command", exact: true })).toBeVisible();
+  await expect.element(page.getByRole("heading", { name: "命令", exact: true })).toBeVisible();
 
   await screen.rerender(view("Check remaining modules", "running"));
   await expect
@@ -92,6 +92,6 @@ it("opens full command details for short labels and keeps pending tasks current"
   await expect.element(page.getByText("Command output stream")).toBeVisible();
   await screen.rerender(view("Native fallback", "completed", false));
   await expect.element(page.getByText("Command output stream")).toBeVisible();
-  await page.getByRole("button", { name: "Close", exact: true }).click();
+  await page.getByRole("button", { name: "关闭", exact: true }).click();
   await expect.element(page.getByRole("dialog")).not.toBeInTheDocument();
 });

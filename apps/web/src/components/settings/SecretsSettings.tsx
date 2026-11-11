@@ -44,7 +44,7 @@ export function SecretsSettingsPanel() {
       environment.serverConfig.secretProviderSettings !== true ? (
         <SettingsSection {...searchableSetting("secret-providers")}>
           <p className="px-4 py-3 text-sm text-muted-foreground">
-            Update T3 Code on {environment.label} to manage its secret providers.
+            更新T3 Code on {environment.label} 管理其秘密提供者。
           </p>
         </SettingsSection>
       ) : connected ? (
@@ -56,7 +56,7 @@ export function SecretsSettingsPanel() {
       ) : (
         <SettingsSection {...searchableSetting("secret-providers")}>
           <p className="px-4 py-3 text-sm text-muted-foreground">
-            Connect an environment to manage the secret providers its provider variables read from.
+            连接一个环境来管理其提供者的变量。
           </p>
         </SettingsSection>
       )}
@@ -103,20 +103,20 @@ function EnvironmentSecretProviders({
           !readOnly ? (
             <Button size="xs" variant="outline" onClick={() => setDialog({ mode: "add" })}>
               <PlusIcon className="size-3" aria-hidden />
-              Add provider
+              添加代理提供方
             </Button>
           ) : null
         }
       >
         {projectScoped ? (
           <p className="px-4 pt-3 text-xs text-muted-foreground">
-            Environment-wide setting. Select an environment to change it.
+            全环境设置。 选择一个环境来改变它。
           </p>
         ) : null}
         {entries.length === 0 ? (
           <SettingsRow
-            title="No secret providers configured."
-            description="Add a 1Password account, then pick it as the source of a provider variable."
+            title="没有配置秘密提供者。"
+            description="添加一个1Password 账户，然后选择它为提供者变量的来源。"
           />
         ) : (
           entries.map(([id, config]) => {
@@ -142,14 +142,14 @@ function EnvironmentSecretProviders({
                       <span className="shrink-0">{kind.name} ·</span>
                       <RedactedSensitiveText
                         value={classified.account}
-                        ariaLabel="Toggle account visibility"
+                        ariaLabel="切换账户可见度"
                         revealTooltip="Click to reveal account"
                         hideTooltip="Click to hide account"
                         className="max-w-full truncate"
                       />
                     </span>
                   ) : (
-                    `Unsupported provider (${config.kind})`
+                    `不支持的提供者 (${config.kind})`
                   )
                 }
                 control={
@@ -161,7 +161,7 @@ function EnvironmentSecretProviders({
                           variant="ghost"
                           onClick={() => setDialog({ mode: "edit", id })}
                         >
-                          Edit
+                          编辑
                         </Button>
                       ) : null}
                       <RemoveSecretProviderButton
@@ -206,16 +206,16 @@ function RemoveSecretProviderButton({
   return (
     <>
       <Button size="xs" variant="ghost" onClick={() => setOpen(true)}>
-        Remove
+        移除
       </Button>
       <AlertDialog open={open} onOpenChange={setOpen}>
         <AlertDialogPopup>
           <AlertDialogHeader>
-            <AlertDialogTitle>Remove {label}?</AlertDialogTitle>
+            <AlertDialogTitle>移除 {label}?</AlertDialogTitle>
             <SecretProviderUses environmentId={environmentId} id={id} label={label} />
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogClose render={<Button variant="outline" />}>Cancel</AlertDialogClose>
+            <AlertDialogClose render={<Button variant="outline" />}>取消</AlertDialogClose>
             <Button
               variant="destructive"
               onClick={() => {
@@ -223,7 +223,7 @@ function RemoveSecretProviderButton({
                 onConfirm();
               }}
             >
-              Remove provider
+              删除提供者
             </Button>
           </AlertDialogFooter>
         </AlertDialogPopup>
@@ -243,17 +243,11 @@ function SecretProviderUses({
 }) {
   const uses = secretProviderUses(useEnvironmentSettings(environmentId), id);
   if (uses.length === 0) {
-    return (
-      <AlertDialogDescription>
-        Nothing reads from {label}. The secrets themselves are untouched.
-      </AlertDialogDescription>
-    );
+    return <AlertDialogDescription>没有读到 {label}. 秘密本身没有被揭穿。</AlertDialogDescription>;
   }
   return (
     <>
-      <AlertDialogDescription>
-        These read from {label} and will be unset. The secrets themselves are untouched.
-      </AlertDialogDescription>
+      <AlertDialogDescription>这些读自: {label} 秘密是不会被揭穿的</AlertDialogDescription>
       <ul className="max-h-48 list-disc space-y-0.5 overflow-y-auto ps-5 text-sm wrap-anywhere">
         {uses.map((use) => (
           <li key={use.id}>{use.label}</li>

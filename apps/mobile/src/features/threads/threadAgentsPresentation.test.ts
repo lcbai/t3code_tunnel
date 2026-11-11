@@ -153,7 +153,7 @@ describe("workflowRail", () => {
       ["Inspect", "completed", 1],
       ["Verify", "working", 1],
       ["Report", "queued", 0],
-      ["Other", "queued", 1],
+      ["其他", "queued", 1],
     ]);
   });
 

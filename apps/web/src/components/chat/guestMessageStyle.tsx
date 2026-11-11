@@ -8,7 +8,7 @@ export function GuestMessageName({ name }: { readonly name: string }) {
   return (
     <p className="me-1 text-2xs text-guest-foreground">
       {name}
-      <span className="sr-only"> (guest)</span>
+      <span className="sr-only"> (贵客)</span>
     </p>
   );
 }

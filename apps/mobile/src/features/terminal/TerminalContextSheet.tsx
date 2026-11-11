@@ -50,29 +50,27 @@ export function TerminalContextSheet(props: {
         context: { version: 1, records: [record] },
       })
     ) {
-      Dialog.alert("Too many context items", "Remove some context from the draft and try again.");
+      Dialog.alert("上下文项目过多", "请移除草稿中的部分上下文后重试。");
       return;
     }
     props.onAttach();
   };
   return (
-    <Sheet title="Terminal output" onClose={props.onClose}>
+    <Sheet title="终端输出" onClose={props.onClose}>
       <ScrollView
         nestedScrollEnabled
         className="flex-1"
         contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 12, paddingBottom: 20 }}
       >
-        <Text className="pb-4 text-sm text-foreground-muted">
-          Tap the first and last line to select a range.
-        </Text>
+        <Text className="pb-4 text-sm text-foreground-muted">轻点第一行和最后一行以选中范围。</Text>
         <View className="overflow-hidden rounded-xl bg-card-alt">
           {lines.map(
             (line, index) => (
               /* oxlint-disable react/no-array-index-key -- Selection is addressed by line number in this captured terminal snapshot. */ <Pressable
                 key={index}
                 accessibilityRole="button"
-                accessibilityLabel={`Line ${index + 1}: ${line}`}
+                accessibilityLabel={`行 ${index + 1}: ${line}`}
                 accessibilityState={{ selected: index >= range.start && index <= range.end }}
                 onPress={() => {
                   if (anchor === null) {
@@ -112,11 +110,11 @@ export function TerminalContextSheet(props: {
       >
         {tooLarge ? (
           <Text className="text-sm text-foreground-muted">
-            Select fewer lines to fit the context limit.
+            请减少选中的行数，以符合上下文限制。
           </Text>
         ) : null}
         <Button
-          label="Attach selected output"
+          label="附加选中的输出"
           tone="primary"
           fullWidth
           disabled={!selectedText.trim() || tooLarge}

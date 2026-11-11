@@ -359,10 +359,7 @@ export function useSelectedThreadRequests() {
             attachment.uploadEnvironmentId !== selectedThreadShell.environmentId,
         )
       ) {
-        Dialog.alert(
-          "Attachments are not ready",
-          "Wait for uploads to finish, or retry failed uploads.",
-        );
+        Dialog.alert("附件尚未就绪", "请等待上传完成，或重试失败的上传。");
         return;
       }
       attachmentsByQuestionId.set(

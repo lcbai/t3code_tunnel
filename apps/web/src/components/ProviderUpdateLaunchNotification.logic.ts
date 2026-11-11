@@ -82,13 +82,11 @@ function getProviderUpdatedTitle(provider: Pick<ServerProvider, "driver" | "vers
   const providerName = PROVIDER_DISPLAY_NAMES[provider.driver] ?? provider.driver;
   return provider.version
     ? `${providerName} updated: ${formatVersion(provider.version)}`
-    : `${providerName} updated`;
+    : `${providerName} 更新`;
 }
 
 function getProviderUpdatedDescription(providerCount: number): string {
-  return providerCount === 1
-    ? "New sessions will use the updated provider."
-    : "New sessions will use the updated providers.";
+  return providerCount === 1 ? "新的会话将使用更新的提供者。" : "新的会话将使用更新的提供者。";
 }
 
 function getProviderFailedUpdateTitle(
@@ -98,7 +96,7 @@ function getProviderFailedUpdateTitle(
   const attemptedVersion = provider.versionAdvisory?.latestVersion;
   return attemptedVersion
     ? `${providerName} ${formatVersion(attemptedVersion)} update failed`
-    : `${providerName} update failed`;
+    : `${providerName} 更新失败`;
 }
 
 export function isProviderUpdateCandidate(
@@ -239,7 +237,7 @@ export function getProviderUpdateRunToastView(runs: ReadonlyArray<ProviderUpdate
   if (failureLines.length === 0) {
     return {
       type: "success",
-      title: settled.length === 1 ? "Provider updated" : `${settled.length} providers updated`,
+      title: settled.length === 1 ? "更新提供者" : `${settled.length} 提供者更新`,
       description: getProviderUpdatedDescription(settled.length),
     };
   }
@@ -247,10 +245,10 @@ export function getProviderUpdateRunToastView(runs: ReadonlyArray<ProviderUpdate
     type: "error",
     title:
       failureLines.length < settled.length
-        ? `${failureLines.length} of ${settled.length} provider updates failed`
+        ? `${failureLines.length} of${settled.length} 提供者更新失败`
         : settled.length === 1
-          ? "Provider update failed"
-          : "Provider updates failed",
+          ? "提供者更新失败"
+          : "提供者更新失败",
     description: failureLines.join("\n"),
   };
 }
@@ -316,12 +314,12 @@ export function getProviderUpdateSidebarPillView(
       tone: "loading",
       title:
         activeProviders.length === 1
-          ? `Updating ${activeProviderName}`
-          : `Updating ${activeProviders.length} providers`,
+          ? `更新${activeProviderName}`
+          : `更新${activeProviders.length} 提供者`,
       description:
         activeProviders.length === 1
-          ? `${formatProviderList(activeProviders)} update in progress.`
-          : `${formatProviderList(activeProviders)} updates are in progress.`,
+          ? `${formatProviderList(activeProviders)} 更新中。`
+          : `${formatProviderList(activeProviders)} 更新正在进行中。`,
     };
   }
 
@@ -347,7 +345,7 @@ export function getProviderUpdateSidebarPillView(
       title:
         failedProviders.length === 1
           ? getProviderFailedUpdateTitle(failedProvider)
-          : `${failedProviders.length} provider updates failed`,
+          : `${failedProviders.length} 提供者更新失败`,
       description: getFailedProviderUpdateDescription(failedProviders),
       dismissible: true,
     });
@@ -371,8 +369,8 @@ export function getProviderUpdateSidebarPillView(
       tone: "warning",
       title:
         unchangedProviders.length === 1
-          ? `${unchangedProviderName} still needs an update`
-          : `${unchangedProviders.length} providers still need updates`,
+          ? `${unchangedProviderName} 还需要更新`
+          : `${unchangedProviders.length} 提供者仍然需要更新`,
       description: `${formatProviderList(unchangedProviders)} ${
         unchangedProviders.length === 1 ? "still appears" : "still appear"
       } outdated. Review provider settings for details.`,
@@ -397,7 +395,7 @@ export function getProviderUpdateSidebarPillView(
       title:
         succeededProviders.length === 1
           ? getProviderUpdatedTitle(succeededProvider)
-          : `${succeededProviders.length} providers updated`,
+          : `${succeededProviders.length} 提供者更新`,
       description: getProviderUpdatedDescription(succeededProviders.length),
       dismissAfterVisibleMs: PROVIDER_UPDATE_SUCCESS_VISIBLE_MS,
     });
@@ -433,5 +431,5 @@ function getFailedProviderUpdateDescription(providers: ReadonlyArray<ServerProvi
       return provider.updateState.message;
     }
   }
-  return `${formatProviderList(providers)} failed to update. Check provider settings for details.`;
+  return `${formatProviderList(providers)} 无法更新。请检查代理提供方设置中的细节。`;
 }

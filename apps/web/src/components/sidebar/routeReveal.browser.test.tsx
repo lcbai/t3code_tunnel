@@ -111,7 +111,7 @@ describe("useActiveRowReveal", () => {
     );
     const target = screen.getByText("thread-40", { exact: true });
     await expect.element(target).toBeInViewport();
-    screen.getByRole("list", { name: "Threads" }).element().scrollTop = 0;
+    screen.getByRole("list", { name: "会话" }).element().scrollTop = 0;
     await expect.element(target).not.toBeInViewport();
 
     // The route moves to a thread the list does not hold yet, then back.

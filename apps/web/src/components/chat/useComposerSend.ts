@@ -395,8 +395,8 @@ export function useComposerSend(input: ComposerSendInput) {
       toastManager.add(
         stackedThreadToast({
           type: "info",
-          title: "Annotation attached to draft",
-          description: "Sending is unavailable right now. Finish the current action, then send.",
+          title: "草案所附说明",
+          description: "现在无法发送。 完成当前动作，然后发送。",
         }),
       );
     };
@@ -435,8 +435,8 @@ export function useComposerSend(input: ComposerSendInput) {
       toastManager.add({
         ...stackedThreadToast({
           type: "warning",
-          title: "Not connected: message not sent",
-          description: "Reconnecting to the environment. Try again once it is connected.",
+          title: "未连接: 消息未发送",
+          description: "重新连接到环境。一旦连接就再试一次。",
         }),
         id: `chat-send-environment-unavailable:${toastSlot}`,
       });
@@ -455,7 +455,7 @@ export function useComposerSend(input: ComposerSendInput) {
       toastManager.add(
         stackedThreadToast({
           type: "warning",
-          title: "Side chat not started",
+          title: "未开始侧式聊天",
           description: sideChatDisabledReason,
         }),
       );
@@ -474,8 +474,8 @@ export function useComposerSend(input: ComposerSendInput) {
         toastManager.add(
           stackedThreadToast({
             type: "warning",
-            title: "Side chats take text only",
-            description: "Remove the attachments and context, then send it again.",
+            title: "边聊只取文字",
+            description: "删除附件和上下文，然后再次发送。",
           }),
         );
         return;
@@ -523,16 +523,15 @@ export function useComposerSend(input: ComposerSendInput) {
             branch: activeThreadBranch,
           });
     if (multipleModelBlock === "server-outdated") {
-      setThreadError(activeThread.id, "Update this server before starting multiple models.");
+      setThreadError(activeThread.id, "在启动多个模型前更新此服务器。");
       return;
     }
     if (multipleModelBlock === "needs-new-git-thread") {
       toastManager.add(
         stackedThreadToast({
           type: "warning",
-          title: "Choose models and a base branch",
-          description:
-            "Multiple models need a new thread in a Git project. Each gets its own worktree.",
+          title: "选择模型和基准分支",
+          description: "多个模型需要在Git项目中新建一条会话。每个模型都有自己的工作树。",
         }),
       );
       return;
@@ -578,8 +577,8 @@ export function useComposerSend(input: ComposerSendInput) {
       toastManager.add(
         stackedThreadToast({
           type: "warning",
-          title: "Attached thread is on another machine",
-          description: `This machine's agent can't read "${strandedThread.title}". Remove it, or switch back to ${owner} to send.`,
+          title: "附加会话在另一台机器上",
+          description: `此机器的代理无法读取“${strandedThread.title} ”。删除它，或切换到${owner} 发送。`,
         }),
       );
       return;
@@ -633,8 +632,8 @@ export function useComposerSend(input: ComposerSendInput) {
         toastManager.add(
           stackedThreadToast({
             type: "warning",
-            title: "Start a Codex thread first",
-            description: "Send a message before you submit feedback.",
+            title: "先启动一个Codex 会话",
+            description: "在提交反馈之前发送消息。",
           }),
         );
         return;
@@ -711,8 +710,8 @@ export function useComposerSend(input: ComposerSendInput) {
       toastManager.add(
         stackedThreadToast({
           type: "warning",
-          title: "Choose a project first",
-          description: "This draft no longer points to an available project.",
+          title: "首先选择一个工程",
+          description: "该草案不再指向一个可用的项目。",
         }),
       );
       return;
@@ -760,7 +759,7 @@ export function useComposerSend(input: ComposerSendInput) {
       freshContext: freshArm !== undefined,
     });
     if (missingWorktreeBaseBranch) {
-      setThreadError(threadIdForSend, "Select a base branch before sending in New worktree mode.");
+      setThreadError(threadIdForSend, "在以新工作树模式发送前选择一个基分支。");
       return;
     }
     // Records bind attachments by the id each side knows: the local id for the optimistic
@@ -884,8 +883,7 @@ export function useComposerSend(input: ComposerSendInput) {
       sendInFlightRef.current = false;
       setThreadError(
         threadIdForSend,
-        attachmentCapabilitiesBeforeDispatch.fileBlockReason ??
-          "This connection cannot change threads.",
+        attachmentCapabilitiesBeforeDispatch.fileBlockReason ?? "此连接不能改变会话。",
       );
       setDockedDraftHeroThreadKey((currentThreadKey) =>
         currentThreadKey === activeThreadKey ? null : currentThreadKey,
@@ -961,10 +959,7 @@ export function useComposerSend(input: ComposerSendInput) {
       );
       if (approvalFeedbackTarget !== undefined) {
         if (composerAttachmentsSnapshot.length > 0 || outgoingMessageContext !== undefined) {
-          setThreadError(
-            threadIdForSend,
-            "Send approval feedback without attachments or added context.",
-          );
+          setThreadError(threadIdForSend, "在不附加附件或添加上下文的情况下发送批准反馈。");
           sendInFlightRef.current = false;
           return;
         }
@@ -1031,7 +1026,7 @@ export function useComposerSend(input: ComposerSendInput) {
           toastManager.add({
             type: "info",
             title: notice,
-            description: "Send again when it's ready.",
+            description: "准备好了再寄过来",
           });
         }
         return;
@@ -1271,7 +1266,7 @@ export function useComposerSend(input: ComposerSendInput) {
           toastManager.add(
             stackedThreadToast({
               type: "warning",
-              title: "Could not open a fresh composer",
+              title: "无法打开新消息输入框",
               description: error instanceof Error ? error.message : undefined,
             }),
           );
@@ -1302,7 +1297,7 @@ export function useComposerSend(input: ComposerSendInput) {
             toastManager.add(
               stackedThreadToast({
                 type: "success",
-                title: "Started in background",
+                title: "开始于背景",
                 timeout: 5_000,
                 actionProps: {
                   children: "Open",
@@ -1363,10 +1358,7 @@ export function useComposerSend(input: ComposerSendInput) {
       }
       if (!isAtomCommandInterrupted(failure)) {
         const error = squashAtomCommandFailure(failure);
-        setThreadError(
-          threadIdForSend,
-          error instanceof Error ? error.message : "Failed to send message.",
-        );
+        setThreadError(threadIdForSend, error instanceof Error ? error.message : "发送消息失败。");
         if (
           draftId &&
           (backgroundDraftOpened || currentRouteThreadKeyRef.current !== routeThreadKey)
@@ -1374,11 +1366,8 @@ export function useComposerSend(input: ComposerSendInput) {
           toastManager.add(
             stackedThreadToast({
               type: "error",
-              title:
-                submissionIntent === "background"
-                  ? "Background task failed"
-                  : "Could not start thread",
-              description: error instanceof Error ? error.message : "Failed to send message.",
+              title: submissionIntent === "background" ? "背景任务失败" : "无法启动会话",
+              description: error instanceof Error ? error.message : "发送消息失败。",
               actionProps: {
                 children: "Open draft",
                 onClick: () => {

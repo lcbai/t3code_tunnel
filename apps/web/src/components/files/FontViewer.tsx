@@ -46,7 +46,7 @@ export default function FontViewer(props: { readonly src: string; readonly name:
   useEffect(() => {
     const controller = new AbortController();
     const timeout = setTimeout(() => {
-      setError("The font took too long to load.");
+      setError("字体加载时间太长。");
       controller.abort();
     }, 30_000);
     void readFont(props.src, controller.signal)
@@ -55,7 +55,7 @@ export default function FontViewer(props: { readonly src: string; readonly name:
       })
       .catch((cause: unknown) => {
         if (!controller.signal.aborted)
-          setError(cause instanceof Error ? cause.message : "The font is damaged or unsupported.");
+          setError(cause instanceof Error ? cause.message : "字体损坏或不支持。");
       })
       .finally(() => clearTimeout(timeout));
     return () => {
@@ -69,9 +69,9 @@ export default function FontViewer(props: { readonly src: string; readonly name:
         role="alert"
         className="flex min-h-0 flex-1 flex-col items-center justify-center gap-1 px-6 text-center"
       >
-        <p className="text-sm font-medium">No preview for this file</p>
+        <p className="text-sm font-medium">此文件没有预览</p>
         <p className="max-w-sm text-xs leading-relaxed text-muted-foreground">
-          {error} Save it to open in another app.
+          {error} 保存到另一个应用程序中打开。
         </p>
       </div>
     );

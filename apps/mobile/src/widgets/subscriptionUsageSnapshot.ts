@@ -67,7 +67,7 @@ function subscriptionUsageProps(
         if (!pool)
           return {
             name,
-            detail: "No limits available",
+            detail: "暂无用量限制信息",
             windows: [],
             expiresAt: 0,
             totalWindows: 0,
@@ -94,10 +94,10 @@ function subscriptionUsageProps(
         return {
           name,
           detail: !fresh
-            ? "Open T3 to refresh"
+            ? "打开 T3 以刷新"
             : pool.accounts.length > 1
               ? `${pool.accounts.length} accounts · pooled`
-              : "Subscription remaining",
+              : "订阅剩余额度",
           expiresAt: fresh ? expiresAt : 0,
           totalWindows: fresh ? pool.windows.length : 0,
           windows: fresh
@@ -106,7 +106,7 @@ function subscriptionUsageProps(
                 label: window.label,
                 remaining: Math.round(window.remainingPercent),
                 reset: window.resets[0]
-                  ? `Next reset ${new Date(window.resets[0].at).toLocaleString(undefined, {
+                  ? `Next reset ${new Date(window.resets[0].at).toLocaleString("zh-CN", {
                       month: "short",
                       day: "numeric",
                       hour: "numeric",
@@ -159,7 +159,7 @@ export function subscriptionUsageTimeline(snapshot: SubscriptionUsageSnapshot, n
       ...snapshot,
       providers: snapshot.providers.map((provider) =>
         provider.windows.length > 0 && provider.expiresAt <= date
-          ? { ...provider, detail: "Open T3 to refresh", windows: [], totalWindows: 0 }
+          ? { ...provider, detail: "打开 T3 以刷新", windows: [], totalWindows: 0 }
           : provider,
       ),
     },

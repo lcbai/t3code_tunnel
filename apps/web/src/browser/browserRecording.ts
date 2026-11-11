@@ -24,7 +24,7 @@ export class BrowserRecordingUnavailableError extends Schema.TaggedError<Browser
   },
 ) {
   override get message(): string {
-    return `Browser recording is unavailable for tab ${this.tabId}.`;
+    return `无法对标签${this.tabId}进行浏览器记录。`;
   }
 }
 
@@ -36,7 +36,7 @@ export class BrowserRecordingConflictError extends Schema.TaggedError<BrowserRec
   },
 ) {
   override get message(): string {
-    return `Cannot record tab ${this.requestedTabId} while tab ${this.activeTabId} is already being recorded.`;
+    return `无法在标签${this.activeTabId} 已记录时记录标签${this.requestedTabId}。`;
   }
 }
 
@@ -47,7 +47,7 @@ export class BrowserRecordingStartCancelledError extends Schema.TaggedError<Brow
   },
 ) {
   override get message(): string {
-    return `Browser recording start was cancelled for tab ${this.tabId}.`;
+    return `浏览器录制开始被取消，用于标签${this.tabId}。`;
   }
 }
 
@@ -56,7 +56,7 @@ export class BrowserRecordingFormatUnavailableError extends Schema.TaggedError<B
   { tabId: Schema.String },
 ) {
   override get message(): string {
-    return `MediaRecorder did not report an output format for tab ${this.tabId}.`;
+    return `MediaRecorder没有报告标签${this.tabId}的输出格式。`;
   }
 }
 
@@ -68,7 +68,7 @@ export class BrowserRecordingCaptureTimeoutError extends Schema.TaggedError<Brow
   },
 ) {
   override get message(): string {
-    return `Browser recording media capture for tab ${this.tabId} did not settle within ${this.timeoutMs}ms.`;
+    return `记录标签${this.tabId}的媒体抓取的浏览器没有在${this.timeoutMs}ms中结算。`;
   }
 }
 
@@ -107,7 +107,7 @@ export class BrowserRecordingOperationError extends Schema.TaggedError<BrowserRe
         `${captureCause.name}: ${captureCause.message}`
       );
     }
-    return `Browser recording operation ${this.operation} failed for tab ${this.tabId}.`;
+    return `浏览器记录操作${this.operation} 失败的标签${this.tabId}。`;
   }
 }
 

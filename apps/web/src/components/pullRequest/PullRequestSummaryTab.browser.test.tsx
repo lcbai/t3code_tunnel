@@ -134,14 +134,14 @@ it("keeps an unsaved description when collapsed and reopened, and after a failed
   const textarea = screen.container.querySelector("textarea")!;
   await userEvent.clear(textarea);
   await userEvent.type(textarea, "Unsaved description");
-  await screen.click("Description");
+  await screen.click("说明");
   expect(screen.expanded("Description")).toBe("false");
-  await screen.click("Description");
+  await screen.click("说明");
   expect(screen.container.querySelector("textarea")!.value).toBe("Unsaved description");
 
-  await userEvent.click(screen.getByRole("button", { name: "Save" }));
+  await userEvent.click(screen.getByRole("button", { name: "保存" }));
   expect(state.update).toHaveBeenCalledTimes(1);
-  await expect.element(screen.getByRole("button", { name: "Save" })).toBeEnabled();
+  await expect.element(screen.getByRole("button", { name: "保存" })).toBeEnabled();
   expect(screen.container.querySelector("textarea")!.value).toBe("Unsaved description");
 });
 

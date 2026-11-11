@@ -10,7 +10,7 @@ import {
 import { linkedThreadDraftAction } from "./prompt-link-model";
 
 export function showPromptLinkNotice(notice: string): void {
-  Dialog.alert("Prompt from a link", notice);
+  Dialog.alert("来自链接的提示词", notice);
 }
 
 export async function applyLinkedPromptToThreadDraft(
@@ -21,7 +21,7 @@ export async function applyLinkedPromptToThreadDraft(
   try {
     await waitForComposerDraftsLoaded();
   } catch {
-    Dialog.alert("Could not open link", "Drafts could not be loaded, so the prompt was not added.");
+    Dialog.alert("Could not open link", "无法加载草稿，提示词未添加。");
     return;
   }
   const action = linkedThreadDraftAction(getComposerDraftSnapshot(draftKey).text, prompt.text);
@@ -30,14 +30,14 @@ export async function applyLinkedPromptToThreadDraft(
     showPromptLinkNotice(notice);
     return;
   }
-  Dialog.alert("Linked prompt ready. Replace draft?", notice, [
-    { text: "Keep mine", style: "cancel" },
-    { text: "Replace", onPress: () => setComposerDraftText(draftKey, prompt.text) },
+  Dialog.alert("已读取链接中的提示词。替换草稿吗？", notice, [
+    { text: "保留我的版本", style: "cancel" },
+    { text: "替换", onPress: () => setComposerDraftText(draftKey, prompt.text) },
   ]);
 }
 
 export async function copyPromptLink(prompt: string): Promise<void> {
   if (!(await tryCopyTextWithHaptic(buildNewThreadLink({ prompt }), { target: "prompt link" }))) {
-    Dialog.alert("Could not copy", "Try again.");
+    Dialog.alert("Could not copy", "请重试。");
   }
 }

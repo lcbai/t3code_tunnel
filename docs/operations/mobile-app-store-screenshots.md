@@ -10,8 +10,7 @@ opens the production Home, Thread, ThreadTerminal, ThreadReview, and SettingsEnv
 
 No screenshot-specific screen recreates application UI. `EXPO_PUBLIC_SHOWCASE=1` only enables the
 non-rendering pairing/readiness coordinator, disables terminal autofocus so captures do not contain
-the software keyboard, and supplies deterministic T3 Connect discovery rows to the real
-Environments screen. The local environment cards always come from real paired servers.
+the software keyboard. The environment cards come from real paired servers.
 
 ## Capture the default matrix
 
@@ -87,7 +86,7 @@ Every palette gets its own leaf folder so one upload slot never mixes themes and
 store-legal screenshot count.
 
 The agent-activity scene shows what a user sees away from the app. The app stages the same Live
-Activity (iOS) or ongoing Live Update (Android) the relay would publish for four seeded threads. On
+Activity (iOS) or ongoing Live Update (Android) for four seeded threads. On
 iOS the runner then locks the simulator and pushes the matching approval alert with `simctl push`;
 on Android the staged update carries the alert and the runner opens the notification shade. Locking
 the simulator and answering the notification permission prompt use

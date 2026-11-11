@@ -129,7 +129,7 @@ export function useComposerAttachmentIntake(input: {
     ) {
       toastManager.add({
         type: "error",
-        title: "This question cannot accept attachments.",
+        title: "这个问题不能接受附件。",
       });
       return false;
     }
@@ -232,9 +232,7 @@ export function useComposerAttachmentIntake(input: {
         toastManager.add({
           type: "info",
           title: `Large paste attached as ${attached.name}`,
-          description: `${formatAttachmentSize(attached.sizeBytes)} · Use ${
-            isMacPlatform(navigator.platform) ? "⌘⇧V" : "Ctrl+Shift+V"
-          } to keep a large paste inline.`,
+          description: `${formatAttachmentSize(attached.sizeBytes)} ^ 使用${isMacPlatform(navigator.platform) ? "⌘⇧V" : "Ctrl+Shift+V"} 来保持一个大型的粘贴内线。`,
           data: { hideCopyButton: true },
         });
       }
@@ -344,7 +342,7 @@ export function useComposerAttachmentIntake(input: {
       return;
     }
     const confirmation = requestConfirmDialog(
-      `Remove ${image?.name ?? "this image"} from the message?\nIt is referenced in your text; removing it also removes every reference.`,
+      `从消息中移除${image?.name ?? "此图片"}吗？\n消息中引用了此图片。移除图片时也会删除引用。`,
       { variant: "destructive" },
     );
     if (!confirmation) {
@@ -397,8 +395,8 @@ export function useComposerAttachmentIntake(input: {
       }
       toastManager.add({
         type: "error",
-        title: "Pasted text is too large for this message",
-        description: "Remove some text or an attachment, then paste again.",
+        title: "粘贴的文本对于此信件太大",
+        description: "删除一些文本或附件，然后再次粘贴。",
         data: { hideCopyButton: true },
       });
       return true;
@@ -419,8 +417,8 @@ export function useComposerAttachmentIntake(input: {
       if (!wouldExceedInputLimit) return false;
       toastManager.add({
         type: "error",
-        title: "Pasted text is too large to attach",
-        description: "Reduce the clipboard contents or save a smaller excerpt as a file.",
+        title: "粘贴文本太大，无法附加",
+        description: "减少剪贴板内容或保存一个较小的节选为文件。",
         data: { hideCopyButton: true },
       });
       return true;

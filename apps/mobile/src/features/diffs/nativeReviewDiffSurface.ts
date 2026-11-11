@@ -296,7 +296,7 @@ function NativeReviewDiffView(props: NativeReviewDiffViewProps) {
       },
       createElement(EmptyState, {
         title: "Could not display diff",
-        detail: "Try loading the diff view again.",
+        detail: "请重新加载差异视图。",
         variant: "plain",
         actionLabel: "Retry diff",
         onAction: () => {

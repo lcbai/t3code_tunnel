@@ -43,7 +43,7 @@ export function AttachmentDocumentBody(props: {
     return (
       <View className="flex-1 items-center justify-center bg-sheet px-6">
         <EmptyState
-          title="File unavailable"
+          title="文件不可用"
           detail={document.error}
           actionLabel="Try again"
           onAction={document.retry}
@@ -52,19 +52,19 @@ export function AttachmentDocumentBody(props: {
     );
   }
   if (props.nativeViewer !== null && props.nativeViewer !== "unavailable") {
-    return <FilePreviewLoading message="Opening in file viewer..." />;
+    return <FilePreviewLoading message="正在文件查看器中打开…" />;
   }
   // ZIP text entries are read into memory and have no file URI.
   if (document.needsText ? !document.content : !document.uri) {
-    return <FilePreviewLoading message="Loading file..." />;
+    return <FilePreviewLoading message="正在加载文件…" />;
   }
   if (document.needsText && document.content) {
     const { content, table } = document;
     return (
       <View className="flex-1 bg-sheet">
         {content.truncated ? (
-          <FilePreviewNotice title="Partial file">
-            Preview limited to the first 1 MB. Save or share the file to read it in full.
+          <FilePreviewNotice title="部分文件">
+            预览仅显示前 1 MB。保存或分享文件后可查看完整内容。
           </FilePreviewNotice>
         ) : null}
         {table && document.activeMode === "table" ? (
@@ -98,10 +98,10 @@ export function AttachmentDocumentBody(props: {
   return (
     <View className="flex-1 items-center justify-center bg-sheet px-6">
       <EmptyState
-        title="No preview for this file"
+        title="此文件无法预览"
         detail={
           props.nativeError ??
-          "No app on this device can show this format. Save or share it to open it elsewhere."
+          "此设备没有可显示此格式的应用。请保存或分享文件，然后在其他应用中打开。"
         }
         actionLabel="Try again"
         onAction={props.onOpenNative}

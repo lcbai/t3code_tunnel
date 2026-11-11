@@ -374,7 +374,7 @@ export async function openDocument(
   const rendered = [];
   for (const [index, page] of pages.entries()) {
     rendered.push({
-      title: page.attrs["draw:name"] || `Page ${index + 1}`,
+      title: page.attrs["draw:name"] || `页${index + 1}`,
       html: await odfHtml(page, archive),
     });
   }
@@ -401,7 +401,7 @@ export async function openEpub(archive: JSZip): Promise<OfficeWorkerResult> {
     pages.push({
       title:
         text(find(chapter, "title")[0] ?? find(chapter, "h1")[0] ?? chapter).slice(0, 120) ||
-        `Chapter ${pages.length + 1}`,
+        `章节${pages.length + 1}`,
       html: await epubHtml(chapter, archive, path),
     });
   }
@@ -490,7 +490,7 @@ export function openRtf(bytes: ArrayBuffer): OfficeWorkerResult {
   let completedLength = 0;
   const finishPage = () => {
     if (pages.length >= 500) throw new Error("Rich text preview limited to 500 pages.");
-    pages.push({ title: `Page ${pages.length + 1}`, html: `<p>${html}</p>` });
+    pages.push({ title: `页${pages.length + 1}`, html: `<p>${html}</p>` });
     completedLength += html.length;
     html = "";
   };

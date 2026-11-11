@@ -130,7 +130,7 @@ function SidebarUpdateArchitectureWarningContent() {
   return (
     <Alert variant="warning">
       <TriangleAlertIcon />
-      <AlertTitle>Intel build on Apple Silicon</AlertTitle>
+      <AlertTitle>在苹果硅上建立英特尔</AlertTitle>
       <AlertDescription>{description}</AlertDescription>
     </Alert>
   );
@@ -314,8 +314,8 @@ function SidebarUpdateControl() {
         toastManager.add(
           stackedThreadToast({
             type: "error",
-            title: "Could not confirm update",
-            description: error instanceof Error ? error.message : "Update confirmation failed.",
+            title: "无法确认更新",
+            description: error instanceof Error ? error.message : "更新确认失败。",
           }),
         );
         return;
@@ -339,11 +339,8 @@ function SidebarUpdateControl() {
         toastManager.add(
           stackedThreadToast({
             type: "error",
-            title: "Could not check for updates",
-            description:
-              updatesDenial ??
-              result.state.message ??
-              "Automatic updates are not available in this build.",
+            title: "无法检查更新",
+            description: updatesDenial ?? result.state.message ?? "此构建中没有自动更新。",
           }),
         );
       })
@@ -351,8 +348,8 @@ function SidebarUpdateControl() {
         toastManager.add(
           stackedThreadToast({
             type: "error",
-            title: "Could not check for updates",
-            description: error instanceof Error ? error.message : "Update check failed.",
+            title: "无法检查更新",
+            description: error instanceof Error ? error.message : "更新检查失败。",
           }),
         );
       });
@@ -383,8 +380,8 @@ function SidebarUpdateControl() {
       toastManager.add(
         stackedThreadToast({
           type: "error",
-          title: "Could not update everything",
-          description: error instanceof Error ? error.message : "An unexpected error occurred.",
+          title: "无法更新全部内容",
+          description: error instanceof Error ? error.message : "发生了意外错误。",
         }),
       );
     }
@@ -561,7 +558,7 @@ function SidebarUpdateControl() {
         {showReleaseNotesPopover && state ? (
           <PopoverPopup
             align="center"
-            aria-label="Update release notes"
+            aria-label="更新发布注释"
             initialFocus={false}
             onKeyDownCapture={(event) => {
               if (

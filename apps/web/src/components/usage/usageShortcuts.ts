@@ -4,16 +4,16 @@ import { resolveShortcutCommand, type ShortcutEventLike } from "../../keybinding
 
 export type UsageMetric = UsageChartMetric | "limits";
 export const METRIC_OPTIONS = [
-  { value: "cost", label: "Cost", command: "usage.cost" },
-  { value: "tokens", label: "Tokens", command: "usage.tokens" },
-  { value: "limits", label: "Limits", command: "usage.limits" },
+  { value: "cost", label: "费用", command: "usage.cost" },
+  { value: "tokens", label: "键", command: "usage.tokens" },
+  { value: "limits", label: "限制", command: "usage.limits" },
 ] as const satisfies readonly { value: UsageMetric; label: string; command: KeybindingCommand }[];
 
 export const WINDOW_OPTIONS = [
-  { days: 1, label: "Past 24h", command: "usage.period.day" },
-  { days: 7, label: "7 days", command: "usage.period.week" },
-  { days: 30, label: "30 days", command: "usage.period.month" },
-  { days: 90, label: "90 days", command: "usage.period.quarter" },
+  { days: 1, label: "过去24小时", command: "usage.period.day" },
+  { days: 7, label: "7天时间", command: "usage.period.week" },
+  { days: 30, label: "30天时间", command: "usage.period.month" },
+  { days: 90, label: "90天(以千美元计)", command: "usage.period.quarter" },
 ] as const;
 
 export function resolveUsageShortcut(

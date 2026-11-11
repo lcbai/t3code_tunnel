@@ -86,7 +86,7 @@ export function splitMarkdownDetails(markdown: string): ReadonlyArray<MarkdownDe
     const label = summary ? decodeHtmlEntities(summary[1]!.replace(/<[^>]*>/g, "")).trim() : "";
     segments.push({
       kind: "details",
-      summary: label || "Details",
+      summary: label || "详情",
       body,
       open: fold.open,
       sourceOffset: fold.start,

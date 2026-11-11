@@ -336,7 +336,7 @@ export function describePullRequestChecks(checks: ReadonlyArray<PullRequestCheck
     parts.push(parts.length > 0 ? `${failed} failed` : `${failed} of ${checks.length} failing`);
   }
   if (parts.length === 0) {
-    return passed === checks.length ? "All checks passed" : `${passed} of ${checks.length} passing`;
+    return passed === checks.length ? "All checks passed" : `${passed} of${checks.length}通过`;
   }
   return parts.join(" · ");
 }
@@ -707,7 +707,7 @@ export function buildPullRequestTimeline(
       id: "created",
       at: detail.createdAt,
       kind: "opened" as const,
-      title: `opened this ${term}`,
+      title: `打开此选项${term}`,
       body: null,
       markdown: false,
       url: null,
@@ -723,7 +723,7 @@ export function buildPullRequestTimeline(
       id: commit.oid,
       at: commit.committedDate,
       kind: "commit" as const,
-      title: `Commit ${commit.oid.slice(0, 7)}`,
+      title: `提交${commit.oid.slice(0, 7)}`,
       body: commit.messageHeadline || null,
       markdown: false,
       url: null,
@@ -757,7 +757,7 @@ export function buildPullRequestTimeline(
             id: "merged",
             at: detail.mergedAt,
             kind: "merged" as const,
-            title: `${capitalizeTerm(term)} merged`,
+            title: `${capitalizeTerm(term)} 合并`,
             body: null,
             markdown: false,
             url: null,
@@ -777,7 +777,7 @@ export function buildPullRequestTimeline(
             id: "closed",
             at: detail.closedAt,
             kind: "closed" as const,
-            title: `${capitalizeTerm(term)} closed`,
+            title: `${capitalizeTerm(term)} 关闭`,
             body: null,
             markdown: false,
             url: null,

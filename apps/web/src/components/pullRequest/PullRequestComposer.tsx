@@ -83,8 +83,8 @@ export function PullRequestComposer({
           pendingComments.length > 0
             ? `Review ${term}, ${pendingComments.length} ${pendingComments.length === 1 ? "comment" : "comments"} pending`
             : reviewStarted || !canComment
-              ? `Review ${term}`
-              : `Comment on ${term}`
+              ? `检讨${term}`
+              : `评论${term}`
         }
       >
         <MessageSquareIcon className="size-4" />
@@ -104,12 +104,12 @@ export function PullRequestComposer({
         sideOffset={8}
         width="lg"
         initialFocus={mode === "review" ? reviewRef : commentRef}
-        aria-label={`${capitalizeTerm(term)} composer`}
+        aria-label={`${capitalizeTerm(term)} 消息输入框`}
       >
         <div className="mb-3 flex items-center justify-between gap-2">
           {canComment && verdicts.length > 0 ? (
             <ToggleGroup
-              aria-label="Composer mode"
+              aria-label="编译器模式"
               variant="segmented"
               value={[mode]}
               onValueChange={(next) => {
@@ -117,33 +117,28 @@ export function PullRequestComposer({
                 if (value === "comment" || value === "review") setRequestedMode(value);
               }}
             >
-              <Toggle value="comment">Comment</Toggle>
+              <Toggle value="comment">注释</Toggle>
               <Toggle value="review">
-                {pendingComments.length > 0 ? `Review (${pendingComments.length})` : "Review"}
+                {pendingComments.length > 0 ? `审查 (${pendingComments.length})` : "审查"}
               </Toggle>
             </ToggleGroup>
           ) : (
-            <PopoverTitle>
-              {mode === "review" ? `Review ${term}` : `Comment on ${term}`}
-            </PopoverTitle>
+            <PopoverTitle>{mode === "review" ? `检讨${term}` : `评论${term}`}</PopoverTitle>
           )}
           <div className="flex items-center gap-1">
             {mode === "review" && pendingComments.length > 0 ? (
               <Button
                 size="icon-xs"
                 variant="ghost"
-                aria-label="Discard pending line comments"
-                title="Discard pending line comments"
+                aria-label="丢弃待处理的行注释"
+                title="丢弃待处理的行注释"
                 disabled={reviewPending}
                 onClick={() => clearComments(reviewKey)}
               >
                 <Trash2Icon className="size-3.5" />
               </Button>
             ) : null}
-            <PopoverClose
-              render={<Button size="icon-xs" variant="ghost" />}
-              aria-label="Close composer"
-            >
+            <PopoverClose render={<Button size="icon-xs" variant="ghost" />} aria-label="关闭编曲">
               <XIcon className="size-3.5" />
             </PopoverClose>
           </div>

@@ -27,7 +27,7 @@ export class PreferredEditorEnvironmentRequiredError extends Schema.TaggedError<
   },
 ) {
   override get message(): string {
-    return `Cannot open ${this.targetPath} because no environment is selected.`;
+    return `无法打开${this.targetPath}因为没有选择环境。`;
   }
 }
 
@@ -98,7 +98,7 @@ export function useOpenInPreferredEditor(
         Cause.fail(
           new EnvironmentAuthorizationError({
             requiredScope: AuthOrchestrationOperateScope,
-            message: "This connection cannot open an editor on this environment.",
+            message: "此连接无法在此环境中打开编辑器。",
           }),
         ),
       );

@@ -138,9 +138,8 @@ export function useDraftEnvironmentRouting(input: DraftEnvironmentRoutingInput) 
       toastManager.add({
         type: "warning",
         id: "load-balancing-attachments",
-        title: "Keep attachments on this machine",
-        description:
-          "Remove attachments before choosing automatic routing, then attach them on the selected machine.",
+        title: "在此机器上保留附件",
+        description: "在选择自动路由之前删除附件，然后在选定的机器上附加附件。",
       });
       return;
     }
@@ -157,12 +156,12 @@ export function useDraftEnvironmentRouting(input: DraftEnvironmentRoutingInput) 
   const onAutoEnvironmentStable = useStableCallback(onAutoEnvironment);
   const autoEnvironmentLabel = automaticEnvironment
     ? draftThread?.loadBalancedEnvironmentId
-      ? "Auto balance"
+      ? "自动余额"
       : loadBalancing.pending
-        ? "Checking machines…"
+        ? "正在检查机器…"
         : loadBalancing.failed
-          ? "Auto balance unavailable"
-          : "Auto balance"
+          ? "无法使用自动余额"
+          : "自动余额"
     : undefined;
 
   // A change in flight belongs to the draft and project it started on.

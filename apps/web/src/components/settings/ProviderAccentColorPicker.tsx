@@ -57,7 +57,7 @@ function ProviderCustomColorPanel(props: {
     <div className="w-56 bg-popover">
       <div onPointerDownCapture={startDrag}>
         <ColorSaturationValuePlane
-          label="Accent color"
+          label="星座颜色"
           value={hsv}
           onChange={changeHsv}
           onInteractionEnd={endDrag}
@@ -67,7 +67,7 @@ function ProviderCustomColorPanel(props: {
       <div className="grid gap-3 p-3">
         <div onPointerDownCapture={startDrag}>
           <ColorHueSlider
-            label="Accent color hue"
+            label="调色色调色调"
             value={hsv.h}
             onChange={(h) => changeHsv({ ...hsv, h })}
             onInteractionEnd={endDrag}
@@ -86,14 +86,14 @@ function ProviderCustomColorPanel(props: {
           }}
           onBlur={() => setHexDraft(null)}
           font="mono"
-          aria-label="Custom hex accent color"
+          aria-label="自定义十六进制口音颜色"
           spellCheck={false}
         />
         {props.showAddButton ? (
           <PopoverClose
             render={
               <Button type="button" size="compact" onClick={() => onCommit(currentColor)}>
-                Add color
+                添加颜色
               </Button>
             }
           />
@@ -126,13 +126,9 @@ function ProviderCustomColorPicker(props: {
             size="icon-sm"
             variant="ghost-muted"
             style={normalized ? { backgroundColor: normalized } : undefined}
-            aria-label={`${normalized ? "Change" : "Add"} accent color for ${props.displayName}`}
+            aria-label={`${props.displayName} 的强调色 ${normalized ? "Change" : "Add"}`}
           >
-            {normalized ? (
-              <span className="sr-only">Change accent color</span>
-            ) : (
-              <PlusIcon aria-hidden />
-            )}
+            {normalized ? <span className="sr-only">更改重音颜色</span> : <PlusIcon aria-hidden />}
           </Button>
         }
       />
@@ -155,7 +151,7 @@ function ProviderCustomColorPicker(props: {
                   onClick={props.onClear}
                 >
                   <XIcon className="size-3.5" aria-hidden />
-                  Clear color
+                  清除颜色
                 </Button>
               }
             />
@@ -219,7 +215,7 @@ export function ProviderAccentColorPicker(props: {
 
   return (
     <div className="grid gap-2">
-      <span className="text-xs font-medium text-foreground">Accent color</span>
+      <span className="text-xs font-medium text-foreground">星座颜色</span>
       {picker}
       {description ? <span className="text-xs text-muted-foreground">{description}</span> : null}
     </div>

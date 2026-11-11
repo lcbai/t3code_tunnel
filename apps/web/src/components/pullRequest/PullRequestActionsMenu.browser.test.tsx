@@ -119,7 +119,7 @@ it("saves maintainer edits, locks while saving, and restores the saved value whe
   const control = setup();
   await using screen = await render(control());
   await screen.getByRole("button", { name: "More pull request actions" }).click();
-  const checkbox = page.getByRole("menuitemcheckbox", { name: "Allow edits from maintainers" });
+  const checkbox = page.getByRole("menuitemcheckbox", { name: "允许从维护者编辑" });
   await expect.element(checkbox).toBeChecked();
   await checkbox.click();
   await expect.element(page.getByRole("status")).not.toBeInTheDocument();
@@ -137,7 +137,7 @@ it("saves maintainer edits, locks while saving, and restores the saved value whe
   await checkbox.click();
   await expect.element(checkbox).toBeChecked();
   await expect.element(checkbox).toBeDisabled();
-  await expect.element(page.getByRole("status")).toHaveTextContent("Saving…");
+  await expect.element(page.getByRole("status")).toHaveTextContent("正在保存…");
   settle({
     _tag: "Failure",
     cause: Cause.fail(new Error("Resource not accessible by integration")),
@@ -156,7 +156,7 @@ it("keeps a saved choice through a stale refresh, then follows the host", async 
   const control = setup();
   await using screen = await render(control());
   await screen.getByRole("button", { name: "More pull request actions" }).click();
-  const checkbox = page.getByRole("menuitemcheckbox", { name: "Allow edits from maintainers" });
+  const checkbox = page.getByRole("menuitemcheckbox", { name: "允许从维护者编辑" });
   let settle!: (value: { _tag: "Success" }) => void;
   mocks.update.mockReturnValueOnce(
     new Promise((resolve) => {
@@ -179,7 +179,7 @@ it("follows the host's first reading after a save, even when it matches the old 
   const control = setup();
   await using screen = await render(control());
   await screen.getByRole("button", { name: "More pull request actions" }).click();
-  const checkbox = page.getByRole("menuitemcheckbox", { name: "Allow edits from maintainers" });
+  const checkbox = page.getByRole("menuitemcheckbox", { name: "允许从维护者编辑" });
   await checkbox.click();
   await expect.element(page.getByRole("status")).not.toBeInTheDocument();
   await expect.element(checkbox).not.toBeChecked();

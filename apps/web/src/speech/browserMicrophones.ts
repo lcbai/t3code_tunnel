@@ -6,6 +6,6 @@ export async function listBrowserMicrophones(): Promise<BrowserMicrophone[]> {
     .filter((device) => device.kind === "audioinput")
     .map(({ deviceId, label }, index) => ({
       deviceId,
-      label: label || `Microphone ${index + 1}`,
+      label: label || `麦克风${index + 1}`,
     }));
 }

@@ -146,10 +146,8 @@ export function ThreadMarkdownImageView(props: {
         <MediaActionsMenu media={mediaActions}>
           <Pressable
             accessibilityRole="imagebutton"
-            accessibilityLabel={props.alt ?? "Markdown image"}
-            accessibilityHint={
-              mediaActions.actions.length > 0 ? "Touch and hold for media actions" : undefined
-            }
+            accessibilityLabel={props.alt ?? "Markdown 图片"}
+            accessibilityHint={mediaActions.actions.length > 0 ? "长按查看媒体操作" : undefined}
             className="items-center justify-center rounded-[10px] bg-md-code-bg"
             style={frameStyle}
           >
@@ -157,7 +155,7 @@ export function ThreadMarkdownImageView(props: {
               <Text className="px-3 text-center text-xs text-foreground-muted">
                 {props.unavailableDetail
                   ? `Image unavailable. ${props.unavailableDetail}`
-                  : "Image unavailable"}
+                  : "图片不可用"}
               </Text>
             ) : (
               <AppActivityIndicator />
@@ -169,10 +167,8 @@ export function ThreadMarkdownImageView(props: {
           <MediaActionsMenu media={mediaActions}>
             <Pressable
               accessibilityRole="imagebutton"
-              accessibilityLabel={props.alt ?? "Markdown image"}
-              accessibilityHint={
-                mediaActions.actions.length > 0 ? "Touch and hold for media actions" : undefined
-              }
+              accessibilityLabel={props.alt ?? "Markdown 图片"}
+              accessibilityHint={mediaActions.actions.length > 0 ? "长按查看媒体操作" : undefined}
               onPress={() =>
                 props.onPressPreview(
                   withGallery({
@@ -257,7 +253,7 @@ function ThreadMarkdownImageLoading() {
       pointerEvents="none"
       style={[StyleSheet.absoluteFill, { alignItems: "center", justifyContent: "center" }]}
     >
-      <Text className="text-xs text-foreground-muted">Loading image…</Text>
+      <Text className="text-xs text-foreground-muted">正在加载图片…</Text>
     </View>
   );
 }

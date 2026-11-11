@@ -53,9 +53,9 @@ export function SettingsOpenSourceLicensesRouteScreen() {
   const search = {
     value: query,
     onChangeText: setQuery,
-    placeholder: "Search packages",
-    accessibilityLabel: "Search open-source licenses",
-    clearAccessibilityLabel: "Clear package search",
+    placeholder: "搜索软件包",
+    accessibilityLabel: "搜索开源许可证",
+    clearAccessibilityLabel: "清除软件包搜索",
   };
   const searchInset = useSearchToolbarInset(search);
   const manifest = useMobileThirdPartyLicenses();
@@ -74,10 +74,10 @@ export function SettingsOpenSourceLicensesRouteScreen() {
 
   if (!manifest) {
     return (
-      <SettingsScreen title="Open source licenses">
+      <SettingsScreen title="开源许可证">
         <View className="flex-1 items-center justify-center px-6">
           <Text className="text-center text-base text-foreground-muted">
-            License notices are unavailable in this build.
+            此版本无法查看许可声明。
           </Text>
         </View>
       </SettingsScreen>
@@ -85,7 +85,7 @@ export function SettingsOpenSourceLicensesRouteScreen() {
   }
 
   return (
-    <SettingsScreen title="Open source licenses" search={search}>
+    <SettingsScreen title="开源许可证" search={search}>
       <LegendList
         renderScrollComponent={NativeScrollView}
         className="flex-1"
@@ -102,7 +102,7 @@ export function SettingsOpenSourceLicensesRouteScreen() {
         ListEmptyComponent={
           <View className="items-center px-6 py-12">
             <Text className="text-center text-base text-foreground-muted">
-              No licenses match that search.
+              找不到符合条件的许可证。
             </Text>
           </View>
         }
@@ -125,18 +125,16 @@ export function SettingsOpenSourceLicenseRouteScreen({ route }: LicenseDetailPro
 
   if (!entry) {
     return (
-      <SettingsScreen title="License notice">
+      <SettingsScreen title="许可声明">
         <View className="flex-1 items-center justify-center px-6">
-          <Text className="text-center text-base text-foreground-muted">
-            This license notice is unavailable.
-          </Text>
+          <Text className="text-center text-base text-foreground-muted">此许可声明不可用。</Text>
         </View>
       </SettingsScreen>
     );
   }
 
   return (
-    <SettingsScreen title="License notice">
+    <SettingsScreen title="许可声明">
       <ScrollView
         className="flex-1"
         contentInsetAdjustmentBehavior="automatic"
@@ -153,12 +151,12 @@ export function SettingsOpenSourceLicenseRouteScreen({ route }: LicenseDetailPro
           </Text>
           {sourceUrl ? (
             <Pressable
-              accessibilityHint="Opens the project website"
+              accessibilityHint="打开项目网站"
               accessibilityRole="link"
               onPress={() => void Linking.openURL(sourceUrl)}
               className="min-h-12 flex-row items-center gap-2 self-start py-2 active:opacity-60"
             >
-              <Text className="font-t3-medium text-primary-text">Project source</Text>
+              <Text className="font-t3-medium text-primary-text">项目来源</Text>
               <SymbolView
                 name="arrow.up.right"
                 size={16}

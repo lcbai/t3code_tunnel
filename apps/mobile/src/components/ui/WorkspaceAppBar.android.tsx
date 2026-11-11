@@ -219,7 +219,7 @@ function WorkspaceAppBarView(props: WorkspaceAppBarProps) {
         >
           <View className="flex-1 flex-row items-center gap-1">
             <AndroidHeaderIconButton
-              accessibilityLabel="Close search"
+              accessibilityLabel="关闭搜索"
               icon="arrow.left"
               onPress={search.onClose}
             />

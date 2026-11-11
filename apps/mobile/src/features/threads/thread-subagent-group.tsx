@@ -200,10 +200,10 @@ export function ThreadSubagentGroup(props: {
                 accessibilityRole={target === null ? undefined : "link"}
                 accessibilityHint={
                   target !== null
-                    ? "Opens this agent's thread"
+                    ? "打开此智能体的会话"
                     : agent.remoteChild !== undefined
-                      ? `Runs on ${agent.remoteChild.label}`
-                      : "Provider-managed agent"
+                      ? `运行位置：${agent.remoteChild.label}`
+                      : "由提供方管理的智能体"
                 }
                 disabled={target === null}
                 onPress={() => {

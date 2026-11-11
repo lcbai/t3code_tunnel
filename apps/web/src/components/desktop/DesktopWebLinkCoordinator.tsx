@@ -106,16 +106,14 @@ export function DesktopWebLinkCoordinator() {
         primaryEnvironment.serverConfig !== null));
 
   const reportFailure = (url: string, description = url) =>
-    toastManager.add(
-      stackedThreadToast({ type: "error", title: "Could not open the link", description }),
-    );
+    toastManager.add(stackedThreadToast({ type: "error", title: "无法打开链接", description }));
 
   const reportPairingFailure = (error: unknown) =>
     toastManager.add(
       stackedThreadToast({
         type: "error",
-        title: "Could not add backend",
-        description: error instanceof Error ? error.message : "Failed to add backend.",
+        title: "无法添加后端",
+        description: error instanceof Error ? error.message : "添加后端失败。",
       }),
     );
 
@@ -141,8 +139,8 @@ export function DesktopWebLinkCoordinator() {
     pairedUrlsRef.current.add(pairingUrl);
     toastManager.add({
       type: "success",
-      title: "Backend added",
-      description: "The environment is saved and will reconnect on app startup.",
+      title: "后端已添加",
+      description: "环境被保存，并将在应用程序启动时重新连接。",
     });
   };
 

@@ -277,11 +277,11 @@ export function useQueuedRunEdit(input: {
           toastManager.add(
             stackedThreadToast({
               type: recovery === "kept" ? "info" : "warning",
-              title: "Queued message is no longer queued",
+              title: "已排队的消息不再排队",
               description:
                 recovery === "kept"
-                  ? `Your unsaved edit${where} was kept in the composer.`
-                  : `Your unsaved edit${where} was discarded.`,
+                  ? `尚未保存的编辑${where} 已保留在消息输入框中。`
+                  : `您的未保存编辑${where} 已被丢弃。`,
             }),
           );
         },
@@ -317,7 +317,7 @@ export function useQueuedRunEdit(input: {
     ) {
       setThreadError(
         editing.threadId,
-        `A message can have at most ${PROVIDER_SEND_TURN_MAX_ATTACHMENTS} attachments.`,
+        `一个消息最多可以有${PROVIDER_SEND_TURN_MAX_ATTACHMENTS}附件。`,
       );
       return;
     }

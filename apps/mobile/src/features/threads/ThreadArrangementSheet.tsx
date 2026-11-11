@@ -127,13 +127,13 @@ function DragHandle(props: {
         collapsable={false}
         accessible
         accessibilityRole="adjustable"
-        accessibilityLabel={`Reorder ${props.title}`}
-        accessibilityHint="Move up and Move down reorder within this section. Other actions move between sections."
+        accessibilityLabel={`重新排列 ${props.title}`}
+        accessibilityHint="「上移」和「下移」可在当前分区内排序。使用其他操作可移到不同分区。"
         accessibilityState={{ disabled: props.disabled }}
         accessibilityActions={[
           ...props.sectionActions,
-          ...(props.canMoveUp ? [{ name: "decrement", label: "Move up" }] : []),
-          ...(props.canMoveDown ? [{ name: "increment", label: "Move down" }] : []),
+          ...(props.canMoveUp ? [{ name: "decrement", label: "上移" }] : []),
+          ...(props.canMoveDown ? [{ name: "increment", label: "下移" }] : []),
         ]}
         onAccessibilityAction={({ nativeEvent }) => {
           if (props.disabled) return;
@@ -394,12 +394,12 @@ function ThreadArrangementSheet(props: { onClose: () => void }) {
             <SafeAreaView style={{ flex: 1 }}>
               <SheetHeader
                 presentation="inline"
-                title="Arrange threads"
+                title="整理会话"
                 onClose={props.onClose}
-                accessibilityLabel="Close arrange threads"
+                accessibilityLabel="关闭会话整理"
               />
               <Text className="px-5 pb-3 text-sm text-foreground-muted">
-                Drag to reorder, pin, or settle. Changes save when you drop.
+                拖动可排序、置顶或收尾。松开后保存更改。
               </Text>
               <View
                 onLayout={(event) => {
@@ -529,9 +529,9 @@ function ThreadArrangementSheet(props: { onClose: () => void }) {
                           >
                             <Text className="text-sm text-foreground-muted">
                               {olderSettledShelf.loading
-                                ? "Loading"
+                                ? "正在加载"
                                 : olderSettledShelf.failed
-                                  ? "Could not load older threads. Retry"
+                                  ? "无法加载较早的会话。重试"
                                   : `Show more (${settledCount - visibleSettled.length} settled hidden)`}
                             </Text>
                           </Pressable>

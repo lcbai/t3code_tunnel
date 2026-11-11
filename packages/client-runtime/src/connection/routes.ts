@@ -23,7 +23,7 @@ export type ConnectionRouteKind =
   | "public"
   | "ssh";
 
-export const RELAY_ROUTE_ID = "relay";
+const RELAY_ROUTE_ID = "relay";
 
 export function connectionRouteId(target: ConnectionTarget): string {
   switch (target._tag) {
@@ -163,7 +163,7 @@ function routeAddressKey(route: ConnectionRoute): string | null {
 export function connectionRouteLabel(route: ConnectionRoute): string {
   switch (connectionRouteKind(route)) {
     case "relay":
-      return "T3 Connect";
+      return "旧版托管连接";
     case "loopback":
       return "This device";
     case "lan":
@@ -194,14 +194,6 @@ export function connectionRouteAddress(route: ConnectionRoute): string | null {
 /** Learned routes alone must not make relay environments manually retryable. */
 export const hasSavedBearerRoute = (entry: ConnectionCatalogEntry) =>
   connectionRoutes(entry).some((r) => !isLearned(r) && r.target._tag === "BearerConnectionTarget");
-
-export function hasRelayRoute(
-  entry: Pick<ConnectionCatalogEntry, "target" | "alternateRoutes">,
-): boolean {
-  return [entry.target, ...(entry.alternateRoutes ?? []).map((route) => route.target)].some(
-    (target) => target._tag === "RelayConnectionTarget",
-  );
-}
 
 export function mergeLearnedRoutes(input: {
   readonly entry: ConnectionCatalogEntry;
@@ -406,7 +398,7 @@ export function isLearned(route: ConnectionRoute): boolean {
 
 /**
  * A learned route borrows the credential of the route it was learned over, so
- * it cannot outlive that route: removing T3 Connect also removes routes learned
+ * it cannot outlive that route: removing a legacy relay also removes routes learned
  * through it, and removing a paired address removes routes that borrow its
  * token.
  */

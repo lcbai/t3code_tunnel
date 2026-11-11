@@ -15,8 +15,7 @@ export default function MermaidViewer(props: { readonly text: string }) {
   )
     return (
       <div role="alert" className="p-6 text-xs text-muted-foreground">
-        This diagram contains resource URLs, markup, node metadata, or custom configuration. Show
-        Mermaid source to inspect it safely.
+        此图包含资源 URL、 标记、 节点元数据或自定义配置。 显示人鱼源以安全检查。
       </div>
     );
   return (

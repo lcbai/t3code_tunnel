@@ -1,6 +1,6 @@
-const TIME_FORMATTER = new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit" });
-const DATE_FORMATTER = new Intl.DateTimeFormat(undefined, { month: "numeric", day: "numeric" });
-const DATE_WITH_YEAR_FORMATTER = new Intl.DateTimeFormat(undefined, {
+const TIME_FORMATTER = new Intl.DateTimeFormat("zh-CN", { hour: "numeric", minute: "2-digit" });
+const DATE_FORMATTER = new Intl.DateTimeFormat("zh-CN", { month: "numeric", day: "numeric" });
+const DATE_WITH_YEAR_FORMATTER = new Intl.DateTimeFormat("zh-CN", {
   month: "numeric",
   day: "numeric",
   year: "numeric",

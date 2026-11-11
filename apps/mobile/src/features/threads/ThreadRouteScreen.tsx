@@ -140,7 +140,7 @@ function ThreadRouteFallbackLayout(props: { readonly children: ReactNode }) {
     <ThreadScreenFallback
       header={
         inspectorHeaderShown ? undefined : (
-          <AppBar title="Thread" onBackToList={goBack} hideBottomBorder />
+          <AppBar title="会话" onBackToList={goBack} hideBottomBorder />
         )
       }
     >
@@ -152,7 +152,7 @@ function ThreadRouteFallbackLayout(props: { readonly children: ReactNode }) {
 function OpeningThreadLoadingScreen() {
   return (
     <ThreadRouteFallbackLayout>
-      <LoadingScreen message="Opening thread…" messagePlacement="above-spinner" embedded />
+      <LoadingScreen message="正在打开会话…" messagePlacement="above-spinner" embedded />
     </ThreadRouteFallbackLayout>
   );
 }
@@ -188,8 +188,8 @@ function ThreadUnavailableScreen(props: {
         className="bg-screen flex-1 android:bg-transparent"
       >
         <EmptyState
-          title="Thread unavailable"
-          detail="This thread is not available in the current mobile snapshot."
+          title="会话不可用"
+          detail="当前移动端快照中没有此会话。"
           actionLabel={props.actionLabel}
           onAction={props.onAction}
         />
@@ -274,7 +274,7 @@ function LiveThreadRouteController(props: ThreadRouteScreenProps) {
     props.inspectorPresentation ? (
       <InspectorHeaderShownContext value>
         <ThreadInspectorHeader
-          title={selectedThread?.title ?? "Thread"}
+          title={selectedThread?.title ?? "会话"}
           {...props.inspectorPresentation}
         />
         {content}
@@ -674,10 +674,7 @@ function ThreadRouteContent(
     });
     if (result._tag === "Failure" && !isAtomCommandInterrupted(result)) {
       const error = squashAtomCommandFailure(result);
-      Dialog.alert(
-        "Could not resume thread",
-        error instanceof Error ? error.message : "Try again.",
-      );
+      Dialog.alert("Could not resume thread", error instanceof Error ? error.message : "请重试。");
     }
   };
 

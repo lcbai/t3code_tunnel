@@ -22,7 +22,7 @@ export const PROVIDER_PRESENTATION = {
     driverKind: ProviderDriverKind.make("claudeAgent"),
   },
   grok: {
-    label: "Grok Build",
+    label: "Grok 构建",
     color: "color-mix(in oklab, var(--contrast-foreground) 72%, var(--background))",
     driverKind: ProviderDriverKind.make("grok"),
   },
@@ -43,7 +43,7 @@ export const PROVIDER_PRESENTATION = {
     driverKind: ProviderDriverKind.make("pi"),
   },
   muse: {
-    label: "Muse Code",
+    label: "Muse 代码",
     color: "#0866ff",
     driverKind: ProviderDriverKind.make("muse"),
   },

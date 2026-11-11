@@ -11,23 +11,23 @@ export const RUNTIME_MODE_CHOICES: ReadonlyArray<{
 }> = [
   {
     mode: "approval-required",
-    label: "Supervised",
-    description: "Ask before commands and file changes.",
+    label: "受监督",
+    description: "运行命令和修改文件前询问。",
   },
   {
     mode: "auto-accept-edits",
-    label: "Auto-accept edits",
-    description: "Auto-approve edits, ask before other actions.",
+    label: "自动接受编辑",
+    description: "自动批准编辑，执行其他操作前询问。",
   },
   {
     mode: "auto",
-    label: "Auto",
-    description: "Supported providers approve routine actions; others still ask.",
+    label: "自动",
+    description: "支持此模式的提供方会自动批准常规操作，其他提供方仍会询问。",
   },
   {
     mode: "full-access",
-    label: "Full access",
-    description: "Allow commands and edits without prompts.",
+    label: "完整访问权限",
+    description: "允许运行命令和编辑文件，无需确认。",
   },
 ];
 

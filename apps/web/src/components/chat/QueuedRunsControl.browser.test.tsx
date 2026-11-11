@@ -105,7 +105,7 @@ it("previews assistant quotes as readable text and preserves the citation when e
     .element(page.getByText(`${quotedText} Why per worktree?`, { exact: true }))
     .toBeVisible();
 
-  await page.getByRole("button", { name: "Edit queued message", exact: true }).nth(1).click();
+  await page.getByRole("button", { name: "编辑队列中的消息", exact: true }).nth(1).click();
   expect(onEditQueuedRun).toHaveBeenCalledExactlyOnceWith(
     expect.objectContaining({ text: quoteAndText }),
   );
@@ -164,14 +164,14 @@ it("shows who sent a queued message and folds automation and agent prompts", asy
   await expect.element(page.getByText(/Follow the runbook/)).not.toBeInTheDocument();
   await automation.click();
   await expect.element(page.getByText(/Follow the runbook/)).toBeVisible();
-  await expect.element(page.getByRole("link", { name: "Open automation" })).toBeInTheDocument();
+  await expect.element(page.getByRole("link", { name: "开放自动化" })).toBeInTheDocument();
 
   await expect.element(page.getByRole("button", { name: /Release lead/ })).toBeVisible();
-  await page.getByRole("button", { name: "Open thread" }).click({ force: true });
+  await page.getByRole("button", { name: "打开会话" }).click({ force: true });
   expect(onOpenThread).toHaveBeenCalledExactlyOnceWith("thread:lead");
 
-  await expect.element(page.getByText("Sent by T3 Code")).toBeVisible();
-  await expect.element(page.getByText("Continue where you left off.")).toBeVisible();
+  await expect.element(page.getByText("发件人:T3 Code")).toBeVisible();
+  await expect.element(page.getByText("继续你离开的地方。")).toBeVisible();
 });
 
 it("stays inside the timeline scroller instead of growing the chat column", async () => {
@@ -199,7 +199,7 @@ it("stays inside the timeline scroller instead of growing the chat column", asyn
       </div>
     </div>,
   );
-  await expect.element(page.getByText("Later", { exact: true })).toBeInTheDocument();
+  await expect.element(page.getByText("回头见", { exact: true })).toBeInTheDocument();
   const column = screen.getByTestId("column").element();
   expect(column.scrollHeight).toBe(column.clientHeight);
 });

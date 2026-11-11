@@ -29,7 +29,7 @@ export function AppRouteModal({ label, children }: { label: string; children: Re
   return (
     <DialogPrimitive.Root
       open={open}
-      // Portaled layers outside this tree (toasts, Clerk, confirm dialogs) are not backdrop presses.
+      // Portaled layers outside this tree (toasts and confirm dialogs) are not backdrop presses.
       disablePointerDismissal
       onOpenChange={(nextOpen) => {
         if (nextOpen) return;
@@ -90,14 +90,14 @@ export function AppRouteModalClose() {
       <TooltipTrigger
         render={
           <DialogPrimitive.Close
-            aria-label="Close"
+            aria-label="关闭"
             render={<Button size="icon-sm" variant="ghost" />}
           />
         }
       >
         <XIcon />
       </TooltipTrigger>
-      <TooltipPopup side="bottom">Close (Esc)</TooltipPopup>
+      <TooltipPopup side="bottom">关闭( Esc)</TooltipPopup>
     </Tooltip>
   );
 }

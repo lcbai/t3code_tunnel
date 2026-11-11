@@ -16,7 +16,7 @@ export function AboutVersionTitle() {
       toastManager.add(
         stackedThreadToast({
           type: "error",
-          title: "Could not copy version",
+          title: "无法复制版本",
           description: error.message,
         }),
       );
@@ -25,7 +25,7 @@ export function AboutVersionTitle() {
 
   return (
     <span className="inline-flex items-baseline gap-2">
-      <span>Version</span>
+      <span>版本</span>
       <code className="text-2xs font-medium">
         <Tooltip>
           <TooltipTrigger
@@ -33,14 +33,14 @@ export function AboutVersionTitle() {
               <InlineButton
                 ref={copyButtonRef}
                 tone="muted"
-                aria-label={`Copy version ${APP_VERSION}`}
+                aria-label={`复制版本${APP_VERSION}`}
                 onClick={() => copyToClipboard(APP_VERSION, undefined)}
               >
                 {APP_VERSION}
               </InlineButton>
             }
           />
-          <TooltipPopup>Copy version</TooltipPopup>
+          <TooltipPopup>复制版本</TooltipPopup>
         </Tooltip>
       </code>
     </span>

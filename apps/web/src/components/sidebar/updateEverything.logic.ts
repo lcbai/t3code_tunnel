@@ -134,9 +134,9 @@ export function collectServerUpdateTargets(
 }
 
 function unavailableReason(machine: UpdateEverythingMachine): string | null {
-  if (machine.serverConfig === null || !machine.connected) return "not connected";
-  if (!machine.canMaintain) return "no permission";
-  if (machine.updateState.status === "running") return "already updating";
+  if (machine.serverConfig === null || !machine.connected) return "未连接";
+  if (!machine.canMaintain) return "不允许";
+  if (machine.updateState.status === "running") return "已经更新";
   return null;
 }
 
@@ -164,13 +164,13 @@ function channelSwitchBlockReason(
   const from = channelSwitchLabel(desktopUpdateChannelOf(fromVersion));
   // Servers and releases from before this check report no migration number.
   if (currentMigration === undefined) {
-    return `its server predates database checks; update it on ${from} first`;
+    return `它的服务器在数据库检查前会更新; 更新到${from} first`;
   }
   if (release.databaseMigration === undefined) {
-    return `${release.version} predates database checks; wait for a newer ${channelSwitchLabel(release.channel)} release`;
+    return `${release.version} 日期在数据库检查前; 等待更新的${channelSwitchLabel(release.channel)} 释放`;
   }
   return currentMigration > release.databaseMigration
-    ? `its database has changes ${release.version} does not support yet; stay on ${from} until ${channelSwitchLabel(release.channel)} has them`
+    ? `其数据库有更改${release.version} 尚未支持; 保留在${from} 直至${channelSwitchLabel(release.channel)} 拥有它们`
     : null;
 }
 
@@ -192,7 +192,7 @@ export function localSwitchBlockReason(
     hosted.length < backendCount ||
     hosted.some((server) => !server.connected)
   ) {
-    return "its server is not connected, so its database cannot be checked";
+    return "它的服务器没有连接，因此无法检查其数据库";
   }
   return (
     hosted
@@ -460,10 +460,10 @@ export function describeUpdateCapsule(
 ): UpdateCapsuleView {
   if (run.phase === "countdown" && run.restartAt !== null) {
     const seconds = Math.max(0, Math.ceil((run.restartAt - now) / 1000));
-    return { tone: "default", label: `Restart in ${seconds}s`, action: "later" };
+    return { tone: "default", label: `重新启动于${seconds}s`, action: "later" };
   }
   if (run.phase === "installing") {
-    return { tone: "default", label: "Restarting…", action: null };
+    return { tone: "default", label: "重新启动中…", action: null };
   }
   const active = machines.filter(({ status }) => isActive(status) && status !== "waiting");
   const slowest = active.toSorted((a, b) => a.machine.startedAt - b.machine.startedAt)[0];
@@ -480,12 +480,12 @@ export function describeUpdateCapsule(
   }
   const done = machines.filter(({ status }) => status === "done").length;
   if (machines.some(({ status }) => isActive(status))) {
-    return { tone: "default", label: `${done} of ${machines.length} updated`, action: null };
+    return { tone: "default", label: `${done} of${machines.length} 更新`, action: null };
   }
   if (local?.status === "downloading") {
     return {
       tone: "default",
-      label: `Downloading${local.percent === null ? "" : ` ${Math.floor(local.percent)}%`}`,
+      label: `下载${local.percent === null ? "" : ` ${Math.floor(local.percent)}%`}`,
       action: null,
     };
   }
@@ -500,7 +500,7 @@ export function describeUpdateCapsule(
           : "dismiss",
     };
   }
-  return { tone: "default", label: `${done} of ${machines.length} updated`, action: null };
+  return { tone: "default", label: `${done} of${machines.length} 更新`, action: null };
 }
 
 export const RUN_STATUS_LABELS: Record<UpdateRunMachineStatus, string> = {
@@ -538,7 +538,7 @@ export function collectUpdateEverythingResult(input: {
     updatedProviders: input.providers.filter((outcome) => outcome.status === "updated").length,
     restarting: [],
     failures: [
-      ...input.localFailures.map((failure) => `This app: ${failure}`),
+      ...input.localFailures.map((failure) => `此应用程序 :${failure}`),
       ...input.servers.flatMap(({ label, outcome }) =>
         outcome.status === "failed" ? [`${label}: ${outcome.message}`] : [],
       ),
@@ -570,13 +570,13 @@ export function getUpdateEverythingToastView(
     if (parts.length === 0) return null;
     return {
       type: "success",
-      title: `Updated ${joinList(parts)}`,
+      title: `更新的${joinList(parts)}`,
       ...(restarting.length === 0 ? {} : { description: restarting.join("\n") }),
     };
   }
   return {
     type: "error",
-    title: parts.length === 0 ? "Update failed" : `Updated ${joinList(parts)}`,
+    title: parts.length === 0 ? "更新失败" : `更新的${joinList(parts)}`,
     description: [...result.failures, ...restarting].join("\n"),
   };
 }

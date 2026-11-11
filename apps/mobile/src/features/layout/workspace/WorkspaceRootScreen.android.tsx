@@ -88,7 +88,7 @@ function WorkspaceRoot() {
                   ) : layout.usesSplitView ? (
                     <>
                       <NativeStackScreenOptions options={{ headerShown: false }} />
-                      <AppBar embedded title="Pull requests" />
+                      <AppBar embedded title="拉取请求" />
                       <WorkspaceEmptyDetail tab="pullRequests" />
                     </>
                   ) : (

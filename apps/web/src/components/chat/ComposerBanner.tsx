@@ -26,7 +26,7 @@ const neutralOutline = cn(
 const variantColors: Record<ComposerBannerVariant, string> = {
   default: neutralOutline,
   error:
-    "[--chat-composer-attached-outline:color-mix(in_srgb,var(--error)_32%,transparent)] [--chat-composer-attached-tint:color-mix(in_srgb,var(--error)_8%,transparent)]",
+    "[-chat-composer-attacked-outline:color-mix(in_srgb, var(-error)_32%，透明] [-chat-composer-attacked-tint:color-mix(in_srgb, var(-errror)_8%，透明]]]",
   info: neutralOutline,
   success: neutralOutline,
   warning:

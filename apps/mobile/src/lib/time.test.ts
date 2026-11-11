@@ -6,12 +6,12 @@ const timestamp = Date.parse(at);
 
 describe("relative time", () => {
   it.each([
-    [59_999, "<1m", "1m"],
-    [119_999, "1m", "2m"],
-    [3_599_999, "59m", "1h"],
-    [7_199_999, "1h", "2h"],
-    [86_399_999, "23h", "1d"],
-    [172_799_999, "1d", "2d"],
+    [59_999, "不到 1 分钟", "1 分钟"],
+    [119_999, "1 分钟", "2 分钟"],
+    [3_599_999, "59 分钟", "1 小时"],
+    [7_199_999, "1 小时", "2 小时"],
+    [86_399_999, "23 小时", "1 天"],
+    [172_799_999, "1 天", "2 天"],
   ] as const)("updates at the next boundary after %i ms", (elapsed, before, after) => {
     const nowMs = timestamp + elapsed;
     expect(relativeTime(at, nowMs)).toBe(before);
@@ -29,12 +29,12 @@ describe("relative time", () => {
   });
 
   it("keeps invalid timestamps static", () => {
-    expect(relativeTime("invalid", timestamp)).toBe("<1m");
+    expect(relativeTime("invalid", timestamp)).toBe("不到 1 分钟");
     expect(msUntilRelativeTimeChange("invalid", timestamp)).toBeNull();
   });
 
   it("waits until a future timestamp is a minute old, with bounded timers", () => {
-    expect(relativeTime(at, timestamp - 30_000)).toBe("<1m");
+    expect(relativeTime(at, timestamp - 30_000)).toBe("不到 1 分钟");
     expect(msUntilRelativeTimeChange(at, timestamp - 30_000)).toBe(90_000);
     expect(msUntilRelativeTimeChange(at, timestamp - 30 * 86_400_000)).toBe(86_400_000);
   });

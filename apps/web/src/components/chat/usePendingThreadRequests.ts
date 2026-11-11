@@ -286,10 +286,7 @@ export function usePendingThreadRequests(input: {
     });
     if (result._tag === "Failure" && !isAtomCommandInterrupted(result)) {
       const error = squashAtomCommandFailure(result);
-      setThreadError(
-        activeThreadId,
-        error instanceof Error ? error.message : "Failed to submit approval decision.",
-      );
+      setThreadError(activeThreadId, error instanceof Error ? error.message : "未提交批准决定。");
     }
     setRespondingRequestIds((existing) => existing.filter((id) => id !== requestId));
     return result;
@@ -325,10 +322,7 @@ export function usePendingThreadRequests(input: {
       if (attachments.length === 0) continue;
       const uploaded = getUploadedAttachments({ environmentId, images: attachments });
       if (!uploaded) {
-        setThreadError(
-          activeThreadId,
-          "Wait for attachments to finish uploading, or remove failed uploads.",
-        );
+        setThreadError(activeThreadId, "等待附件完成上传，或是删除失败的上传。");
         return;
       }
       attachmentsByQuestionId.set(question.id, uploaded as UserInputAttachments[string]);
@@ -351,10 +345,7 @@ export function usePendingThreadRequests(input: {
     });
     if (result._tag === "Failure" && !isAtomCommandInterrupted(result)) {
       const error = squashAtomCommandFailure(result);
-      setThreadError(
-        activeThreadId,
-        error instanceof Error ? error.message : "Failed to submit user input.",
-      );
+      setThreadError(activeThreadId, error instanceof Error ? error.message : "提交用户输入失败。");
     }
     userInputResponsesInFlight.current.delete(responseKey);
     setRespondingUserInputRequestIds((existing) => existing.filter((id) => id !== requestId));
@@ -373,10 +364,7 @@ export function usePendingThreadRequests(input: {
     });
     if (result._tag === "Failure" && !isAtomCommandInterrupted(result)) {
       const error = squashAtomCommandFailure(result);
-      setThreadError(
-        activeThreadId,
-        error instanceof Error ? error.message : "Failed to dismiss the question.",
-      );
+      setThreadError(activeThreadId, error instanceof Error ? error.message : "未能驳回问题。");
     }
     setRespondingUserInputRequestIds((existing) => existing.filter((id) => id !== requestId));
     return result;
@@ -407,8 +395,8 @@ export function usePendingThreadRequests(input: {
       setComposerDraftPrompt(composerDraftTarget, nextPrompt);
       toastManager.add({
         type: "info",
-        title: "Your typed text was set aside",
-        description: "It will be back in the composer once the question is answered.",
+        title: "您的输入文本被丢弃",
+        description: "一旦问题得到回答，它就会回到消息输入框的行列。",
         data: { threadRef: activeThreadId ? { environmentId, threadId: activeThreadId } : null },
       });
       if (activeThreadId) {

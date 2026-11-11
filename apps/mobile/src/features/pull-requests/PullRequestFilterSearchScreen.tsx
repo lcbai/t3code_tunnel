@@ -110,10 +110,10 @@ export function PullRequestFilterSearchScreen({
       },
     });
   };
-  const placeholder = kind === "labels" ? "Search labels" : "Search authors";
+  const placeholder = kind === "labels" ? "搜索标签" : "Search authors";
   return (
     <PullRequestSearchSheet
-      title={kind === "labels" ? "Filter by label" : "Filter by author"}
+      title={kind === "labels" ? "按标签筛选" : "按作者筛选"}
       placeholder={placeholder}
       closeAccessibilityLabel={kind === "labels" ? "Close label filter" : "Close author filter"}
       clearAccessibilityLabel={kind === "labels" ? "Clear label search" : "Clear author search"}
@@ -155,15 +155,15 @@ export function PullRequestFilterSearchScreen({
                   hosted.failed
                     ? "Couldn't search the host"
                     : kind === "labels"
-                      ? "No matching labels"
-                      : "No matching authors"
+                      ? "没有匹配的标签"
+                      : "没有匹配的作者"
                 }
                 detail={
                   hosted.failed
-                    ? "The host didn't answer. Try again in a moment."
+                    ? "主机未响应。请稍后重试。"
                     : kind === "labels"
-                      ? "Search the labels of the repositories this list covers."
-                      : "Search people by name or handle on the repositories' hosts."
+                      ? "搜索此列表中各仓库的标签。"
+                      : "按姓名或用户名搜索仓库托管平台上的用户。"
                 }
                 variant="plain"
               />

@@ -75,18 +75,18 @@ type ZipFailure = typeof ZipFailure.Type;
 
 const SAVE_ZIP_HINT = "Save the ZIP to open it in another app.";
 const TOO_LARGE: ZipFailure = {
-  title: "Too large to browse here",
+  title: "文件太大，无法在这里浏览",
   detail: `Browsing works up to ${formatAttachmentSize(ARCHIVE_MAX_BYTES)}. ${SAVE_ZIP_HINT}`,
   retry: false,
 };
 const CANCELLED: ZipFailure = {
-  title: "Download cancelled",
-  detail: "The ZIP wasn't downloaded. Try again to list its files.",
+  title: "下载已取消",
+  detail: "ZIP 未下载。请重试以查看其中的文件。",
   retry: true,
 };
 const NETWORK: ZipFailure = {
   title: "Couldn't download this ZIP",
-  detail: "Check the connection to this environment and try again.",
+  detail: "请检查与此环境的连接后重试。",
   retry: true,
 };
 
@@ -305,11 +305,11 @@ function ZipArchiveHeader(props: {
         if (navigation.canGoBack()) navigation.goBack();
       }}
       actions={[
-        { accessibilityLabel: "Save ZIP", icon: "square.and.arrow.up", onPress: props.onSave },
+        { accessibilityLabel: "保存 ZIP", icon: "square.and.arrow.up", onPress: props.onSave },
         ...(props.onRemove
           ? [
               {
-                accessibilityLabel: "Remove from draft",
+                accessibilityLabel: "从草稿中移除",
                 icon: "trash" as const,
                 onPress: props.onRemove,
                 destructive: true,
@@ -341,12 +341,12 @@ function ZipArchiveProgress(props: {
       </Text>
       <Progress
         value={props.totalBytes > 0 ? props.receivedBytes / props.totalBytes : undefined}
-        label="ZIP download progress"
+        label="ZIP 下载进度"
       />
       <Text className="text-sm text-foreground-muted">
         {`Downloading the ZIP so its files can be listed.${timeLeft ? ` ${timeLeft} on this connection.` : ""}`}
       </Text>
-      <Button label="Cancel" onPress={props.onCancel} />
+      <Button label="取消" onPress={props.onCancel} />
     </View>
   );
 }
@@ -365,11 +365,11 @@ function ZipArchiveFailure(props: {
         action={
           <View className="flex-row gap-3">
             {props.failure.retry ? (
-              <Button tone="primary" label="Try again" onPress={props.onRetry} />
+              <Button tone="primary" label="重试" onPress={props.onRetry} />
             ) : null}
             <Button
               tone={props.failure.retry ? "secondary" : "primary"}
-              label="Save ZIP"
+              label="保存 ZIP"
               onPress={props.onSave}
             />
           </View>
@@ -417,7 +417,7 @@ function ZipArchiveList(props: {
             <View className="h-[38px] flex-row items-center gap-2 rounded-[10px] bg-subtle px-3">
               <SymbolView name="magnifyingglass" size={15} tintColorClassName="accent-icon-muted" />
               <TextInput
-                accessibilityLabel="Filter files in ZIP"
+                accessibilityLabel="筛选 ZIP 内的文件"
                 autoCapitalize="none"
                 autoCorrect={false}
                 placeholder={`Filter ${fileCount} ${fileCount === 1 ? "file" : "files"}`}
@@ -430,7 +430,7 @@ function ZipArchiveList(props: {
               {query ? (
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel="Clear filter"
+                  accessibilityLabel="清除筛选条件"
                   hitSlop={10}
                   onPress={() => setQuery("")}
                 >
@@ -457,11 +457,11 @@ function ZipArchiveList(props: {
             <EmptyState
               variant="plain"
               title={`No files match “${query.trim()}”`}
-              detail="The filter checks file names and folder paths."
-              action={<Button label="Clear filter" onPress={() => setQuery("")} />}
+              detail="筛选条件匹配文件名和文件夹路径。"
+              action={<Button label="清除筛选条件" onPress={() => setQuery("")} />}
             />
           ) : (
-            <EmptyState variant="plain" title="This ZIP is empty" detail="It has no files." />
+            <EmptyState variant="plain" title="ZIP 文件为空" detail="其中没有文件。" />
           )
         }
       />
@@ -519,7 +519,7 @@ export function ZipArchiveView(props: {
         <View className="flex-1" style={{ paddingTop: headerInset }}>
           {state.status === "loading" ? (
             props.isLocal || state.receivedBytes === 0 ? (
-              <FilePreviewLoading message="Opening ZIP..." />
+              <FilePreviewLoading message="正在打开 ZIP…" />
             ) : (
               <ZipArchiveProgress
                 receivedBytes={state.receivedBytes}
@@ -608,7 +608,7 @@ function ZipEntryView(props: {
     tooBig
       ? {
           status: "failed",
-          title: "Too big to preview",
+          title: "文件太大，无法预览",
           message: `Previews stop at ${formatAttachmentSize(ARCHIVE_ENTRY_MAX_BYTES)}. Save the file to open it in another app.`,
         }
       : { status: "loading" },
@@ -668,7 +668,7 @@ function ZipEntryView(props: {
         if (controller.signal.aborted) return;
         setBusy(null);
         if (kind === "attach")
-          Dialog.alert("Added to chat", `${entry.name} is attached to your message.`);
+          Dialog.alert("已添加到会话", `${entry.name} is attached to your message.`);
       },
       (cause: unknown) => {
         if (controller.signal.aborted) return;
@@ -720,14 +720,14 @@ function ZipEntryView(props: {
         onBack={props.onBack}
         menus={[
           {
-            title: "File actions",
+            title: "文件操作",
             icon: "ellipsis",
             items: [
               ...(renderedMode
                 ? [
                     {
                       id: "toggle-rendered",
-                      title: rendered ? "Show source" : "Show preview",
+                      title: rendered ? "显示源代码" : "显示预览",
                       icon: rendered ? "doc.text" : "eye",
                       onPress: () => setRendered((value) => !value),
                     },
@@ -737,7 +737,7 @@ function ZipEntryView(props: {
                 ? [
                     {
                       id: "add-to-chat",
-                      title: "Add to chat",
+                      title: "添加到会话",
                       icon: "plus.bubble",
                       disabled: busy !== null,
                       onPress: addToChat,
@@ -746,7 +746,7 @@ function ZipEntryView(props: {
                 : []),
               {
                 id: "save",
-                title: "Save file",
+                title: "保存文件",
                 icon: "square.and.arrow.up",
                 disabled: busy !== null,
                 onPress: save,
@@ -762,7 +762,7 @@ function ZipEntryView(props: {
             title={content.title}
             detail={content.message}
             action={
-              <Button tone="primary" label="Save file" loading={busy === "save"} onPress={save} />
+              <Button tone="primary" label="保存文件" loading={busy === "save"} onPress={save} />
             }
           />
         </ScrollView>
@@ -770,8 +770,8 @@ function ZipEntryView(props: {
         // Closing the viewer stays here so Save and Add to chat remain reachable.
         <View className="flex-1 items-center justify-center bg-sheet px-6">
           <EmptyState
-            title={viewerError ? "No preview for this file" : entry.name}
-            detail={viewerError ?? "Open it in the file viewer, save it, or add it to chat."}
+            title={viewerError ? "此文件无法预览" : entry.name}
+            detail={viewerError ?? "可在文件查看器中打开、保存，或添加到会话。"}
             actionLabel="Open in file viewer"
             onAction={openViewer}
           />

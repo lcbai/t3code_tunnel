@@ -332,7 +332,7 @@ export function useProjectPathSearch(
         ? null
         : canReadFiles
           ? result.error
-          : (fileAccess.error ?? "This connection cannot search host files."),
+          : (fileAccess.error ?? "此连接无法搜索主机文件。"),
     isPending:
       !areProjectPathSearchTargetsEqual(normalizedTarget, debouncedTarget) ||
       (hasTarget && (fileAccess.isPending || result.isPending)),
@@ -394,7 +394,7 @@ export function useProjectContentSearch(target: ProjectContentSearchTarget) {
         ? null
         : canReadFiles
           ? result.error
-          : (fileAccess.error ?? "This connection cannot search host files."),
+          : (fileAccess.error ?? "此连接无法搜索主机文件。"),
     isPending:
       isCheckingAccess ||
       (canReadFiles && hasQuery && (query !== debouncedQuery || result.isPending)),

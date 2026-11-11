@@ -172,8 +172,8 @@ function ToastExpandableSection({
   labels: { expand?: string; collapse?: string };
 }) {
   const [open, setOpen] = useState(false);
-  const expandLabel = labels.expand ?? "Show details";
-  const collapseLabel = labels.collapse ?? "Hide details";
+  const expandLabel = labels.expand ?? "显示细节";
+  const collapseLabel = labels.collapse ?? "隐藏细节";
 
   return (
     <div className="min-w-0">
@@ -226,8 +226,8 @@ function ToastDescriptionAndExpandable({
     );
   }
 
-  const expandLabel = labels.expand ?? "Show details";
-  const collapseLabel = labels.collapse ?? "Hide details";
+  const expandLabel = labels.expand ?? "显示细节";
+  const collapseLabel = labels.collapse ?? "隐藏细节";
 
   const toggle = () => setOpen((v) => !v);
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
@@ -660,7 +660,7 @@ function Toasts({ position }: { position: ToastPosition }) {
               />
               <div className={toastCornerDismissClass}>
                 <button
-                  aria-label="Dismiss notification"
+                  aria-label="解雇通知"
                   className={toastCornerOrbClass}
                   data-slot="toast-close"
                   onClick={() =>
@@ -751,7 +751,7 @@ function AnchoredToasts() {
                     <>
                       <div className={toastCornerDismissClass}>
                         <button
-                          aria-label="Dismiss notification"
+                          aria-label="解雇通知"
                           className={toastCornerOrbClass}
                           data-slot="toast-close"
                           onClick={() =>

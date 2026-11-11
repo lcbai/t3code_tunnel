@@ -90,7 +90,7 @@ function ExtendedOfficeViewer(props: {
     const controller = new AbortController();
     if ((props.sizeBytes ?? 0) > OFFICE_PREVIEW_MAX_BYTES) {
       // oxlint-disable-next-line react/set-state-in-effect -- The file metadata can reject the preview before loading bytes or engines.
-      setError("Preview limited to files under 50 MB.");
+      setError("预览仅限于50 MB以下的文件。");
       return;
     }
     const worker = new Worker(new URL("./officePreview.worker.ts", import.meta.url), {
@@ -160,9 +160,9 @@ function ExtendedOfficeViewer(props: {
         role="alert"
         className="flex min-h-0 flex-1 flex-col items-center justify-center gap-1 px-6 text-center"
       >
-        <p className="text-sm font-medium">No preview for this file</p>
+        <p className="text-sm font-medium">此文件没有预览</p>
         <p className="max-w-sm text-xs leading-relaxed text-muted-foreground">
-          {error} Save it or open it in another app.
+          {error} 保存或打开在另一个应用程序。
         </p>
       </div>
     );
@@ -185,7 +185,7 @@ function ExtendedOfficeViewer(props: {
       {count > 0 ? (
         <div className="flex h-10 shrink-0 items-center gap-2 border-b border-border/60 px-3 text-xs">
           <FileSurfaceAction
-            label={`Previous ${navigation}`}
+            label={`上一个${navigation}`}
             disabled={page === 0}
             onPress={() => selectPage(page - 1)}
           >
@@ -199,7 +199,7 @@ function ExtendedOfficeViewer(props: {
                   if (value !== null) selectPage(value);
                 }}
               >
-                <SelectTrigger aria-label="Sheet" size="xs">
+                <SelectTrigger aria-label="工作表" size="xs">
                   <SelectValue>{sheet?.name}</SelectValue>
                 </SelectTrigger>
                 <SelectPopup>
@@ -219,7 +219,7 @@ function ExtendedOfficeViewer(props: {
                   if (value !== null) selectPage(value);
                 }}
               >
-                <SelectTrigger aria-label="Chapter" size="xs">
+                <SelectTrigger aria-label="章次页次" size="xs">
                   <SelectValue>{documentPage?.title}</SelectValue>
                 </SelectTrigger>
                 <SelectPopup>
@@ -233,11 +233,11 @@ function ExtendedOfficeViewer(props: {
             </div>
           ) : (
             <span className="flex-1 text-center tabular-nums" aria-live="polite">
-              {navigation === "slide" ? "Slide" : "Page"} {page + 1} of {count}
+              {navigation === "slide" ? "幻灯片" : "页次"} {page + 1} of {count}
             </span>
           )}
           <FileSurfaceAction
-            label={`Next ${navigation}`}
+            label={`下一个${navigation}`}
             disabled={page + 1 === count}
             onPress={() => selectPage(page + 1)}
           >
@@ -250,7 +250,7 @@ function ExtendedOfficeViewer(props: {
           className="flex min-h-10 shrink-0 flex-wrap items-center gap-x-1 border-b border-border/60 px-3 py-2 text-xs text-muted-foreground tabular-nums"
           role="status"
         >
-          Sheet {page + 1} of {count} · {sheet.rowCount.toLocaleString()} rows ·{" "}
+          工作表 {page + 1} of {count} · {sheet.rowCount.toLocaleString()} 行数 ^{" "}
           {sheet.columns.toLocaleString()} columns
           {fileSize !== undefined
             ? ` · ${fileSize === 0 ? "0 bytes" : formatAttachmentSize(fileSize)}`
@@ -260,9 +260,7 @@ function ExtendedOfficeViewer(props: {
       {documentPage ? (
         <>
           {props.kind !== "epub" ? (
-            <FileSurfaceNotice>
-              Text and images. Layout and embedded objects may differ from the original.
-            </FileSurfaceNotice>
+            <FileSurfaceNotice>文本和图像。布局和嵌入式对象可能与原始对象不同。</FileSurfaceNotice>
           ) : null}
           <Suspense fallback={<FileSurfaceLoading />}>
             <DocumentPages
@@ -275,15 +273,15 @@ function ExtendedOfficeViewer(props: {
       ) : sheet ? (
         <>
           <FileSurfaceNotice>
-            Cell values only. Charts, images, and formatting are not shown.
+            只显示单元格值。没有显示图表、图像和格式。
             {sheet.truncated
               ? props.kind === "ods"
-                ? " Limited to 500 rows and 50 columns."
-                : " Preview limited to 250,000 rows, 1,024 columns, and bounded cell text."
+                ? " 限于500列和50列。"
+                : " 预览限制在25万行,1024列，以及边框单元格文本。"
               : ""}
           </FileSurfaceNotice>
           {sheet.rowCount === 0 ? (
-            <p className="p-6 text-xs text-muted-foreground">This sheet is empty.</p>
+            <p className="p-6 text-xs text-muted-foreground">此表为空。</p>
           ) : (
             <VirtualTablePreview
               key={page}

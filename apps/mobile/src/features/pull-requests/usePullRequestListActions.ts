@@ -107,8 +107,8 @@ export function usePullRequestListActions(
     if (AsyncResult.isFailure(result)) {
       const cause = squashAtomCommandFailure(result);
       Dialog.alert(
-        `Couldn't update this ${terminology.singular}`,
-        cause instanceof Error ? cause.message : "Try again.",
+        `无法更新此${terminology.singular}`,
+        cause instanceof Error ? cause.message : "请重试。",
       );
     }
   };
@@ -142,7 +142,7 @@ export function usePullRequestListActions(
       sourceControlClients.get(entry.provider).changeRequest,
     );
     Dialog.alert(`${label}?`, `#${entry.number} · ${entry.title}`, [
-      { text: "Cancel", style: "cancel" },
+      { text: "取消", style: "cancel" },
       {
         text: label,
         style: supported === "close" ? "destructive" : "default",
@@ -155,19 +155,19 @@ export function usePullRequestListActions(
     return [
       {
         id: "open",
-        title: `Open ${terminology.singular}`,
+        title: `打开 ${terminology.singular}`,
         image: "arrow.up.right",
       },
       ...(writableEnvironments.has(entry.environmentId) && entry.state === "open"
         ? [
             {
               id: "request-review",
-              title: "Request review",
+              title: "请求审查",
               image: "person.badge.plus",
             },
             {
               id: entry.isDraft ? "ready" : "draft",
-              title: entry.isDraft ? "Mark ready for review" : "Convert to draft",
+              title: entry.isDraft ? "标记为可审查" : "转为草稿",
               image: "pencil",
             },
             {
@@ -188,10 +188,10 @@ export function usePullRequestListActions(
           : []),
       {
         id: "share",
-        title: "Share…",
+        title: "分享…",
         image: "square.and.arrow.up",
       },
-      { id: "copy", title: "Copy link", image: "link" },
+      { id: "copy", title: "复制链接", image: "link" },
       {
         id: "provider",
         title: openOnProviderLabel(entry.provider),

@@ -31,7 +31,7 @@ export function LocalEnvironmentSetting() {
     try {
       await setEnabled(!enabled);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Couldn't change this setting.");
+      setError(cause instanceof Error ? cause.message : "无法改变这个设置。");
       setIsUpdating(false);
     }
   };
@@ -42,15 +42,15 @@ export function LocalEnvironmentSetting() {
         {...searchableSetting("local-environment")}
         description={
           enabled
-            ? "Run agents on this computer. Turn off to use T3 Code only with remote environments."
-            : "Turned off. Agents only run in remote environments."
+            ? "在此计算机上运行代理。 关闭只使用远程环境的T3 Code option: window"
+            : "关机了特工只在偏僻环境中跑"
         }
         control={
           <Switch
             checked={enabled}
             disabled={isUpdating}
             onCheckedChange={() => setConfirmOpen(true)}
-            aria-label="Local environment"
+            aria-label="本地环境"
           />
         }
       />
@@ -64,19 +64,17 @@ export function LocalEnvironmentSetting() {
       >
         <AlertDialogPopup>
           <AlertDialogHeader>
-            <AlertDialogTitle>
-              {enabled ? "Turn off local environment?" : "Turn on local environment?"}
-            </AlertDialogTitle>
+            <AlertDialogTitle>{enabled ? "关掉本地环境?" : "打开本地环境?"}</AlertDialogTitle>
             <AlertDialogDescription>
               {enabled
-                ? "T3 Code will restart without running a server on this computer. Any agents and terminals running here will stop, and other devices will no longer be able to connect to this computer. Your projects, history, and remote environments are unaffected."
-                : "T3 Code will restart and start running a server on this computer again."}
+                ? "T3 Code 将在不运行此计算机的服务器的情况下重新启动。在此运行的任何代理服务器和终端都会停止运行，其他设备将无法连接到此计算机。您的项目、 历史和远程环境不会受到影响。"
+                : "T3 Code 将重新启动，并再次开始在此计算机上运行服务器。"}
             </AlertDialogDescription>
           </AlertDialogHeader>
           {error ? <p className="px-6 pb-4 text-sm text-destructive">{error}</p> : null}
           <AlertDialogFooter>
             <AlertDialogClose disabled={isUpdating} render={<Button variant="outline" />}>
-              Cancel
+              取消
             </AlertDialogClose>
             <Button
               variant={enabled ? "destructive" : "default"}
@@ -86,12 +84,12 @@ export function LocalEnvironmentSetting() {
               {isUpdating ? (
                 <>
                   <Spinner size="sm" />
-                  Restarting…
+                  重新启动中…
                 </>
               ) : enabled ? (
-                "Restart and turn off"
+                "重新启动并关闭"
               ) : (
-                "Restart and turn on"
+                "重新启动并打开"
               )}
             </Button>
           </AlertDialogFooter>

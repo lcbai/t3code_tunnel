@@ -29,11 +29,11 @@ export function SettingsLegalDocumentRouteScreen({
   const headerOptions = (
     <SheetHeader
       title={documentName}
-      accessibilityLabel="Close legal document"
+      accessibilityLabel="关闭法律文件"
       onClose={() => navigation.goBack()}
       actions={[
         {
-          accessibilityLabel: "Open legal documents in external browser",
+          accessibilityLabel: "在外部浏览器中打开法律文件",
           icon: "safari",
           onPress: () => void Linking.openURL(safeExternalUrl).catch(() => undefined),
         },
@@ -58,7 +58,7 @@ export function SettingsLegalDocumentRouteScreen({
           />
           <View className="items-center gap-2">
             <Text className="text-center font-t3-bold text-lg text-foreground">
-              Couldn&apos;t load the {documentName.toLowerCase()}
+              无法加载 {documentName.toLowerCase()}
             </Text>
             <Text selectable className="text-center text-sm leading-normal text-foreground-muted">
               {loadError}
@@ -66,7 +66,7 @@ export function SettingsLegalDocumentRouteScreen({
           </View>
           <View className="w-full max-w-[320px] gap-2">
             <Button
-              label="Try Again"
+              label="重试"
               tone="contrast"
               fullWidth
               onPress={() => {
@@ -79,9 +79,7 @@ export function SettingsLegalDocumentRouteScreen({
               onPress={() => openExternalUrl(documentUrl)}
               className="items-center rounded-xl px-4 py-3 active:bg-foreground/5"
             >
-              <Text className="font-t3-medium text-base text-foreground-muted">
-                Open in Browser
-              </Text>
+              <Text className="font-t3-medium text-base text-foreground-muted">在浏览器中打开</Text>
             </Pressable>
           </View>
         </View>

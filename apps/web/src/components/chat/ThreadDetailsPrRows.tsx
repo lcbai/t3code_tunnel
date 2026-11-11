@@ -131,7 +131,7 @@ export function ThreadDetailsPrRows({
           // Chevrons, not plus and minus: the plus already means "add" in this card.
           icon={expanded ? ChevronUp : ChevronDown}
         />
-        {expanded ? "Show less" : `Show ${rest.length} more`}
+        {expanded ? "显示少一点" : `显示${rest.length} 更多`}
       </ThreadDetailsControl>
     </>
   );

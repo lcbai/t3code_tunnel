@@ -127,8 +127,8 @@ export function useSnapShotShortcutRecorder({
         disabled={disabled}
         aria-label={
           displayShortcut
-            ? `Record snapshot shortcut, currently ${formatSnapShotShortcutLabel(displayShortcut)}`
-            : "Change snapshot shortcut"
+            ? `记录快照快捷键，当前为${formatSnapShotShortcutLabel(displayShortcut)}`
+            : "更改快照快捷键"
         }
         aria-pressed={recording}
         data-keybinding-capture=""
@@ -138,11 +138,11 @@ export function useSnapShotShortcutRecorder({
         onBlur={stopRecording}
       >
         {recording ? (
-          "Press shortcut…"
+          "按下快捷键…"
         ) : !displayShortcut ? (
-          "Change shortcut"
+          "更改快捷键"
         ) : !allowModifierPairs && isModifierPairShortcut(displayShortcut) ? (
-          "Choose shortcut"
+          "选择快捷键"
         ) : (
           <SnapShotShortcutKeys shortcut={displayShortcut} />
         )}

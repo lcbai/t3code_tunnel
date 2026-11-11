@@ -155,8 +155,8 @@ export function installChatRouteCommands(router: AnyRouter): () => void {
           toastManager.add(
             stackedThreadToast({
               type: "info",
-              title: "Preview is desktop-only",
-              description: "Open T3 Code in the desktop app to use the in-app preview.",
+              title: "预览仅限桌面",
+              description: "在桌面应用程序中打开T3 Code 使用内应用预览。",
             }),
           );
           return;

@@ -33,7 +33,7 @@ export const CompactComposerControlsMenu = memo(function CompactComposerControls
             ref={triggerRef}
             size={size}
             className="shrink-0"
-            aria-label="More composer controls"
+            aria-label="更多编曲控制"
             data-composer-shortcut={props.showPermissions ? "composer.mode" : undefined}
           />
         }

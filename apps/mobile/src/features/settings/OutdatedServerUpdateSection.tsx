@@ -53,12 +53,12 @@ export function OutdatedServerUpdateSection({
     const targetVersion = release?.targetVersion;
     if (busy || !release || !targetVersion) return;
     Dialog.alert(
-      `Update ${label}?`,
+      `更新 ${label}?`,
       `Install T3 Code ${targetVersion}. T3 Code restarts on that machine and reconnects. Running threads may be interrupted.`,
       [
-        { text: "Cancel", style: "cancel" },
+        { text: "取消", style: "cancel" },
         {
-          text: "Update",
+          text: "更新",
           onPress: () => {
             setCheckErrorDismissed(true);
             void update({
@@ -76,20 +76,20 @@ export function OutdatedServerUpdateSection({
     <SettingsSection title="T3 Code">
       <View className="gap-1 p-4">
         <Text className="text-base text-foreground">
-          {release ? `Version ${release.fromVersion}` : "Update required"}
+          {release ? `版本 ${release.fromVersion}` : "需要更新"}
         </Text>
         <Text className="text-sm text-foreground-muted">
           {state.status === "running"
             ? state.stage === "resuming"
-              ? "Restarting and reconnecting…"
+              ? "正在重启并重新连接…"
               : state.stage === "installing"
-                ? "Installing update…"
-                : "Downloading update…"
+                ? "正在安装更新…"
+                : "正在下载更新…"
             : release
               ? release.targetVersion
-                ? `Version ${release.targetVersion} is available.`
-                : "No newer version is available yet."
-              : "This app needs a newer version of T3 Code on this machine."}
+                ? `版本 ${release.targetVersion} 可用。`
+                : "当前没有新版本。"
+              : "此应用需要该设备上安装较新版本的 T3 Code。"}
         </Text>
         {error || state.status === "failed" ? (
           <Text selectable accessibilityRole="alert" className="text-sm text-danger-foreground">
@@ -99,7 +99,7 @@ export function OutdatedServerUpdateSection({
       </View>
       <SettingsActionRow
         icon="arrow.clockwise"
-        label="Check for updates"
+        label="检查更新"
         disabled={busy}
         loading={checking}
         onPress={check}
@@ -107,7 +107,7 @@ export function OutdatedServerUpdateSection({
       {release?.targetVersion ? (
         <SettingsActionRow
           icon="arrow.up.circle"
-          label={state.status === "failed" ? "Retry update" : `Update to ${release.targetVersion}`}
+          label={state.status === "failed" ? "重试更新" : `更新到 ${release.targetVersion}`}
           disabled={busy}
           loading={state.status === "running"}
           onPress={requestUpdate}

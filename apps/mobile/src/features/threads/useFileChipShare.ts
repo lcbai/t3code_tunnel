@@ -46,10 +46,7 @@ export function useFileChipShare(
     })()
       .catch((error: unknown) => {
         if (!request.signal.aborted) {
-          Dialog.alert(
-            "Could not share file",
-            error instanceof Error ? error.message : "Try again.",
-          );
+          Dialog.alert("Could not share file", error instanceof Error ? error.message : "请重试。");
         }
       })
       .finally(() => {

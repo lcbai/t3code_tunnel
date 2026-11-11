@@ -48,13 +48,13 @@ export function readAntigravityAuthMethod(config: unknown): AntigravityAuthMetho
 export function ProviderSetupSection(props: ProviderSetupSectionProps) {
   return (
     <section
-      aria-label="Antigravity setup"
+      aria-label="Antigravity 设置"
       className="@container/setup divide-y divide-border/50 text-xs [&_[data-slot=settings-row]]:rounded-none"
     >
       <SettingsRow
         className="@max-lg/setup:[&>div:first-child]:flex @max-lg/setup:[&>div:first-child]:items-stretch @max-lg/setup:[&>div:first-child]:gap-3"
-        title="Environment"
-        description="Device that runs this provider."
+        title="环境"
+        description="运行此提供者的设备。"
         control={
           <div className="flex min-w-0 flex-col gap-2 sm:items-end">
             <span className="text-muted-foreground [overflow-wrap:anywhere]">
@@ -62,19 +62,16 @@ export function ProviderSetupSection(props: ProviderSetupSectionProps) {
             </span>
             {!props.enabled && !props.readOnly ? (
               <Button size="sm" variant="outline" onClick={props.onEnable}>
-                Enable Antigravity
+                启用Antigravity
               </Button>
             ) : null}
           </div>
         }
       />
       {props.readOnly ? (
-        <SettingsRow title="Setup unavailable" description="Provider setup is read-only." />
+        <SettingsRow title="无法设置" description="代理提供方设置为只读。" />
       ) : props.provider?.setup === undefined ? (
-        <SettingsRow
-          title="Update required"
-          description="Update this environment to manage Antigravity."
-        />
+        <SettingsRow title="需要更新" description="更新此环境以管理Antigravity。" />
       ) : (
         <ProviderSetupActions
           key={`${props.environmentId}:${props.instanceId}`}
@@ -133,22 +130,22 @@ function ProviderSetupActions({
   const actionsDisabled = pendingLabel !== null || queryError !== null;
   const installationStatusMessage =
     installation === null
-      ? "Checking the Antigravity runtime."
+      ? "正在检查Antigravity 运行环境。"
       : installation?.phase === "downloading"
-        ? `Downloading ${(installation.downloadedBytes / 1_000_000).toFixed(1)} MB${installation.totalBytes === null ? "" : ` of ${(installation.totalBytes / 1_000_000).toFixed(1)} MB`}.`
+        ? `正在下载${(installation.downloadedBytes / 1_000_000).toFixed(1)}MB${installation.totalBytes === null ? "" : ` of ${(installation.totalBytes / 1_000_000).toFixed(1)} MB`}。`
         : installation?.phase === "extracting"
-          ? "Extracting Antigravity."
+          ? "正在提取Antigravity。"
           : installation?.phase === "verifying"
-            ? "Checking the downloaded runtime."
+            ? "正在检查下载的运行环境。"
             : installed
-              ? "Installed."
+              ? "已安装。"
               : usesCustomBinary
                 ? enabled
-                  ? "The configured Antigravity runtime is unavailable."
-                  : "The configured Antigravity runtime has not been checked."
+                  ? "配置的Antigravity 运行环境不可用。"
+                  : "配置的Antigravity 运行环境尚未检查。"
                 : installation?.totalBytes
-                  ? `${Math.ceil(installation.totalBytes / 1_000_000)} MB download.`
-                  : "Not installed.";
+                  ? `${Math.ceil(installation.totalBytes / 1_000_000)} MB 下载。`
+                  : "未安装。";
 
   async function runCommand<A, E>(
     label: string,
@@ -162,14 +159,14 @@ function ProviderSetupActions({
     pendingRef.current = false;
     setPendingLabel(null);
     if (settled._tag === "Failure") {
-      setError("Provider setup failed. Try again.");
+      setError("代理提供方设置失败。再试一次。");
       return false;
     }
     const result = settled.value;
     if (result._tag === "Failure") {
       if (!isAtomCommandInterrupted(result)) {
         const failure = squashAtomCommandFailure(result);
-        setError(failure instanceof Error ? failure.message : "Provider setup failed.");
+        setError(failure instanceof Error ? failure.message : "代理提供方设置失败。");
       }
       return false;
     }
@@ -193,20 +190,16 @@ function ProviderSetupActions({
         {pendingLabel ? `${pendingLabel}.` : null}
       </p>
       <SettingsRow
-        title="Runtime"
+        title="运行环境"
         className="@max-lg/setup:[&>div:first-child]:flex @max-lg/setup:[&>div:first-child]:items-stretch @max-lg/setup:[&>div:first-child]:gap-3"
-        description="Install and manage Antigravity."
+        description="安装和管理Antigravity。"
         status={
           <div className="space-y-2">
             {usesCustomBinary ? (
-              <p className="text-muted-foreground">
-                Uses the custom binary path below. Installation keeps that path.
-              </p>
+              <p className="text-muted-foreground">使用下面的自定义二进制路径。 安装保留该路径。</p>
             ) : null}
             {!installed && !provider.setup?.canInstall ? (
-              <p className="text-muted-foreground">
-                Automatic installation unavailable. Set a binary path or use another environment.
-              </p>
+              <p className="text-muted-foreground">无法自动安装。 设置二进制路径或使用其他环境。</p>
             ) : null}
           </div>
         }
@@ -220,7 +213,7 @@ function ProviderSetupActions({
               installation.totalBytes !== null &&
               installation.totalBytes > 0 ? (
                 <progress
-                  aria-label="Antigravity download"
+                  aria-label="Antigravity 下载"
                   // Forced-colors mode repaints the track and fill as Canvas, and
                   // appearance:auto cannot bring the native widget back: the
                   // preflight border reset marks every <progress> as author-styled,
@@ -253,7 +246,7 @@ function ProviderSetupActions({
                       );
                     }}
                   >
-                    Cancel installation
+                    取消安装
                   </Button>
                 ) : !installActive && provider.setup?.canInstall ? (
                   <Button
@@ -267,13 +260,13 @@ function ProviderSetupActions({
                     {installation?.installedVersion
                       ? installation.version &&
                         installation.version !== installation.installedVersion
-                        ? "Update Antigravity"
-                        : "Reinstall Antigravity"
+                        ? "更新Antigravity"
+                        : "莱因斯托尔Antigravity"
                       : installation?.phase === "failed" || installation?.phase === "cancelled"
-                        ? "Retry installation"
+                        ? "重试安装"
                         : installed
-                          ? "Install managed runtime"
-                          : "Install Antigravity"}
+                          ? "安装管理的运行环境"
+                          : "安装Antigravity"}
                   </Button>
                 ) : null}
               </div>
@@ -285,7 +278,7 @@ function ProviderSetupActions({
                         size="icon-sm"
                         variant="ghost"
                         className="col-start-1 row-start-1"
-                        aria-label="Remove downloaded runtime"
+                        aria-label="删除已下载的运行环境"
                         disabled={actionsDisabled || authActive}
                         onClick={() => void removeRuntime()}
                       />
@@ -293,7 +286,7 @@ function ProviderSetupActions({
                   >
                     <Trash2Icon className="size-3.5" />
                   </TooltipTrigger>
-                  <TooltipPopup>Remove downloaded runtime</TooltipPopup>
+                  <TooltipPopup>删除已下载的运行环境</TooltipPopup>
                 </Tooltip>
               ) : null}
             </div>
@@ -324,7 +317,7 @@ function ProviderSetupActions({
                 installQuery.refresh();
               }}
             >
-              Retry setup status
+              重试设置状态
             </Button>
           ) : null}
         </div>

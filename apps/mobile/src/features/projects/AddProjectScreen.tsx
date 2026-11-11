@@ -457,13 +457,13 @@ function EmptyEnvironmentState() {
 
   return (
     <View className="items-center gap-3 rounded-2xl bg-grouped-card px-5 py-8">
-      <Text className="text-center text-lg font-t3-bold">Environment unavailable</Text>
+      <Text className="text-center text-lg font-t3-bold">环境不可用</Text>
       <Text className="text-center text-sm leading-normal text-foreground-muted">
-        Start or reconnect an environment before adding a project.
+        请先启动或重新连接环境，再添加项目。
       </Text>
       <View className="mt-1">
         <Button
-          label="Add environment"
+          label="添加环境"
           tone="primary"
           onPress={() => navigation.dispatch(StackActions.replace("ConnectionsNew"))}
         />
@@ -481,7 +481,9 @@ function SourceControlRow(props: {
 }) {
   const navigation = useNavigation();
   const title =
-    props.source === "url" ? "Git URL" : `${addProjectRemoteSourceLabel(props.source)} repository`;
+    props.source === "url"
+      ? "Git 仓库网址"
+      : `${addProjectRemoteSourceLabel(props.source)} repository`;
   const subtitle =
     props.source === "url"
       ? "Clone from a remote URL"
@@ -551,12 +553,12 @@ export function AddProjectSourceScreen(props: { readonly environmentId?: string 
   const readiness = buildAddProjectRemoteSourceReadiness(discoveryState.data);
 
   return (
-    <AddProjectShell title="Add project">
+    <AddProjectShell title="添加项目">
       {selectedEnvironment === null ? <EmptyEnvironmentState /> : null}
 
       {environmentOptions.length > 1 || (selectedEnvironment !== null && !isConnected) ? (
         <>
-          <SectionTitle>Environments</SectionTitle>
+          <SectionTitle>环境</SectionTitle>
           <ListSection>
             {environmentOptions.map((environment, index) => (
               <ListRow
@@ -603,8 +605,8 @@ export function AddProjectSourceScreen(props: { readonly environmentId?: string 
           <ListSection>
             {selectedEnvironment.newProjectsRoot !== null ? (
               <ListRow
-                title="New project"
-                subtitle="Start a new Git repository from a name"
+                title="新建项目"
+                subtitle="为指定名称创建 Git 仓库"
                 disabled={!isConnected}
                 icon={
                   <SymbolView
@@ -625,12 +627,8 @@ export function AddProjectSourceScreen(props: { readonly environmentId?: string 
               />
             ) : null}
             <ListRow
-              title="Local folder"
-              subtitle={
-                canCreateProject
-                  ? "Browse a folder on disk"
-                  : "This connection cannot add projects."
-              }
+              title="本地文件夹"
+              subtitle={canCreateProject ? "浏览磁盘上的文件夹" : "此连接无权添加项目。"}
               icon={
                 <SymbolView
                   name="folder.badge.plus"
@@ -658,7 +656,7 @@ export function AddProjectSourceScreen(props: { readonly environmentId?: string 
                   ready={canCloneProject && readiness(candidate).ready}
                   hint={
                     !canCloneProject
-                      ? "This connection cannot clone projects."
+                      ? "此连接无权克隆项目。"
                       : readiness(candidate).ready
                         ? addProjectRemoteSourcePathHint(candidate)
                         : (readiness(candidate).hint ?? "")
@@ -737,7 +735,7 @@ function useCreateProject(environment: EnvironmentOption | null) {
       !readEnvironmentScope(environment.environmentId, AuthOrchestrationOperateScope)
     ) {
       Dialog.alert(
-        "Project not added",
+        "未添加项目",
         `This connection cannot add projects right now. Any existing files remain at ${workspaceRoot}.`,
       );
       return;
@@ -759,7 +757,7 @@ function useCreateProject(environment: EnvironmentOption | null) {
           })
         )._tag === "Success";
       Dialog.alert(
-        "Project already exists",
+        "项目已存在",
         unarchived ? existing.title : `${existing.title} is still archived. Try again later.`,
       );
       openNewTaskDraft(
@@ -793,10 +791,7 @@ function useCreateProject(environment: EnvironmentOption | null) {
       15_000,
     );
     if (project === null) {
-      Dialog.alert(
-        "Project added",
-        "The project was created but has not reached this device yet. It will appear in the project list once the connection catches up.",
-      );
+      Dialog.alert("已添加项目", "项目已创建，尚未同步到此设备。同步完成后会出现在项目列表中。");
       return result;
     }
     openNewTaskDraft(
@@ -883,7 +878,9 @@ export function AddProjectRepositoryScreen(props: {
   };
 
   return (
-    <AddProjectShell title={source === "url" ? "Git URL" : addProjectRemoteSourceLabel(source)}>
+    <AddProjectShell
+      title={source === "url" ? "Git 仓库网址" : addProjectRemoteSourceLabel(source)}
+    >
       {error ? <ErrorBanner message={error} /> : null}
       {environment ? (
         <>
@@ -902,7 +899,7 @@ export function AddProjectRepositoryScreen(props: {
             onSubmitEditing={() => void lookupRepository()}
           />
           <PrimaryActionButton
-            label={source === "url" ? "Continue" : "Lookup repository"}
+            label={source === "url" ? "继续" : "查找仓库"}
             disabled={isSubmitting || repositoryInput.trim().length === 0}
             onPress={() => void lookupRepository()}
             loading={isSubmitting}
@@ -960,17 +957,15 @@ function FolderBrowser(props: {
 
   return (
     <>
-      <SectionTitle>Browse folders</SectionTitle>
+      <SectionTitle>浏览文件夹</SectionTitle>
       {!canReadFiles && !fileAccess.isPending ? (
-        <ErrorBanner message={fileAccess.error ?? "This connection cannot browse host folders."} />
+        <ErrorBanner message={fileAccess.error ?? "此连接无权浏览主机文件夹。"} />
       ) : null}
       {browseState.error === null ? null : isMissingCloneParentBrowseFailure({
           cloning: props.cloning === true,
           failure: browseState.failure,
         }) ? (
-        <Text className="text-sm text-foreground-muted">
-          This folder does not exist yet. Cloning creates it.
-        </Text>
+        <Text className="text-sm text-foreground-muted">此文件夹尚不存在，克隆时将自动创建。</Text>
       ) : (
         <ErrorBanner message={browseState.error} />
       )}
@@ -1125,7 +1120,7 @@ export function AddProjectNewScreen(props: { readonly environmentId?: string | s
     }
     const { projectId, workspaceRoot, commitError } = result.value;
     if (commitError !== undefined) {
-      Dialog.alert("Created without a first commit", commitError);
+      Dialog.alert("已创建，尚未有初始提交", commitError);
     }
     if (publishes && publishTarget !== null) {
       void publishRepository({
@@ -1139,7 +1134,7 @@ export function AddProjectNewScreen(props: { readonly environmentId?: string | s
       }).then((publishResult) => {
         if (AsyncResult.isFailure(publishResult)) {
           Dialog.alert(
-            `Could not create the ${publishTarget.definition.label} repository`,
+            `无法创建 ${publishTarget.definition.label} repository`,
             errorMessage(Cause.squash(publishResult.cause)),
           );
         } else {
@@ -1177,7 +1172,7 @@ export function AddProjectNewScreen(props: { readonly environmentId?: string | s
   };
 
   return (
-    <AddProjectShell title="New project">
+    <AddProjectShell title="新建项目">
       {error ? <ErrorBanner message={error} /> : null}
       {environment ? (
         <>
@@ -1187,15 +1182,15 @@ export function AddProjectNewScreen(props: { readonly environmentId?: string | s
             onChangeText={setName}
             autoCorrect={false}
             autoFocus
-            placeholder="Project name"
+            placeholder="项目名称"
             returnKeyType="done"
             onSubmitEditing={() => void submit()}
           />
           {pathPreview !== null ? (
             <Text className="px-1 text-sm leading-snug text-foreground-muted" numberOfLines={2}>
               {trimmedName.length > 0
-                ? `Creates ${pathPreview}`
-                : `Goes in ${environment.newProjectsRoot}`}
+                ? `创建到 ${pathPreview}`
+                : `保存位置：${environment.newProjectsRoot}`}
               {showMachines ? ` on ${environment.label}` : null}
             </Text>
           ) : null}
@@ -1203,7 +1198,7 @@ export function AddProjectNewScreen(props: { readonly environmentId?: string | s
           {publishTarget !== null ? (
             <ListSection>
               <ListRow
-                title={`Create private repository on ${publishTarget.definition.label}`}
+                title={`创建私有仓库：${publishTarget.definition.label}`}
                 subtitle={
                   trimmedName.length > 0 && pathPreview !== null
                     ? getNewProjectRepository(publishTarget, pathPreview)
@@ -1219,7 +1214,7 @@ export function AddProjectNewScreen(props: { readonly environmentId?: string | s
                 isFirst
                 right={
                   <ThemedSwitch
-                    accessibilityLabel={`Create private repository on ${publishTarget.definition.label}`}
+                    accessibilityLabel={`创建私有仓库：${publishTarget.definition.label}`}
                     value={publishes}
                     onValueChange={setPublishes}
                   />
@@ -1260,15 +1255,15 @@ export function AddProjectNewScreen(props: { readonly environmentId?: string | s
             </ListSection>
           ) : null}
           <PrimaryActionButton
-            label="Create project"
+            label="创建项目"
             disabled={isSubmitting || trimmedName.length === 0}
             onPress={() => void submit()}
             loading={isSubmitting}
           />
           <ListSection>
             <ListRow
-              title="Add existing project"
-              subtitle="Open a folder or clone a repository"
+              title="添加现有项目"
+              subtitle="打开文件夹或克隆仓库"
               icon={
                 <SymbolView
                   name="folder.badge.plus"
@@ -1329,16 +1324,14 @@ export function AddProjectLocalFolderScreen(props: { readonly environmentId?: st
   };
 
   return (
-    <AddProjectShell title="Local folder">
+    <AddProjectShell title="本地文件夹">
       {error ? <ErrorBanner message={error} /> : null}
       {environment ? (
         <>
-          {!canCreateProject ? (
-            <ErrorBanner message="This connection cannot add projects." />
-          ) : null}
+          {!canCreateProject ? <ErrorBanner message="此连接无权添加项目。" /> : null}
           <ProjectPathInput value={pathInput} onChangeText={setPathInput} onSubmit={submitPath} />
           <PrimaryActionButton
-            label="Add project"
+            label="添加项目"
             disabled={!canCreateProject || isBrowseNavigating || isSubmitting}
             onPress={submitPath}
             loading={isSubmitting}
@@ -1471,7 +1464,7 @@ export function AddProjectDestinationScreen(props: {
   };
 
   return (
-    <AddProjectShell title="Clone destination">
+    <AddProjectShell title="克隆目标">
       {error ? <ErrorBanner message={error} /> : null}
       {repositoryTitle ? (
         <View className="rounded-[24px] bg-grouped-card px-4 py-3">
@@ -1485,15 +1478,13 @@ export function AddProjectDestinationScreen(props: {
         <>
           <ProjectPathInput value={pathInput} onChangeText={setPathInput} onSubmit={submitPath} />
           <PrimaryActionButton
-            label="Clone project"
+            label="克隆项目"
             disabled={!canCloneProject || isBrowseNavigating || isSubmitting || !remoteUrl}
             onPress={submitPath}
             loading={isSubmitting}
           />
           {!canCloneProject ? (
-            <Text className="text-sm text-foreground-muted">
-              This connection cannot clone projects.
-            </Text>
+            <Text className="text-sm text-foreground-muted">此连接无权克隆项目。</Text>
           ) : null}
           <FolderBrowser
             environment={environment}

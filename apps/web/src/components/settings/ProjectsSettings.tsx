@@ -22,7 +22,7 @@ export function ProjectsSettings() {
               onClick={() => selectScope(selectEnvironmentAxis(value, ALL_ENVIRONMENTS_VALUE))}
             >
               <LayersIcon />
-              Show all environments
+              显示所有环境
             </Button>
           ) : null}
         </div>
@@ -47,7 +47,7 @@ export function ProjectsSettings() {
         unavailable
       ) : (
         <SettingsScopeNotice target="project">
-          Choose a project to manage its name, icon, checkouts and actions.
+          选择一个项目来管理它的名称，图标，检查和动作。
         </SettingsScopeNotice>
       )}
     </div>

@@ -21,17 +21,16 @@ const options: ReadonlyArray<{
   label: string;
   description: string;
 }> = [
-  { value: "off", label: "Off", description: "Keep source control requests on this environment." },
+  { value: "off", label: "关闭", description: "在当前环境中处理版本控制请求。" },
   {
     value: "read",
-    label: "Read PRs",
-    description: "Share PR data with other enabled environments.",
+    label: "读取拉取请求",
+    description: "与其他启用的环境共享拉取请求数据。",
   },
   {
     value: "read-write",
-    label: "Read and act",
-    description:
-      "Actions may use broader source control permissions than the original environment.",
+    label: "读取和操作",
+    description: "操作可能使用比原环境更广的版本控制权限。",
   },
 ];
 
@@ -45,7 +44,7 @@ export function PullRequestRoutingSettings() {
 
   return (
     <View className="mt-5 gap-3">
-      <SettingsSection title="Pull request routing">
+      <SettingsSection title="拉取请求路由">
         {[...catalog.entries.values()].map((entry) => {
           const environmentId = entry.target.environmentId;
           const selected = pullRequestRoutingPermissionFor(entry, permissions);
@@ -65,7 +64,7 @@ export function PullRequestRoutingSettings() {
                     {entry.target.label}
                   </Text>
                   <Text className="text-xs text-foreground-muted" numberOfLines={1}>
-                    {connectionCatalogDisplayUrl(entry) ?? "T3 Connect"}
+                    {connectionCatalogDisplayUrl(entry) ?? "无地址"}
                   </Text>
                 </View>
                 <Text className="text-sm text-foreground-muted">
@@ -90,10 +89,7 @@ export function PullRequestRoutingSettings() {
                         void update({ environmentId, permission: option.value }).then((result) => {
                           setSaving(false);
                           if (result._tag === "Failure")
-                            Dialog.alert(
-                              "Could not save pull request routing permission",
-                              "Try again before leaving this screen.",
-                            );
+                            Dialog.alert("无法保存拉取请求路由权限", "请在离开此页面前重试。");
                         });
                       }}
                     />
@@ -104,8 +100,7 @@ export function PullRequestRoutingSettings() {
         })}
       </SettingsSection>
       <Text className="px-2 text-sm text-foreground-muted">
-        Choose environments you trust to share PR data and use each other's source control access.
-        Enable both environments. This applies only to this client.
+        请选择可信的环境，以共享拉取请求数据并使用彼此的版本控制权限。请启用这两个环境。设置仅对此客户端生效。
       </Text>
     </View>
   );

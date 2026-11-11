@@ -12,13 +12,13 @@ export const ENVIRONMENT_MACHINE_SYMBOLS = {
 } as const satisfies Record<EnvironmentMachineKind, AppSymbolName>;
 
 const ENVIRONMENT_MACHINE_KIND_LABELS: Record<EnvironmentMachineKind, string> = {
-  server: "Server",
-  cloud: "Cloud VM",
+  server: "服务器",
+  cloud: "云主机",
   linux: "Linux/WSL",
-  desktop: "Desktop",
-  laptop: "Laptop",
-  "mac-mini": "Mini PC",
-  "mac-studio": "Workstation",
+  desktop: "台式机",
+  laptop: "笔记本电脑",
+  "mac-mini": "迷你电脑",
+  "mac-studio": "工作站",
 };
 
 export function EnvironmentMachineSymbol(props: {

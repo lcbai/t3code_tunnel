@@ -61,7 +61,7 @@ export const ChangedFilesCard = memo(function ChangedFilesCard(props: {
       >
         <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-xs font-medium text-foreground">
           <span>
-            {totals.count.toLocaleString()} changed file{totals.count === 1 ? "" : "s"}
+            {totals.count.toLocaleString()} 已更改文件{totals.count === 1 ? "" : "s"}
           </span>
           {hasNonZeroStat(totals) && (
             <DiffStatLabel
@@ -81,9 +81,7 @@ export const ChangedFilesCard = memo(function ChangedFilesCard(props: {
                     type="button"
                     size="icon-xs"
                     variant="ghost-muted"
-                    aria-label={
-                      allDirectoriesExpanded ? "Collapse all folders" : "Expand all folders"
-                    }
+                    aria-label={allDirectoriesExpanded ? "折叠所有文件夹" : "展开所有文件夹"}
                     data-scroll-anchor-ignore
                     onClick={() => {
                       onToggleAllDirectories();
@@ -98,7 +96,7 @@ export const ChangedFilesCard = memo(function ChangedFilesCard(props: {
                 />
               </TooltipTrigger>
               <TooltipPopup side="top">
-                {allDirectoriesExpanded ? "Collapse all folders" : "Expand all folders"}
+                {allDirectoriesExpanded ? "折叠所有文件夹" : "展开所有文件夹"}
               </TooltipPopup>
             </Tooltip>
           )}
@@ -109,15 +107,15 @@ export const ChangedFilesCard = memo(function ChangedFilesCard(props: {
                   type="button"
                   size="xs"
                   variant="ghost-muted"
-                  aria-label="Open diff"
+                  aria-label="打开 diff"
                   onClick={() => onOpenTurnDiff(runId, files[0]?.path)}
                 />
               }
             >
               <FileDiffIcon className="size-3" />
-              <span className="hidden @[24rem]/changed-files:inline">Open diff</span>
+              <span className="hidden @[24rem]/changed-files:inline">打开 diff</span>
             </TooltipTrigger>
-            <TooltipPopup side="top">Open the full diff</TooltipPopup>
+            <TooltipPopup side="top">打开完整的 diff</TooltipPopup>
           </Tooltip>
         </div>
       </div>
@@ -138,8 +136,7 @@ export const ChangedFilesCard = memo(function ChangedFilesCard(props: {
             variant="ghost-muted"
             onClick={() => onOpenTurnDiff(runId, files[0]?.path)}
           >
-            {hiddenFileCount.toLocaleString()} more file{hiddenFileCount === 1 ? "" : "s"} in the
-            full diff
+            {hiddenFileCount.toLocaleString()} 更多文件{hiddenFileCount === 1 ? "" : "s"} 满载时
           </Button>
         </div>
       )}

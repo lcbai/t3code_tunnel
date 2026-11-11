@@ -41,8 +41,8 @@ export function SubscriptionUsage(props: SubscriptionUsageProps, environment: Wi
     : getMaterialColors({ scheme: appearance });
   const muted = colors.onSurfaceVariant;
   const providers = props.providers ?? [
-    { name: "Codex", detail: "Open T3 to connect", windows: [], expiresAt: 0, totalWindows: 0 },
-    { name: "Claude", detail: "Open T3 to connect", windows: [], expiresAt: 0, totalWindows: 0 },
+    { name: "Codex", detail: "打开 T3 以连接", windows: [], expiresAt: 0, totalWindows: 0 },
+    { name: "Claude", detail: "打开 T3 以连接", windows: [], expiresAt: 0, totalWindows: 0 },
   ];
   return (
     // Android lacks widgetURL; one card Button routes taps to the app listener opening props.url.
@@ -71,7 +71,7 @@ export function SubscriptionUsage(props: SubscriptionUsageProps, environment: Wi
               </Text>
               {shown.length === 0 ? (
                 <Text color={muted} maxLines={1} style={{ fontSize: 11 }}>
-                  {stale ? "Open T3 to refresh" : provider.detail}
+                  {stale ? "打开 T3 以刷新" : provider.detail}
                 </Text>
               ) : null}
               {shown.map((window) => {
@@ -114,8 +114,8 @@ export function SubscriptionUsage(props: SubscriptionUsageProps, environment: Wi
           modifiers={[padding(0, 10, 0, 0)]}
         >
           {props.checkedAt
-            ? `As of ${new Date(props.checkedAt).toLocaleString(undefined, { hour: "numeric", minute: "2-digit", month: "short", day: "numeric" })}`
-            : "Tap to connect in T3"}
+            ? `As of ${new Date(props.checkedAt).toLocaleString("zh-CN", { hour: "numeric", minute: "2-digit", month: "short", day: "numeric" })}`
+            : "轻点以在 T3 中连接"}
         </Text>
       </Column>
     </Button>

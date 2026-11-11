@@ -1,7 +1,5 @@
-import { ListRow } from "../../components/ui/ListRow";
 import * as Dialog from "../../components/ui/Dialog";
 import { ScreenScrollView as ScrollView } from "../../components/ui/ScreenScrollView";
-import { useAuth } from "@clerk/expo";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import * as Haptics from "expo-haptics";
 import {
@@ -25,10 +23,7 @@ import { FrostedCutout } from "../../components/ui/FrostedCutout";
 import { buildPairingUrl, extractPairingUrlFromQrPayload, parsePairingUrl } from "./pairing";
 import { useRemoteConnections } from "../../state/use-remote-environment-registry";
 import { SymbolView } from "../../components/ui/AppSymbol";
-import { hasCloudPublicConfig } from "../cloud/publicConfig";
-import { CloudEnvironmentRows } from "./CloudEnvironmentRows";
 import { autoConnectReport, devAutoConnectAttemptAtom } from "./devAutoConnect";
-import { splitEnvironmentSections } from "./environmentSections";
 import { leaveSettingsPage } from "../settings/settings-navigation";
 import { workspaceHasColumns } from "../layout/workspace/workspace-selection-store";
 
@@ -112,14 +107,10 @@ function PairingForm({
       return;
     }
     if (permission.canAskAgain) return;
-    Dialog.alert(
-      "Camera access needed",
-      "Camera access was denied for this app. Open Settings to enable it.",
-      [
-        { text: "Cancel", style: "cancel" },
-        { text: "Open Settings", onPress: () => void Linking.openSettings() },
-      ],
-    );
+    Dialog.alert("需要相机权限", "此应用的相机权限已被拒绝。请打开系统设置以开启。", [
+      { text: "取消", style: "cancel" },
+      { text: "打开设置", onPress: () => void Linking.openSettings() },
+    ]);
   };
 
   const handleQrScan = ({ data }: { readonly data: string }) => {
@@ -139,10 +130,7 @@ function PairingForm({
       setScannerLocked(false);
     } catch (error) {
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Dialog.alert(
-        "Invalid QR code",
-        error instanceof Error ? error.message : "Scanned QR code was not recognized.",
-      );
+      Dialog.alert("二维码无效", error instanceof Error ? error.message : "无法识别扫描的二维码。");
       setTimeout(() => {
         setScannerLocked(false);
       }, 600);
@@ -176,10 +164,10 @@ function PairingForm({
 
   return (
     <SettingsScreen
-      title="Add environment"
+      title="添加环境"
       actions={[
         {
-          accessibilityLabel: connecting ? "Connecting" : "Add environment",
+          accessibilityLabel: connecting ? "正在连接" : "添加环境",
           loading: connecting,
           icon: "checkmark",
           tintColor: headerIconColor,
@@ -212,7 +200,7 @@ function PairingForm({
           />
 
           <View collapsable={false} className="gap-2">
-            <Text className="px-4 text-sm font-t3-medium text-foreground-muted">Or enter it</Text>
+            <Text className="px-4 text-sm font-t3-medium text-foreground-muted">或手动输入</Text>
             <View
               collapsable={false}
               className={cn(
@@ -221,7 +209,7 @@ function PairingForm({
               )}
             >
               <PairingInputRow
-                label="Address"
+                label="地址"
                 keyboardType="url"
                 placeholder="192.168.1.100:3773"
                 value={hostInput}
@@ -229,8 +217,8 @@ function PairingForm({
               />
               <View className="ml-4 border-t border-border-subtle" />
               <PairingInputRow
-                label="Code"
-                placeholder="Pairing code"
+                label="代码"
+                placeholder="配对码"
                 returnKeyType="go"
                 value={codeInput}
                 onChangeText={handleCodeChange}
@@ -247,11 +235,9 @@ function PairingForm({
               )}
             >
               {pairingConnectionError ??
-                "For machines on your local network or tailnet. The machine keeps its own provider credentials."}
+                "连接局域网或 Tailscale 网络中的设备。提供方凭据保存在该设备上。"}
             </Text>
           </View>
-
-          {hasCloudPublicConfig() ? <T3ConnectSection /> : null}
         </View>
       </ScrollView>
     </SettingsScreen>
@@ -272,7 +258,7 @@ function PairingScanCard(props: {
   return (
     <Pressable
       accessibilityRole={props.cameraActive ? undefined : "button"}
-      accessibilityLabel={props.cameraActive ? undefined : "Scan QR code"}
+      accessibilityLabel={props.cameraActive ? undefined : "扫描二维码"}
       disabled={props.cameraActive}
       onPress={props.onScanPress}
       className={cn(
@@ -337,50 +323,16 @@ function PairingScanCard(props: {
               <Text
                 className={cn("font-t3-medium text-sm", light ? "text-black/70" : "text-white/80")}
               >
-                Tap to scan
+                轻点扫描
               </Text>
             </>
           )}
         </View>
         <Text className={cn("text-center text-sm", light ? "text-black/70" : "text-white/80")}>
-          Scan the code from t3 pair or desktop Connections settings
+          扫描 t3 pair 或桌面端「连接」设置中显示的二维码
         </Text>
       </View>
     </Pressable>
-  );
-}
-
-function T3ConnectSection() {
-  const { isLoaded, isSignedIn } = useAuth({ treatPendingAsSignedOut: false });
-  const navigation = useNavigation();
-  const { connectedEnvironments, onSetEnvironmentEnabled, onRemoveEnvironmentPress } =
-    useRemoteConnections();
-  const { connectedCloudEnvironments } = splitEnvironmentSections({
-    connectedEnvironments,
-    cloudEnvironments: null,
-  });
-
-  return (
-    <View collapsable={false} className="gap-2">
-      <Text className="px-4 text-sm font-t3-medium text-foreground-muted">
-        Or use the managed relay
-      </Text>
-      {isSignedIn ? (
-        <CloudEnvironmentRows
-          connectedCloudEnvironments={connectedCloudEnvironments}
-          onSetEnvironmentEnabled={onSetEnvironmentEnabled}
-          onRemoveEnvironment={onRemoveEnvironmentPress}
-          showHeader={false}
-        />
-      ) : (
-        <ListRow
-          label="Sign in to T3 Connect"
-          description="Reach your machines from anywhere, no network setup."
-          disabled={!isLoaded}
-          onPress={() => navigation.navigate("SettingsAuth")}
-        />
-      )}
-    </View>
   );
 }
 

@@ -18,7 +18,7 @@ export function DraftEnvironmentControl(props: {
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`Choose environment, ${props.label}, ${disconnected ? "Offline" : "Connected"}`}
+      accessibilityLabel={`选择环境：${props.label}，${disconnected ? "离线" : "已连接"}`}
       disabled={props.disabled}
       onPress={props.onChooseEnvironment}
       className="flex-row items-center gap-1.5 rounded-xl px-3 py-2 active:opacity-65"

@@ -48,20 +48,19 @@ export function getProviderSummary(provider: ServerProvider | undefined) {
   if (!provider) {
     return {
       headline: "Checking provider status",
-      detail: "Waiting for the server to report installation and authentication details.",
+      detail: "等待服务器报告安装和认证细节。",
     };
   }
   if (!provider.enabled || provider.status === "disabled") {
     return {
       headline: "Disabled",
-      detail:
-        provider.message ?? "This provider is installed but disabled for new sessions in T3 Code.",
+      detail: provider.message ?? "此提供者已安装，但已禁用，用于在T3 Code 中新建会话。",
     };
   }
   if (!provider.installed) {
     return {
       headline: "Not found",
-      detail: provider.message ?? "CLI not detected on PATH.",
+      detail: provider.message ?? "在路径上未检测到CLI。",
     };
   }
   if (provider.auth.status === "unauthenticated") {
@@ -80,14 +79,13 @@ export function getProviderSummary(provider: ServerProvider | undefined) {
   if (provider.status === "warning") {
     return {
       headline: "Needs attention",
-      detail:
-        provider.message ?? "The provider is installed, but the server could not fully verify it.",
+      detail: provider.message ?? "代理提供方已安装，但服务器无法完全验证。",
     };
   }
   if (provider.status === "error") {
     return {
       headline: "Unavailable",
-      detail: provider.message ?? "The provider failed its startup checks.",
+      detail: provider.message ?? "代理提供方未能完成启动检查。",
     };
   }
   if (provider.auth.status === "authenticated") {
@@ -148,7 +146,7 @@ export function getProviderVersionAdvisoryPresentation(
       title: COMPATIBILITY_TITLES[compatibility.status],
       detail:
         compatibility.message ??
-        (recommendation ? `Use ${recommendation} for full support.` : "Update for full support."),
+        (recommendation ? `使用${recommendation} 表示全力支持。` : "更新供全力支持。"),
       updateCommand:
         targetVersion || latestIsIncompatible || isAlreadyLatest
           ? null
@@ -174,9 +172,7 @@ export function getProviderVersionAdvisoryPresentation(
     title: label,
     detail:
       advisory.message ??
-      (versionLabel
-        ? `${label}: install ${versionLabel}.`
-        : `${label}: install the latest provider version.`),
+      (versionLabel ? `${label}:安装${versionLabel}。` : `${label}: 安装最新的提供者版本。`),
     updateCommand: advisory.updateCommand,
     emphasis: "normal" as const,
     targetVersion: null,

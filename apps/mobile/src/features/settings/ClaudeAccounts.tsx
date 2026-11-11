@@ -84,12 +84,12 @@ export function ClaudeAccount({
       `providerInstances.${provider.instanceId}`,
     );
   const actions: MenuAction[] = [
-    { id: "edit", title: "Edit", image: "pencil" },
+    { id: "edit", title: "编辑", image: "pencil" },
     ...(removable
       ? [
           {
             id: "remove",
-            title: "Remove",
+            title: "移除",
             image: "trash",
             attributes: { destructive: true },
           } satisfies MenuAction,
@@ -98,12 +98,12 @@ export function ClaudeAccount({
   ];
   function remove() {
     Dialog.alert(
-      `Remove ${name}?`,
-      `It leaves the model picker on ${environment.label}. The config folder and its sign-in stay on the server.`,
+      `移除 ${name}?`,
+      `此账号将从 ${environment.label} 的模型选择器中移除。配置目录和登录状态仍保存在服务器上。`,
       [
-        { text: "Cancel", style: "cancel" },
+        { text: "取消", style: "cancel" },
         {
-          text: "Remove",
+          text: "移除",
           style: "destructive",
           onPress: () => {
             void run({ operation: "remove", instanceId: provider.instanceId });
@@ -174,8 +174,8 @@ export function AddClaudeAccount({ environment }: { readonly environment: Settin
       ) : (
         <ListActionRow
           icon="plus"
-          label="Add Claude account"
-          description="Use a Claude config folder that is already signed in on this server."
+          label="添加 Claude 账号"
+          description="请使用此服务器上已登录的 Claude 配置目录。"
           onPress={() => setAdding(true)}
         />
       )}
@@ -229,7 +229,7 @@ function ClaudeAccountForm({
   return (
     <View className="gap-2 px-4 py-3">
       <Text textRole="footnote" className="text-foreground-muted">
-        {`Point at a CLAUDE_CONFIG_DIR folder on ${environment.label} where Claude Code is already signed in. Sign in there with the Claude CLI first.`}
+        {`选择 ${environment.label} 上已登录 Claude Code 的 CLAUDE_CONFIG_DIR 目录。请先在该设备上通过 Claude CLI 登录。`}
       </Text>
       {field("name", "Account name", "Name, e.g. Work")}
       {field("configDir", "Claude config folder", "Config folder, e.g. ~/.claude-work")}
@@ -239,10 +239,10 @@ function ClaudeAccountForm({
         </Text>
       ) : null}
       <View className="flex-row justify-end gap-2">
-        <ControlPill variant="pill" label="Cancel" disabled={pending} onPress={onDone} />
+        <ControlPill variant="pill" label="取消" disabled={pending} onPress={onDone} />
         <ControlPill
           variant="primary"
-          label={instanceId === null ? "Add" : "Save"}
+          label={instanceId === null ? "添加" : "保存"}
           disabled={pending}
           onPress={save}
         />

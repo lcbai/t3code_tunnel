@@ -83,7 +83,7 @@ it("leaves thread shortcuts and their hints to the preview when their rules excl
   };
   const firstPath = `/${ENVIRONMENT_ID}/${first.id}`;
 
-  await userEvent.click(page.getByRole("button", { name: "Reload" }));
+  await userEvent.click(page.getByRole("button", { name: "重新加载" }));
   await press();
   expect(router.history.location.pathname).toBe(firstPath);
   await whileHoldingControl(() => expect(jumpHint()).toBeNull());

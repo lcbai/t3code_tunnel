@@ -27,7 +27,7 @@ const VOICE_ERROR_LABELS: Record<string, string> = {
 };
 
 function voiceErrorLabel(error: string | null): string {
-  return (error && VOICE_ERROR_LABELS[error]) || "Voice input failed";
+  return (error && VOICE_ERROR_LABELS[error]) || "语音输入失败";
 }
 
 export function VoiceInputErrorPill(props: {
@@ -41,11 +41,11 @@ export function VoiceInputErrorPill(props: {
   const navigate = useNavigate();
   const openSettings = props.errorAction === "settings";
   const actionLabel = openSettings
-    ? "Open voice settings"
+    ? "打开语音设置"
     : props.error === "Could not transcribe this recording." ||
         props.error === "Voice transcription on this environment failed."
-      ? "Retry transcription"
-      : "Record again";
+      ? "重试抄录"
+      : "再次录制";
   return (
     <VoiceInputPill>
       <Tooltip>
@@ -55,7 +55,7 @@ export function VoiceInputErrorPill(props: {
               type="button"
               size="icon-sm-pill"
               variant="ghost"
-              aria-label="Dismiss voice input error"
+              aria-label="解除语音输入错误"
               onPointerDown={(event) => event.preventDefault()}
               onClick={props.onDismiss}
             >
@@ -64,7 +64,7 @@ export function VoiceInputErrorPill(props: {
           }
         />
         <TooltipPopup side="top">
-          Dismiss voice input error
+          解除语音输入错误
           {props.cancelShortcutLabel ? ` (${props.cancelShortcutLabel})` : ""}
         </TooltipPopup>
       </Tooltip>
@@ -74,14 +74,14 @@ export function VoiceInputErrorPill(props: {
             <span
               tabIndex={0}
               role="status"
-              aria-label={props.error ?? "Voice input failed"}
+              aria-label={props.error ?? "语音输入失败"}
               className="min-w-0 flex-1 truncate text-sm text-destructive"
             />
           }
         >
           {voiceErrorLabel(props.error)}
         </TooltipTrigger>
-        <TooltipPopup side="top">{props.error ?? "Voice input failed"}</TooltipPopup>
+        <TooltipPopup side="top">{props.error ?? "语音输入失败"}</TooltipPopup>
       </Tooltip>
       {props.errorAction ? (
         <Tooltip>

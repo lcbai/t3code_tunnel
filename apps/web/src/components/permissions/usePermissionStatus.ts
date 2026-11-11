@@ -4,7 +4,7 @@ import { useStableCallback } from "~/hooks/useStableCallback";
 import { getDocumentActivity, subscribeDocumentActivity } from "~/lib/documentActivity";
 
 const POLL_INTERVAL_MS = 1500;
-const CHECK_FAILED_MESSAGE = "Could not check permissions. We'll try again automatically.";
+const CHECK_FAILED_MESSAGE = "无法检查权限。我们将自动再次尝试。";
 
 interface PermissionSnapshot<Id extends string> {
   readonly status: Record<Id, boolean>;

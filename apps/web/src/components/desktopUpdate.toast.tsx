@@ -16,7 +16,7 @@ export async function openDesktopUpdateReleaseNotes(
   try {
     if (shell && (await shell.openExternal(releaseUrl))) return;
   } catch {}
-  toastManager.add({ type: "error", title: "Unable to open release notes" });
+  toastManager.add({ type: "error", title: "无法打开发行便笺" });
 }
 
 function ReleaseNotesLink({
@@ -34,7 +34,7 @@ function ReleaseNotesLink({
       }}
       type="button"
     >
-      Read more
+      更多信息
       <ArrowRightIcon
         aria-hidden
         className="ml-1 inline size-3 -rotate-45 align-[-0.125em]"
@@ -51,10 +51,10 @@ export function showDesktopUpdateDownloadedToast(
   const releaseUrl = getDesktopUpdateReleaseUrl(getDesktopUpdateDownloadedVersion(state));
   toastManager.add({
     type: "success",
-    title: "Update downloaded",
+    title: "已下载更新",
     description: (
       <>
-        Restart the app from the update button to install it.
+        从更新按钮重新启动应用程序以安装它。
         {releaseUrl ? <ReleaseNotesLink releaseUrl={releaseUrl} shell={shell} /> : null}
       </>
     ),

@@ -27,8 +27,7 @@ const TRUNCATED_LABELS: Record<ReviewerTruncation, (error: string | null) => str
     "This repository has more people with access than are listed here. Ask for the rest on the host.",
   searchable: () =>
     "This repository has more people with access than are listed here. Search to find them.",
-  "search-failed": (error) =>
-    `Only the people already listed are matched: the host search failed. ${error ?? ""}`,
+  "search-failed": (error) => `只有已经列出的人被匹配:主机搜索失败。${error ?? ""}`,
   "search-truncated": () =>
     "More people match than the host returned. Keep typing to narrow it down.",
 };
@@ -88,8 +87,8 @@ export function PullRequestReviewerPicker({
       toastManager.add({
         type: "error",
         title: candidate.isRequested
-          ? `Could not take back the review request to ${candidate.login}`
-          : `Could not ask ${candidate.login} for a review`,
+          ? `无法将审查请求撤回到${candidate.login}`
+          : `无法请求${candidate.login} 进行复议`,
         description: readableFailure(
           squashAtomCommandFailure(result),
           "The host refused it. Check that you have write access on this repository, and that they still have access to it.",
@@ -103,15 +102,15 @@ export function PullRequestReviewerPicker({
     toastManager.add({
       type: "success",
       title: candidate.isRequested
-        ? `Review request to ${candidate.login} taken back`
-        : `Review requested from ${candidate.login}`,
+        ? `复议请求为${candidate.login} 收回`
+        : `请从${candidate.login} 复议`,
     });
   };
 
   return (
     <PullRequestCandidatePicker
       icon={<UserPlusIcon className="size-3.5" />}
-      label="Request a review"
+      label="请求审查"
       allowed={allowed}
       disabledReason="Asking someone to review needs write access on this repository"
       open={open}
@@ -128,7 +127,7 @@ export function PullRequestReviewerPicker({
             : null
       }
       candidates={candidates}
-      emptyLabel="Nobody else has access to this repository."
+      emptyLabel="没人能进入这个仓库"
       noMatchLabel="Nobody with access matches that."
       errorLabel="The people with access could not be read."
       truncated={truncation !== null}
@@ -144,7 +143,7 @@ export function PullRequestReviewerPicker({
             <span className="shrink-0 text-muted-foreground">team</span>
           ) : null}
           {candidate.isRequested ? (
-            <CheckIcon aria-label="Already asked" className="size-3.5 shrink-0" />
+            <CheckIcon aria-label="已经问过了" className="size-3.5 shrink-0" />
           ) : null}
         </>
       )}

@@ -153,7 +153,7 @@ export function AppBar(props: AppBarProps) {
         <Toolbar placement="left">
           <Toolbar.Button
             icon="xmark"
-            accessibilityLabel={props.closeAccessibilityLabel ?? "Close"}
+            accessibilityLabel={props.closeAccessibilityLabel ?? "关闭"}
             onPress={props.onClose}
           />
         </Toolbar>
@@ -161,7 +161,7 @@ export function AppBar(props: AppBarProps) {
         <Toolbar placement="left">
           {rootBack ? (
             <ScreenHeaderButton
-              accessibilityLabel="Back"
+              accessibilityLabel="返回"
               icon="chevron.left"
               onPress={rootBack}
               separateBackground
@@ -179,8 +179,8 @@ export function AppBar(props: AppBarProps) {
           ) : null}
           {compose ? (
             <ScreenHeaderButton
-              accessibilityLabel="New task"
-              label="New task"
+              accessibilityLabel="新建任务"
+              label="新建任务"
               icon="square.and.pencil"
               onPress={compose}
               separateBackground
@@ -239,7 +239,7 @@ export function AppBar(props: AppBarProps) {
           ) : null}
           {closeInspector ? (
             <ScreenHeaderButton
-              accessibilityLabel="Close inspector"
+              accessibilityLabel="关闭检查器"
               icon="xmark"
               onPress={closeInspector}
               separateBackground

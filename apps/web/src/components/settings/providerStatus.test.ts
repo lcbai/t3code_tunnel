@@ -180,7 +180,7 @@ it("does not offer an update that cannot change a limited-support version", () =
   };
   expect(getProviderVersionAdvisoryPresentation(advisory, compatibility)).toEqual({
     title: "Limited support",
-    detail: "Use >=2.0.18 for full support.",
+    detail: "使用>=2.0.18 表示全力支持。",
     updateCommand: null,
     emphasis: "normal",
     targetVersion: null,
@@ -227,7 +227,7 @@ it("shows compatibility in the version popover even when the installed version i
     }),
   ).toEqual({
     title: "Limited support",
-    detail: "Use >=2.1.0 for full support.",
+    detail: "使用>=2.1.0 表示全力支持。",
     updateCommand: null,
     emphasis: "normal",
     targetVersion: null,

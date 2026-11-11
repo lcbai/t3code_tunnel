@@ -46,8 +46,8 @@ export function SettingsVoiceModelsRouteScreen({
     );
   return (
     <PullRequestSearchSheet
-      title="Transcription models"
-      placeholder="Search models or languages"
+      title="转录模型"
+      placeholder="搜索模型或语言"
       closeAccessibilityLabel="Close transcription models"
       clearAccessibilityLabel="Clear model search"
       query={query}
@@ -67,7 +67,7 @@ export function SettingsVoiceModelsRouteScreen({
           ListHeaderComponent={
             voice.canManage ? undefined : (
               <Text className="pb-3 text-xs text-foreground-muted">
-                This connection can’t change settings on {label}.
+                此连接无权修改以下位置的设置： {label}.
               </Text>
             )
           }
@@ -87,10 +87,8 @@ export function SettingsVoiceModelsRouteScreen({
               <AppActivityIndicator className="my-8" />
             ) : (
               <EmptyState
-                title={needle ? "No models match" : "No transcription models"}
-                detail={
-                  needle ? "Try another name or language." : `${label} has no models to list.`
-                }
+                title={needle ? "没有匹配的模型" : "没有转录模型"}
+                detail={needle ? "请尝试其他名称或语言。" : `${label} has no models to list.`}
                 variant="plain"
               />
             )

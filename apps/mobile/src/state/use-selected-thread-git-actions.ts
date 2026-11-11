@@ -100,7 +100,7 @@ export function useSelectedThreadGitActions() {
         Cause.fail(
           new EnvironmentAuthorizationError({
             requiredScope: AuthOrchestrationOperateScope,
-            message: "This connection cannot update the thread's branch.",
+            message: "此连接无权更新会话的分支。",
           }),
         ),
       );
@@ -141,7 +141,7 @@ export function useSelectedThreadGitActions() {
           target,
           {
             operation: "refresh_status",
-            label: "Refreshing source control status",
+            label: "正在刷新版本控制状态",
           },
           execute,
         );
@@ -201,7 +201,7 @@ export function useSelectedThreadGitActions() {
       const error = Cause.squash(result.cause);
       const message = error instanceof Error ? error.message : "Git action failed.";
       setPendingConnectionError(message);
-      showGitActionResult({ type: "error", title: "Git action failed", description: message });
+      showGitActionResult({ type: "error", title: "Git 操作失败", description: message });
       return null;
     }
     return result.value;
@@ -217,7 +217,7 @@ export function useSelectedThreadGitActions() {
       const error = Cause.squash(result.cause);
       const message = error instanceof Error ? error.message : "Failed to refresh branches.";
       setPendingConnectionError(message);
-      showGitActionResult({ type: "error", title: "Git action failed", description: message });
+      showGitActionResult({ type: "error", title: "Git 操作失败", description: message });
       return null;
     }
     setPendingConnectionError(null);
@@ -348,8 +348,8 @@ export function useSelectedThreadGitActions() {
           type: "success",
           title:
             result.value.status === "skipped_up_to_date"
-              ? "Already up to date"
-              : `Pulled latest on ${result.value.refName}`,
+              ? "已是最新"
+              : `已拉取最新内容：${result.value.refName}`,
         });
         return result;
       },

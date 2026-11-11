@@ -33,16 +33,14 @@ export function markdownFileCopyMenuItems({
   targetPath,
   workspaceRelativePath,
 }: Pick<MarkdownFileLinkMeta, "targetPath" | "workspaceRelativePath">) {
-  const items = [
-    { id: "copy-full", label: "Copy full path", value: targetPath, title: "Full path" },
-  ];
+  const items = [{ id: "copy-full", label: "复制完整路径", value: targetPath, title: "完整路径" }];
   if (workspaceRelativePath !== null) {
     const position = targetPath.slice(splitFilePathPosition(targetPath).path.length);
     items.unshift({
       id: "copy-relative",
-      label: "Copy relative path",
+      label: "复制相对路径",
       value: `${workspaceRelativePath}${position}`,
-      title: "Relative path",
+      title: "相对路径",
     });
   }
   return items;

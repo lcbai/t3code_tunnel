@@ -22,7 +22,7 @@ export class TerminalLinkPreviewOpenError extends Schema.TaggedError<TerminalLin
   terminalLinkErrorContext,
 ) {
   override get message(): string {
-    return `Failed to open terminal link ${this.targetOrigin} in preview for thread ${this.threadId}.`;
+    return `在会话${this.threadId} 预览中打开终端链接${this.targetOrigin} 失败。`;
   }
 }
 

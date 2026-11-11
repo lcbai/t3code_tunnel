@@ -40,8 +40,8 @@ describe("markdown copy without the async clipboard", () => {
     );
     using clipboard = withoutAsyncClipboard();
 
-    await userEvent.click(screen.getByRole("button", { name: "Copy code" }));
-    await expect.element(screen.getByRole("button", { name: "Copied" })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "复制代码" }));
+    await expect.element(screen.getByRole("button", { name: "已复制" })).toBeInTheDocument();
     expect(clipboard.execCommand).toHaveBeenCalledWith("copy");
   });
 
@@ -64,9 +64,9 @@ describe("markdown copy without the async clipboard", () => {
     );
     using clipboard = withoutAsyncClipboard();
 
-    await userEvent.click(screen.getByRole("button", { name: "Copy table" }));
-    await userEvent.click(page.getByRole("menuitem", { name: "Copy as Markdown" }));
-    await expect.element(screen.getByRole("button", { name: "Copied" })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "复制表格" }));
+    await userEvent.click(page.getByRole("menuitem", { name: "复制为Markdown" }));
+    await expect.element(screen.getByRole("button", { name: "已复制" })).toBeInTheDocument();
     expect(clipboard.execCommand).toHaveBeenCalledWith("copy");
   });
 });

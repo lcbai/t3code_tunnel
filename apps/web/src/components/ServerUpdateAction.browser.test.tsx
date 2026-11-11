@@ -164,8 +164,8 @@ describe("ServerUpdateAction", () => {
       testState.updateServer.mockResolvedValue(success());
 
       await using screen = await renderAction();
-      expect(button(screen, "Update")!.disabled).toBe(!allowed);
-      await click(screen, "Update");
+      expect(button(screen, "更新")!.disabled).toBe(!allowed);
+      await click(screen, "更新");
 
       expect(testState.updateServer).toHaveBeenCalledTimes(allowed ? 1 : 0);
     },
@@ -175,8 +175,8 @@ describe("ServerUpdateAction", () => {
     using _state = setup();
     await using screen = await renderAction();
     await act(() => setSession(AsyncResult.success({ ...currentSession, scopes: [] })));
-    expect(button(screen, "Update")!.disabled).toBe(true);
-    await click(screen, "Update");
+    expect(button(screen, "更新")!.disabled).toBe(true);
+    await click(screen, "更新");
     expect(testState.updateServer).not.toHaveBeenCalled();
   });
 });
@@ -211,7 +211,7 @@ describe("ServerUpdatesAction", () => {
       .mockResolvedValueOnce(AsyncResult.failure(Cause.fail(new Error("Download failed"))))
       .mockResolvedValueOnce(success());
     await using screen = await mount();
-    await click(screen, "Update all");
+    await click(screen, "全部更新");
 
     expect(testState.updateServer).toHaveBeenCalledTimes(2);
     expect(testState.toast).toHaveBeenCalledWith({
@@ -222,7 +222,7 @@ describe("ServerUpdatesAction", () => {
     expect(testState.toast).toHaveBeenCalledWith(
       expect.objectContaining({ type: "success", title: "Office updated" }),
     );
-    expect(button(screen, "Update all")!.disabled).toBe(false);
+    expect(button(screen, "全部更新")!.disabled).toBe(false);
   });
 
   it("skips a machine whose update would cross Stable and Nightly", async () => {
@@ -230,7 +230,7 @@ describe("ServerUpdatesAction", () => {
     testState.serverVersions.set("batch-a", "0.0.30-nightly.20261001.1");
     testState.updateServer.mockResolvedValue(success());
     await using screen = await mount();
-    await click(screen, "Update all");
+    await click(screen, "全部更新");
 
     expect(testState.updateServer).toHaveBeenCalledTimes(1);
     expect(testState.toast).toHaveBeenCalledWith(

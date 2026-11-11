@@ -12,10 +12,10 @@ const TOOL_CALL_VISIBILITY_OPTIONS: ReadonlyArray<{
   readonly value: ToolCallVisibility;
   readonly label: string;
 }> = [
-  { value: "showAll", label: "Show all" },
-  { value: "hideSuccessful", label: "Hide successful" },
-  { value: "hideAll", label: "Hide all" },
-  { value: "zen", label: "Zen" },
+  { value: "showAll", label: "全部显示" },
+  { value: "hideSuccessful", label: "隐藏已成功项" },
+  { value: "hideAll", label: "全部隐藏" },
+  { value: "zen", label: "专注模式" },
 ];
 
 export function ToolCallsAppearanceSection() {
@@ -27,7 +27,7 @@ export function ToolCallsAppearanceSection() {
 
   return (
     <View className="gap-3">
-      <SettingsSection title="Tool calls in chat">
+      <SettingsSection title="在会话中显示工具调用">
         {TOOL_CALL_VISIBILITY_OPTIONS.map((option, index) => (
           <ListChoiceRow
             key={option.value}
@@ -40,8 +40,7 @@ export function ToolCallsAppearanceSection() {
         ))}
       </SettingsSection>
       <Text className="px-2 text-sm text-foreground-muted">
-        Hide the commands, edits, and searches agents run. Hide successful keeps failures. Zen shows
-        only final answers. Approvals, questions, and errors always show.
+        隐藏智能体执行的命令、编辑和搜索。「隐藏已成功项」会保留失败的操作，「专注模式」仅显示最终答复。审批、问题和错误始终显示。
       </Text>
     </View>
   );

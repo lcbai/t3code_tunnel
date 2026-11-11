@@ -99,10 +99,10 @@ export function createWorkerClient<M extends Methods>(worker: Worker) {
   });
 
   worker.addEventListener("error", (event) =>
-    fail(new WorkerClosedError({ message: event.message || "The Office engine stopped" })),
+    fail(new WorkerClosedError({ message: event.message || "办公室引擎停了" })),
   );
   worker.addEventListener("messageerror", () =>
-    fail(new WorkerClosedError({ message: "The Office engine sent an unreadable reply" })),
+    fail(new WorkerClosedError({ message: "办公室引擎发送了无法读取的答复" })),
   );
 
   return {
@@ -114,7 +114,7 @@ export function createWorkerClient<M extends Methods>(worker: Worker) {
       if (state.failure) return Promise.reject(state.failure);
 
       if (options.signal?.aborted)
-        return Promise.reject(new WorkerClosedError({ message: "The call was aborted" }));
+        return Promise.reject(new WorkerClosedError({ message: "电话中断了" }));
 
       const id = ++state.next;
 
@@ -123,7 +123,7 @@ export function createWorkerClient<M extends Methods>(worker: Worker) {
           () =>
             fail(
               new WorkerClosedError({
-                message: "This document took too long to preview. Open it in another app.",
+                message: "此文档预览时间太长。在另一个应用程序中打开。",
               }),
             ),
           30_000,
@@ -131,7 +131,7 @@ export function createWorkerClient<M extends Methods>(worker: Worker) {
         const abort = () => {
           clearTimeout(timeout);
           pending.delete(id);
-          reject(new WorkerClosedError({ message: "The call was aborted" }));
+          reject(new WorkerClosedError({ message: "电话中断了" }));
           worker.postMessage({ cancel: id } satisfies Cancel, []);
         };
 
@@ -164,7 +164,7 @@ export function createWorkerClient<M extends Methods>(worker: Worker) {
     },
     /** Stops the worker, which frees its engine's memory, and fails every pending call. */
     close() {
-      fail(new WorkerClosedError({ message: "The Office engine was closed" }));
+      fail(new WorkerClosedError({ message: "办公室引擎关闭" }));
     },
   };
 }
@@ -218,7 +218,7 @@ export function serveWorker<M extends Methods>(handlers: {
           id: request.id,
           ok: false,
           superseded: false,
-          message: `Unknown method ${request.method}`,
+          message: `未知的方法${request.method}`,
         });
         continue;
       }
@@ -281,8 +281,7 @@ export function serveWorker<M extends Methods>(handlers: {
     if (replaced !== -1) {
       const [old] = queue.splice(replaced, 1);
 
-      if (old)
-        reply({ id: old.id, ok: false, superseded: true, message: "Replaced by a newer call" });
+      if (old) reply({ id: old.id, ok: false, superseded: true, message: "替换为新电话" });
     }
 
     queue.push(event.data);

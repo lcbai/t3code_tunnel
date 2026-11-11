@@ -136,7 +136,7 @@ function PendingSecretRequestForm(props: {
       {link !== null ? (
         <View className="gap-1.5">
           <Button
-            label={`Open ${link.host}`}
+            label={`打开 ${link.host}`}
             tone="secondary"
             fullWidth
             onPress={() => void tryOpenExternalUrl(link.href, "secret-request")}
@@ -152,7 +152,7 @@ function PendingSecretRequestForm(props: {
       {sources.length > 0 ? (
         <View className="flex-row flex-wrap gap-2">
           <Chip
-            label="Value"
+            label="值"
             size="small"
             selected={source === null}
             disabled={submitting}
@@ -216,7 +216,7 @@ function PendingSecretRequestForm(props: {
         </Text>
       ) : null}
       <Button
-        label="Save securely"
+        label="安全保存"
         tone="primary"
         fullWidth
         disabled={submitting || draft.trim().length === 0}
@@ -235,7 +235,7 @@ function PendingSecretRequestForm(props: {
           </Text>
         </View>
         <Button
-          label="Decline"
+          label="拒绝"
           tone="text"
           disabled={submitting}
           onPress={() => void send({ type: "decline" })}

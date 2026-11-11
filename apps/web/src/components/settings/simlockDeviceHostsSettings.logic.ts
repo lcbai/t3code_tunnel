@@ -46,7 +46,7 @@ export function simlockDeviceHostProblem(host: SimlockDeviceHostConfigType): str
 
 export function simlockLeaseLimits(host: SimlockDeviceHostConfigType) {
   const devices = host.maxLeases === 1 ? "1 device" : `${host.maxLeases} devices`;
-  return `Up to ${devices} at once, each released after ${host.maxLeaseMinutes} min`;
+  return `最多${devices} 一次，每个在${host.maxLeaseMinutes} min后发布`;
 }
 
 export interface SimlockHostEnvironment {

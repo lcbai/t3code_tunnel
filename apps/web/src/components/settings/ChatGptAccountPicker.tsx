@@ -48,14 +48,12 @@ export function ChatGptAccountPicker({
     >
       <DialogPopup>
         <DialogHeader>
-          <DialogTitle>Reconnect ChatGPT</DialogTitle>
-          <DialogDescription>
-            On OpenAI, sign in with the account you choose here.
-          </DialogDescription>
+          <DialogTitle>重新连接ChatGPT</DialogTitle>
+          <DialogDescription>在OpenAI 上，请在您选择的账户中登录。</DialogDescription>
         </DialogHeader>
         <div className="px-6 pb-6">
           <RadioGroup
-            aria-label="ChatGPT account to connect"
+            aria-label="要连接的ChatGPT count"
             disabled={disabled}
             value={selectedMethodId}
             onValueChange={(value) => setSelection(value)}
@@ -71,7 +69,7 @@ export function ChatGptAccountPicker({
             ))}
             <label className="flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-3 text-sm">
               <Radio value="chatgpt-change-account" />
-              <span className="font-medium">Use a different account</span>
+              <span className="font-medium">使用不同的账户</span>
             </label>
           </RadioGroup>
         </div>
@@ -87,7 +85,7 @@ export function ChatGptAccountPicker({
               disabled={disabled || !canRemove}
               onClick={() => onRemove(selectedMethodId)}
             >
-              Remove connection
+              删除连接
             </Button>
           ) : null}
           <ChatGptConnectionButton disabled={disabled} onClick={() => onSelect(selectedMethodId)} />

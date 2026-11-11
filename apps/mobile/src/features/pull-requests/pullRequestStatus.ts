@@ -11,28 +11,28 @@ import { PullRequestGlyph } from "./pullRequestGlyphs";
 
 const STATES = {
   open: {
-    label: "Open",
+    label: "打开",
     icon: PullRequestGlyph.pullRequest,
     tint: "accent-adaptive-emerald-600-400",
     text: "text-adaptive-emerald-600-400",
     background: "bg-adaptive-emerald-500-a12-a16",
   },
   merged: {
-    label: "Merged",
+    label: "已合并",
     icon: PullRequestGlyph.merged,
     tint: "accent-adaptive-violet-600-400",
     text: "text-adaptive-violet-600-400",
     background: "bg-adaptive-violet-500-a12-a16",
   },
   closed: {
-    label: "Closed",
+    label: "已关闭",
     icon: PullRequestGlyph.closed,
     tint: "accent-danger-foreground",
     text: "text-danger-foreground",
     background: "bg-danger",
   },
   draft: {
-    label: "Draft",
+    label: "草稿",
     icon: PullRequestGlyph.draft,
     tint: "accent-icon-muted",
     text: "text-foreground-muted",
@@ -54,37 +54,37 @@ export function pullRequestConflict(pr: {
   readonly baseBranch?: string | undefined;
 }) {
   if (pr.state !== "open" || pr.isDraft || pr.mergeability !== "conflicting") return null;
-  return { label: pr.baseBranch ? `Conflicts with ${pr.baseBranch}` : "Has conflicts" };
+  return { label: pr.baseBranch ? `冲突分支：${pr.baseBranch}` : "存在冲突" };
 }
 
 export function checkStatus(check: PullRequestCheck) {
   switch (check.status) {
     case "success":
       return {
-        label: "Passed",
+        label: "已通过",
         icon: "checkmark.circle",
         tint: "accent-adaptive-emerald-600-400",
       } as const;
     case "failure":
       return {
-        label: "Failed",
+        label: "失败",
         icon: "exclamationmark.circle",
         tint: "accent-danger-foreground",
       } as const;
     case "action-required":
       return {
-        label: "Action required",
+        label: "需要操作",
         icon: "exclamationmark.circle",
         tint: "accent-warning-foreground",
       } as const;
     case "pending":
-      return { label: "Pending", icon: "clock", tint: "accent-warning-foreground" } as const;
+      return { label: "待处理", icon: "clock", tint: "accent-warning-foreground" } as const;
     case "cancelled":
-      return { label: "Cancelled", icon: "minus", tint: "accent-icon-muted" } as const;
+      return { label: "已取消", icon: "minus", tint: "accent-icon-muted" } as const;
     case "skipped":
-      return { label: "Skipped", icon: "slash.circle", tint: "accent-icon-muted" } as const;
+      return { label: "已跳过", icon: "slash.circle", tint: "accent-icon-muted" } as const;
     case "neutral":
-      return { label: "Neutral", icon: "minus", tint: "accent-icon-muted" } as const;
+      return { label: "中性", icon: "minus", tint: "accent-icon-muted" } as const;
   }
 }
 
@@ -105,7 +105,7 @@ export function pullRequestChecksSummary(pr: Pick<PullRequestDetail, "checks">) 
   if (required)
     return {
       label: `${required} need attention`,
-      title: "Checks need attention",
+      title: "检查需要处理",
       count: `${required} awaiting action`,
       icon: "exclamationmark.circle",
       tint: "accent-warning-foreground",
@@ -113,7 +113,7 @@ export function pullRequestChecksSummary(pr: Pick<PullRequestDetail, "checks">) 
   if (pending)
     return {
       label: `${pending} pending`,
-      title: "Checks running",
+      title: "正在检查",
       count: `${pending} pending`,
       icon: "clock",
       tint: "accent-warning-foreground",
@@ -121,14 +121,14 @@ export function pullRequestChecksSummary(pr: Pick<PullRequestDetail, "checks">) 
   if (passed)
     return {
       label: `${passed} of ${pr.checks.length} passed`,
-      title: passed === pr.checks.length ? "All checks passed" : "Checks completed",
+      title: passed === pr.checks.length ? "所有检查均已通过" : "检查已完成",
       count,
       icon: "checkmark.circle",
       tint: "accent-adaptive-emerald-600-400",
     } as const;
   return {
-    label: pr.checks.length ? `${pr.checks.length} completed` : "No checks reported",
-    title: pr.checks.length ? "Checks completed" : "No checks reported",
+    label: pr.checks.length ? `${pr.checks.length} completed` : "没有检查结果",
+    title: pr.checks.length ? "检查已完成" : "没有检查结果",
     count,
     icon: "minus",
     tint: "accent-icon-muted",
@@ -175,7 +175,7 @@ export function pullRequestReviewSummary(
   );
   if (requested.length)
     return {
-      title: "Changes requested",
+      title: "已请求修改",
       count: `${requested.length} ${requested.length === 1 ? "reviewer" : "reviewers"}`,
       icon: "xmark.circle.fill",
       tint: "accent-danger-foreground",
@@ -186,7 +186,7 @@ export function pullRequestReviewSummary(
       title:
         approved.length === 1 && approved[0]?.author
           ? `Approved by ${approved[0].author.login}`
-          : "Reviews approved",
+          : "审查已通过",
       count: `${approved.length} approved`,
       icon: "checkmark.circle",
       tint: "accent-adaptive-emerald-600-400",
@@ -195,14 +195,14 @@ export function pullRequestReviewSummary(
   const commented = reviews.filter((review) => review.reviewState === "COMMENTED");
   if (commented.length && !pr.reviewers.length)
     return {
-      title: "Reviews",
+      title: "审查记录",
       count: `${commented.length} commented`,
       icon: "bubble.left",
       tint: "accent-icon-muted",
       reviews,
     } as const;
   return {
-    title: pr.reviewers.length ? "Awaiting review" : "Request a review",
+    title: pr.reviewers.length ? "等待审查" : "请求审查",
     count: pr.reviewers.length ? `${pr.reviewers.length} requested` : "None assigned",
     icon: "person.2",
     tint: "accent-icon-muted",

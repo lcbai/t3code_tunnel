@@ -116,10 +116,7 @@ export function ComposerEditor({
         return;
       }
       if (!insertComposerDraftContext(draftKey, result, insertion)) {
-        Dialog.alert(
-          "Could not paste context",
-          "Remove some attachments or context items from the draft, then paste again.",
-        );
+        Dialog.alert("Could not paste context", "请从草稿中移除部分附件或上下文后再粘贴。");
         return;
       }
       const warnings: string[] = [];
@@ -133,7 +130,7 @@ export function ComposerEditor({
         );
       if (warnings.length > 0)
         Dialog.alert(
-          "Some context is unavailable",
+          "部分上下文不可用",
           [...warnings, "Those references are marked unavailable."].join("\n\n"),
         );
     });
@@ -143,7 +140,7 @@ export function ComposerEditor({
       const error = squashAtomCommandFailure(settled);
       Dialog.alert(
         "Could not paste context",
-        error instanceof Error ? error.message : "Try copying again.",
+        error instanceof Error ? error.message : "请重试复制。",
       );
     }
   };
@@ -224,12 +221,12 @@ export function ComposerEditor({
         }}
       />
       {importing ? (
-        <Text className="py-2 text-xs text-foreground-muted">Copying context…</Text>
+        <Text className="py-2 text-xs text-foreground-muted">正在复制上下文…</Text>
       ) : null}
       {selected && (selectedReference || selectedSkill) ? (
         <ComposerContextSheet
           label={
-            selectedReference?.label ?? selectedSkill?.displayName ?? selectedSkill?.name ?? "Skill"
+            selectedReference?.label ?? selectedSkill?.displayName ?? selectedSkill?.name ?? "技能"
           }
           record={
             record ??

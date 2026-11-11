@@ -18,13 +18,13 @@ const FOLLOW_UP_OPTIONS: ReadonlyArray<{
 }> = [
   {
     behavior: "queue",
-    label: "Queue",
-    description: "Your message waits and runs after the current turn finishes.",
+    label: "队列",
+    description: "消息会加入队列，等当前轮次结束后执行。",
   },
   {
     behavior: "steer",
-    label: "Steer",
-    description: "Your message reaches the agent right away, changing what it is working on.",
+    label: "引导",
+    description: "立即向智能体发送此消息，调整它当前的工作。",
   },
 ];
 
@@ -45,7 +45,7 @@ export function SettingsFollowUpRouteScreen() {
       contentContainerClassName="gap-3 px-5 pt-4"
       contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 18) + 18 }}
     >
-      <SettingsSection title="While the agent is running">
+      <SettingsSection title="智能体运行期间">
         {FOLLOW_UP_OPTIONS.map((option, index) => (
           <SettingsChoiceRow
             key={option.behavior}
@@ -59,11 +59,11 @@ export function SettingsFollowUpRouteScreen() {
         ))}
       </SettingsSection>
       <Text className="px-2 text-sm text-foreground-muted">
-        Long-press the send button to use the other option for a single message. With a hardware
-        keyboard, hold {Platform.OS === "android" ? "Ctrl" : "Command"} while sending.
+        长按发送按钮可为当前消息使用另一选项。使用实体键盘时，按住{" "}
+        {Platform.OS === "android" ? "Ctrl" : "⌘"} 发送。
       </Text>
     </ScrollView>
   );
 
-  return <SettingsScreen title="Chat">{content}</SettingsScreen>;
+  return <SettingsScreen title="会话">{content}</SettingsScreen>;
 }

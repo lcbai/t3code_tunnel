@@ -90,15 +90,15 @@ export function AddCodexAccountDialog({
     >
       <WizardPopup size="wide">
         <WizardHeader
-          title={instanceId ? displayName : "Add ChatGPT account"}
-          description="Each account has its own Codex instance and sign-in. Choose the other account on the sign-in page."
+          title={instanceId ? displayName : "添加ChatGPT 账户"}
+          description="每个账户都有自己的Codex 实例和登录。 选择签名页面上的另一个账户。"
         />
         <WizardPanel>
           {instanceId ? (
             provider?.setup ? (
               renderSetup(instanceId, provider)
             ) : (
-              <SettingsRow title="Codex runtime" description="Preparing managed setup." />
+              <SettingsRow title="Codex 运行环境" description="正在准备管理设置。" />
             )
           ) : (
             <form
@@ -110,15 +110,15 @@ export function AddCodexAccountDialog({
               }}
             >
               <SettingsRow
-                title="Account name"
-                description="Shown in the provider list and model picker."
+                title="账户名称"
+                description="在提供者列表和模型拾取器中显示。"
                 control={
                   <Input
-                    aria-label="Account name"
+                    aria-label="账户名称"
                     value={name}
                     disabled={pending}
                     onChange={(event) => setName(event.target.value)}
-                    placeholder="e.g. Personal or Work"
+                    placeholder="例如，个人或工作"
                   />
                 }
               />
@@ -129,19 +129,19 @@ export function AddCodexAccountDialog({
         <WizardFooter>
           {instanceId ? (
             <Button variant="outline" onClick={onClose}>
-              Finish later
+              以后再写吧
             </Button>
           ) : (
             <>
               <Button variant="outline" disabled={pending} onClick={onClose}>
-                Cancel
+                取消
               </Button>
               <Button
                 type="submit"
                 form="add-codex-account"
                 disabled={pending || !name.trim() || !canManageProviders}
               >
-                {pending ? "Adding account…" : "Continue"}
+                {pending ? "正在添加账户…" : "继续"}
               </Button>
             </>
           )}

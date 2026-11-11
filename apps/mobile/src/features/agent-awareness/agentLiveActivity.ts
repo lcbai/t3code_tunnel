@@ -1,8 +1,6 @@
 import type { LiveActivity } from "expo-widgets";
 import type { AgentActivityProps } from "../../widgets/AgentActivity";
 
-export function dismissEndedAgentLiveActivities(): void {}
-
 export function getAgentLiveActivities(): Array<LiveActivity<AgentActivityProps>> {
   return [];
 }

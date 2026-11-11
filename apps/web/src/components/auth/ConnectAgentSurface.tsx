@@ -37,8 +37,8 @@ export const accessConfig: Record<
   { readonly label: string; readonly description: string; readonly icon: LucideIcon }
 > = {
   "read-only": {
-    label: "Read only",
-    description: "Read projects and threads. Cannot start, message or change anything.",
+    label: "只读",
+    description: "读取工程和会话。 无法启动、 信件或更改任何内容。",
     icon: EyeIcon,
   },
   ...runtimeModeConfig,
@@ -117,7 +117,7 @@ const primaryTransport: McpApprovalTransport = {
 const decodeAuthorizationRequest = Schema.decodeSync(AuthMcpAuthorizationRequest);
 
 /** The agent's OAuth request from this page's query; other parameters are ignored. */
-export function readAuthorizationRequest(): AuthMcpAuthorizationRequest {
+function readAuthorizationRequest(): AuthMcpAuthorizationRequest {
   return decodeAuthorizationRequest(Object.fromEntries(new URL(window.location.href).searchParams));
 }
 
@@ -130,7 +130,7 @@ export function ConnectAgentSurface() {
  * The consent screen for one agent sign-in. `acceptsCode` shows the sign-in code field;
  * `requireLevelChoice` starts with no level picked; `footer` sits under the actions.
  */
-export function McpConsent({
+function McpConsent({
   authorization,
   transport,
   acceptsCode = false,
@@ -223,10 +223,7 @@ export function McpConsent({
   if (loaded.status === "loading") {
     return (
       <StandalonePage>
-        <ConnectAgentHeading
-          title="Checking the sign-in request"
-          description="One moment while this environment verifies the agent's request."
-        />
+        <ConnectAgentHeading title="正在检查登录请求" description="等这环境证实了特工的要求" />
         <Spinner className="mt-6" size="lg" tone="muted" />
       </StandalonePage>
     );
@@ -235,10 +232,8 @@ export function McpConsent({
   if (loaded.status === "invalid") {
     return (
       <StandalonePage>
-        <ConnectAgentHeading title="This sign-in cannot continue" description={loaded.message} />
-        <p className="mt-4 text-sm text-muted-foreground">
-          Close this page and start the sign-in again from your agent.
-        </p>
+        <ConnectAgentHeading title="此登录无法继续" description={loaded.message} />
+        <p className="mt-4 text-sm text-muted-foreground">关闭此页面，然后从您的代理开始登录。</p>
         {footer}
       </StandalonePage>
     );
@@ -257,10 +252,10 @@ export function McpConsent({
   return (
     <StandalonePage>
       <ConnectAgentHeading
-        title={`Connect ${details.clientName}`}
+        title={`连接${details.clientName}`}
         description={
           <>
-            This agent wants to use the threads in every project on{" "}
+            这个代理想要在每一个工程中使用会话{" "}
             <span className="font-medium text-foreground">
               {environmentLabel ?? details.environmentHost}
             </span>
@@ -269,27 +264,24 @@ export function McpConsent({
         }
       />
       <dl className="mt-4 grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-1 text-sm">
-        <dt className="text-muted-foreground">App</dt>
+        <dt className="text-muted-foreground">应用</dt>
         <dd className="min-w-0 break-words">
-          {details.clientName} <span className="text-muted-foreground">· name set by the app</span>
+          {details.clientName} <span className="text-muted-foreground">应用程序设置的名称</span>
         </dd>
-        <dt className="text-muted-foreground">Access goes to</dt>
+        <dt className="text-muted-foreground">访问到</dt>
         <dd className="min-w-0 break-words font-medium">
           {details.redirectHost}
           {redirectsToThisComputer(details.redirectHost) ? (
-            <span className="font-normal text-muted-foreground">
-              {" "}
-              on the computer that opened this page
-            </span>
+            <span className="font-normal text-muted-foreground"> 打开此页面的计算机</span>
           ) : (
             <span className="font-normal text-muted-foreground">
               {" "}
-              · whoever runs it gets this access
+              · 经营该工具的任何人获得这种准入
             </span>
           )}
         </dd>
       </dl>
-      <p className="mt-2 text-xs text-muted-foreground">Only approve a sign-in you just started.</p>
+      <p className="mt-2 text-xs text-muted-foreground">只批准你刚刚开始的签注</p>
 
       <form
         className="mt-6 space-y-5"
@@ -301,7 +293,7 @@ export function McpConsent({
         {acceptsCode ? (
           <div className="space-y-2">
             <label className="text-sm font-medium" htmlFor="connect-agent-pairing-code">
-              Sign-in code
+              签名代码
             </label>
             <Input
               id="connect-agent-pairing-code"
@@ -311,26 +303,26 @@ export function McpConsent({
               disabled={pending !== null}
               nativeInput
               onChange={(event) => setPairingCode(event.currentTarget.value)}
-              placeholder="Paste a code"
+              placeholder="粘贴代码"
               spellCheck={false}
               value={pairingCode}
             />
             <p className="text-xs text-muted-foreground">
-              Get one from Use T3 Code in another app (MCP), Settings → Sharing & access, or{" "}
-              <code>t3 auth pairing create</code> on this machine.
+              从另一个应用程序(MCP)中获取一个“使用T3 Code”，设置 + 共享和访问，或{" "}
+              <code>t3 auth pairing create</code> 在这台机器上。
             </p>
           </div>
         ) : null}
 
         {codeAccess ? (
           <p className="text-sm">
-            <span className="text-muted-foreground">Access</span>{" "}
+            <span className="text-muted-foreground">访问</span>{" "}
             <span className="font-medium">{accessConfig[codeAccess].label}</span>
           </p>
         ) : (
           <div className="space-y-2">
             <span id="connect-agent-access-label" className="text-sm font-medium">
-              What it may do
+              它会做什么?
             </span>
             <RadioGroup
               aria-labelledby="connect-agent-access-label"
@@ -347,8 +339,7 @@ export function McpConsent({
               ))}
             </RadioGroup>
             <p className="text-xs text-muted-foreground">
-              Beyond read only, it can start, message and stop threads, and none of them can run
-              with more than the mode you pick.
+              仅读后，它可以启动，消息和停止会话，而且没有一个会话可以运行的方式超过你所选择的模式。
             </p>
           </div>
         )}
@@ -362,10 +353,10 @@ export function McpConsent({
         <div className="flex flex-wrap gap-2">
           <Button disabled={!canApprove} type="submit">
             {pending === "approve"
-              ? "Approving…"
+              ? "核准…"
               : approveLevel === null
-                ? "Choose what it may do"
-                : `Approve ${accessConfig[approveLevel].label}`}
+                ? "选择它可能做什么"
+                : `批准 ${accessConfig[approveLevel].label}`}
           </Button>
           <Button
             disabled={pending !== null}
@@ -373,7 +364,7 @@ export function McpConsent({
             type="button"
             variant="outline"
           >
-            {pending === "deny" ? "Denying…" : "Deny"}
+            {pending === "deny" ? "拒绝…" : "拒绝"}
           </Button>
         </div>
       </form>

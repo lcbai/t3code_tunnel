@@ -419,14 +419,14 @@ describe("resolveThreadStatusPill", () => {
     const blocked = { ...baseThread, blockedOnThreadWait: true };
     expect(resolveSidebarThreadStatus(blocked)).toBe("waiting");
     expect(resolveThreadStatusPill({ thread: blocked })).toMatchObject({
-      label: "Waiting",
+      label: "等待中",
       pulse: false,
     });
 
     const resumed = { ...blocked, blockedOnThreadWait: false };
     expect(resolveSidebarThreadStatus(resumed)).toBe("working");
     expect(resolveThreadStatusPill({ thread: resumed })).toMatchObject({
-      label: "Working",
+      label: "运行中",
       pulse: true,
     });
   });
@@ -447,7 +447,7 @@ describe("resolveThreadStatusPill", () => {
         },
       }),
     ).toMatchObject({
-      label: "Waiting",
+      label: "等待中",
       colorClass: "text-sidebar-muted-foreground",
       dotClass: "bg-sidebar-muted-foreground",
       pulse: false,
@@ -468,7 +468,7 @@ describe("resolveThreadStatusPill", () => {
           },
         },
       }),
-    ).toMatchObject({ label: "Plan Ready", pulse: false });
+    ).toMatchObject({ label: "计划已就绪", pulse: false });
   });
 
   it("does not manufacture completed state without a client visit marker", () => {
@@ -502,7 +502,7 @@ describe("resolveThreadStatusPill", () => {
           },
         },
       }),
-    ).toMatchObject({ label: "Completed", pulse: false });
+    ).toMatchObject({ label: "已完成", pulse: false });
   });
 
   it("shows failed, not completed, when the unseen run failed", () => {
@@ -521,7 +521,7 @@ describe("resolveThreadStatusPill", () => {
           },
         },
       }),
-    ).toMatchObject({ label: "Failed", pulse: false });
+    ).toMatchObject({ label: "失败", pulse: false });
   });
 
   it("shows failed, not plan ready, when a plan run proposed a plan and then failed", () => {
@@ -535,7 +535,7 @@ describe("resolveThreadStatusPill", () => {
           runtime: { ...baseThread.runtime, status: "failed", activeRunId: null },
         },
       }),
-    ).toMatchObject({ label: "Failed" });
+    ).toMatchObject({ label: "失败" });
   });
 
   it("drops the failed pill once the failure has been seen", () => {
@@ -932,21 +932,21 @@ describe("unseen completion with background work", () => {
       task: { kind: "command" },
       status: "ready",
       receded: false,
-      pill: "Completed",
+      pill: "已完成",
     },
     {
       roster: "dev server watchdog",
       task: { kind: "monitor" },
       status: "ready",
       receded: false,
-      pill: "Completed",
+      pill: "已完成",
     },
     {
       roster: "awaited command",
       task: { kind: "command", awaited: true },
       status: "waiting",
       receded: true,
-      pill: "Waiting",
+      pill: "等待中",
     },
   ] as const)("presents a completed thread with a $roster roster", (expected) => {
     const thread = presentThreadShell(localEnvironmentId, {

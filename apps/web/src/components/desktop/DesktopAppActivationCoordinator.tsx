@@ -21,7 +21,7 @@ export function DesktopAppActivationCoordinator() {
   const primaryEnvironment = usePrimaryEnvironment();
   const createProject = useAtomCommand(projectEnvironment.create, { reportFailure: false });
   const updateProject = useOrchestrationCommand(projectEnvironment.update, {
-    label: "project unarchive",
+    label: "工程无存档",
   });
   const openThread = useNewThreadHandler();
   const queueRef = useRef(Promise.resolve());

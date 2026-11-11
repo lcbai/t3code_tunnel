@@ -2,18 +2,18 @@ import type { ClientSettings } from "@t3tools/contracts";
 
 // Ids are stored in client settings, so never rename one.
 export const THREAD_DETAILS_ITEMS = [
-  { id: "environment", label: "Environment and worktree", defaultVisible: true },
-  { id: "openIn", label: "Open in editor", defaultVisible: true },
-  { id: "scripts", label: "Project scripts", defaultVisible: true },
-  { id: "branch", label: "Branch and pull request", defaultVisible: true },
-  { id: "gitActions", label: "Git actions", defaultVisible: true },
-  { id: "changes", label: "Changes", defaultVisible: true },
-  { id: "servers", label: "Servers", defaultVisible: true },
-  { id: "automations", label: "Automations", defaultVisible: true },
-  { id: "lineage", label: "Lineage", defaultVisible: true },
-  { id: "sideChats", label: "Side chats", defaultVisible: true },
-  { id: "usage", label: "Usage limits", defaultVisible: false },
-  { id: "context", label: "Context window", defaultVisible: false },
+  { id: "environment", label: "环境与工作树", defaultVisible: true },
+  { id: "openIn", label: "在编辑器中打开", defaultVisible: true },
+  { id: "scripts", label: "项目脚本", defaultVisible: true },
+  { id: "branch", label: "分支和拉取请求", defaultVisible: true },
+  { id: "gitActions", label: "Git 动作", defaultVisible: true },
+  { id: "changes", label: "变动", defaultVisible: true },
+  { id: "servers", label: "服务器", defaultVisible: true },
+  { id: "automations", label: "自动化", defaultVisible: true },
+  { id: "lineage", label: "线性", defaultVisible: true },
+  { id: "sideChats", label: "边聊边聊", defaultVisible: true },
+  { id: "usage", label: "用量限制", defaultVisible: false },
+  { id: "context", label: "上下文窗口", defaultVisible: false },
 ] as const;
 
 export type ThreadDetailsItemId = (typeof THREAD_DETAILS_ITEMS)[number]["id"];

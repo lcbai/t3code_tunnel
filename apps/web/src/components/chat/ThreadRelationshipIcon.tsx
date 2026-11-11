@@ -8,38 +8,38 @@ export function threadRelationshipStatusLabel(status: string | null): string {
   switch (status) {
     case "preparing":
     case "starting":
-      return "Starting";
+      return "开始";
     case "running":
     case "in_progress":
-      return "Running";
+      return "运行中";
     case "pending":
     case "queued":
-      return "Queued";
+      return "排队中";
     case "waiting":
     case "blocked":
-      return "Waiting";
+      return "等待中";
     case "completed":
-      return "Done";
+      return "完成";
     case "failed":
     case "error":
-      return "Failed";
+      return "失败";
     case "cancelled":
     case "interrupted":
-      return "Stopped";
+      return "已停止";
     case "rolled_back":
-      return "Reverted";
+      return "还原";
     case "resolved_native":
-      return "Resolved (native)";
+      return "已解决( 本地)";
     case "resolved_portable":
-      return "Resolved (portable)";
+      return "已解决(便携式)";
     case "consumed":
-      return "Consumed";
+      return "已消费";
     case "superseded":
-      return "Superseded";
+      return "已替换";
     case "idle":
-      return "Idle";
+      return "闲置";
     default:
-      return "Unknown";
+      return "未知";
   }
 }
 

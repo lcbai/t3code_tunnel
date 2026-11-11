@@ -169,7 +169,7 @@ export function ThemePreviewCircles({
             <TooltipTrigger
               render={
                 <button
-                  aria-label={`Use ${label} ${mode} mode`}
+                  aria-label={`使用 ${label} 的 ${mode} 模式`}
                   aria-pressed={isPicked}
                   className={cn(
                     "relative flex size-[68px] shrink-0 transform-gpu cursor-pointer items-center justify-center rounded-full p-1.5 outline-none transition-transform hover:scale-105 focus-visible:outline-2 focus-visible:outline-solid focus-visible:-outline-offset-5 focus-visible:outline-foreground/60",
@@ -204,9 +204,7 @@ export function ThemePreviewCircles({
                 </button>
               }
             />
-            <TooltipPopup>
-              {mode === "light" ? "Use for light mode only" : "Use for dark mode only"}
-            </TooltipPopup>
+            <TooltipPopup>{mode === "light" ? "仅用于灯光模式" : "仅用于暗模式"}</TooltipPopup>
           </Tooltip>
         );
       })}

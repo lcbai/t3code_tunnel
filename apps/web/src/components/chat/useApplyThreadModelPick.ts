@@ -15,7 +15,7 @@ import { stackedThreadToast, toastManager } from "../ui/toast";
 export function useApplyThreadModelPick() {
   const registry = useContext(RegistryContext);
   const setModelSelection = useOrchestrationCommand(threadEnvironment.setModelSelection, {
-    label: "change model",
+    label: "更改模型",
   });
   return async (target: ComposerThreadTarget) => {
     if (typeof target === "string") return;
@@ -39,8 +39,8 @@ export function useApplyThreadModelPick() {
       toastManager.add(
         stackedThreadToast({
           type: "error",
-          title: "Could not apply model selection",
-          description: `This model pick was not saved. ${error instanceof Error ? error.message : "Try again."}`,
+          title: "无法应用模型选择",
+          description: `此模型选择未保存。${error instanceof Error ? error.message : "Try again."}@`,
         }),
       );
     }

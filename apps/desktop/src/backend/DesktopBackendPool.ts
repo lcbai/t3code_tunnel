@@ -123,8 +123,8 @@ export const layer = Layer.effect(
             { reason },
           );
           yield* electronDialog.showErrorBox(
-            "WSL backend is still unavailable",
-            `${reason}\n\nT3 Code will use the Windows backend for this launch and retry WSL the next time the app starts.`,
+            "WSL 后端仍不可用",
+            `${reason}\n\nT3 Code 本次将使用 Windows 后端，下次启动时会重试 WSL。`,
           );
           yield* appSettings.applyWslWindowsFallbackInMemory;
           return true;
@@ -134,8 +134,8 @@ export const layer = Layer.effect(
           reason,
         });
         yield* electronDialog.showErrorBox(
-          "WSL backend couldn't start",
-          `${reason}\n\nFalling back to the Windows backend so T3 Code can open. Re-enable the WSL backend from Settings > Sharing & access once the WSL distro is fixed.`,
+          "WSL 后端无法启动",
+          `${reason}\n\n将切换到 Windows 后端以打开 T3 Code。修复 WSL 发行版后，可在「设置 → 共享与访问」中重新启用 WSL 后端。`,
         );
         // Clear wslOnly too so enabling WSL cannot restore a failed mode.
         // Keep the in-memory fallback if persistence fails.
@@ -176,8 +176,8 @@ export const layer = Layer.effect(
       onStateDirOwned: () =>
         electronDialog
           .showErrorBox(
-            "This T3 home is unavailable",
-            "Another T3 Code server, such as the background service, is using this data directory, or an older background service is set up for it. Stop that server or try `t3 update`. If the older launcher cannot update, run `t3 service uninstall` and optionally reinstall with `t3 service install` from a current CLI. Use `npx t3@latest` if `t3` is missing or outdated, and pass `--base-dir` with the service's T3 home to each command. Then reopen T3 Code. You can also set a separate T3CODE_HOME and pair with the running server.",
+            "此 T3 数据目录不可用",
+            "此数据目录正在被另一个 T3 Code 服务器占用，或者已关联到旧版后台服务。请停止该服务器或尝试运行 t3 update。如果旧启动器无法更新，请运行 t3 service uninstall，并按需使用新版 CLI 执行 t3 service install。如果 t3 缺失或版本过旧，可使用 npx t3@latest；每条命令都需通过 --base-dir 指定后台服务的数据目录。随后重新打开 T3 Code。你也可以设置独立的 T3CODE_HOME，再配对到正在运行的服务器。",
           )
           .pipe(Effect.andThen(electronApp.quit)),
     });

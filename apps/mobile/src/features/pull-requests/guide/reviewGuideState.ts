@@ -24,10 +24,10 @@ export function guideNoticeState(state: {
   if (state.running) {
     return {
       kind: "writing" as const,
-      title: "Rewriting guide",
+      title: "正在重写指南",
       description: guide
-        ? "You can keep reading this guide while the agent writes the update."
-        : "An agent is reading the change and writing the tour. You can leave and come back when it’s ready.",
+        ? "智能体编写新版指南期间，可继续阅读当前指南。"
+        : "智能体正在读取变更并编写导览。你可以先离开，完成后再回来。",
       action: guide ? "Rewriting…" : "Writing guide…",
     };
   }
@@ -51,24 +51,23 @@ export function guideNoticeState(state: {
   if (!state.data) {
     return {
       kind: "loading" as const,
-      title: "Review guide",
-      description: "Checking for a saved guide…",
+      title: "审查指南",
+      description: "正在查找已保存的指南…",
       action: "Loading guide…",
     };
   }
   if (stale) {
     return {
       kind: "stale" as const,
-      title: "New changes since this guide",
-      description: "You can read the previous guide, or rewrite it for the latest changes.",
+      title: "此指南生成后的新变更",
+      description: "你可以阅读上一版指南，或按最新变更重写。",
       action: "Rewrite guide",
     };
   }
   return {
     kind: guide ? ("ready" as const) : ("empty" as const),
-    title: "Review guide",
-    description:
-      "Get a tour of the change, with code excerpts and notes on what needs a closer look.",
+    title: "审查指南",
+    description: "通过代码摘录和重点说明浏览这次变更。",
     action: "Write guide",
   };
 }

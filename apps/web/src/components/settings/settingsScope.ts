@@ -66,7 +66,7 @@ export function resolveSettingsScope(
   ): ResolvedSettingsScope => ({
     kind: "unavailable",
     reason,
-    label: "Unavailable selection",
+    label: "无法选择",
     message,
     members: [],
     environmentIds: [],
@@ -143,7 +143,7 @@ export function resolveSettingsScope(
   }
   return {
     kind: "all",
-    label: "All environments",
+    label: "所有环境",
     members: [],
     environmentIds: environments.map((candidate) => candidate.environmentId),
   };

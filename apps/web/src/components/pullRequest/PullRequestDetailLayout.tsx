@@ -38,10 +38,7 @@ export function PullRequestDetailHeaderBody({
       <div className="mt-4 flex min-h-5 min-w-0 items-center gap-2 text-xs text-muted-foreground">
         <span className="flex min-w-0 flex-1 items-center gap-1.5 font-mono text-xs text-muted-foreground/70">
           {base}
-          <ArrowLeftIcon
-            aria-label="receives changes from"
-            className="size-3.5 shrink-0 opacity-60"
-          />
+          <ArrowLeftIcon aria-label="接收从" className="size-3.5 shrink-0 opacity-60" />
           {head}
         </span>
         <span className="ml-auto inline-flex shrink-0 items-baseline justify-end gap-2">
@@ -80,7 +77,7 @@ export function PullRequestDetailTabBar<Tab extends string>({
   return (
     <nav
       className="col-span-2 flex min-w-0 flex-wrap items-center gap-2 border-t border-border/60 px-4 py-2"
-      aria-label="Pull request tabs"
+      aria-label="拖动请求标签"
       inert={inert}
     >
       <ToggleGroup

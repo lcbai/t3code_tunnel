@@ -11,7 +11,7 @@ export class LocalStorageOperationError extends Schema.TaggedError<LocalStorageO
   },
 ) {
   override get message(): string {
-    return `Failed to ${this.operation} local storage item ${this.storageKey}.`;
+    return `${this.operation} 本地存储项${this.storageKey} 失败。`;
   }
 }
 

@@ -103,7 +103,7 @@ function LinkPullRequestDialog({
     setPending(false);
     if (result._tag === "Failure") {
       const error = squashAtomCommandFailure(result);
-      setSubmitError(error instanceof Error ? error.message : "Could not link the pull request.");
+      setSubmitError(error instanceof Error ? error.message : "无法链接拉取请求。");
       return;
     }
     onOpenChange(false);
@@ -123,16 +123,13 @@ function LinkPullRequestDialog({
     <Dialog open={open} onOpenChange={(next) => (pending ? undefined : onOpenChange(next))}>
       <DialogPopup className="max-w-xl" initialFocus={inputRef}>
         <DialogHeader>
-          <DialogTitle>Link pull request</DialogTitle>
-          <DialogDescription>
-            Attach a pull request to this thread by its URL, or by its number for this thread's
-            repository.
-          </DialogDescription>
+          <DialogTitle>链接拉取请求</DialogTitle>
+          <DialogDescription>将拉取请求附加到此会话的URL，或该会话寄存器的编号。</DialogDescription>
         </DialogHeader>
         <DialogPanel>
           <Input
             ref={inputRef}
-            placeholder="Pull request URL or #42"
+            placeholder="拉取请求地址或编号（如 #42）"
             value={reference}
             onChange={(event) => {
               setDirty(true);
@@ -161,7 +158,7 @@ function LinkPullRequestDialog({
             onClick={() => onOpenChange(false)}
             disabled={pending}
           >
-            Cancel
+            取消
           </Button>
           <Button
             type="button"
@@ -169,7 +166,7 @@ function LinkPullRequestDialog({
             onClick={() => void submit()}
             disabled={pending || resolved === null || "error" in resolved}
           >
-            {pending ? "Linking..." : "Link"}
+            {pending ? "连接中…" : "链接"}
           </Button>
         </DialogFooter>
       </DialogPopup>

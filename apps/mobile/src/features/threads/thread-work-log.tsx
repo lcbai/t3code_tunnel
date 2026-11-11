@@ -779,9 +779,9 @@ function WorkspacePreparationRetryButton(props: {
   return (
     <View className="ml-7 mt-2">
       <Button
-        label="Retry"
+        label="重试"
         tone="secondary"
-        accessibilityLabel="Retry workspace preparation"
+        accessibilityLabel="重新准备工作区"
         disabled={busy}
         onPress={() => {
           setBusy(true);
@@ -864,7 +864,7 @@ const ThreadWorkLogRow = function ThreadWorkLogRow(
     const resetAt = failureItem.failure.resetAt;
     // The reset time is the viewer's local time; naming the zone keeps it unambiguous.
     const resetTime = resetAt
-      ? `${new Date(resetAt).toLocaleString(undefined, {
+      ? `${new Date(resetAt).toLocaleString("zh-CN", {
           month: "short",
           day: "numeric",
           hour: "numeric",
@@ -877,7 +877,7 @@ const ThreadWorkLogRow = function ThreadWorkLogRow(
     return (
       <WorkLogPressable
         accessibilityLabel={warning ? label : `${row.summary}: ${failureItem.failure.message}`}
-        accessibilityHint="Long press to copy."
+        accessibilityHint="长按复制。"
         onLongPress={() => props.onCopyRow(row.id, row.getCopyText())}
       >
         <View className="flex-1 py-1">
@@ -900,14 +900,14 @@ const ThreadWorkLogRow = function ThreadWorkLogRow(
             </Text>
             {props.copied ? (
               <Text className="pr-1 font-t3-medium text-3xs text-adaptive-emerald-600-400">
-                Copied
+                已复制
               </Text>
             ) : null}
             <Text
-              accessibilityLabel={timestamp.toLocaleString()}
+              accessibilityLabel={timestamp.toLocaleString("zh-CN")}
               className="shrink-0 text-xs text-foreground-subtle"
             >
-              {timestamp.toLocaleString(undefined, {
+              {timestamp.toLocaleString("zh-CN", {
                 month: "short",
                 day: "numeric",
                 hour: "numeric",
@@ -1015,10 +1015,10 @@ const ThreadWorkLogRow = function ThreadWorkLogRow(
         accessibilityLabel={failed ? `${accessiblePreview}, tool call failed` : accessiblePreview}
         accessibilityHint={
           notifiedSubagentThreadId !== undefined
-            ? "Opens this agent's thread. Long press to copy."
+            ? "打开此智能体的会话，长按可复制。"
             : canExpand
               ? `Double tap to ${expanded ? "hide" : "show"} full details. Long press to copy.`
-              : "Long press to copy."
+              : "长按复制。"
         }
         accessibilityState={canExpand ? { expanded } : undefined}
         onPress={() => {
@@ -1095,7 +1095,7 @@ const ThreadWorkLogRow = function ThreadWorkLogRow(
         <View className="shrink-0 flex-row items-center gap-px">
           {props.copied ? (
             <Text className="pr-1 font-t3-medium text-3xs text-adaptive-emerald-600-400">
-              Copied
+              已复制
             </Text>
           ) : null}
           {failed && toolIcon !== undefined ? (

@@ -38,10 +38,10 @@ export function useStartTriage() {
       `${message} Run ${CLI_COMMAND} in a terminal on that machine instead.`,
       [
         {
-          text: "Copy command",
+          text: "复制命令",
           onPress: () =>
             void Clipboard.setStringAsync(CLI_COMMAND).catch(() =>
-              Dialog.alert("Could not copy", `Type ${CLI_COMMAND} instead.`),
+              Dialog.alert("Could not copy", `请输入 ${CLI_COMMAND} instead.`),
             ),
         },
         { text: "OK", style: "cancel" },
@@ -105,7 +105,7 @@ export function useStartTriage() {
     setComposerDraftText(draftId, prepared.value.prompt);
     selectDetail({
       name: "Thread",
-      params: { draft: { environmentId, projectId: scratch.value.id, title: "Triage", draftId } },
+      params: { draft: { environmentId, projectId: scratch.value.id, title: "分诊", draftId } },
     });
   };
 }

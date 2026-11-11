@@ -55,7 +55,7 @@ async function renderDiagram(source: string): Promise<Diagram> {
     // Not cached, so the next mount tries again.
     peleLoad = null;
     diagramLoads.delete(source);
-    return { status: "error", message: "The diagram renderer failed to load." };
+    return { status: "error", message: "无法加载图表渲染器。" };
   }
   let type: DiagramType | null = null;
   try {
@@ -75,7 +75,7 @@ async function renderDiagram(source: string): Promise<Diagram> {
     if (!(await load)) {
       typeLoads.delete(type);
       diagramLoads.delete(source);
-      return { status: "error", message: "The diagram renderer failed to load." };
+      return { status: "error", message: "无法加载图表渲染器。" };
     }
   }
   try {
@@ -89,7 +89,7 @@ async function renderDiagram(source: string): Promise<Diagram> {
   } catch (error) {
     return {
       status: "error",
-      message: error instanceof Error ? error.message : "The diagram could not be rendered.",
+      message: error instanceof Error ? error.message : "无法渲染图表。",
     };
   }
 }
@@ -215,14 +215,14 @@ function MermaidBlock(props: MermaidCodeBlockProps & { readonly diagram: Diagram
           {svg ? (
             <HeaderButton
               icon={showCode ? "flowchart" : "chevron.left.forwardslash.chevron.right"}
-              label={showCode ? "Show diagram" : "Show code"}
+              label={showCode ? "显示图表" : "显示代码"}
               color={secondaryColor}
               onPress={() => setShowCode((value) => !value)}
             />
           ) : null}
           <HeaderButton
             icon="doc.on.doc"
-            label="Copy code"
+            label="复制代码"
             color={secondaryColor}
             onPress={() => copyTextWithHaptic(code)}
           />
@@ -231,7 +231,7 @@ function MermaidBlock(props: MermaidCodeBlockProps & { readonly diagram: Diagram
       <View style={styles.content}>
         {diagram?.status === "error" ? (
           <Text style={[styles.error, { color: secondaryColor, fontSize: codeFontSize * 0.85 }]}>
-            Unable to render diagram: {diagram.message}
+            无法渲染图表： {diagram.message}
           </Text>
         ) : null}
         {svg && diagram?.status === "ready" && !showCode ? (
@@ -240,8 +240,8 @@ function MermaidBlock(props: MermaidCodeBlockProps & { readonly diagram: Diagram
           <View style={styles.diagramRow}>
             <Pressable
               accessibilityRole="imagebutton"
-              accessibilityLabel="Mermaid diagram"
-              accessibilityHint="Opens the diagram full screen"
+              accessibilityLabel="Mermaid 图表"
+              accessibilityHint="全屏打开图表"
               onPress={() => {
                 if (expansion) return;
                 void Haptics.selectionAsync();

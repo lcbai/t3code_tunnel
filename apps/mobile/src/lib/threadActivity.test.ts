@@ -612,7 +612,7 @@ describe("buildThreadFeed", () => {
       entry.type === "activity-group" ? entry.activities : [],
     )[0]!;
     expect(workEntryRowLabel(activity.workEntry)).toBe("src/a.ts +2 more");
-    expect(summarizeToolGroup([activity.workEntry]).summary).toBe("Changed 3 files");
+    expect(summarizeToolGroup([activity.workEntry]).summary).toBe("更改了 3 个文件");
   });
 
   it("anchors feedback before later committed turns", () => {
@@ -865,7 +865,7 @@ describe("buildThreadFeed", () => {
     expect(collapsed[1]).toMatchObject({
       type: "run-fold",
       createdAt: "2026-06-20T00:00:01.500Z",
-      label: "Worked for 2s",
+      label: "工作时长 2s",
     });
 
     const expanded = deriveThreadFeedPresentation(feed, latestRun, new Set([runId]));
@@ -1119,10 +1119,10 @@ describe("buildThreadFeed", () => {
     const settled = deriveThreadFeedPresentation(feed(false), null, new Set());
     expect(shape(settled)).toEqual([
       "user:launch",
-      "fold:Worked for 8s",
+      "fold:工作时长 8s",
       "assistant:launch-answer",
       "user:resume",
-      "fold:Worked for 8s",
+      "fold:工作时长 8s",
       "assistant:resume-answer",
     ]);
     const launchFold = settled.find((entry) => entry.type === "run-fold");
@@ -1131,11 +1131,11 @@ describe("buildThreadFeed", () => {
       shape(deriveThreadFeedPresentation(feed(false), null, new Set([launchFold.runId]))),
     ).toEqual([
       "user:launch",
-      "fold:Worked for 8s",
+      "fold:工作时长 8s",
       "activity-group",
       "assistant:launch-answer",
       "user:resume",
-      "fold:Worked for 8s",
+      "fold:工作时长 8s",
       "assistant:resume-answer",
     ]);
 
@@ -1152,7 +1152,7 @@ describe("buildThreadFeed", () => {
       ),
     ).toEqual([
       "user:launch",
-      "fold:Worked for 8s",
+      "fold:工作时长 8s",
       "assistant:launch-answer",
       "user:resume",
       "activity-group",
@@ -1618,7 +1618,7 @@ it("stops stranded thinking after a steer and follows the next thought or tool",
       at,
     );
   expect(rows([first]).find((row) => row.type === "work-toggle")).toMatchObject({
-    summary: "Thinking",
+    summary: "正在思考",
     thought: "first-thought",
     live: true,
     shimmer: true,
@@ -1632,7 +1632,7 @@ it("stops stranded thinking after a steer and follows the next thought or tool",
   const header = afterSteer.find((row) => row.type === "work-toggle");
   if (header?.type !== "work-toggle") throw new Error("Expected thought toggle");
   const expanded = rows([first, steer], new Set([header.groupId]));
-  expect(expanded.find((row) => row.type === "work-toggle")).toMatchObject({ summary: "Thought" });
+  expect(expanded.find((row) => row.type === "work-toggle")).toMatchObject({ summary: "思考" });
   expect(expanded.find((row) => row.type === "activity-group")).toMatchObject({
     activities: [{ lifecycleStatus: "completed", workEntry: { toolLifecycleStatus: "completed" } }],
   });
@@ -1645,7 +1645,7 @@ it("stops stranded thinking after a steer and follows the next thought or tool",
     expect(live).toHaveLength(1);
     expect(live[0]).toMatchObject(
       items.at(-1)!.type === "reasoning"
-        ? { summary: "Thinking", thought: "next-thought" }
+        ? { summary: "正在思考", thought: "next-thought" }
         : { summary: "Running vp" },
     );
   }
@@ -2014,7 +2014,7 @@ it("caps live thought previews while preserving reasoning detail", () => {
     at,
   );
   const header = rows.find((row) => row.type === "work-toggle");
-  expect(header).toMatchObject({ summary: "Thinking", live: true });
+  expect(header).toMatchObject({ summary: "正在思考", live: true });
   expect(header?.thought).toMatch(/^Considering the pending approval/);
   expect(header?.thought).not.toContain("\n");
   expect(header!.thought!.length).toBeLessThanOrEqual(203);

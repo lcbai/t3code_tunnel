@@ -214,8 +214,8 @@ describe("SettingsServerControlsRouteScreen", () => {
         (button) => button.textContent === label,
       )!;
 
-    act(() => toggle("Agent browser access").click());
-    act(() => toggle("Auto-settle merged threads").click());
+    act(() => toggle("智能体浏览器访问权限").click());
+    act(() => toggle("自动收尾已合并的会话").click());
 
     // Both rewrite the whole project override, so a second write planned now would drop the first.
     expect(mocks.updateSettings).toHaveBeenCalledOnce();
@@ -231,7 +231,7 @@ describe("SettingsServerControlsRouteScreen", () => {
     act(() => root.render(<SettingsThreadsRouteScreen />));
 
     const autoSettle = [...container.querySelectorAll<HTMLButtonElement>('[role="switch"]')].find(
-      (button) => button.textContent === "Auto-settle merged threads",
+      (button) => button.textContent === "自动收尾已合并的会话",
     )!;
     expect(autoSettle.disabled).toBe(true);
   });

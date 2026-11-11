@@ -74,7 +74,7 @@ export function ComposerContextAttachment(props: {
       const cause = squashAtomCommandFailure(result);
       Dialog.alert(
         "Could not open attachment",
-        cause instanceof Error ? cause.message : "Try again.",
+        cause instanceof Error ? cause.message : "请重试。",
       );
     }
   };
@@ -83,7 +83,7 @@ export function ComposerContextAttachment(props: {
       {record.kind === "image" && uri ? (
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={`Preview ${record.name}`}
+          accessibilityLabel={`预览 ${record.name}`}
           onPress={() => setPreviewOpen(true)}
         >
           <Image
@@ -99,13 +99,11 @@ export function ComposerContextAttachment(props: {
         </Pressable>
       ) : null}
       {error || (!local && asset._tag === "Failure") ? (
-        <Text className="text-foreground-muted">
-          {error ?? "Attachment unavailable. Reconnect and try again."}
-        </Text>
+        <Text className="text-foreground-muted">{error ?? "附件不可用。请重新连接后重试。"}</Text>
       ) : null}
       <PresentationSource identifier={shareSourceIdentifier}>
         <Button
-          label={sharing ? "Opening attachment…" : "Open or share attachment"}
+          label={sharing ? "正在打开附件…" : "打开或分享附件"}
           tone="secondary"
           disabled={sharing}
           onPress={() => void share()}

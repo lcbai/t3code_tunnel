@@ -27,7 +27,7 @@ export function PullRequestOverviewLoading({
   return (
     <View
       className="gap-5"
-      accessibilityLabel="Loading pull request details"
+      accessibilityLabel="正在加载拉取请求详情"
       accessibilityState={{ busy: true }}
     >
       <PullRequestStackCard params={params} state={stack} />
@@ -36,12 +36,12 @@ export function PullRequestOverviewLoading({
           compact
           title={
             summary.checksState === "passing"
-              ? "Checks completed"
+              ? "检查已完成"
               : summary.checksState === "failing"
-                ? "Checks failing"
+                ? "检查未通过"
                 : summary.checksState === "pending"
-                  ? "Checks running"
-                  : "Checks"
+                  ? "正在检查"
+                  : "检查"
           }
           icon={
             summary.checksState === "passing"
@@ -62,7 +62,7 @@ export function PullRequestOverviewLoading({
         </PullRequestCardRow>
         <PullRequestCardRow
           compact
-          title={review?.accessibleLabel ?? "Reviews"}
+          title={review?.accessibleLabel ?? "审查记录"}
           icon={review?.icon ?? "bubble.left"}
           tint={review?.tint}
         >
@@ -72,10 +72,10 @@ export function PullRequestOverviewLoading({
           compact
           title={
             conflicting
-              ? `Conflicts with ${summary.baseBranch}`
+              ? `冲突分支：${summary.baseBranch}`
               : clean
-                ? `No conflicts with ${summary.baseBranch}`
-                : "Branch"
+                ? `无冲突分支：${summary.baseBranch}`
+                : "分支"
           }
           icon={
             conflicting ? PullRequestGlyph.conflicting : clean ? "checkmark.circle" : "arrow.branch"
@@ -100,7 +100,7 @@ export function PullRequestOverviewLoading({
         </View>
       ) : null}
       <View className="gap-3">
-        <PullRequestSectionHeading>Description</PullRequestSectionHeading>
+        <PullRequestSectionHeading>描述</PullRequestSectionHeading>
         <View className="gap-3 py-1">
           <View className="h-4 w-full rounded bg-subtle-strong" />
           <View className="h-4 w-full rounded bg-subtle-strong" />

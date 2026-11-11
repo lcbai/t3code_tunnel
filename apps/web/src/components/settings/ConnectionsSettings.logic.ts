@@ -64,8 +64,8 @@ export function missingTailscaleEndpointDescription(
   state: Pick<DesktopServerExposureState, "mode" | "tailscaleServeEnabled"> | null,
 ): string {
   return state && state.mode !== "network-accessible" && !state.tailscaleServeEnabled
-    ? "Turn on Network access to detect Tailscale."
-    : "Start Tailscale to set up HTTPS access through MagicDNS.";
+    ? "开启网络访问以检测Tailscale。"
+    : "启动Tailscale通过 MagicDNS 设置HTTPS 访问。";
 }
 
 export function resolveTailscaleServeBaseUrl(
@@ -97,11 +97,9 @@ export function isWslSettingsRowVisible(input: {
  * including retryable failures. Rechecks retain downloaded-update labels; `state` is null outside desktop.
  */
 export function resolveLocalVersionStatusLabel(state: DesktopUpdateState | null): string {
-  if (!state) return "Up to date";
+  if (!state) return "最新数据";
   if (state.status === "downloading") {
-    return state.availableVersion
-      ? `Downloading update ${state.availableVersion}`
-      : "Downloading update";
+    return state.availableVersion ? `正在下载更新${state.availableVersion}` : "正在下载更新";
   }
   const action = resolveDesktopUpdateButtonAction(state);
   if (
@@ -110,14 +108,12 @@ export function resolveLocalVersionStatusLabel(state: DesktopUpdateState | null)
     (state.status === "checking" && state.downloadedVersion !== null)
   ) {
     const version = getDesktopUpdateDownloadedVersion(state);
-    return version ? `Update ${version} downloaded` : "Update downloaded";
+    return version ? `更新${version} 下载` : "已下载更新";
   }
   if (action === "download") {
-    return state.availableVersion
-      ? `Update ${state.availableVersion} available`
-      : "Update available";
+    return state.availableVersion ? `更新${state.availableVersion} 可用` : "更新可用";
   }
-  return "Up to date";
+  return "最新数据";
 }
 
 export type QrEndpointOption = {
@@ -159,7 +155,7 @@ export async function applyWslEnableSelection(input: {
   return await bridge.setWslBackendEnabled(true);
 }
 
-const accessTimestampFormatter = new Intl.DateTimeFormat(undefined, {
+const accessTimestampFormatter = new Intl.DateTimeFormat("zh-CN", {
   dateStyle: "medium",
   timeStyle: "short",
 });

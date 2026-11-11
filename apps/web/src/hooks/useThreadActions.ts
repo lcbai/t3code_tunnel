@@ -192,8 +192,8 @@ export async function navigateAfterThreadDeletion(navigate: () => Promise<void>)
     toastManager.add(
       stackedThreadToast({
         type: "error",
-        title: "Thread deleted, but navigation failed",
-        description: error instanceof Error ? error.message : "An error occurred.",
+        title: "会话已删除，但导航失败",
+        description: error instanceof Error ? error.message : "发生了错误。",
       }),
     );
   }
@@ -266,7 +266,7 @@ function threadOperationFailure(target: ScopedThreadRef) {
     : AsyncResult.failure(
         Cause.fail(
           new EnvironmentAuthorizationError({
-            message: "This connection cannot change threads.",
+            message: "此连接不能改变会话。",
             requiredScope: AuthOrchestrationOperateScope,
           }),
         ),
@@ -647,7 +647,7 @@ export function useThreadActions() {
       : AsyncResult.failure(
           Cause.fail(
             new EnvironmentAuthorizationError({
-              message: "This connection can no longer remove worktrees.",
+              message: "此连接已无法移除工作树。",
               requiredScope: AuthSourceControlWriteScope,
             }),
           ),
@@ -678,11 +678,9 @@ export function useThreadActions() {
       toastManager.add(
         stackedThreadToast({
           type: "error",
-          title: removalFailed
-            ? "Failed to delete worktree"
-            : "Worktree deleted, but Git status refresh failed",
+          title: removalFailed ? "删除工作树失败" : "Worktree 已删除，但Git 状态刷新失败",
           description: removalFailed
-            ? `Could not remove ${displayWorktreePath ?? orphanedWorktreePath}. ${message}`
+            ? `无法删除${displayWorktreePath ?? orphanedWorktreePath}.${message}`
             : message,
         }),
       );
@@ -831,7 +829,7 @@ export function useThreadActions() {
     const resolved = resolveThreadTarget(target);
     const confirmationResult = await requestThreadUnpinConfirmation({
       enabled: confirmThreadUnpin,
-      title: resolved?.thread.title ?? "this thread",
+      title: resolved?.thread.title ?? "此会话",
       confirm: localApi ? (message) => localApi.dialogs.confirm(message) : null,
     });
     if (confirmationResult._tag === "Failure") {

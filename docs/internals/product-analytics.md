@@ -20,17 +20,13 @@ with it. Who an install belongs to is a separate fact, sent as
 a rule can change and apply to all history.
 
 [Owner sources](../../apps/server/src/telemetry/Identify.ts), strongest first:
-T3 Connect, then the OpenAI and Claude person ids, then the client device. The
-server reports what it can read itself: the linked Connect account and provider
-logins. A connecting client reports its signed-in Connect account and its device,
-which links every environment opened from one phone, browser, or desktop. Use the
-OpenAI `user_id` claim, not the Codex `account_id` (the ChatGPT workspace, which a
-whole Team shares) or the token `sub` (one per login method). Two Connect accounts are never the same person, whatever
-weaker ids they share.
+OpenAI and Claude person IDs, followed by the client device. The server reports
+provider identities and the connecting client reports its device identifier. Use the
+OpenAI `user_id` claim: the Codex `account_id` is shared within a ChatGPT workspace,
+and the token `sub` can vary by login method.
 
 Every id is SHA-256 hashed with [one helper](../../packages/shared/src/telemetryId.ts)
-on both sides, so a Connect account hashes the same on the client and the server.
-The server accepts only hashes from clients.
+on both sides. The server accepts only hashes from clients.
 
 ## Attribution boundaries
 
@@ -47,8 +43,7 @@ runs; use `surface` for the connected client.
 
 ## Interpreting events
 
-Use `client.turn.requested` for active-use reports. There is no connection event,
-because T3 Connect sessions expire hourly and each reconnect would count again.
+Use `client.turn.requested` for active-use reports. Reconnects do not count as active use.
 A command whose id was already accepted is a retry, so it records nothing again.
 One identity can appear in several client groups during a period; adding those
 groups double-counts users.

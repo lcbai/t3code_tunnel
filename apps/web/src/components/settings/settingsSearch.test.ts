@@ -61,7 +61,7 @@ describe("searchSettings", () => {
   it("matches titles, sections, and remembered setting details", () => {
     expect(searchSettings("word", ITEMS).map((item) => item.id)).toEqual(["word-wrap"]);
     expect(searchSettings("network", ITEMS).map((item) => item.id)).toEqual(["network-access"]);
-    expect(searchSettings("sharing", ITEMS).map((item) => item.id)).toEqual(["network-access"]);
+    expect(searchSettings("共享", ITEMS).map((item) => item.id)).toEqual(["network-access"]);
     expect(searchSettings("claude", ITEMS).map((item) => item.id)).toEqual(["providers"]);
     expect(searchSettings("long lines", ITEMS).map((item) => item.id)).toEqual(["word-wrap"]);
     for (const query of ["fallback", "fallback agent", "fallback model"]) {
@@ -80,8 +80,8 @@ describe("searchSettings", () => {
 
   it("matches normalized title substrings", () => {
     expect(searchSettings("  WORD   WRAP  ", ITEMS).map((item) => item.id)).toEqual(["word-wrap"]);
-    expect(searchSettings("glass").map((item) => item.id)).toEqual(["setting-glass-opacity"]);
-    expect(searchSettings("panel animations").map((item) => item.id)).toEqual(["panel-animations"]);
+    expect(searchSettings("磨砂").map((item) => item.id)).toEqual(["setting-glass-opacity"]);
+    expect(searchSettings("面板动画").map((item) => item.id)).toEqual(["panel-animations"]);
     expect(searchSettings("thè\u{1ab0}mes")[0]?.id).toBe("theme");
     const localeLowerCase = vi.spyOn(String.prototype, "toLocaleLowerCase").mockReturnValue("gıt");
     try {
@@ -113,7 +113,6 @@ describe("searchSettings", () => {
 
   it("hides settings whose controls are unavailable", () => {
     const available = filterAvailableSettingsSearchItems({
-      hasCloudPublicConfig: false,
       hasEnvironment: false,
       hasProviderSettingsEnvironment: false,
       canManageLocalBackend: false,
@@ -145,7 +144,6 @@ describe("searchSettings", () => {
 
   it("finds linked environments on a remote host without local maintenance access", () => {
     const availability = {
-      hasCloudPublicConfig: false,
       hasEnvironment: true,
       hasProviderSettingsEnvironment: true,
       canManageLocalBackend: false,
@@ -155,7 +153,7 @@ describe("searchSettings", () => {
     };
     const results = (hasPeerLinkHost: boolean) =>
       searchSettings(
-        "linked environments",
+        "关联环境",
         filterAvailableSettingsSearchItems({ ...availability, hasPeerLinkHost }),
       );
     expect(results(false).map((item) => item.id)).not.toContain("linked-environments");
@@ -170,7 +168,6 @@ describe("searchSettings", () => {
 
   it("finds the Welcome page only where a primary computer can open it", () => {
     const availability = {
-      hasCloudPublicConfig: true,
       hasEnvironment: true,
       hasProviderSettingsEnvironment: true,
       canManageLocalBackend: false,
@@ -179,7 +176,7 @@ describe("searchSettings", () => {
     };
     const ids = (hasPrimaryEnvironment: boolean) =>
       searchSettings(
-        "welcome page",
+        "欢迎页",
         filterAvailableSettingsSearchItems({ ...availability, hasPrimaryEnvironment }),
       ).map((item) => item.id);
     // Hosted web reaches remote computers but has no primary one to set up.
@@ -191,7 +188,7 @@ describe("searchSettings", () => {
     expect(searchSettings("toggle sidebar")[0]?.id).toBe("keybinding-sidebar.toggle");
     expect(searchSettings("sidebar.toggle")[0]?.id).toBe("keybinding-sidebar.toggle");
     expect(searchSettings("mod+b")[0]?.id).toBe("keybinding-sidebar.toggle");
-    expect(searchSettings("copy link")[0]).toMatchObject({
+    expect(searchSettings("复制链接")[0]).toMatchObject({
       id: "keybinding-thread.copyReference",
       to: "/settings/keybindings",
     });
@@ -207,14 +204,14 @@ describe("searchSettings", () => {
 
   it("finds rows by the titles shown on their pages", () => {
     for (const [title, id] of [
-      ["Automatic worktree cleanup", "storage-worktrees"],
-      ["Delete settled worktrees", "storage-worktrees"],
-      ["Delete old browser artifacts", "storage-artifacts"],
-      ["Delete old rotated logs", "storage-artifacts"],
-      ["Custom search URL", "browser-search-engine"],
-      ["Native sessions", "providers"],
-      ["CODEX_HOME path", "providers"],
-      ["Shadow home path", "providers"],
+      ["自动清理工作树", "storage-worktrees"],
+      ["删除已结束会话的工作树", "storage-worktrees"],
+      ["删除旧浏览器文件", "storage-artifacts"],
+      ["删除旧轮转日志", "storage-artifacts"],
+      ["自定义搜索地址", "browser-search-engine"],
+      ["原生会话", "providers"],
+      ["CODEX_HOME 路径", "providers"],
+      ["隔离目录路径", "providers"],
     ] as const) {
       expect(searchSettings(title)[0]?.id, title).toBe(id);
     }
@@ -228,7 +225,7 @@ describe("searchSettings", () => {
 
 describe("settings search targets", () => {
   it("requires an environment for the resolved telemetry export destination", () => {
-    const result = searchSettings("OpenTelemetry export").find(
+    const result = searchSettings("OpenTelemetry 导出").find(
       (item) => item.id === "telemetry-export",
     )!;
     const target = getSettingsSearchTargetScope(result.targetId ?? result.id)!;
@@ -278,14 +275,17 @@ describe("auto-settlement search availability", () => {
     const availability = getThreadAutoSettlementSearchAvailability(environments);
     expect(availability.eligibleEnvironmentIds).toEqual([capable.environmentId]);
     const items = filterAvailableSettingsSearchItems({
-      hasCloudPublicConfig: false,
       hasEnvironment: true,
       hasProviderSettingsEnvironment: true,
       canManageLocalBackend: false,
       isWslSettingsRowVisible: false,
       hasThreadAutoSettlement: availability.eligibleEnvironmentIds.length > 0,
     });
-    expect(searchSettings("auto-settle", items).map((item) => item.id)).toEqual([
+    expect(
+      searchSettings("自动结束", items)
+        .map((item) => item.id)
+        .sort(),
+    ).toEqual([
       "auto-settle-inactive-threads",
       "auto-settle-merged-threads",
       "days-before-auto-settle",
@@ -327,7 +327,7 @@ describe("source control host search items", () => {
 
   it("lists a host by its label, its keywords, and its settings fields", () => {
     const items = sourceControlHostSearchItems([UNKNOWN_SOURCE_CONTROL_CLIENT, definition]);
-    expect(items.map((item) => item.title)).toEqual(["Example credentials"]);
+    expect(items.map((item) => item.title)).toEqual(["Example 凭据"]);
     expect(searchSettings("sample apitoken", items).map((item) => item.id)).toEqual([
       sourceControlHostSettingsSearchId("example"),
     ]);
@@ -347,7 +347,7 @@ describe("source control host search items", () => {
         },
       },
     ]);
-    expect(items.map((item) => item.title)).toEqual(["Example accounts and token"]);
+    expect(items.map((item) => item.title)).toEqual(["Example 账户和令牌"]);
     expect(searchSettings("ex switch accounts", items)).toHaveLength(1);
   });
 

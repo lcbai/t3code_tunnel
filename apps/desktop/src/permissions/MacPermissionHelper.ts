@@ -40,9 +40,9 @@ const escapeHtml = (value: string) =>
 
 function helperHtml(permission: MacPermission, icon: string) {
   const title = MAC_PERMISSION_TITLES[permission];
-  return `<!doctype html><html lang="en"><head><meta charset="utf-8">
+  return `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline'">
-<title>Set up ${title}</title><style>
+<title>设置${title}</title><style>
 :root { color-scheme: light dark; --base: #fff; --row: #e7e7e7; --text: #292929; --line: #e3e3e3; }
 @media (prefers-color-scheme: dark) { :root { --base: #242424; --row: #383838; --text: #f5f5f5; --line: #484848; } }
 * { box-sizing: border-box; }
@@ -58,9 +58,9 @@ button:focus-visible { outline: 2px solid #007aff; outline-offset: -2px; }
 #app:active { cursor: grabbing; }
 img { width: 32px; height: 32px; pointer-events: none; }
 </style></head><body><main id="panel">
-<button id="close" aria-label="Close permission helper">×</button>
-<header>↑ Drag T3 Code into the list above</header>
-<button id="app" draggable="true" aria-label="Drag T3 Code to System Settings, or click to reveal in Finder"><img src="${escapeHtml(icon)}" alt="" draggable="false">T3 Code</button>
+<button id="close" aria-label="关闭权限助手">×</button>
+<header>↑ 将 T3 Code 拖到上方的列表</header>
+<button id="app" draggable="true" aria-label="将 T3 Code 拖到系统设置，或点击以在访达中显示"><img src="${escapeHtml(icon)}" alt="" draggable="false">T3 Code</button>
 </main></body></html>`;
 }
 
@@ -92,7 +92,7 @@ export class MacPermissionHelper {
     const appIcon = iconPaths
       .map((iconPath) => Electron.nativeImage.createFromPath(iconPath))
       .find((image) => !image.isEmpty());
-    if (!appIcon) throw new Error("The packaged T3 Code icon is missing.");
+    if (!appIcon) throw new Error("找不到安装包中的 T3 Code 图标。");
     const icon = appIcon.resize({ width: 64, height: 64 });
     const window = new Electron.BrowserWindow({
       width: 560,
@@ -109,7 +109,7 @@ export class MacPermissionHelper {
       fullscreenable: false,
       alwaysOnTop: true,
       skipTaskbar: true,
-      title: `Set up ${MAC_PERMISSION_TITLES[permission]}`,
+      title: `设置${MAC_PERMISSION_TITLES[permission]}`,
       webPreferences: { preload, sandbox: true, contextIsolation: true, nodeIntegration: false },
     });
     this.window = window;

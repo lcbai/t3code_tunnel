@@ -80,14 +80,14 @@ const KINDS: Record<
   }
 > = {
   wired: {
-    label: "Wired",
-    row: "Other wired",
-    rowDescription: "Headsets and USB microphones not listed here",
+    label: "有线",
+    row: "其他有线设备",
+    rowDescription: "未在此处列出的耳麦和 USB 麦克风",
     icon: "cable.connector",
   },
   bluetooth: {
-    label: "Bluetooth",
-    row: "Other Bluetooth",
+    label: "蓝牙",
+    row: "其他蓝牙设备",
     rowDescription:
       Platform.OS === "android"
         ? "Earbuds, headsets, and cars, including Android Auto, not listed here"
@@ -95,9 +95,9 @@ const KINDS: Record<
     icon: "headphones",
   },
   builtIn: {
-    label: "Built-in",
-    row: "Built-in microphone",
-    rowDescription: "The microphone on this device",
+    label: "内置",
+    row: "内置麦克风",
+    rowDescription: "此设备上的麦克风",
     icon: "iphone",
   },
   carPlay: {
@@ -118,8 +118,8 @@ function saveDestination(id: EnvironmentId | null) {
     chooseVoiceDestination(id);
   } catch {
     Dialog.alert(
-      "Could not save transcription choice",
-      "Dictation on an environment is off for this session. Save again before closing the app, or your previous choice may return when it restarts.",
+      "无法保存转录选项",
+      "本次已关闭环境语音输入。关闭应用前请再次保存，否则重启后可能恢复之前的选择。",
     );
   }
 }
@@ -144,13 +144,13 @@ function EnvironmentChoice({
       description={
         !usable
           ? environment.connection.phase !== "connected"
-            ? "Not connected"
-            : "Transcription unavailable"
+            ? "未连接"
+            : "转录不可用"
           : status?.supported === false
             ? status.reason
             : status?.state === "missing-model"
-              ? "No transcription model installed"
-              : (environment.displayUrl ?? "Send finished recordings to this environment.")
+              ? "尚未安装转录模型"
+              : (environment.displayUrl ?? "将录制完成的音频发送到此环境。")
       }
       separated
       onPress={() => {
@@ -158,7 +158,7 @@ function EnvironmentChoice({
           Dialog.confirm({
             title: `Send microphone audio to ${environment.label}?`,
             message: `Finished recordings will be sent to ${environment.displayUrl ?? environment.label} for transcription. You can switch back to This device at any time.`,
-            confirmText: "Use environment",
+            confirmText: "使用环境",
             onConfirm: () => saveDestination(environment.environmentId),
           });
       }}
@@ -222,7 +222,7 @@ export function SettingsVoiceRouteScreen() {
   const dragTo = drag === null ? -1 : dragFrom + dropSteps(dragFrom, drag.translation);
 
   return (
-    <SettingsScreen title="Voice">
+    <SettingsScreen title="语音">
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         showsVerticalScrollIndicator={false}
@@ -230,10 +230,10 @@ export function SettingsVoiceRouteScreen() {
         contentContainerClassName="gap-3 px-5 pt-4"
         contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 18) + 18 }}
       >
-        <SettingsSection title="Transcribe on">
+        <SettingsSection title="转录位置">
           <ListChoiceRow
-            label="This device"
-            description="Audio stays on this device and is transcribed here."
+            label="此设备"
+            description="音频保存在此设备，并在此设备上转录。"
             selected={!grant}
             onPress={() => saveDestination(null)}
           />
@@ -250,8 +250,8 @@ export function SettingsVoiceRouteScreen() {
             ))}
           {isReady && grant && !grantEnvironment ? (
             <ListChoiceRow
-              label="Previously selected environment"
-              description="No longer paired"
+              label="先前选择的环境"
+              description="已解除配对"
               separated
               selected
               disabled
@@ -290,10 +290,10 @@ export function SettingsVoiceRouteScreen() {
         ) : null}
         {permission === "ask" || permission === "denied" ? (
           <>
-            <SettingsSection title="Microphone access">
+            <SettingsSection title="麦克风权限">
               <SettingsActionRow
                 icon="mic"
-                label={permission === "ask" ? "Allow microphone access" : "Open Settings"}
+                label={permission === "ask" ? "允许访问麦克风" : "打开设置"}
                 onPress={
                   permission === "ask" ? requestPermission : () => void Linking.openSettings()
                 }
@@ -301,12 +301,12 @@ export function SettingsVoiceRouteScreen() {
             </SettingsSection>
             <Text className="px-2 text-sm text-foreground-muted">
               {permission === "ask"
-                ? "Allow microphone access to record and to see your microphones."
-                : "Turn on microphone access for T3 Code in Settings to use voice input."}
+                ? "请允许访问麦克风，以便录音和查看可用设备。"
+                : "请在系统设置中为 T3 Code 开启麦克风权限，以使用语音输入。"}
             </Text>
           </>
         ) : null}
-        <SettingsSection title="Preferred order">
+        <SettingsSection title="首选顺序">
           {entries.map((entry, index) => {
             const key = microphoneEntryKey(entry);
             const shift =
@@ -341,11 +341,9 @@ export function SettingsVoiceRouteScreen() {
           })}
         </SettingsSection>
         <Text className="px-2 text-sm text-foreground-muted">
-          Voice input uses the first connected microphone in this list. A wired or Bluetooth
-          microphone is added by name the first time you dictate with it connected; until then it
-          falls under Other. Swipe left on a named microphone to forget it.
+          语音输入使用列表中第一个已连接的麦克风。首次使用有线或蓝牙麦克风输入时，系统会按名称添加该设备；此前它归在「其他」中。向左滑动可移除已命名的麦克风。
           {Platform.OS === "android"
-            ? " Android may still use a different microphone if the preferred one can’t be routed."
+            ? "如果无法使用首选麦克风，Android 可能会改用其他麦克风。"
             : null}
         </Text>
       </ScrollView>
@@ -387,7 +385,7 @@ function MicrophoneRow(props: {
       <View
         accessible
         accessibilityLabel={`${title}, ${kind.label}, ${props.position} of ${props.count}`}
-        accessibilityActions={onForget ? [{ name: "forget", label: "Forget" }] : undefined}
+        accessibilityActions={onForget ? [{ name: "forget", label: "移除" }] : undefined}
         onAccessibilityAction={({ nativeEvent }) => {
           if (nativeEvent.actionName === "forget") onForget?.();
         }}
@@ -428,10 +426,10 @@ function MicrophoneRow(props: {
           fullSwipeWidth={windowWidth - 40}
           onDelete={onForget}
           primaryAction={{
-            accessibilityLabel: `Forget ${title}`,
+            accessibilityLabel: `移除 ${title}`,
             destructive: true,
             icon: "trash",
-            label: "Forget",
+            label: "移除",
             onPress: onForget,
           }}
           secondaryAction={null}

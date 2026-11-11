@@ -276,7 +276,7 @@ function ComposerMentionNodeView({ node }: NodeViewProps) {
       dir="ltr"
       render={<button type="button" />}
       onClick={() => actions.openMention(path)}
-      aria-label={`Preview ${path}`}
+      aria-label={`预览${path}`}
       contentEditable={false}
       spellCheck={false}
       data-composer-mention-chip="true"

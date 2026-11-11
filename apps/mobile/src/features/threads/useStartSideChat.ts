@@ -39,7 +39,7 @@ export function useStartSideChat() {
   ) => {
     if (isAtomCommandInterrupted(failure)) return;
     const error = squashAtomCommandFailure(failure);
-    Dialog.alert("Side chat not started", error instanceof Error ? error.message : fallback);
+    Dialog.alert("尚未开始旁支会话", error instanceof Error ? error.message : fallback);
   };
 
   return async (
@@ -53,7 +53,7 @@ export function useStartSideChat() {
       input: {
         sourceThreadId: source.threadId,
         targetThreadId,
-        title: "Side chat",
+        title: "旁支会话",
         creationSource: "mobile",
       },
     });
@@ -69,16 +69,13 @@ export function useStartSideChat() {
       });
     const targetRef = scopeThreadRef(source.environmentId, targetThreadId);
     if (!(await waitForThreadShell(targetRef))) {
-      Dialog.alert(
-        "Side chat not started",
-        "The side chat was created, but it did not reach this device.",
-      );
+      Dialog.alert("尚未开始旁支会话", "旁支会话已创建，但尚未同步到此设备。");
       discard();
       return false;
     }
     const sideChat = appAtomRegistry.get(environmentThreadShells.threadShellAtom(targetRef));
     if (sideChat === null) {
-      Dialog.alert("Side chat not started", "The side chat is no longer available.");
+      Dialog.alert("尚未开始旁支会话", "旁支会话已不可用。");
       discard();
       return false;
     }

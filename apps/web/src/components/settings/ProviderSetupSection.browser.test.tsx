@@ -193,7 +193,7 @@ describe("Antigravity setup", () => {
     setup.startInstall.mockReturnValueOnce(command);
     await using screen = await renderSetup({ provider: { ...provider, installed: false } });
 
-    await screen.click("Install Antigravity");
+    await screen.click("安装Antigravity");
     await expect
       .element(screen.getByRole("status").filter({ hasText: "Starting installation." }))
       .toBeVisible();
@@ -206,11 +206,9 @@ describe("Antigravity setup", () => {
       totalBytes: 2_000_000,
     };
     await publish();
-    await expect
-      .element(screen.getByRole("button", { name: "Cancel installation" }))
-      .toBeDisabled();
+    await expect.element(screen.getByRole("button", { name: "取消安装" })).toBeDisabled();
     await act(async () => resolveStart());
-    await expect.element(screen.getByRole("button", { name: "Cancel installation" })).toBeEnabled();
+    await expect.element(screen.getByRole("button", { name: "取消安装" })).toBeEnabled();
     await expect
       .element(screen.getByRole("status").filter({ hasText: "Downloading 1.0 MB of 2.0 MB." }))
       .toBeVisible();
@@ -221,7 +219,7 @@ describe("Antigravity setup", () => {
     const callbackUrl = "http://127.0.0.1:5555/?state=test-only&code=test-only";
     await using screen = await renderSetup();
     await userEvent.fill(screen.callbackInput(), callbackUrl);
-    await screen.click("Continue");
+    await screen.click("继续");
 
     expect(setup.completeAuth).toHaveBeenCalledWith({
       environmentId,
@@ -278,7 +276,7 @@ describe("Antigravity setup", () => {
       provider: { ...provider, installed: false },
       binaryPath: "/missing/antigravity",
     });
-    expect(screen.button("Sign in")?.disabled).toBe(true);
+    expect(screen.button("登录")?.disabled).toBe(true);
     expect(setup.startAuth).not.toHaveBeenCalled();
   });
 });

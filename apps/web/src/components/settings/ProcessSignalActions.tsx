@@ -17,7 +17,7 @@ export function ProcessSignalActions({
           render={
             <InlineButton
               disabled={disabled}
-              aria-label="Send SIGINT"
+              aria-label="发送签名"
               tone="muted"
               onClick={() => onSignal("SIGINT")}
             >
@@ -25,14 +25,14 @@ export function ProcessSignalActions({
             </InlineButton>
           }
         />
-        <TooltipPopup side="top">Send SIGINT</TooltipPopup>
+        <TooltipPopup side="top">发送签名</TooltipPopup>
       </Tooltip>
       <Tooltip>
         <TooltipTrigger
           render={
             <InlineButton
               disabled={disabled}
-              aria-label="Send SIGKILL"
+              aria-label="发送SIGKIL"
               tone="destructive"
               onClick={() => onSignal("SIGKILL")}
             >
@@ -40,7 +40,7 @@ export function ProcessSignalActions({
             </InlineButton>
           }
         />
-        <TooltipPopup side="top">Send SIGKILL</TooltipPopup>
+        <TooltipPopup side="top">发送SIGKIL</TooltipPopup>
       </Tooltip>
     </div>
   );

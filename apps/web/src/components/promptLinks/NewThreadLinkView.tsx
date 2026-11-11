@@ -346,10 +346,10 @@ export function NewThreadLinkView({ link }: { readonly link: NewThreadLink }) {
 
   switch (state.status) {
     case "opening":
-      return <LinkPage title="Opening the link..." />;
+      return <LinkPage title="正在打开链接…" />;
     case "opened":
       return (
-        <LinkPage title="This link is open">
+        <LinkPage title="链接已打开">
           <Button
             size="sm"
             variant="outline"
@@ -359,26 +359,21 @@ export function NewThreadLinkView({ link }: { readonly link: NewThreadLink }) {
               setState({ status: "opening" });
             }}
           >
-            Open it again
+            重新打开
           </Button>
         </LinkPage>
       );
     case "failed":
-      return (
-        <LinkPage title={state.title ?? "Could not open the link"} description={state.message} />
-      );
+      return <LinkPage title={state.title ?? "无法打开链接"} description={state.message} />;
     case "missing-repository": {
       const name = `${state.repository.owner}/${state.repository.name}`;
       return (
-        <LinkPage
-          title={`You don't have ${name}`}
-          description="Clone it to work on it here, or start without a project."
-        >
+        <LinkPage title={`尚未添加 ${name}`} description="可以先克隆仓库，也可以直接开始会话。">
           <Button size="sm" onClick={() => void cloneRepository(state.repository)}>
             Clone {name}
           </Button>
           <Button size="sm" variant="outline" onClick={openWithoutProject}>
-            Use without project
+            不选择项目
           </Button>
         </LinkPage>
       );
@@ -416,8 +411,8 @@ function PullRequestLinkCheckout({
   const { owner, name, number } = link.pullRequest;
   return (
     <LinkPage
-      title={`Check out ${owner}/${name}#${number}?`}
-      description="This puts the pull request's code in a new worktree and runs your project's setup script on it."
+      title={`要检出 ${owner}/${name}#${number} 吗？`}
+      description="在新工作树中检出此拉取请求的代码，并运行项目的初始化脚本。"
     >
       <Button
         size="sm"
@@ -429,7 +424,7 @@ function PullRequestLinkCheckout({
           )
         }
       >
-        {handoff !== null ? "Checking out..." : "Check out"}
+        {handoff !== null ? "正在检出…" : "检出"}
       </Button>
     </LinkPage>
   );

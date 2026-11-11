@@ -23,12 +23,12 @@ export function buildHomeListFilterMenuItems(props: {
   const items: AppBarMenuItem[] = [
     {
       id: "environment",
-      title: "Environment",
+      title: "环境",
       items: [
         {
           id: "environment:all",
-          title: "All environments",
-          subtitle: "Show threads from every environment",
+          title: "所有环境",
+          subtitle: "显示所有环境的会话",
           selected: props.selectedEnvironmentId === null,
           onPress: () => props.onEnvironmentChange(null),
         },
@@ -45,12 +45,12 @@ export function buildHomeListFilterMenuItems(props: {
   if (props.projects.length > 0) {
     items.push({
       id: "project",
-      title: "Project",
+      title: "项目",
       items: [
         {
           id: "project:all",
-          title: "All projects",
-          subtitle: "Show threads from every project",
+          title: "所有项目",
+          subtitle: "显示所有项目的会话",
           selected: props.selectedProjectKey === null,
           onPress: () => props.onProjectChange(null),
         },

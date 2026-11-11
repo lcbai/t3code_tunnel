@@ -16,7 +16,7 @@ export function AutoSettleDaysField(props: AutoSettleDaysFieldProps) {
       {...props}
       min={MIN_SIDEBAR_AUTO_SETTLE_AFTER_DAYS}
       max={MAX_SIDEBAR_AUTO_SETTLE_AFTER_DAYS}
-      label="Days before auto-settle"
+      label="自动收尾前等待的天数"
       formatValue={(value) => `${value} ${value === 1 ? "day" : "days"}`}
     />
   );

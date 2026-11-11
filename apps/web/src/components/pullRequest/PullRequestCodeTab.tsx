@@ -283,7 +283,7 @@ function FileViewedToggle({
         onClick={(event) => event.stopPropagation()}
       >
         <Checkbox
-          aria-label={stale ? "Changed" : "Viewed"}
+          aria-label={stale ? "已更改" : "已查看"}
           checked={viewed}
           onCheckedChange={(next, details) =>
             viewedFiles.setFileViewed(
@@ -296,14 +296,12 @@ function FileViewedToggle({
         {stale ? (
           <Tooltip>
             <TooltipTrigger render={<span className="text-warning-foreground" />}>
-              Changed
+              已更改
             </TooltipTrigger>
-            <TooltipPopup side="bottom">
-              This file has been pushed to since you marked it viewed.
-            </TooltipPopup>
+            <TooltipPopup side="bottom">这个文件是从你给它做标记开始的。</TooltipPopup>
           </Tooltip>
         ) : (
-          <span className="@max-xs:hidden">Viewed</span>
+          <span className="@max-xs:hidden">已查看</span>
         )}
       </label>
     </span>
@@ -873,13 +871,13 @@ function PullRequestCodeTab({
       >
         {diffQuery.error !== null ? (
           <>
-            <span>The rest of this diff could not be loaded.</span>
+            <span>其余的diff无法装入。</span>
             <Button size="xs" variant="outline" onClick={() => diffQuery.refresh()}>
-              Retry
+              重试
             </Button>
           </>
         ) : diffQuery.isPending ? (
-          "Loading more files..."
+          "正在装入更多文件…"
         ) : null}
       </div>
     );
@@ -891,7 +889,7 @@ function PullRequestCodeTab({
         size="icon-micro"
         variant="ghost-muted"
         aria-expanded={!collapsed}
-        aria-label={collapsed ? "Expand diff" : "Collapse diff"}
+        aria-label={collapsed ? "扩展 diff" : "折叠 diff"}
         className="mr-1"
         onClick={(event) => {
           event.stopPropagation();
@@ -990,7 +988,7 @@ function PullRequestCodeTab({
         if (result._tag === "Failure") {
           toastManager.add({
             type: "error",
-            title: "More comments could not be loaded",
+            title: "无法装入更多注释",
           });
           return null;
         }
@@ -1054,7 +1052,7 @@ function PullRequestCodeTab({
           {...(canCommentOnLines && onAddToAgentSelection
             ? {
                 secondaryAction: {
-                  label: "Add to agent",
+                  label: "添加到代理服务器",
                   onAction: (text: string) =>
                     finishSelection(draft, text, (comment) =>
                       onAddToAgentSelection({ comment, request: text }),
@@ -1092,7 +1090,7 @@ function PullRequestCodeTab({
   );
 
   const selectedCommit = orderedCommits.find((entry) => entry.oid === commit);
-  const scopeLabel = selectedCommit ? selectedCommit.messageHeadline : "All commits";
+  const scopeLabel = selectedCommit ? selectedCommit.messageHeadline : "全部承诺";
   const changeIgnoreWhitespace = (next: boolean) => {
     setIgnoreWhitespace(next);
     setDraft(null);
@@ -1106,7 +1104,7 @@ function PullRequestCodeTab({
             <DropdownMenuTrigger
               render={<Button size="xs" variant="secondary" />}
               className="min-w-0 max-w-64"
-              aria-label={`Diff scope: ${scopeLabel}`}
+              aria-label={`diff 范围 :${scopeLabel}`}
             >
               <span className="truncate">{scopeLabel}</span>
               <ChevronDownIcon className="size-3.5 shrink-0 opacity-70" />
@@ -1117,7 +1115,7 @@ function PullRequestCodeTab({
                 onValueChange={(value) => onSelectedCommitChange(value === "all" ? null : value)}
               >
                 <DropdownMenuRadioItem value="all" closeOnClick>
-                  <span>All commits</span>
+                  <span>全部承诺</span>
                 </DropdownMenuRadioItem>
                 {orderedCommits.slice(0, visibleCommitCount).map((entry) => (
                   <DropdownMenuRadioItem key={entry.oid} value={entry.oid} closeOnClick>
@@ -1141,7 +1139,7 @@ function PullRequestCodeTab({
                   onClick={() => setVisibleCommitCount((count) => count + COMMIT_PAGE_SIZE)}
                 >
                   <span className="text-muted-foreground">
-                    Show more ({orderedCommits.length - visibleCommitCount} left)
+                    显示更多( E){orderedCommits.length - visibleCommitCount} 左侧)
                   </span>
                 </DropdownMenuItem>
               ) : null}
@@ -1164,20 +1162,19 @@ function PullRequestCodeTab({
                 {filePaths.filter(isFileViewed).length} / {files.length}
               </span>
               <span className="truncate">
-                {viewedFilesStore === "environment" ? `viewed in ${APP_BASE_NAME}` : "viewed"}
+                {viewedFilesStore === "environment" ? `浏览于${APP_BASE_NAME}` : "viewed"}
               </span>
               {viewedFilesStore === "environment" ? (
                 <Tooltip>
                   <TooltipTrigger render={<span className="flex shrink-0 items-center" />}>
                     <InfoIcon
-                      aria-label="These ticks are kept here, not on the host"
+                      aria-label="这些滴滴是在这里保存的，不是在主机上"
                       className="text-muted-foreground size-3.5"
                     />
                   </TooltipTrigger>
                   <TooltipPopup side="bottom">
-                    This host keeps no shared record of which files you have read, so these ticks
-                    are kept by this environment. They follow you between the apps connected to it,
-                    but the host's own web UI will not show them.
+                    此主机不保存您所读文件的共享记录，因此这些勾选由此环境保存。它们会跟随您在与之连接的应用程序之间，但主机自己的网络
+                    UI 将不会显示它们。
                   </TooltipPopup>
                 </Tooltip>
               ) : null}
@@ -1185,13 +1182,12 @@ function PullRequestCodeTab({
                 <Tooltip>
                   <TooltipTrigger render={<span className="flex shrink-0 items-center" />}>
                     <TriangleAlertIcon
-                      aria-label="Your ticks could not be read"
+                      aria-label="您的勾选无法读取"
                       className="size-3.5 text-warning-foreground"
                     />
                   </TooltipTrigger>
                   <TooltipPopup side="bottom">
-                    The boxes below are whatever was last read, and empty if nothing has been read
-                    yet. {filesViewed.error}
+                    下面的框是上次读过的，如果还没有读到的话是空的。 {filesViewed.error}
                   </TooltipPopup>
                 </Tooltip>
               ) : null}
@@ -1199,13 +1195,12 @@ function PullRequestCodeTab({
                 <Tooltip>
                   <TooltipTrigger render={<span className="flex shrink-0 items-center" />}>
                     <TriangleAlertIcon
-                      aria-label="This count covers only part of the change"
+                      aria-label="此计数只涵盖部分变化"
                       className="size-3.5 text-warning-foreground"
                     />
                   </TooltipTrigger>
                   <TooltipPopup side="bottom">
-                    This change has more files than the host will report ticks for in one read, so
-                    the count is short and some boxes below start empty.
+                    此更改的文件比主机报告一个读取的勾选时要多，因此计数很短，下面的一些框开始为空。
                   </TooltipPopup>
                 </Tooltip>
               ) : null}
@@ -1215,25 +1210,22 @@ function PullRequestCodeTab({
             <Tooltip>
               <TooltipTrigger render={<span className="flex shrink-0 items-center" />}>
                 <TriangleAlertIcon
-                  aria-label="Some of this diff was not shown"
+                  aria-label="未显示其中的一些 diff"
                   className="size-3.5 text-warning-foreground"
                 />
               </TooltipTrigger>
               <TooltipPopup side="bottom">
-                The host withheld part of this diff: a binary file, or a change too large to inline.
+                主机扣留了此 diff 的部分:二进制文件，或更改太大，无法内含。
               </TooltipPopup>
             </Tooltip>
           ) : null}
           {commit !== null && review.inlineComment ? (
             <Tooltip>
               <TooltipTrigger render={<span className="flex shrink-0 items-center" />}>
-                <MessageSquareOffIcon
-                  aria-label="Line comments are written from the whole change"
-                  className="size-3.5"
-                />
+                <MessageSquareOffIcon aria-label="行注释来自整个更改" className="size-3.5" />
               </TooltipTrigger>
               <TooltipPopup side="bottom">
-                A comment is anchored to the whole change, so switch to All commits to write one.
+                一个评论被固定在整个变化中，所以切换到所有承诺写一个。
               </TooltipPopup>
             </Tooltip>
           ) : null}
@@ -1247,26 +1239,26 @@ function PullRequestCodeTab({
                 <DropdownMenuTrigger
                   render={<Button size="icon-sm" variant="ghost" />}
                   className="@lg:hidden"
-                  aria-label="Diff options"
+                  aria-label="diff 选项"
                 />
               }
             >
               <Settings2Icon className="size-3.5" />
             </TooltipTrigger>
-            <TooltipPopup side="top">Diff options</TooltipPopup>
+            <TooltipPopup side="top">diff 选项</TooltipPopup>
           </Tooltip>
           <DropdownMenuContent align="end">
             <DropdownMenuCheckboxItem
               checked={ignoreWhitespace}
               onCheckedChange={(checked) => changeIgnoreWhitespace(checked)}
             >
-              Hide whitespace changes
+              隐藏空格变化
             </DropdownMenuCheckboxItem>
             <DropdownMenuCheckboxItem
               checked={wordWrap}
               onCheckedChange={(checked) => setWordWrap(checked)}
             >
-              Wrap lines
+              环行
             </DropdownMenuCheckboxItem>
             <DropdownMenuSeparator />
             <DropdownMenuRadioGroup
@@ -1278,10 +1270,10 @@ function PullRequestCodeTab({
               }}
             >
               <DropdownMenuRadioItem value="stacked" closeOnClick>
-                Stacked
+                堆叠
               </DropdownMenuRadioItem>
               <DropdownMenuRadioItem value="split" closeOnClick>
-                Split
+                分开
               </DropdownMenuRadioItem>
             </DropdownMenuRadioGroup>
           </DropdownMenuContent>
@@ -1291,9 +1283,7 @@ function PullRequestCodeTab({
             <TooltipTrigger
               render={
                 <Toggle
-                  aria-label={
-                    ignoreWhitespace ? "Show whitespace changes" : "Hide whitespace changes"
-                  }
+                  aria-label={ignoreWhitespace ? "显示空格变化" : "隐藏空格变化"}
                   variant="ghost"
                   size="sm"
                   pressed={ignoreWhitespace}
@@ -1304,11 +1294,11 @@ function PullRequestCodeTab({
               <PilcrowIcon className="size-3.5" />
             </TooltipTrigger>
             <TooltipPopup side="top">
-              {ignoreWhitespace ? "Show whitespace changes" : "Hide whitespace changes"}
+              {ignoreWhitespace ? "显示空格变化" : "隐藏空格变化"}
             </TooltipPopup>
           </Tooltip>
           <ToggleGroup
-            aria-label="Diff layout"
+            aria-label="diff 版式"
             className="shrink-0"
             variant="segmented"
             value={[diffLayout]}
@@ -1319,10 +1309,10 @@ function PullRequestCodeTab({
               }
             }}
           >
-            <Toggle aria-label="Stacked diff view" value="stacked">
+            <Toggle aria-label="堆叠的 diff 视图" value="stacked">
               <Rows3Icon className="size-3.5" />
             </Toggle>
-            <Toggle aria-label="Split diff view" value="split">
+            <Toggle aria-label="分割 diff 视图" value="split">
               <Columns2Icon className="size-3.5" />
             </Toggle>
           </ToggleGroup>
@@ -1330,7 +1320,7 @@ function PullRequestCodeTab({
             <TooltipTrigger
               render={
                 <Toggle
-                  aria-label={wordWrap ? "Disable diff line wrapping" : "Enable diff line wrapping"}
+                  aria-label={wordWrap ? "禁用 diff 线包" : "启用 diff 线条包装"}
                   variant="ghost"
                   size="sm"
                   pressed={wordWrap}
@@ -1342,9 +1332,7 @@ function PullRequestCodeTab({
             >
               <TextWrapIcon className="size-3.5" />
             </TooltipTrigger>
-            <TooltipPopup side="top">
-              {wordWrap ? "Disable line wrapping" : "Enable line wrapping"}
-            </TooltipPopup>
+            <TooltipPopup side="top">{wordWrap ? "禁用行包" : "启用行包"}</TooltipPopup>
           </Tooltip>
         </div>
         {fileKeys.length > 0 ? (
@@ -1355,7 +1343,7 @@ function PullRequestCodeTab({
                   type="button"
                   size="icon-sm"
                   variant="ghost"
-                  aria-label={allFilesCollapsed ? "Expand all files" : "Collapse all files"}
+                  aria-label={allFilesCollapsed ? "展开所有文件" : "折叠所有文件"}
                   onClick={toggleAllFiles}
                 />
               }
@@ -1366,7 +1354,7 @@ function PullRequestCodeTab({
               />
             </TooltipTrigger>
             <TooltipPopup side="top">
-              {allFilesCollapsed ? "Expand all files" : "Collapse all files"}
+              {allFilesCollapsed ? "展开所有文件" : "折叠所有文件"}
             </TooltipPopup>
           </Tooltip>
         ) : null}
@@ -1375,7 +1363,7 @@ function PullRequestCodeTab({
             <TooltipTrigger
               render={
                 <Toggle
-                  aria-label="Hide test files"
+                  aria-label="隐藏测试文件"
                   variant="ghost"
                   size="sm"
                   pressed={hideTestFiles}
@@ -1386,7 +1374,7 @@ function PullRequestCodeTab({
               <FlaskConicalOffIcon className="size-3.5" />
             </TooltipTrigger>
             <TooltipPopup side="top">
-              {hideTestFiles ? "Show test files" : "Hide test files"}
+              {hideTestFiles ? "显示测试文件" : "隐藏测试文件"}
             </TooltipPopup>
           </Tooltip>
         ) : null}
@@ -1395,7 +1383,7 @@ function PullRequestCodeTab({
             <TooltipTrigger
               render={
                 <Toggle
-                  aria-label={fileTreeOpen ? "Hide file tree" : "Show file tree"}
+                  aria-label={fileTreeOpen ? "隐藏文件树" : "显示文件树"}
                   variant="ghost"
                   size="sm"
                   pressed={fileTreeOpen}
@@ -1405,9 +1393,7 @@ function PullRequestCodeTab({
             >
               <FolderTreeIcon className="size-3.5" />
             </TooltipTrigger>
-            <TooltipPopup side="top">
-              {fileTreeOpen ? "Hide file tree" : "Show file tree"}
-            </TooltipPopup>
+            <TooltipPopup side="top">{fileTreeOpen ? "隐藏文件树" : "显示文件树"}</TooltipPopup>
           </Tooltip>
         ) : null}
       </div>
@@ -1441,7 +1427,7 @@ function PullRequestCodeTab({
 
   const term = sourceControlClients.get(detail.provider).changeRequest.singular;
   if (diffQuery.isPending && loadedSlices.length === 0) {
-    return withToolbar(<DiffPanelLoadingState label={`Loading ${term} diff...`} />);
+    return withToolbar(<DiffPanelLoadingState label={`正在装入${term} diff…`} />);
   }
 
   if (diffQuery.error && loadedSlices.length === 0) {
@@ -1462,7 +1448,7 @@ function PullRequestCodeTab({
   if (items.length === 0 && nextCursor === null) {
     return withToolbar(
       <p className="px-4 py-5 text-sm text-muted-foreground">
-        {commit === null ? `This ${term} has no file changes.` : "This commit has no file changes."}
+        {commit === null ? `此${term}没有文件更改。` : "此承诺没有文件更改。"}
       </p>,
     );
   }
@@ -1484,9 +1470,7 @@ function PullRequestCodeTab({
             <h2>
               <CollapsibleTrigger className="flex w-full items-center gap-1.5 px-4 py-2 text-left text-xs text-muted-foreground">
                 <span>
-                  {nextCursor === null
-                    ? "Conversations not on the current diff"
-                    : "Conversations not on the diff loaded so far"}
+                  {nextCursor === null ? "对当前 diff 的不交谈" : "目前尚未装入的 diff 上的对话"}
                 </span>
                 <ChevronRightIcon
                   aria-hidden
@@ -1496,9 +1480,7 @@ function PullRequestCodeTab({
                   {orphanThreads.length}
                 </span>
                 <span className="sr-only">
-                  {orphanThreads.length === 1
-                    ? "1 conversation"
-                    : `${orphanThreads.length} conversations`}
+                  {orphanThreads.length === 1 ? "一次谈话" : `${orphanThreads.length} 对话`}
                 </span>
               </CollapsibleTrigger>
             </h2>
@@ -1518,7 +1500,7 @@ function PullRequestCodeTab({
                       {threads.map((thread) => (
                         <div key={thread.id}>
                           {thread.line === null ? null : (
-                            <p className="px-3 text-xs text-muted-foreground">Line {thread.line}</p>
+                            <p className="px-3 text-xs text-muted-foreground">行线 {thread.line}</p>
                           )}
                           {renderThreadCard(thread)}
                         </div>
@@ -1583,7 +1565,7 @@ function PullRequestCodeTab({
             resizeLabel="Resize PR Code files"
           >
             <DiffFileTree
-              ariaLabel={`${capitalizeTerm(term)} #${detail.number} files`}
+              ariaLabel={`${capitalizeTerm(term)} #${detail.number} 的文件`}
               entries={fileTreeEntries}
               onSelectFile={revealFile}
               footer={
@@ -1598,10 +1580,10 @@ function PullRequestCodeTab({
                       onClick={diffQuery.error !== null ? () => diffQuery.refresh() : loadNextSlice}
                     >
                       {diffQuery.error !== null
-                        ? "Retry"
+                        ? "重试"
                         : diffQuery.isPending
-                          ? "Loading more files..."
-                          : "Load more files"}
+                          ? "正在装入更多文件…"
+                          : "装入更多文件"}
                     </Button>
                   </div>
                 )

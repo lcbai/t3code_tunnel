@@ -80,7 +80,7 @@ function CrossTrackNote() {
 }
 
 function updateFailureMessage(error: unknown): string {
-  return error instanceof Error ? error.message : "Server update failed.";
+  return error instanceof Error ? error.message : "服务器更新失败。";
 }
 
 export interface ServerUpdateTarget {
@@ -120,7 +120,7 @@ export function useServerUpdate() {
       if (!quiet) {
         toastManager.add({
           type: "error",
-          title: `${serverLabel} not updated`,
+          title: `${serverLabel}未更新`,
           description: denial,
         });
       }
@@ -149,7 +149,7 @@ export function useServerUpdate() {
       if (!quiet) {
         toastManager.add({
           type: "error",
-          title: `${serverLabel} update failed`,
+          title: `${serverLabel} 更新失败`,
           description: message,
         });
       }
@@ -158,10 +158,10 @@ export function useServerUpdate() {
     if (!quiet) {
       toastManager.add({
         type: "success",
-        title: `${serverLabel} updated`,
+        title: `${serverLabel} 更新`,
         description:
           selfUpdate === "desktop-managed"
-            ? `Desktop app relaunched on ${result.value.targetVersion}.`
+            ? `桌面应用程序在${result.value.targetVersion} 上重新启动。`
             : `Reconnected on t3@${result.value.targetVersion}.`,
       });
     }
@@ -171,7 +171,7 @@ export function useServerUpdate() {
 
 export function ServerUpdatesAction({
   targets,
-  label = "Update all",
+  label = "全部更新",
   variant = "outline",
   size = "xs",
   className,
@@ -263,7 +263,7 @@ export function ServerUpdateAction({
   desktopAppUpdate = false,
   targetVersion,
   channel,
-  label = "Update",
+  label = "更新",
   variant = "outline",
   size = "xs",
   className,
@@ -280,18 +280,17 @@ export function ServerUpdateAction({
     onCopy: ({ command }) => {
       toastManager.add({
         type: "success",
-        title:
-          installation?.kind === "npm-global" ? "Update command copied" : "Relaunch command copied",
+        title: installation?.kind === "npm-global" ? "更新已复制的命令" : "复制的重新启动命令",
         description:
           installation?.kind === "npm-global"
-            ? `Run \`${command}\` on ${serverLabel}, then restart t3 with your usual options.`
-            : `Stop t3 on ${serverLabel}, then relaunch with \`${command}\` using the same subcommand and options. This does not update an installed t3 command.`,
+            ? `在${serverLabel} 上运行\`${command}\`，然后用您通常的选项重新启动t3。`
+            : `在${serverLabel} 上停止t3，然后使用相同的子命令和选项以\`${command}\` 重新启动。这不会更新已安装的t3 命令。`,
       });
     },
     onError: (error) => {
       toastManager.add({
         type: "error",
-        title: "Could not copy update command",
+        title: "无法复制更新命令",
         description: error.message,
       });
     },
@@ -338,7 +337,7 @@ export function ServerUpdateAction({
   if (selfUpdate === "desktop-managed" && !desktopAppUpdate) {
     return (
       <span className="text-muted-foreground text-xs">
-        Update the desktop app on that machine to update this server.
+        更新该机上的桌面应用程序以更新此服务器。
       </span>
     );
   }
@@ -352,8 +351,8 @@ export function ServerUpdateAction({
   const actionLabel =
     manualCommand !== null
       ? installation?.kind === "npm-global"
-        ? "Copy update command"
-        : "Copy relaunch command"
+        ? "复制更新命令"
+        : "复制重新启动命令"
       : label;
   const onClick =
     manualCommand !== null
@@ -369,7 +368,7 @@ export function ServerUpdateAction({
               size="icon-xs"
               variant="ghost-muted"
               className={className}
-              aria-label={`${actionLabel} for ${serverLabel}`}
+              aria-label={`${serverLabel} 的 ${actionLabel}`}
               disabled={manualCommand === null && !canUpdate}
               onClick={onClick}
             />
@@ -401,7 +400,7 @@ export function OutdatedServerUpdateAction({
   serverLabel,
   fromVersion,
   targetVersion,
-  label = "Update",
+  label = "更新",
 }: {
   readonly environmentId: EnvironmentId;
   readonly serverLabel: string;
@@ -423,14 +422,14 @@ export function OutdatedServerUpdateAction({
       if (isAtomCommandInterrupted(result)) return;
       toastManager.add({
         type: "error",
-        title: `${serverLabel} update failed`,
+        title: `${serverLabel} 更新失败`,
         description: updateFailureMessage(squashAtomCommandFailure(result)),
       });
       return;
     }
     toastManager.add({
       type: "success",
-      title: `${serverLabel} updated`,
+      title: `${serverLabel} 更新`,
       description: `Reconnected on t3@${result.value.targetVersion}.`,
     });
   };

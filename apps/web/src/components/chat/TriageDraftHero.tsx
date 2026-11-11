@@ -16,14 +16,14 @@ export function TriageDraftHero(props: {
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col items-center">
       <h1 className="w-full text-center font-normal text-2xl text-foreground tracking-tight sm:text-3xl">
-        What went wrong?
+        出什么问题了?
       </h1>
       <p className="mt-2 flex h-6 w-full items-center justify-center gap-1.5 text-sm">
         <Tooltip>
           <TooltipTrigger
             render={<span tabIndex={0} className="min-w-0 truncate font-medium text-foreground" />}
           >
-            {props.machineLabel ?? "This machine"}
+            {props.machineLabel ?? "本机"}
             {props.serverVersion === null ? null : (
               <span className="ml-1.5 font-normal text-muted-foreground">
                 v{props.serverVersion}
@@ -31,8 +31,7 @@ export function TriageDraftHero(props: {
             )}
           </TooltipTrigger>
           <TooltipPopup side="bottom">
-            The agent reads T3 Code's logs and source here, and asks before it applies a fix or
-            posts anything.
+            代理读取T3 Code的日志和源头，并询问在应用固定或张贴任何内容之前。
           </TooltipPopup>
         </Tooltip>
         <span aria-hidden className="text-muted-foreground">
@@ -48,10 +47,10 @@ export function TriageDraftHero(props: {
               />
             }
           >
-            {isCopied ? "Copied" : "or run"}
+            {isCopied ? "已复制" : "运行"}
             {isCopied ? null : <code className="ml-1 font-mono text-xs">{TRIAGE_CLI_COMMAND}</code>}
           </TooltipTrigger>
-          <TooltipPopup side="bottom">Copy command, for a terminal</TooltipPopup>
+          <TooltipPopup side="bottom">复制命令，用于终端</TooltipPopup>
         </Tooltip>
       </p>
     </div>

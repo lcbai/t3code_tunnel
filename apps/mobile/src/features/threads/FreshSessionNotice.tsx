@@ -9,7 +9,7 @@ export function FreshSessionNotice(props: { readonly threadKey: string }) {
   return (
     <View className="px-4 pb-3">
       <Notice
-        message="Your next message starts a fresh session. The agent won't see earlier messages in this thread."
+        message="下一条消息会开启全新会话，智能体无法看到此会话中先前的消息。"
         icon="arrow.clockwise"
         floating
         onDismiss={() => setFreshSessionPending(props.threadKey, false)}

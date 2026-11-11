@@ -119,11 +119,7 @@ export function PullRequestEditScreen({ route }: StaticScreenProps<PullRequestEd
     navigation.goBack();
   };
   const title =
-    params.field === "title"
-      ? "Edit title"
-      : params.field === "body"
-        ? "Edit description"
-        : "Edit comment";
+    params.field === "title" ? "编辑标题" : params.field === "body" ? "编辑描述" : "编辑评论";
   return (
     <PullRequestSheetContent
       busy={busy}
@@ -133,7 +129,7 @@ export function PullRequestEditScreen({ route }: StaticScreenProps<PullRequestEd
         <Button
           fullWidth
           tone="contrast"
-          label={busy ? "Saving…" : "Save"}
+          label={busy ? "正在保存…" : "保存"}
           loading={busy}
           disabled={!allowed || unchanged || invalid || original === null}
           onPress={() => void save()}
@@ -153,9 +149,9 @@ export function PullRequestEditScreen({ route }: StaticScreenProps<PullRequestEd
             ? `${capitalizeTerm(singular)} title`
             : params.field === "body"
               ? `${capitalizeTerm(singular)} description`
-              : "Comment"
+              : "评论"
         }
-        placeholder={params.field === "title" ? "Title" : "Write in Markdown…"}
+        placeholder={params.field === "title" ? "标题" : "使用 Markdown 撰写…"}
         placeholderTextColorClassName="accent-foreground-muted"
         maxLength={params.field === "title" ? 1024 : 65536}
         value={value}

@@ -55,7 +55,7 @@ export function WorktreeSetupCard(props: WorktreeSetupCardProps) {
       : running
         ? handedOff
           ? "Setup continues…"
-          : "Setting up worktree…"
+          : "正在设置工作树…"
         : snapshot.phase === "cancelled"
           ? "Worktree setup cancelled"
           : snapshot.phase === "failed"
@@ -65,7 +65,7 @@ export function WorktreeSetupCard(props: WorktreeSetupCardProps) {
               : "Worktree ready";
 
   return (
-    <View accessibilityLabel="Worktree setup" className="py-1">
+    <View accessibilityLabel="工作树设置" className="py-1">
       <View className="min-h-11 flex-row items-center gap-2 border-b border-border px-1">
         <HeaderLabel
           label={label}
@@ -85,7 +85,7 @@ export function WorktreeSetupCard(props: WorktreeSetupCardProps) {
           accessibilityLabel={
             backgroundSetup
               ? `Background setup is still running: ${scriptName}. Show setup progress.`
-              : "Worktree setup details"
+              : "工作树设置详情"
           }
           accessibilityState={{ expanded: detailsOpen }}
           onPress={() => setDetailsOpen(true)}
@@ -116,7 +116,7 @@ export function WorktreeSetupCard(props: WorktreeSetupCardProps) {
               />
             ) : null}
             <Text numberOfLines={1} className="shrink text-2xs text-foreground-secondary">
-              {backgroundSetup ? "Background setup" : "Details"}
+              {backgroundSetup ? "后台设置" : "详情"}
             </Text>
             {!backgroundSetup ? (
               <SymbolView name="chevron.right" size={10} tintColorClassName="accent-icon-muted" />
@@ -152,7 +152,7 @@ export function WorktreeWorkingHeader({ startedAt }: { startedAt: string }) {
   return (
     <View className="py-1">
       <View className="min-h-11 flex-row items-center border-b border-border px-1">
-        <HeaderLabel label={`Working for ${elapsed(startedAt, null, now) ?? "0s"}`} active />
+        <HeaderLabel label={`已工作 ${elapsed(startedAt, null, now) ?? "0s"}`} active />
       </View>
     </View>
   );
@@ -200,7 +200,7 @@ function SetupDetailsSheet({
   const insets = useSafeAreaInsets();
   const canCancel = snapshot.phase === "running" && !turnStarted;
   return (
-    <Sheet title="Worktree setup" onClose={onClose}>
+    <Sheet title="工作树设置" onClose={onClose}>
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         bounces={false}
@@ -229,9 +229,9 @@ function SetupDetailsSheet({
         {canCancel ? (
           <View className="mt-3 flex-row items-center justify-end gap-4 border-t border-border pt-1">
             <Button
-              label="Cancel setup"
+              label="取消设置"
               tone="danger"
-              accessibilityLabel="Cancel worktree setup"
+              accessibilityLabel="取消工作树设置"
               onPress={() => {
                 onClose();
                 onCancel();
@@ -239,7 +239,7 @@ function SetupDetailsSheet({
             />
             {onWorkLocally ? (
               <Button
-                label="Work locally"
+                label="在本地工作"
                 tone="secondary"
                 onPress={() => {
                   onClose();
@@ -347,7 +347,7 @@ const OUTPUT_TAIL_SLOTS = [0, 1, 2, 3] as const;
 function OutputTail({ lines, failed }: { lines: ReadonlyArray<string>; failed: boolean }) {
   return (
     <View
-      accessibilityLabel="Setup script output"
+      accessibilityLabel="设置脚本输出"
       className={
         failed
           ? "mb-2 ml-8 rounded-md border border-danger-border bg-danger px-3 py-2"

@@ -100,7 +100,7 @@ export default function DocumentPages(props: {
             {props.details}
           </span>
           <FileSurfaceAction
-            label="Decrease reading size"
+            label="缩小读取大小"
             disabled={zoom <= 0.5}
             onPress={() => setZoom((value) => Math.max(0.5, value - 0.25))}
           >
@@ -108,17 +108,13 @@ export default function DocumentPages(props: {
           </FileSurfaceAction>
           <span className="min-w-10 text-center tabular-nums">{Math.round(zoom * 100)}%</span>
           <FileSurfaceAction
-            label="Increase reading size"
+            label="增加读取大小"
             disabled={zoom >= 2}
             onPress={() => setZoom((value) => Math.min(2, value + 0.25))}
           >
             <PlusIcon className="size-3.5" />
           </FileSurfaceAction>
-          <FileSurfaceAction
-            label="Reset reading size"
-            disabled={zoom === 1}
-            onPress={() => setZoom(1)}
-          >
+          <FileSurfaceAction label="重置读取大小" disabled={zoom === 1} onPress={() => setZoom(1)}>
             <RotateCcwIcon className="size-3.5" />
           </FileSurfaceAction>
         </div>

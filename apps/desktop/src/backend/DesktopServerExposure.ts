@@ -50,14 +50,14 @@ interface DesktopAdvertisedEndpointInput {
 
 const DESKTOP_CORE_ENDPOINT_PROVIDER: AdvertisedEndpointProvider = {
   id: "desktop-core",
-  label: "Desktop",
+  label: "桌面端",
   kind: "core",
   isAddon: false,
 };
 
 const DESKTOP_MANUAL_ENDPOINT_PROVIDER: AdvertisedEndpointProvider = {
   id: "manual",
-  label: "Manual",
+  label: "手动配置",
   kind: "manual",
   isAddon: false,
 };
@@ -165,7 +165,7 @@ const resolveDesktopCoreAdvertisedEndpoints = (
   const endpoints: AdvertisedEndpoint[] = [
     createDesktopEndpoint({
       id: `desktop-loopback:${input.port}`,
-      label: "This machine",
+      label: "本机",
       httpBaseUrl: input.exposure.localHttpUrl,
       reachability: "loopback",
       status: "available",
@@ -177,7 +177,7 @@ const resolveDesktopCoreAdvertisedEndpoints = (
     endpoints.push(
       createDesktopEndpoint({
         id: `desktop-lan:${input.exposure.endpointUrl}`,
-        label: "Local network",
+        label: "局域网",
         httpBaseUrl: input.exposure.endpointUrl,
         reachability: "lan",
         status: "available",
@@ -193,7 +193,7 @@ const resolveDesktopCoreAdvertisedEndpoints = (
       endpoints.push(
         createManualEndpoint({
           id: `manual:${customEndpointUrl}`,
-          label: isHttpsEndpoint ? "Custom HTTPS" : "Custom endpoint",
+          label: isHttpsEndpoint ? "自定义 HTTPS" : "自定义地址",
           httpBaseUrl: customEndpointUrl,
           reachability: "public",
           ...(isHttpsEndpoint ? ({ hostedHttpsCompatibility: "compatible" } as const) : {}),

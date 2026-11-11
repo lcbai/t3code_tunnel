@@ -62,14 +62,14 @@ function RefreshFilesButton(props: { isPending: boolean; onRefresh: () => void }
             type="button"
             variant="ghost"
             size="icon-xs"
-            aria-label="Refresh workspace files"
+            aria-label="刷新工作空间文件"
             onClick={props.onRefresh}
           />
         }
       >
         <RefreshIcon refreshing={props.isPending} />
       </TooltipTrigger>
-      <TooltipPopup>{props.isPending ? "Refreshing…" : "Refresh files"}</TooltipPopup>
+      <TooltipPopup>{props.isPending ? "刷新中…" : "刷新文件"}</TooltipPopup>
     </Tooltip>
   );
 }
@@ -89,7 +89,7 @@ function FileSearchField(props: {
         size="sm"
         value={props.value}
         aria-label={props.ariaLabel}
-        placeholder="Search files"
+        placeholder="搜索文件"
         data-workspace-focus-default
         spellCheck={false}
         onChange={(event) => props.onValueChange(event.target.value)}
@@ -198,8 +198,8 @@ export default function FileBrowserPanel({
         const clicked = await api.contextMenu.show(
           [
             ...fileMenuItems,
-            { id: "copy-mention", label: "Copy mention" },
-            { id: "add-to-chat", label: "Add to chat" },
+            { id: "copy-mention", label: "复制提及" },
+            { id: "add-to-chat", label: "添加到聊天中" },
           ],
           position,
         );
@@ -216,14 +216,14 @@ export default function FileBrowserPanel({
             await writeTextToClipboard(mention);
             toastManager.add({
               type: "success",
-              title: "Mention copied",
+              title: "提及已复制",
               description: relativePath,
             });
           } catch (error) {
             toastManager.add({
               type: "error",
-              title: "Failed to copy mention",
-              description: error instanceof Error ? error.message : "An error occurred.",
+              title: "复制引用失败",
+              description: error instanceof Error ? error.message : "发生了错误。",
             });
           }
           return;
@@ -233,8 +233,8 @@ export default function FileBrowserPanel({
           if (!composer) {
             toastManager.add({
               type: "error",
-              title: "Unable to add to chat",
-              description: "Open a chat for this project and try again.",
+              title: "无法添加到聊天中",
+              description: "为此项目打开聊天并再次尝试。",
             });
             return;
           }
@@ -242,8 +242,8 @@ export default function FileBrowserPanel({
           if (!inserted) {
             toastManager.add({
               type: "error",
-              title: "Unable to add to chat",
-              description: "The chat isn't ready to accept input right now.",
+              title: "无法添加到聊天中",
+              description: "聊天还没准备好接受输入",
             });
           }
         }
@@ -290,7 +290,7 @@ export default function FileBrowserPanel({
       row.kind === "directory" &&
       row.isExpanded &&
       loadingDirectoriesRef.current.has(item.path.replace(/\/$/, ""))
-        ? { icon: "t3-tree-icon-loading", title: "Loading…" }
+        ? { icon: "t3-tree-icon-loading", title: "正在加载…" }
         : null,
     search: false,
     onSearchChange: (value) => setQuery(value ?? ""),
@@ -491,7 +491,7 @@ export default function FileBrowserPanel({
         <RefreshFilesButton isPending={isPending} onRefresh={handleRefresh} />
         <FileSearchField
           name="project-files-search"
-          ariaLabel={`Search ${projectName} files`}
+          ariaLabel={`搜索${projectName}文件`}
           value={search.value}
           onValueChange={handleSearchValueChange}
           onClose={closeSearch}
@@ -505,9 +505,7 @@ export default function FileBrowserPanel({
                   size="icon-xs"
                   variant="ghost"
                   aria-label={
-                    expandAll || allDirectoriesExpanded
-                      ? "Collapse all folders"
-                      : "Expand all folders"
+                    expandAll || allDirectoriesExpanded ? "折叠所有文件夹" : "展开所有文件夹"
                   }
                   onClick={toggleAllDirectories}
                 />
@@ -519,7 +517,7 @@ export default function FileBrowserPanel({
               />
             </TooltipTrigger>
             <TooltipPopup>
-              {expandAll || allDirectoriesExpanded ? "Collapse all folders" : "Expand all folders"}
+              {expandAll || allDirectoriesExpanded ? "折叠所有文件夹" : "展开所有文件夹"}
             </TooltipPopup>
           </Tooltip>
         ) : null}
@@ -530,13 +528,11 @@ export default function FileBrowserPanel({
           onClick={handleRefresh}
           className="p-4 text-left text-xs leading-relaxed text-destructive"
         >
-          {error ?? pathSearch.error} Click to retry.
+          {error ?? pathSearch.error} 点击重试。
         </button>
       ) : null}
       {query.trim() && pathSearch.truncated && !pathSearch.isPending ? (
-        <div className="px-3 py-1 text-xs text-muted-foreground">
-          More matches available. Refine your search.
-        </div>
+        <div className="px-3 py-1 text-xs text-muted-foreground">更多匹配的可用。 完善搜索。</div>
       ) : null}
       {(!ready || pathSearch.isPending) && (
         <div
@@ -547,19 +543,19 @@ export default function FileBrowserPanel({
               : "px-3 py-1 text-xs text-muted-foreground"
           }
         >
-          Loading files…
+          正在装入文件…
         </div>
       )}
       {hasNoSearchMatches ? (
         ready && !isPending && !pathSearch.isPending && !error && !pathSearch.error ? (
           <div role="status" className="px-3 py-4 text-xs text-muted-foreground">
-            No matching files.
+            没有匹配的文件。
           </div>
         ) : null
       ) : (
         <FileTree
           model={model}
-          aria-label={`${projectName} files`}
+          aria-label={`${projectName}文件`}
           className="min-h-0 flex-1 overflow-hidden"
           style={pierreTreeStyle(resolvedTheme)}
         />

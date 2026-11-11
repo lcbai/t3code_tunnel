@@ -38,7 +38,7 @@ export function SourceControlTokenSettings({
     readHostCredentialSettings(settings, definition.kind),
   );
   const updateSettings = useAtomCommand(serverEnvironment.updateSettings, {
-    label: `save ${definition.label} token`,
+    label: `保存${definition.label} 符号`,
   });
   const defaultHost = definition.publicHost ?? "";
   const [host, setHost] = useState(defaultHost);
@@ -88,11 +88,10 @@ export function SourceControlTokenSettings({
       {/* Locked while saving: a successful save clears the draft, which would drop edits made mid-request. */}
       <fieldset disabled={saving} className="contents">
         <p className="max-w-2xl text-xs leading-relaxed text-muted-foreground">
-          A token saved here is used before{" "}
+          此处保存的符号在之前使用过{" "}
           <code className="rounded bg-muted px-1 py-px text-2xs">{credentials.tokenEnvVar}</code>{" "}
-          and the{" "}
-          <code className="rounded bg-muted px-1 py-px text-2xs">{credentials.cliName}</code> login,
-          so {definition.label} works without the {credentials.cliLabel}. Give it{" "}
+          页:1 <code className="rounded bg-muted px-1 py-px text-2xs">{credentials.cliName}</code>{" "}
+          登录，所以 {definition.label} 工作没有 {credentials.cliLabel}给它{" "}
           {credentials.tokenAccess}.{" "}
           {normalizedHost || defaultHost ? (
             <InlineButton
@@ -104,14 +103,14 @@ export function SourceControlTokenSettings({
                 />
               }
             >
-              Create a token
+              创建符号
               <ExternalLinkIcon aria-hidden className="size-3" />
             </InlineButton>
           ) : null}
         </p>
         <div className="grid gap-3 sm:grid-cols-[12rem_1fr]">
           <div className="grid gap-1.5">
-            <Label htmlFor={`${definition.kind}-token-host-${environmentId}`}>Host</Label>
+            <Label htmlFor={`${definition.kind}-token-host-${environmentId}`}>主机</Label>
             <Input
               id={`${definition.kind}-token-host-${environmentId}`}
               autoComplete="off"
@@ -126,7 +125,7 @@ export function SourceControlTokenSettings({
             <SecretSourceInput
               id={`${definition.kind}-token-${environmentId}`}
               size="sm"
-              aria-label={`${definition.label} token`}
+              aria-label={`${definition.label} 符号@ action`}
               configured={isSaved && !isSecretReference(savedToken)}
               value={draft}
               sources={secretSources}
@@ -138,8 +137,8 @@ export function SourceControlTokenSettings({
         <div className="flex items-center justify-between gap-3">
           <p className="text-xs text-muted-foreground">
             {savedHosts.length === 0
-              ? `No token saved; the server uses ${credentials.tokenEnvVar} or the ${credentials.cliName} login.`
-              : `Saved for ${savedHosts.join(", ")}.`}
+              ? `没有保存任何令牌;服务器使用${credentials.tokenEnvVar}或${credentials.cliName}登录。`
+              : `保存于${savedHosts.join(", ")}。`}
           </p>
           <div className="flex shrink-0 gap-2">
             {isSaved ? (
@@ -149,7 +148,7 @@ export function SourceControlTokenSettings({
                 disabled={saving}
                 onClick={() => void save(normalizedHost, "")}
               >
-                Remove
+                移除
               </Button>
             ) : null}
             <Button
@@ -157,7 +156,7 @@ export function SourceControlTokenSettings({
               size="xs"
               disabled={!normalizedHost || submission === "" || saving}
             >
-              Save
+              保存
             </Button>
           </div>
         </div>

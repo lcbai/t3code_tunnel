@@ -115,20 +115,18 @@ export function scheduleDraftErrors(draft: DraftState) {
   if (draft.scheduleMode === "once") {
     const runAt = new Date(draft.runAt);
     if (Number.isNaN(runAt.getTime()))
-      return [{ title: "Invalid run time", description: "Pick a date and time." }];
+      return [{ title: "无效的运行时间", description: "挑个日期和时间" }];
     // A time skipped by a daylight saving change parses to a different clock time.
     if (toDateTimeLocalValue(runAt) !== draft.runAt)
-      return [
-        { title: "Invalid run time", description: "That time does not exist in your time zone." },
-      ];
+      return [{ title: "无效的运行时间", description: "时间在你的时区并不存在。" }];
     return [];
   }
   if (draft.scheduleMode !== "webhook") return [];
   if (parseMaxDeliveryAge(draft.maxDeliveryAgeMinutes) === undefined)
     return [
       {
-        title: "Invalid age limit",
-        description: `Enter whole minutes from 1 to ${MAX_WEBHOOK_DELIVERY_AGE_MINUTES}, or leave it blank.`,
+        title: "无效的年龄限制",
+        description: `输入从 1到${MAX_WEBHOOK_DELIVERY_AGE_MINUTES} 的整分钟，或留空。`,
       },
     ];
   const errors: Array<{ title: string; description: string }> = [];
@@ -138,15 +136,15 @@ export function scheduleDraftErrors(draft: DraftState) {
   ] as const) {
     if (value.trim() && !isWebhookDedupeTemplate(value.trim()))
       errors.push({
-        title: "Invalid webhook settings",
-        description: `${label} must contain a valid request placeholder.`,
+        title: "无效的 Webhook 设置",
+        description: `${label}必须包含有效的请求占位符。`,
       });
   }
   const window = draft.coalesceWindowSeconds.trim();
   if (window && (!Number.isInteger(Number(window)) || Number(window) < 10 || Number(window) > 3600))
     errors.push({
-      title: "Invalid webhook settings",
-      description: "Coalesce window must be whole seconds from 10 to 3600.",
+      title: "无效的 Webhook 设置",
+      description: "Coalesce窗口必须从10秒到3600秒整秒。",
     });
   return errors;
 }
@@ -155,7 +153,7 @@ export function webhookDeliveryLabel(delivery: {
   readonly outcome: string;
   readonly pendingWindow?: boolean | undefined;
 }) {
-  if (delivery.outcome === "accepted") return delivery.pendingWindow ? "Opened window" : "Ran";
+  if (delivery.outcome === "accepted") return delivery.pendingWindow ? "打开窗口" : "小兰";
   const labels: Record<string, string> = {
     dispatch_failed: "Run failed",
     duplicate: "Duplicate",

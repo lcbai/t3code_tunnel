@@ -28,12 +28,12 @@ export function WorkspaceEmptyDetail(props: {
         {props.onAddConnection ? (
           <View className="w-full max-w-[430px]">
             <EmptyState
-              title="No environments connected"
-              detail="Add an environment to load projects and start coding sessions."
+              title="尚未连接任何环境"
+              detail="添加环境后即可加载项目并开始编程。"
               variant="plain"
               action={
                 <FloatingActionButton
-                  label="Add environment"
+                  label="添加环境"
                   icon="plus"
                   variant="extended"
                   tone="primary"
@@ -51,20 +51,16 @@ export function WorkspaceEmptyDetail(props: {
               type="hierarchical"
             />
             <Text className="text-center text-xl font-t3-bold">
-              {settings
-                ? "Select a setting"
-                : pullRequests
-                  ? "Select a pull request"
-                  : "Select a thread"}
+              {settings ? "选择设置项" : pullRequests ? "选择拉取请求" : "选择会话"}
             </Text>
             <Text className="text-center text-base text-foreground-muted">
               {settings
-                ? "Choose a page from the sidebar."
+                ? "从侧栏选择一个页面。"
                 : pullRequests
-                  ? "Choose a pull request from the sidebar to review it."
+                  ? "从侧栏选择拉取请求进行审查。"
                   : Platform.OS === "android"
-                    ? "Choose a thread from the sidebar or start a new thread."
-                    : "Choose a thread from the sidebar or start a new task."}
+                    ? "从侧栏选择会话，或新建会话。"
+                    : "从侧栏选择会话，或新建任务。"}
             </Text>
             {props.onStartNewTask && !pullRequests && !settings ? (
               Platform.OS === "android" ? (
@@ -75,7 +71,7 @@ export function WorkspaceEmptyDetail(props: {
                   className="mt-2 flex-row items-center gap-2 rounded-full bg-primary px-5 py-3 active:opacity-70"
                   onPress={props.onStartNewTask}
                 >
-                  <Text className="text-base font-t3-bold text-primary-foreground">New thread</Text>
+                  <Text className="text-base font-t3-bold text-primary-foreground">新建会话</Text>
                 </Pressable>
               )
             ) : null}

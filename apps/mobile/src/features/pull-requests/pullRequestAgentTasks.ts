@@ -28,21 +28,17 @@ export function pullRequestAgentThreadActions(
     const action = {
       id: `${task}:${thread.id}`,
       title: thread.title,
-      subtitle: thread.archivedAt
-        ? "Archived thread"
-        : thread.settled
-          ? "Settled thread"
-          : "Continue thread",
+      subtitle: thread.archivedAt ? "已归档会话" : thread.settled ? "已收尾的会话" : "继续会话",
       image: "bubble.left.and.bubble.right",
       attributes: { disabled: task !== "ask" && Boolean(thread.archivedAt) },
     };
     (thread.settled ? settled : active).push(action);
   }
   return [
-    ...(canAsk ? [{ id: `${task}:new`, title: "Start a new thread", image: "plus" }] : []),
+    ...(canAsk ? [{ id: `${task}:new`, title: "新建会话", image: "plus" }] : []),
     ...active,
     ...(settled.length
-      ? [{ id: `${task}:settled`, title: "Settled threads", subactions: settled }]
+      ? [{ id: `${task}:settled`, title: "已收尾的会话", subactions: settled }]
       : []),
   ];
 }
@@ -71,26 +67,26 @@ export function pullRequestAgentActions(pr: PullRequestDetail, canWatch: boolean
   return [
     {
       task: "ask",
-      title: "Ask a question",
+      title: "提问",
       icon: "bubble.left.and.text.bubble.right",
       disabled: false,
     },
-    { task: "explain", title: `Explain this ${shortLabel}`, icon: "book", disabled: false },
+    { task: "explain", title: `解释 ${shortLabel}`, icon: "book", disabled: false },
     {
       task: "feedback",
-      title: "Address feedback",
+      title: "处理反馈",
       icon: "wrench.and.screwdriver",
       disabled: pr.state !== "open",
     },
     {
       task: "conflicts",
-      title: "Resolve conflicts",
+      title: "解决冲突",
       icon: "arrow.triangle.branch",
       disabled: pr.state !== "open" || pr.mergeability !== "conflicting",
     },
     {
       task: "watch",
-      title: `Watch ${shortLabel}`,
+      title: `关注 ${shortLabel}`,
       icon: "eye",
       disabled: pr.state !== "open" || !canWatch,
     },

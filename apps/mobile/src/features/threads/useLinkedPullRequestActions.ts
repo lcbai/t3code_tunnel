@@ -61,7 +61,7 @@ export function useLinkedPullRequestActions(input: {
     const result = await pending;
     if (result._tag === "Success" || isAtomCommandInterrupted(result)) return;
     const cause = squashAtomCommandFailure(result);
-    Dialog.alert(failureTitle, cause instanceof Error ? cause.message : "Try again.");
+    Dialog.alert(failureTitle, cause instanceof Error ? cause.message : "请重试。");
   };
 
   const setLinked = (
@@ -90,11 +90,11 @@ export function useLinkedPullRequestActions(input: {
   const promptLink = () => {
     const { singular } = terminology;
     Dialog.prompt({
-      title: `Link ${singular}`,
+      title: `关联 ${singular}`,
       message: `Paste a ${singular} URL, or enter 123 / #123 for this thread's repository.`,
       placeholder: `${capitalizeTerm(singular)} URL or #42`,
       initialValue: "",
-      confirmText: "Link",
+      confirmText: "链接",
       onConfirm: (reference) => {
         const resolved = resolveLinkPullRequestInput({
           reference,
@@ -118,13 +118,13 @@ export function useLinkedPullRequestActions(input: {
     const open = link.snapshot === null || link.snapshot.state === "open";
     const watching = link.watch !== undefined;
     return [
-      { id: "copy", title: "Copy link", image: "link" },
-      { id: "browser", title: "Open in browser", image: "safari" },
+      { id: "copy", title: "复制链接", image: "link" },
+      { id: "browser", title: "在浏览器中打开", image: "safari" },
       ...((watching ? canWatch : canStartWatch) && open
         ? [
             {
               id: "watch",
-              title: watching ? "Stop watching" : "Watch for changes",
+              title: watching ? "停止关注" : "关注变更",
               image: watching ? "eye.slash" : "eye",
             },
           ]
@@ -133,7 +133,7 @@ export function useLinkedPullRequestActions(input: {
         ? [
             {
               id: "unlink",
-              title: link.source === "stack" ? "Dismiss from thread" : "Unlink from thread",
+              title: link.source === "stack" ? "从会话中移除" : "取消与会话的关联",
               image: "xmark",
               attributes: { destructive: true },
             },
@@ -151,7 +151,7 @@ export function useLinkedPullRequestActions(input: {
             sourceControlClients.findByChangeRequestUrl(link.url) ??
             sourceControlClients.get(undefined)
           ).changeRequest;
-          Dialog.alert(`Unable to open ${shortLabel}`, `The ${singular} could not be opened.`);
+          Dialog.alert(`无法打开 ${shortLabel}`, `The ${singular} could not be opened.`);
         }
       });
     else if (action === "watch" && thread !== null)

@@ -58,16 +58,16 @@ function deriveProjectEmptyState(catalogState: WorkspaceState): {
 } {
   if (catalogState.isLoadingConnections) {
     return {
-      title: "Loading environments",
-      detail: "Checking saved environments on this device.",
+      title: "正在加载环境",
+      detail: "正在检查此设备上保存的环境。",
       loading: true,
     };
   }
 
   if (!catalogState.hasConnections) {
     return {
-      title: "No environments connected",
-      detail: "Add an environment before creating a task.",
+      title: "尚未连接任何环境",
+      detail: "添加环境后再创建任务。",
       loading: false,
     };
   }
@@ -80,13 +80,9 @@ function deriveProjectEmptyState(catalogState: WorkspaceState): {
     !catalogState.hasLoadedShellSnapshot
   ) {
     return {
-      title:
-        catalogState.connectionState === "unsupported"
-          ? "Client not supported"
-          : "Environment unavailable",
+      title: catalogState.connectionState === "unsupported" ? "不支持此客户端" : "环境不可用",
       detail:
-        catalogState.connectionError ??
-        "The saved environment is offline. Check the URL or start the environment, then retry.",
+        catalogState.connectionError ?? "已保存的环境处于离线状态。请检查网址或启动环境后重试。",
       loading: false,
     };
   }
@@ -97,15 +93,15 @@ function deriveProjectEmptyState(catalogState: WorkspaceState): {
     catalogState.connectionError === null
   ) {
     return {
-      title: "Connecting to environment",
-      detail: "Loading projects from the saved environment.",
+      title: "正在连接环境",
+      detail: "正在从已保存的环境加载项目。",
       loading: true,
     };
   }
 
   return {
-    title: "No projects found",
-    detail: "The connected environment did not report any projects.",
+    title: "找不到项目",
+    detail: "已连接的环境未返回任何项目。",
     loading: false,
   };
 }
@@ -133,7 +129,7 @@ function NewTaskHeader(props: {
           props.canAddProject
             ? [
                 {
-                  accessibilityLabel: "Add project",
+                  accessibilityLabel: "添加项目",
                   icon: "plus",
                   onPress: () => navigation.dispatch(StackActions.push("AddProject")),
                 },
@@ -143,7 +139,7 @@ function NewTaskHeader(props: {
         search={{
           value: props.searchText,
           onChangeText: props.onSearchTextChange,
-          placeholder: "Search projects",
+          placeholder: "搜索项目",
         }}
       />
     </>
@@ -171,7 +167,7 @@ export function NewTaskRouteScreen({ route }: StaticScreenProps<NewTaskRoutePara
         ? `Choose a project for the ${incomingShare.attachments[0]?.type === "image" ? "image" : "file"} you shared`
         : `Choose a project for the ${incomingShare.attachments.length} ${incomingShare.attachments.every((attachment) => attachment.type === "image") ? "images" : "files"} you shared`
     : null;
-  const screenTitle = incomingShare ? "Start a task" : "Choose project";
+  const screenTitle = incomingShare ? "Start a task" : "选择项目";
   const projectEmptyState = deriveProjectEmptyState(catalogState);
   const serverConfigs = useServerConfigs();
   const listScopes = pickableProjectGroups(projectScopes).filter(
@@ -216,9 +212,7 @@ export function NewTaskRouteScreen({ route }: StaticScreenProps<NewTaskRoutePara
       } catch (error) {
         Dialog.alert(
           "Could not change project",
-          error instanceof Error
-            ? error.message
-            : "The shared content reservation could not be updated.",
+          error instanceof Error ? error.message : "无法更新共享内容的预留记录。",
         );
         return;
       }
@@ -255,10 +249,8 @@ export function NewTaskRouteScreen({ route }: StaticScreenProps<NewTaskRoutePara
       if (!isAtomCommandInterrupted(result)) {
         const error = squashAtomCommandFailure(result);
         Dialog.alert(
-          "Could not start without a project",
-          error instanceof Error
-            ? error.message
-            : "The folder for threads without a project could not be created.",
+          "无法在没有项目的情况下启动",
+          error instanceof Error ? error.message : "无法创建无项目会话的文件夹。",
         );
       }
       return;
@@ -333,8 +325,8 @@ export function NewTaskRouteScreen({ route }: StaticScreenProps<NewTaskRoutePara
               <View collapsable={false} className="overflow-hidden rounded-[28px] bg-grouped-card">
                 <NavigationRow
                   className="bg-grouped-card"
-                  title="No project"
-                  subtitle="Start a task without a project"
+                  title="无项目"
+                  subtitle="启动不关联项目的任务"
                   disabled={!canStartScratch}
                   onPress={() => void startScratch()}
                   leading={
@@ -351,7 +343,7 @@ export function NewTaskRouteScreen({ route }: StaticScreenProps<NewTaskRoutePara
               <View collapsable={false} className="overflow-hidden rounded-[24px] bg-grouped-card">
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel="No project"
+                  accessibilityLabel="无项目"
                   disabled={!canStartScratch}
                   onPress={() => void startScratch()}
                   className={cn(
@@ -368,9 +360,9 @@ export function NewTaskRouteScreen({ route }: StaticScreenProps<NewTaskRoutePara
                     />
                   </View>
                   <View className="min-w-0 flex-1">
-                    <Text className="text-base font-t3-bold leading-snug">No project</Text>
+                    <Text className="text-base font-t3-bold leading-snug">无项目</Text>
                     <Text className="text-xs leading-snug text-foreground-muted" numberOfLines={1}>
-                      Start a task without a project
+                      启动不关联项目的任务
                     </Text>
                   </View>
                   <SymbolView
@@ -404,9 +396,7 @@ export function NewTaskRouteScreen({ route }: StaticScreenProps<NewTaskRoutePara
                 <>
                   <View>
                     <Button
-                      label={
-                        catalogState.hasReadyEnvironment ? "Add new project" : "Add environment"
-                      }
+                      label={catalogState.hasReadyEnvironment ? "添加新项目" : "添加环境"}
                       tone="primary"
                       onPress={() =>
                         catalogState.hasReadyEnvironment
@@ -418,7 +408,7 @@ export function NewTaskRouteScreen({ route }: StaticScreenProps<NewTaskRoutePara
                   {canStartScratch ? (
                     <View>
                       <Button
-                        label="Start without a project"
+                        label="不选择项目直接开始"
                         tone="secondary"
                         onPress={() => void startScratch()}
                       />
@@ -428,7 +418,7 @@ export function NewTaskRouteScreen({ route }: StaticScreenProps<NewTaskRoutePara
               ) : !catalogState.hasReadyEnvironment ? (
                 <View className="mt-1">
                   <Button
-                    label="Add environment"
+                    label="添加环境"
                     tone="primary"
                     onPress={() => navigation.navigate("ConnectionsNew")}
                   />
@@ -437,7 +427,7 @@ export function NewTaskRouteScreen({ route }: StaticScreenProps<NewTaskRoutePara
                 <>
                   <View className="mt-1">
                     <Button
-                      label="Add new project"
+                      label="添加新项目"
                       tone="primary"
                       onPress={() => navigation.dispatch(StackActions.push("AddProject"))}
                     />
@@ -445,7 +435,7 @@ export function NewTaskRouteScreen({ route }: StaticScreenProps<NewTaskRoutePara
                   {canStartScratch ? (
                     <View>
                       <Button
-                        label="Start without a project"
+                        label="不选择项目直接开始"
                         tone="secondary"
                         onPress={() => void startScratch()}
                       />
@@ -457,10 +447,10 @@ export function NewTaskRouteScreen({ route }: StaticScreenProps<NewTaskRoutePara
           ) : visibleScopes.length === 0 ? (
             <View className="items-center gap-2 px-6 py-8">
               <Text className="text-center text-lg font-t3-bold text-foreground">
-                No matching projects
+                没有符合条件的项目
               </Text>
               <Text className="text-center text-sm leading-normal text-foreground-muted">
-                Try a different project name or workspace path.
+                请尝试其他项目名称或工作区路径。
               </Text>
             </View>
           ) : (

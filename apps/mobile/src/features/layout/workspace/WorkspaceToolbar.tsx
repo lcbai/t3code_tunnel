@@ -22,9 +22,9 @@ import { useFloatingWorkspaceTabs, useSidebarWorkspaceTabs } from "./useSystemWo
 import { WorkspaceTabToolbarButtons } from "./WorkspaceSectionToolbar";
 
 const SEARCH_LABELS = {
-  threads: "Search threads",
-  pullRequests: "Search pull requests",
-  settings: "Search settings",
+  threads: "搜索会话",
+  pullRequests: "搜索拉取请求",
+  settings: "搜索设置",
 } as const;
 
 export function WorkspaceToolbar(props: {
@@ -123,7 +123,7 @@ export function WorkspaceToolbar(props: {
   const composeButton = nativeToolbarCompose ? (
     <Toolbar.Button
       identifier="workspace-compose"
-      accessibilityLabel="New chat"
+      accessibilityLabel="新建会话"
       icon="square.and.pencil"
       onPress={props.onNewTask}
       separateBackground
@@ -132,7 +132,7 @@ export function WorkspaceToolbar(props: {
   const searchButton = foldedSearch ? (
     <Toolbar.Button
       identifier="workspace-search"
-      accessibilityLabel={searchVisible ? "Close search" : searchLabel}
+      accessibilityLabel={searchVisible ? "关闭搜索" : searchLabel}
       icon={searchVisible ? "xmark" : "magnifyingglass"}
       onPress={searchVisible ? () => searchRef.current?.cancelSearch() : focusSearch}
       separateBackground
@@ -200,7 +200,7 @@ export function WorkspaceToolbar(props: {
           sidebarTabs === "picker" ||
           floatingTabs ? null : (
             <Toolbar.Button
-              accessibilityLabel="New chat"
+              accessibilityLabel="新建会话"
               icon="square.and.pencil"
               onPress={props.onNewTask}
             />

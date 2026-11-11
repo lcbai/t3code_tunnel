@@ -19,8 +19,8 @@ export function loadBalancingSendWarning(input: {
 }) {
   if (input.pending) {
     return {
-      title: "Checking machine resources",
-      description: "Resource checks are still running. You can choose a machine in the composer.",
+      title: "检查机器资源",
+      description: "正在检查可用资源。你也可以在消息输入框中手动选择机器。",
     };
   }
   const noMachineReadsEveryThread =
@@ -29,10 +29,10 @@ export function loadBalancingSendWarning(input: {
       input.threadContexts.every((record) => record.environmentId === environmentId),
     );
   return {
-    title: "Choose a machine to continue",
+    title: "选择要继续的机器",
     description: noMachineReadsEveryThread
-      ? "No machine can read every attached thread. Choose a machine in the composer or remove the threads."
-      : "No eligible machine has available resources. Choose a machine in the composer to override.",
+      ? "没有一台机器可以读取所有附加的会话。请在消息输入框中选择机器，或移除会话引用。"
+      : "没有符合条件的机器有可用资源。你可以在消息输入框中手动选择机器。",
   };
 }
 

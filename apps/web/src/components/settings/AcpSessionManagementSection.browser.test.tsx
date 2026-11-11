@@ -168,21 +168,21 @@ it("does not import with provider management alone", async () => {
   setup();
   grants.scopes.delete("orchestration:operate");
   await using screen = await renderSection();
-  await screen.click("List sessions");
-  expect(screen.button("Import").disabled).toBe(true);
-  await screen.click("Import");
+  await screen.click("清单会议");
+  expect(screen.button("导入").disabled).toBe(true);
+  await screen.click("导入");
   expect(commands.import).not.toHaveBeenCalled();
 });
 
 it("rechecks task access after confirming deletion", async () => {
   setup();
   await using screen = await renderSection();
-  await screen.click("List sessions");
+  await screen.click("清单会议");
   dialogs.confirm.mockImplementationOnce(async () => {
     grants.scopes.delete("orchestration:operate");
     return true;
   });
-  await screen.click("Delete");
+  await screen.click("删除");
   expect(commands.delete).not.toHaveBeenCalled();
 });
 
@@ -197,7 +197,7 @@ it.each(["Save", "Disable"])("keeps other provider edits through a %s refetch", 
   const response = { _tag: "Success" as const, value: { providers } };
   commands.listProviders.mockResolvedValue(response);
   await using screen = await renderSection();
-  await screen.click("List providers");
+  await screen.click("名单提供者");
   const input = (label: string) =>
     screen.container.querySelector<HTMLInputElement>(`[aria-label="${label}"]`)!;
   await userEvent.fill(input("other base URL"), "https://other.example.test/v1");
@@ -221,7 +221,7 @@ it.each(["Save", "Disable"])("keeps other provider edits through a %s refetch", 
     })),
   );
   await screen.click(action);
-  expect(screen.button("Refresh").disabled).toBe(true);
+  expect(screen.button("刷新").disabled).toBe(true);
   await act(async () => resolveMutation());
   for (const button of screen.container.querySelectorAll<HTMLButtonElement>("button")) {
     if (button.textContent === "Save" || button.textContent === "Disable") {
@@ -234,7 +234,7 @@ it.each(["Save", "Disable"])("keeps other provider edits through a %s refetch", 
   expect(input("other base URL").value).toBe("https://newer.example.test/v1");
   expect(input("other write-only headers JSON").value).toBe('{"X-Test":"unsaved"}');
   expect(input("google write-only headers JSON").value).toBe("");
-  await screen.click("Refresh");
+  await screen.click("刷新");
   expect(input("other base URL").value).toBe("https://api.example.test/v1");
   expect(input("other write-only headers JSON").value).toBe("");
 });
@@ -291,8 +291,8 @@ it.each([true, false])(
         }),
       )
       .toHaveFocus();
-    if (canList) await screen.getByRole("button", { name: "List sessions" }).click();
-    await screen.getByRole("button", { name: "List providers" }).click();
+    if (canList) await screen.getByRole("button", { name: "清单会议" }).click();
+    await screen.getByRole("button", { name: "名单提供者" }).click();
     await userEvent.fill(
       screen.getByRole("textbox", { name: "google base URL" }),
       "https://draft.test",
@@ -313,7 +313,7 @@ it.each([true, false])(
     await expect
       .element(screen.getByRole("textbox", { name: "google base URL" }))
       .toHaveValue("https://draft.test");
-    await screen.getByRole("button", { name: "Save", exact: true }).click();
+    await screen.getByRole("button", { name: "保存", exact: true }).click();
     expect(commands.setProvider).toHaveBeenLastCalledWith({
       environmentId,
       input: {
@@ -328,11 +328,11 @@ it.each([true, false])(
 
     await screen.setProjects([project]);
     await expect.element(screen.getByText(session.title)).not.toBeInTheDocument();
-    await expect.element(screen.getByRole("button", { name: "Load more" })).not.toBeInTheDocument();
+    await expect.element(screen.getByRole("button", { name: "装入更多" })).not.toBeInTheDocument();
     await expect
       .element(screen.getByRole("textbox", { name: "google base URL" }))
       .not.toBeInTheDocument();
-    await screen.getByRole("button", { name: "List providers" }).click();
+    await screen.getByRole("button", { name: "名单提供者" }).click();
     expect(commands.listProviders).toHaveBeenLastCalledWith({
       environmentId,
       input: { instanceId, projectId },
@@ -355,7 +355,7 @@ it.each([true, false])(
       .toHaveValue("https://api.example.test/v1");
 
     await screen.setProjects([]);
-    await expect.element(screen.getByRole("button", { name: "List providers" })).toBeDisabled();
+    await expect.element(screen.getByRole("button", { name: "名单提供者" })).toBeDisabled();
     await expect
       .element(screen.getByRole("textbox", { name: "google base URL" }))
       .not.toBeInTheDocument();
@@ -371,14 +371,14 @@ it("ignores a late listing after project replacement", async () => {
     }),
   );
   await using screen = await renderSection();
-  await screen.click("List sessions");
+  await screen.click("清单会议");
   await screen.setProjects([replacement]);
   await act(async () =>
     finish({ _tag: "Success", value: { sessions: [session], nextCursor: "old-page" } }),
   );
   await expect.element(screen.getByText(session.title)).not.toBeInTheDocument();
-  await expect.element(screen.getByRole("button", { name: "Load more" })).not.toBeInTheDocument();
-  await expect.element(screen.getByRole("button", { name: "List sessions" })).toBeEnabled();
+  await expect.element(screen.getByRole("button", { name: "装入更多" })).not.toBeInTheDocument();
+  await expect.element(screen.getByRole("button", { name: "清单会议" })).toBeEnabled();
 });
 
 it.each(["Save", "Disable"])("does not refetch the old project after a late %s", async (action) => {
@@ -394,13 +394,13 @@ it.each(["Save", "Disable"])("does not refetch the old project after a late %s",
     })),
   );
   await using screen = await renderSection();
-  await screen.click("List providers");
+  await screen.click("名单提供者");
   await screen.click(action);
   expect(command).toHaveBeenCalledOnce();
   await screen.setProjects([replacement]);
   await act(async () => finish());
   expect(commands.listProviders).toHaveBeenCalledOnce();
-  await expect.element(screen.getByRole("button", { name: "List providers" })).toBeEnabled();
+  await expect.element(screen.getByRole("button", { name: "名单提供者" })).toBeEnabled();
 });
 
 it.each(["Delete", "Disable"])(
@@ -434,14 +434,14 @@ it("keeps logout pending across project replacement and clears replacement sessi
     })),
   );
   await using screen = await renderSection();
-  await screen.click("Log out");
+  await screen.click("注销");
   await screen.setProjects([replacement]);
-  await screen.click("List sessions");
+  await screen.click("清单会议");
   await expect.element(screen.getByText(session.title)).toBeVisible();
-  await expect.element(screen.getByRole("button", { name: "Logging out" })).toBeDisabled();
-  await screen.click("Logging out");
+  await expect.element(screen.getByRole("button", { name: "正在注销" })).toBeDisabled();
+  await screen.click("正在注销");
   expect(commands.logout).toHaveBeenCalledOnce();
   await act(async () => finish());
   await expect.element(screen.getByText(session.title)).not.toBeInTheDocument();
-  await expect.element(screen.getByRole("button", { name: "Log out", exact: true })).toBeEnabled();
+  await expect.element(screen.getByRole("button", { name: "注销", exact: true })).toBeEnabled();
 });

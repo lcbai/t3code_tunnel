@@ -58,14 +58,14 @@ function failedThread(
 describe("UsageLimitRecoveryCard", () => {
   // Older servers report ChatGPT sharing limits as provider errors and may store a reset.
   it.each([
-    [CHATGPT_USAGE_LIMIT_CODE, "usage_limit", null, ["Manage usage"]],
-    [CHATGPT_WORKSPACE_USAGE_LIMIT_CODE, "usage_limit", null, ["Copy request for admin"]],
-    [CHATGPT_USAGE_LIMIT_CODE, "provider_error", null, ["Manage usage"]],
+    [CHATGPT_USAGE_LIMIT_CODE, "usage_limit", null, ["管理用量"]],
+    [CHATGPT_WORKSPACE_USAGE_LIMIT_CODE, "usage_limit", null, ["复制请求以发给管理员"]],
+    [CHATGPT_USAGE_LIMIT_CODE, "provider_error", null, ["管理用量"]],
     [
       CHATGPT_USAGE_LIMIT_CODE,
       "usage_limit",
       new Date(DAY_MS).toISOString(),
-      ["Manage usage", "Resume at reset", "Snooze until reset"],
+      ["管理用量", "额度重置时恢复", "推迟至重置"],
     ],
   ])("shows one ChatGPT notice for %s (%s, reset %s)", (code, errorClass, resetAt, actions) => {
     const container = document.createElement("div");
@@ -79,8 +79,8 @@ describe("UsageLimitRecoveryCard", () => {
         />,
       ),
     );
-    expect(container.textContent).toContain("ChatGPT usage limit reached");
-    expect(container.textContent).not.toContain("did not report a reset time");
+    expect(container.textContent).toContain("已达到 ChatGPT 用量上限");
+    expect(container.textContent).not.toContain("未报告重置时间");
     expect([...container.querySelectorAll("button")].map((button) => button.textContent)).toEqual(
       actions,
     );
@@ -105,7 +105,7 @@ describe("UsageLimitRecoveryCard", () => {
     await act(async () => copy());
     expect(container.textContent).toContain("Could not copy the request");
     await act(async () => copy());
-    expect(container.textContent).toContain("Request copied");
+    expect(container.textContent).toContain("请求已复制");
     expect(container.textContent).not.toContain("Could not copy the request");
   });
 
@@ -128,7 +128,7 @@ describe("UsageLimitRecoveryCard", () => {
     act(() => copy());
     expect(Clipboard.setStringAsync).toHaveBeenCalledTimes(1);
     await act(async () => first.resolve(true));
-    expect(container.textContent).toContain("Request copied");
+    expect(container.textContent).toContain("请求已复制");
   });
 
   it("disables Snooze once a reset more than 24.8 days away passes", () => {
@@ -147,7 +147,7 @@ describe("UsageLimitRecoveryCard", () => {
     );
     const snooze = () =>
       [...container.querySelectorAll("button")].find(
-        (button) => button.textContent === "Snooze until reset",
+        (button) => button.textContent === "推迟至重置",
       );
     expect(snooze()?.disabled).toBe(false);
 

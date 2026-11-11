@@ -447,7 +447,7 @@ export function buildLocalDraftThread(
   return presentThreadShell(draftThread.environmentId, {
     id: threadId,
     projectId: draftThread.projectId,
-    title: "New thread",
+    title: "新建会话",
     providerInstanceId: fallbackModelSelection.instanceId,
     modelSelection: fallbackModelSelection,
     runtimeMode: draftThread.runtimeMode,
@@ -542,23 +542,23 @@ export function getAntigravitySendBlockReason(
 ): string | null {
   if (provider?.driver !== "antigravity") return null;
   if (!provider.installed) {
-    return "Install Antigravity in provider settings before sending.";
+    return "请先在代理提供方设置中安装 Antigravity，再发送消息。";
   }
   if (provider.auth.status === "unauthenticated") {
-    return "Sign in to Antigravity in provider settings before sending.";
+    return "请先在代理提供方设置中登录 Antigravity，再发送消息。";
   }
   const slug = model.trim();
-  if (slug.length === 0) return "Choose an Antigravity model before sending.";
+  if (slug.length === 0) return "请先选择 Antigravity 模型，再发送消息。";
   if (provider.auth.status === "unknown") return null;
   if (provider.models.length === 0) {
-    return "Refresh Antigravity models in provider settings before sending.";
+    return "请先在代理提供方设置中刷新 Antigravity 模型列表，再发送消息。";
   }
   if (
     provider.status === "ready" &&
     slug !== ANTIGRAVITY_DEFAULT_MODEL &&
     !provider.models.some((entry) => entry.slug === slug || entry.aliases?.includes(slug))
   ) {
-    return "That Antigravity model is no longer available. Choose another model.";
+    return "Antigravity 模型已经无法使用。 选择另一个模型。";
   }
   return null;
 }
@@ -761,17 +761,13 @@ export function buildExpiredTerminalContextToastCopy(
   variant: "omitted" | "empty",
 ): { title: string; description: string } {
   const count = Math.max(1, Math.floor(expiredTerminalContextCount));
-  const noun = count === 1 ? "Expired terminal context" : "Expired terminal contexts";
-  const pronoun = count === 1 ? "it" : "them";
-  if (variant === "empty") {
-    return {
-      title: `${noun} won't be sent`,
-      description: `Remove ${pronoun} or re-add ${pronoun} to include terminal output.`,
-    };
-  }
+  const noun = count === 1 ? "终端上下文" : `${count} 个终端上下文`;
   return {
-    title: `${noun} omitted from message`,
-    description: `Re-add ${pronoun} if you want that terminal output included.`,
+    title: variant === "empty" ? `${noun}已过期，无法发送` : `已略过过期的${noun}`,
+    description:
+      variant === "empty"
+        ? "请移除过期的引用，或重新添加以包含终端输出。"
+        : "如需包含终端输出，请重新添加过期的引用。",
   };
 }
 
@@ -885,8 +881,8 @@ export function getStartedThreadModelChangeBlockReason(input: {
     return null;
   }
   return {
-    title: "Start a new chat to switch providers",
-    description: "This thread does not support switching providers after it has started.",
+    title: "启动新聊天以切换提供者",
+    description: "此会话在启动后不支持切换提供者。",
   };
 }
 
@@ -1175,7 +1171,7 @@ export type LocalThreadErrorEntry = {
 };
 
 export function chatActionErrorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : "An error occurred.";
+  return error instanceof Error ? error.message : "发生了错误。";
 }
 
 export function releaseChatTimelineAnchor<T extends { readonly messageId: MessageId | null }>(
@@ -1244,7 +1240,7 @@ export function makeModelDisabledReason(
       ...context,
       nextModelSelection: { instanceId, model },
     });
-    return reason ? `${reason.description} Start a new thread to use this model.` : null;
+    return reason ? `${reason.description} 启动新会话使用此模型。` : null;
   };
 }
 

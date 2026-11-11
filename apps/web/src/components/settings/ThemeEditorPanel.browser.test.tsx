@@ -66,7 +66,7 @@ async function renderPanel() {
       />,
     ),
   );
-  const panel = screen.getByRole("dialog", { name: "Create theme" });
+  const panel = screen.getByRole("dialog", { name: "创建主题" });
   await expect.element(panel).toBeVisible();
   return {
     panel: panel.element() as HTMLElement,
@@ -109,7 +109,7 @@ describe("ThemeEditorPanel", () => {
         restoreTheme={() => {}}
       />,
     );
-    const panel = screen.getByRole("dialog", { name: "Create theme" });
+    const panel = screen.getByRole("dialog", { name: "创建主题" });
     await expect.element(panel).toBeVisible();
 
     dragHeader(panel.element() as HTMLElement, 700, 40);

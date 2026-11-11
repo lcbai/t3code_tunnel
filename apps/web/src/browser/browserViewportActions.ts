@@ -75,14 +75,14 @@ async function resizeBrowserViewport(
       environmentId: target.threadRef.environmentId,
       input: { threadId: target.threadRef.threadId, tabId: target.tabId, viewport },
     },
-    { label: "preview viewport resize" },
+    { label: "预览视图调整大小" },
   );
   if (result._tag === "Failure") {
     const error = squashAtomCommandFailure(result);
     toastManager.add({
       type: "error",
-      title: "Unable to resize browser viewport",
-      description: error instanceof Error ? error.message : "An error occurred.",
+      title: "无法调整浏览器视图端口大小",
+      description: error instanceof Error ? error.message : "发生了错误。",
     });
     throw error;
   }

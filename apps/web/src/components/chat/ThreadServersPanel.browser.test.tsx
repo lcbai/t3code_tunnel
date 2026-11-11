@@ -39,7 +39,7 @@ it("pages servers four at a time, collapses back, and resets on thread switch", 
   expect(count("[data-thread-details-server-overflow]")).toBe(4);
   await page.getByRole("button", { name: "Show 2 more" }).click();
   await expectRows(10);
-  await page.getByRole("button", { name: "Show less" }).click();
+  await page.getByRole("button", { name: "显示少一点" }).click();
   await expectRows(4);
 
   await page.getByRole("button", { name: "Show 4 more" }).click();
