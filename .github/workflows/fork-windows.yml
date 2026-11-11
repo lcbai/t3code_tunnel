@@ -43,7 +43,7 @@ jobs:
           $baseVersion = (Get-Content apps/desktop/package.json -Raw | ConvertFrom-Json).version
           $buildDate = (Get-Date).ToUniversalTime().ToString('yyyyMMdd')
           $version = "$baseVersion-preview.$buildDate.$env:GITHUB_RUN_NUMBER"
-          vp run dist:desktop:win:x64 --build-version "$version"
+          vp run dist:desktop:win:x64 --build-version "$version" --keep-stage
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
           $installer = "release/T3-Code-$version-x64.exe"
@@ -56,6 +56,23 @@ jobs:
           }
           Get-FileHash -Algorithm SHA256 -LiteralPath $installer
           "path=$installer" >> $env:GITHUB_OUTPUT
+
+      - name: Report unpacked file counts
+        if: failure() && steps.installer.conclusion == 'failure'
+        run: |
+          $tempDirectory = node -p 'require("node:os").tmpdir()'
+          $stage = Get-ChildItem -LiteralPath $tempDirectory -Directory -Filter 't3code-desktop-win-stage-*' |
+            Sort-Object LastWriteTime -Descending | Select-Object -First 1
+          if (!$stage) { return }
+          $dist = Join-Path $stage.FullName 'app/dist'
+          if (!(Test-Path -LiteralPath $dist)) { return }
+          Get-ChildItem -LiteralPath $dist -Directory -Filter '*-unpacked' | ForEach-Object {
+            $appDirectory = $_.FullName
+            Get-ChildItem -LiteralPath $appDirectory -Recurse -File |
+              Group-Object { [System.IO.Path]::GetRelativePath($appDirectory, $_.DirectoryName) } |
+              Sort-Object Name |
+              ForEach-Object { '{0,3} {1}' -f $_.Count, $_.Name }
+          }
 
       - name: Upload installer
         uses: actions/upload-artifact@v7
