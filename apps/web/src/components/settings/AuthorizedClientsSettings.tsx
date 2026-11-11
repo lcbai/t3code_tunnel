@@ -550,6 +550,11 @@ const ConnectedClientListRow = memo(function ConnectedClientListRow({
                 <span aria-hidden> · </span>
               </>
             ) : null}
+            {clientSession.persistent ? (
+              <>
+                长期授权<span aria-hidden> · </span>
+              </>
+            ) : null}
             <AccessScopeSummary scopes={clientSession.scopes} label="客户范围" />
           </p>
         </div>

@@ -42,6 +42,7 @@ import {
 import { loadRepoEnv } from "./lib/public-config.ts";
 import { selectDesktopRuntimeExternalDependencies } from "./lib/desktop-external-packages.ts";
 import { resolveCatalogDependencies } from "./lib/resolve-catalog.ts";
+import { windowsSystemTar } from "./lib/windows-tar.ts";
 
 import * as NodeRuntime from "@effect/platform-node/NodeRuntime";
 import * as NodeServices from "@effect/platform-node/NodeServices";
@@ -58,11 +59,21 @@ import * as Path from "effect/Path";
 import * as Schema from "effect/Schema";
 import * as Stream from "effect/Stream";
 import { Command, Flag } from "effect/cli";
+import { FetchHttpClient, HttpClient, HttpClientResponse } from "effect/http";
 import { ChildProcess, ChildProcessSpawner } from "effect/process";
 
 const LINUX_ICON_SIZES = [16, 22, 24, 32, 48, 64, 128, 256, 512] as const;
 const DESKTOP_APP_ID = "com.t3tools.t3code";
 const APPLE_TEAM_ID_PATTERN = /^[A-Z0-9]{10}$/u;
+const FRP_VERSION = "0.72.0"; // Match the server image in infra/frp-tunnel/compose.yaml.
+const FRP_ARCHIVE_SHA256 = {
+  darwin_amd64: "60439dc6bf794c4182a1a4cac147d642f839d55201607208979eb23aecd09be9",
+  darwin_arm64: "6e8576c5b6b9914a86850f6ff4fb81c5a09e706f91f70f64d5f398558bdc9db8",
+  linux_amd64: "daf719b32ca2778770bb92955e231a07414d754378b9af328aa2642862479804",
+  linux_arm64: "02180b857480302fd934e9ddbd50fe2f73229f99062f88756abc6de9df5e95cf",
+  windows_amd64: "5197c1b69564089cdc229fc1260a0e25db1e722b1b7db45fe1542c3c43edf9ae",
+  windows_arm64: "e4b83b66c4045971dd9a47cdef16dd02af471aaa6667dd303e63b1a669162927",
+} as const;
 
 const BuildPlatform = Schema.Literals(["mac", "linux", "win"]);
 const BuildArch = Schema.Literals(["arm64", "x64", "universal"]);
@@ -455,6 +466,15 @@ export class ResourceMonitorBuildOutputMissingError extends Schema.TaggedError<R
 ) {
   override get message(): string {
     return `Resource monitor build for ${this.rustTarget} did not produce ${this.binaryPath}.`;
+  }
+}
+
+class FrpArchiveChecksumError extends Schema.TaggedError<
+  FrpArchiveChecksumError,
+  { readonly brand: unique symbol }
+>()("FrpArchiveChecksumError", { archiveName: Schema.String }) {
+  override get message() {
+    return `SHA-256 verification failed for ${this.archiveName}.`;
   }
 }
 
@@ -979,6 +999,10 @@ export const DESKTOP_FILE_EXCLUSIONS = [
   "!apps/desktop/resources/browser-secret/**/*",
   "!apps/desktop/prod-resources/browser-secret",
   "!apps/desktop/prod-resources/browser-secret/**/*",
+  "!apps/desktop/resources/frp",
+  "!apps/desktop/resources/frp/**/*",
+  "!apps/desktop/prod-resources/frp",
+  "!apps/desktop/prod-resources/frp/**/*",
   "!apps/desktop/prod-resources/windows-server",
   "!apps/desktop/prod-resources/windows-server/**/*",
   "!apps/desktop/prod-resources/wsl-runtime.tar.gz",
@@ -1081,6 +1105,10 @@ export const DESKTOP_EXTRA_RESOURCES = [
   {
     from: "apps/desktop/prod-resources/resource-monitor",
     to: "resource-monitor",
+  },
+  {
+    from: "apps/desktop/prod-resources/frp",
+    to: "frp",
   },
 ] as const;
 export const LINUX_CAPTURE_EXTRA_RESOURCES = [
@@ -2256,6 +2284,78 @@ export const stageBrowserSecret = Effect.fn("stageBrowserSecret")(function* (inp
     ),
     { label: "build Linux browser secret helper", verbose: input.verbose },
   );
+});
+
+const stageFrpClient = Effect.fn("stageFrpClient")(function* (input: {
+  readonly stageResourcesDir: string;
+  readonly platform: typeof BuildPlatform.Type;
+  readonly arch: typeof BuildArch.Type;
+  readonly verbose: boolean;
+}) {
+  const fs = yield* FileSystem.FileSystem;
+  const path = yield* Path.Path;
+  const hostPlatform = yield* HostProcess.Platform;
+  const localArchiveDirectory = yield* Config.option(Config.String("T3CODE_FRP_ARCHIVE_DIR"));
+  const scratch = yield* fs.makeTempDirectoryScoped({ prefix: "t3-frpc-" });
+  const directory = path.join(input.stageResourcesDir, "frp");
+  const frpPlatform = { mac: "darwin", linux: "linux", win: "windows" } as const;
+  const architectures: ReadonlyArray<"amd64" | "arm64"> =
+    input.arch === "universal" ? ["amd64", "arm64"] : [input.arch === "arm64" ? "arm64" : "amd64"];
+  const executableName = input.platform === "win" ? "frpc.exe" : "frpc";
+  const executablePaths: string[] = [];
+  yield* fs.makeDirectory(directory, { recursive: true });
+  for (const arch of architectures) {
+    const target = `${frpPlatform[input.platform]}_${arch}` as const;
+    const archiveStem = `frp_${FRP_VERSION}_${target}`;
+    const archiveName = `${archiveStem}.${input.platform === "win" ? "zip" : "tar.gz"}`;
+    const archivePath = path.join(scratch, archiveName);
+    const bytes = yield* Option.match(localArchiveDirectory, {
+      onSome: (folder) => fs.readFile(path.join(folder, archiveName)),
+      onNone: () =>
+        Effect.log(`[desktop-artifact] Downloading ${archiveName}.`).pipe(
+          Effect.andThen(
+            HttpClient.get(
+              `https://github.com/fatedier/frp/releases/download/v${FRP_VERSION}/${archiveName}`,
+            ),
+          ),
+          Effect.flatMap(HttpClientResponse.filterStatusOk),
+          Effect.flatMap((response) => response.arrayBuffer),
+          Effect.map((buffer) => new Uint8Array(buffer)),
+          Effect.provide(FetchHttpClient.layer),
+        ),
+    });
+    const digest = NodeCrypto.createHash("sha256").update(bytes).digest("hex");
+    if (digest !== FRP_ARCHIVE_SHA256[target])
+      return yield* new FrpArchiveChecksumError({ archiveName });
+    yield* fs.writeFile(archivePath, bytes);
+    const entries = [`${archiveStem}/${executableName}`, `${archiveStem}/LICENSE`];
+    const extract =
+      input.platform === "win" && hostPlatform === "linux"
+        ? ChildProcess.make("unzip", ["-q", archivePath, ...entries, "-d", scratch])
+        : ChildProcess.make(hostPlatform === "win32" ? windowsSystemTar() : "tar", [
+            "-xf",
+            archivePath,
+            "-C",
+            scratch,
+            ...entries,
+          ]);
+    yield* runCommand(extract, {
+      label: `extract verified ${archiveName}`,
+      verbose: input.verbose,
+    });
+    executablePaths.push(path.join(scratch, archiveStem, executableName));
+    yield* fs.copyFile(path.join(scratch, archiveStem, "LICENSE"), path.join(directory, "LICENSE"));
+  }
+  const destination = path.join(directory, executableName);
+  if (executablePaths.length === 1) {
+    yield* fs.copyFile(executablePaths[0]!, destination);
+  } else {
+    yield* runCommand(
+      ChildProcess.make("lipo", ["-create", ...executablePaths, "-output", destination]),
+      { label: "lipo frpc universal binary", verbose: input.verbose },
+    );
+  }
+  if (input.platform !== "win") yield* fs.chmod(destination, 0o755);
 });
 
 const generateMacIconSet = Effect.fn("build-desktop-artifact.generateMacIconSet")(function* (
@@ -3570,6 +3670,12 @@ const buildDesktopArtifactUnlocked = Effect.fn("buildDesktopArtifactUnlocked")(f
   }
   yield* stageResourceMonitor({
     repoRoot,
+    stageResourcesDir,
+    platform: options.platform,
+    arch: options.arch,
+    verbose: options.verbose,
+  });
+  yield* stageFrpClient({
     stageResourcesDir,
     platform: options.platform,
     arch: options.arch,

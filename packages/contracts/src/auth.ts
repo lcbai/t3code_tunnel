@@ -352,6 +352,7 @@ export const AuthClientSession = Schema.Struct({
   client: AuthClientMetadata,
   issuedAt: Schema.DateTimeUtc,
   expiresAt: Schema.DateTimeUtc,
+  persistent: Schema.optionalKey(Schema.Literal(true)),
   lastConnectedAt: Schema.NullOr(Schema.DateTimeUtc),
   connected: Schema.Boolean,
   current: Schema.Boolean,
@@ -448,6 +449,8 @@ export type AuthRevokeClientSessionInput = typeof AuthRevokeClientSessionInput.T
 export const AuthCreatePairingCredentialInput = Schema.Struct({
   label: Schema.optionalKey(TrimmedNonEmptyString),
   scopes: Schema.optionalKey(AuthGrantScopes),
+  /** The one-time code still expires. Its bearer session remains valid until revoked. */
+  persistent: Schema.optionalKey(Schema.Boolean),
   /** Binds the code to one agent sign-in at this level. The server derives the scopes from it. */
   access: Schema.optionalKey(AuthMcpClientAccess),
 });

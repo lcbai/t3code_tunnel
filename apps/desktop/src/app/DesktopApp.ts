@@ -29,6 +29,7 @@ import * as DesktopObservability from "./DesktopObservability.ts";
 import * as DesktopPreReadyPlatform from "./DesktopPreReadyPlatform.ts";
 import * as DesktopShutdown from "./DesktopShutdown.ts";
 import * as DesktopServerExposure from "../backend/DesktopServerExposure.ts";
+import * as DesktopFrpTunnel from "../backend/DesktopFrpTunnel.ts";
 import * as DesktopAppSettings from "../settings/DesktopAppSettings.ts";
 import * as DesktopShellEnvironment from "../shell/DesktopShellEnvironment.ts";
 import * as DesktopStartupRecovery from "./DesktopStartupRecovery.ts";
@@ -262,6 +263,14 @@ const bootstrap = Effect.gen(function* () {
     yield* logBootstrapInfo("bootstrap backend start requested");
     // WSL-only fallback can change the primary endpoint before readiness.
     const config = yield* primaryBackend.currentConfig;
+    const tunnel = yield* DesktopFrpTunnel.DesktopFrpTunnel;
+    const appIdentity = yield* DesktopAppIdentity.DesktopAppIdentity;
+    yield* tunnel.restore(
+      yield* appIdentity.resolveUserDataPath,
+      Option.map(config, (value) => value.httpBaseUrl).pipe(
+        Option.getOrElse(() => backendConfig.httpBaseUrl),
+      ),
+    );
     if (
       !environment.isDevelopment &&
       !settings.wslOnly &&
@@ -366,10 +375,12 @@ const scopedProgram = Effect.scoped(
 
     const shutdown = yield* DesktopShutdown.DesktopShutdown;
     const rendererHistory = yield* DesktopRendererHistory.DesktopRendererHistory;
+    const tunnel = yield* DesktopFrpTunnel.DesktopFrpTunnel;
 
     yield* Effect.addFinalizer(() =>
       // Quit can outrun layer finalizers; stop pooled backends here so they receive SIGTERM before OS teardown.
       stopAllPoolInstances().pipe(
+        Effect.ensuring(tunnel.stop),
         Effect.ensuring(rendererHistory.shutdown),
         Effect.ensuring(shutdown.markComplete),
         Effect.withSpan("desktop.app.shutdown"),

@@ -1,0 +1,10 @@
+{
+	servers {
+		protocols h1 h2
+	}
+}
+
+{$T3_TUNNEL_DOMAIN} {
+	reverse_proxy /~!frp frps:7000
+	reverse_proxy frps:8080
+}

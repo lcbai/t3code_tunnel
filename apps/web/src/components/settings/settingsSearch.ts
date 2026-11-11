@@ -1215,6 +1215,14 @@ export const SETTINGS_SEARCH_ITEMS = [
     localBackendManagementOnly: true,
   },
   {
+    id: "frp-tunnel",
+    title: "FRP 穿透",
+    to: "/settings/access",
+    searchTerms: ["内网穿透 公网 手机配对 frpc frps reverse proxy tunnel"],
+    desktopOnly: true,
+    localBackendManagementOnly: true,
+  },
+  {
     id: "wsl-backend",
     title: "WSL 后端",
     to: "/settings/access",

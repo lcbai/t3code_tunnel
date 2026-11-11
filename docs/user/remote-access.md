@@ -130,6 +130,25 @@ tailscale serve --https=443 --set-path=/ off
 If that port is already in use, choose another with
 `--tailscale-serve-port`. See `t3 pair --help` for other pairing options.
 
+### 自建 FRP 穿透
+
+把 `infra/frp-tunnel` 目录放到一台安装了 Docker Compose 的公网服务器上。为要连接的电脑准备一个域名，例如 `t3.example.com`，把 DNS 解析指向公网服务器，并放通 TCP `80` 和 `443`。每个域名接入一台运行 T3 Code 的电脑，可以配对多部手机。
+
+在服务器的 `infra/frp-tunnel` 目录执行 `cp .env.example .env`，然后把 `.env` 中的 `T3_TUNNEL_DOMAIN` 改成你的域名。首次部署时生成密钥并启动服务。
+
+```sh
+(umask 077 && openssl rand -hex 32 > .env.token)
+docker compose up -d
+```
+
+Caddy 会为域名申请和续期 HTTPS 证书。桌面端与手机均通过该域名的 `443` 端口连接，FRP 的内部端口由 Docker 网络提供。把 `.env.token` 里的密钥填入桌面端，手机只需要一次性配对码。
+
+1. 在电脑打开 **设置 → 共享与访问 → FRP 穿透 → 配置穿透**，输入完整的 HTTPS 地址和服务器密钥，选择 **保存并连接**。
+2. 桌面端显示 **已连接** 后，点击 **手机扫码配对**。在手机的 **设置 → 环境 → ＋** 扫码，点击右上角勾号完成连接。
+3. 手机再次打开时会使用已保存的连接。电脑需要保持开机并运行 T3 Code。可以在电脑的 **已授权客户端** 撤销手机授权。
+
+如果桌面端显示连接失败，检查域名解析及服务器防火墙，或在服务器运行 `docker compose logs --tail=100 caddy frps` 查看服务状态。
+
 ### Hosted web app
 
 [app.t3.codes](https://app.t3.codes) needs an HTTPS endpoint. It connects directly

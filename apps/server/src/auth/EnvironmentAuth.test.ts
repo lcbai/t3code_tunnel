@@ -3,9 +3,12 @@ import * as NodeServices from "@effect/platform-node/NodeServices";
 import { authScopeResponse, AuthStandardClientScopes } from "@t3tools/contracts";
 import { expect, it } from "@effect/vitest";
 import * as DateTime from "effect/DateTime";
+import * as Duration from "effect/Duration";
 import * as Effect from "effect/Effect";
+import * as Fiber from "effect/Fiber";
 import * as Layer from "effect/Layer";
 import * as Redacted from "effect/Redacted";
+import * as TestClock from "effect/testing/TestClock";
 
 import * as ServerConfig from "../config.ts";
 import { makeDpopKey } from "./dpop.testkit.ts";
@@ -344,6 +347,55 @@ it.layer(Layer.mergeAll(NodeServices.layer, NodePlatformCrypto.layer))(
           .pipe(Effect.flip);
         expect(reused._tag).toBe("ServerAuthInvalidCredentialError");
       }).pipe(Effect.provide(layerEnvironmentAuth())),
+    );
+
+    it.effect("keeps a persistent device authorized after the ordinary pairing lifetime", () =>
+      Effect.gen(function* () {
+        const serverAuth = yield* EnvironmentAuth.EnvironmentAuth;
+        const sessions = yield* SessionStore.SessionStore;
+        const pairing = yield* serverAuth.issuePairingCredential({
+          persistent: true,
+          scopes: ["orchestration:read"],
+        });
+        const now = yield* DateTime.now;
+        expect(pairing.expiresAt.epochMilliseconds - now.epochMilliseconds).toBe(
+          Duration.toMillis(Duration.minutes(5)),
+        );
+
+        const exchange = () =>
+          serverAuth.exchangeBootstrapCredentialForAccessToken(
+            pairing.credential,
+            undefined,
+            requestMetadata,
+          );
+        const token = yield* exchange();
+        expect((yield* Effect.flip(exchange()))._tag).toBe("ServerAuthInvalidCredentialError");
+
+        yield* TestClock.adjust(Duration.days(31));
+        const session = yield* serverAuth.authenticateHttpRequest(
+          makeBearerRequest(token.access_token),
+        );
+        const ticket = yield* serverAuth.issueWebSocketTicket(session, { use: "rpc" });
+        expect(
+          (yield* sessions.verifyWebSocketToken(Redacted.value(ticket.ticket))).sessionId,
+        ).toBe(session.sessionId);
+        expect(yield* serverAuth.listSessions()).toEqual([
+          expect.objectContaining({ sessionId: session.sessionId, persistent: true }),
+        ]);
+
+        const invalidation = yield* sessions
+          .awaitInvalidation(session.sessionId)
+          .pipe(Effect.forkScoped({ startImmediately: true }));
+        expect(yield* serverAuth.revokeSession(session.sessionId)).toBe(true);
+        yield* Fiber.join(invalidation);
+        expect((yield* Effect.flip(sessions.verify(token.access_token)))._tag).toBe(
+          "SessionTokenRevokedError",
+        );
+        expect(yield* serverAuth.listSessions()).toEqual([]);
+      }).pipe(
+        Effect.scoped,
+        Effect.provide(Layer.merge(layerEnvironmentAuth(), TestClock.layer())),
+      ),
     );
 
     it.effect.each([

@@ -895,7 +895,9 @@ export const make = Effect.gen(function* () {
                       proofKeyThumbprint: input.proofKeyThumbprint,
                       ttl: Duration.hours(1),
                     }
-                  : {}),
+                  : grant.subject === SessionStore.PERSISTENT_DEVICE_SUBJECT
+                    ? { persistent: true }
+                    : {}),
                 replaceActiveForSubjectAndMethod: grant.method === "desktop-bootstrap",
                 client: {
                   ...requestMetadata,
@@ -1057,7 +1059,10 @@ export const make = Effect.gen(function* () {
       scopes: input?.access
         ? mcpClientScopes(input.access)
         : (input?.scopes ?? AuthStandardClientScopes),
-      subject: "one-time-token",
+      subject:
+        input?.persistent && input.access === undefined
+          ? SessionStore.PERSISTENT_DEVICE_SUBJECT
+          : "one-time-token",
       ...(input?.label ? { label: input.label } : {}),
       ...(input?.access ? { mcpApproval: input.access } : {}),
     }).pipe(
@@ -1334,6 +1339,9 @@ const mcpApprovalLevel = (subject: string): AuthMcpClientAccess | undefined => {
   return isMcpClientAccess(level) ? level : undefined;
 };
 
+const isPairedDevice = (subject: string) =>
+  subject === "one-time-token" || subject === SessionStore.PERSISTENT_DEVICE_SUBJECT;
+
 const revokeUnsupportedPairedClients = Effect.fn("EnvironmentAuth.revokeUnsupportedPairedClients")(
   function* (
     policy: ManagedPolicy.ManagedPolicy["Service"],
@@ -1346,7 +1354,7 @@ const revokeUnsupportedPairedClients = Effect.fn("EnvironmentAuth.revokeUnsuppor
     const sessions = (yield* stores.sessions.listActive()).filter(
       (session) =>
         session.subject === "cloud-connect" ||
-        (!remoteAllowed && session.subject === "one-time-token") ||
+        (!remoteAllowed && isPairedDevice(session.subject)) ||
         // The startup link also pairs browsers on this machine; only a device elsewhere goes.
         (!remoteAllowed &&
           session.subject === INTERNAL_ADMINISTRATIVE_BOOTSTRAP_SUBJECT &&
@@ -1356,7 +1364,7 @@ const revokeUnsupportedPairedClients = Effect.fn("EnvironmentAuth.revokeUnsuppor
     const links = (yield* stores.pairingLinks.listActive()).filter(
       (link) =>
         link.subject === "cloud-connect" ||
-        (!remoteAllowed && link.subject === "one-time-token") ||
+        (!remoteAllowed && isPairedDevice(link.subject)) ||
         // Approval codes let an agent elsewhere sign in, as plain codes do.
         (!remoteAllowed && link.subject.startsWith(MCP_APPROVAL_SUBJECT_PREFIX)),
     );

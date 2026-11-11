@@ -375,6 +375,7 @@ export class SessionStore extends Context.Service<
     readonly legacyCookieName: string | undefined;
     readonly issue: (input?: {
       readonly ttl?: Duration.Duration;
+      readonly persistent?: true;
       readonly subject?: string;
       readonly method?: ServerAuthSessionMethod;
       readonly scopes?: ReadonlyArray<AuthEnvironmentScope>;
@@ -427,6 +428,9 @@ export class SessionStore extends Context.Service<
 const SIGNING_SECRET_NAME = "server-signing-key";
 const DEFAULT_SESSION_TTL = Duration.days(30);
 const DEFAULT_WEBSOCKET_TOKEN_TTL = Duration.minutes(5);
+export const PERSISTENT_DEVICE_SUBJECT = "persistent-device-pairing";
+// Session records and signed claims require a date even for a persistent device.
+const PERSISTENT_DEVICE_EXPIRES_AT = DateTime.makeUnsafe("9999-12-31T23:59:59.999Z");
 
 const SessionClaims = Schema.Struct({
   v: Schema.Literals([1, 2]),
@@ -485,6 +489,10 @@ function toClientMetadata(record: {
 function toAuthClientSession(input: Omit<AuthClientSession, "current">): AuthClientSession {
   return {
     ...input,
+    ...(input.expiresAt.epochMilliseconds === PERSISTENT_DEVICE_EXPIRES_AT.epochMilliseconds &&
+    input.subject === PERSISTENT_DEVICE_SUBJECT
+      ? { persistent: true }
+      : {}),
     current: false,
   };
 }
@@ -649,9 +657,11 @@ const make = Effect.gen(function* () {
           .pipe(Effect.mapError((cause) => new SessionCredentialIssueError({ cause }))),
       );
       const issuedAt = yield* DateTime.now;
-      const expiresAt = DateTime.add(issuedAt, {
-        milliseconds: Duration.toMillis(input?.ttl ?? DEFAULT_SESSION_TTL),
-      });
+      const expiresAt = input?.persistent
+        ? PERSISTENT_DEVICE_EXPIRES_AT
+        : DateTime.add(issuedAt, {
+            milliseconds: Duration.toMillis(input?.ttl ?? DEFAULT_SESSION_TTL),
+          });
       const claims: SessionClaims = {
         v: 1,
         kind: "session",

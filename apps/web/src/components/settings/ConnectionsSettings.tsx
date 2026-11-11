@@ -93,6 +93,7 @@ import {
   desktopNetworkAccessStateAtom,
   refreshDesktopNetworkAccessState,
 } from "~/state/desktopNetworkAccess";
+import { useDesktopFrpTunnelState } from "~/state/desktopFrpTunnel";
 import { desktopWslStateAtom, refreshDesktopWslState } from "~/state/desktopWslState";
 import { useDesktopUpdateState } from "~/state/desktopUpdate";
 import {
@@ -130,6 +131,7 @@ import {
 import { ITEM_ROW_CLASSNAME } from "./itemRows";
 import { EmptyRemoteEnvironments, SavedBackendListRow } from "./SavedEnvironmentRows";
 import { AddEnvironmentDialog } from "./AddEnvironmentDialog";
+import { FrpTunnelSettings } from "./FrpTunnelSettings";
 
 const DEFAULT_TAILSCALE_SERVE_PORT = 443;
 const EMPTY_ADVERTISED_ENDPOINTS: ReadonlyArray<AdvertisedEndpoint> = [];
@@ -376,6 +378,11 @@ function ConnectionsSettingsContent({
   const canMaintain = useEnvironmentScope(accessEnvironmentId, AuthEnvironmentMaintainScope);
   const canManageLocalBackend = isPrimaryAccess && !isLocalEnvironmentDisabled() && canMaintain;
   const showsAccess = view === "access";
+  const canManageFrpTunnel =
+    canManageLocalBackend &&
+    typeof desktopBridge?.getFrpTunnelState === "function" &&
+    typeof desktopBridge.setFrpTunnel === "function";
+  const frpTunnel = useDesktopFrpTunnelState(showsAccess && canManageFrpTunnel);
   const authAccessChanges = useEnvironmentQuery(
     showsAccess && canReadAccess && accessEnvironmentId !== null
       ? authEnvironment.accessChanges({
@@ -686,18 +693,32 @@ function ConnectionsSettingsContent({
 
   const visibleDesktopPairingLinks = desktopPairingLinks;
   const tailscaleHttpsEndpoint = desktopAdvertisedEndpoints.find(isTailscaleHttpsEndpoint) ?? null;
+  const connectedFrpOrigin = frpTunnel.data?.status === "connected" ? frpTunnel.data.url : null;
+  const frpEndpoint =
+    connectedFrpOrigin !== null
+      ? (desktopAdvertisedEndpoints.find(
+          (endpoint) =>
+            endpoint.provider.id === "frp" &&
+            new URL(endpoint.httpBaseUrl).origin === connectedFrpOrigin,
+        ) ?? null)
+      : null;
   const visibleDesktopNetworkAdvertisedEndpoints = isLocalBackendNetworkAccessible
-    ? desktopAdvertisedEndpoints.filter((endpoint) => !isTailscaleHttpsEndpoint(endpoint))
+    ? desktopAdvertisedEndpoints.filter(
+        (endpoint) => endpoint.provider.id !== "frp" && !isTailscaleHttpsEndpoint(endpoint),
+      )
     : [];
-  const visibleDesktopAdvertisedEndpoints = tailscaleHttpsEndpoint
-    ? [...visibleDesktopNetworkAdvertisedEndpoints, tailscaleHttpsEndpoint]
-    : visibleDesktopNetworkAdvertisedEndpoints;
+  const visibleDesktopAdvertisedEndpoints = [
+    ...visibleDesktopNetworkAdvertisedEndpoints,
+    ...(tailscaleHttpsEndpoint ? [tailscaleHttpsEndpoint] : []),
+    ...(frpEndpoint ? [frpEndpoint] : []),
+  ];
   const defaultDesktopNetworkAdvertisedEndpoint = selectPairingEndpoint(
     visibleDesktopNetworkAdvertisedEndpoints,
     defaultAdvertisedEndpointKey,
   );
   const defaultDesktopAdvertisedEndpoint =
     defaultDesktopNetworkAdvertisedEndpoint ??
+    frpEndpoint ??
     selectPairingEndpoint(
       tailscaleHttpsEndpoint ? [tailscaleHttpsEndpoint] : [],
       defaultAdvertisedEndpointKey,
@@ -1206,6 +1227,16 @@ function ConnectionsSettingsContent({
                 {renderNetworkAccessRow()}
                 {renderEndpointRows()}
                 {renderTailscaleRow()}
+                {canManageFrpTunnel ? (
+                  <FrpTunnelSettings
+                    bridge={desktopBridge}
+                    state={frpTunnel.data}
+                    readError={frpTunnel.error}
+                    environmentId={accessEnvironmentId}
+                    delegatableScopes={currentSessionScopes ?? []}
+                    managed={remoteClientsDenial}
+                  />
+                ) : null}
                 {renderWslRow()}
               </>
             ) : canManageLocalBackend ? (

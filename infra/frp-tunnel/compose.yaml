@@ -1,0 +1,32 @@
+services:
+  frps:
+    image: ghcr.io/fatedier/frps:v0.72.0@sha256:17abb20dd392557a44070d9726954630c0eb1f7a9bd6ead5ae9150d165179ea4
+    command: ["-c", "/etc/frp/frps.toml"]
+    restart: unless-stopped
+    volumes:
+      - ./frps.toml:/etc/frp/frps.toml:ro
+    secrets:
+      - frp_token
+
+  caddy:
+    image: caddy:2.11.9-alpine@sha256:0bbb055bda6793c999bde78b1b5ce3e89f829fb031af2cf50056ea1246559fee
+    restart: unless-stopped
+    depends_on:
+      - frps
+    environment:
+      T3_TUNNEL_DOMAIN: ${T3_TUNNEL_DOMAIN:?Set T3_TUNNEL_DOMAIN in .env}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+secrets:
+  frp_token:
+    file: ./.env.token
+
+volumes:
+  caddy_data:
+  caddy_config:

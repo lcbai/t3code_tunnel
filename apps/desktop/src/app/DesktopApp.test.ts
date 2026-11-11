@@ -33,6 +33,7 @@ import * as DesktopPreReadyPlatform from "./DesktopPreReadyPlatform.ts";
 import * as DesktopShutdown from "./DesktopShutdown.ts";
 import * as DesktopState from "./DesktopState.ts";
 import * as DesktopBackendPool from "../backend/DesktopBackendPool.ts";
+import * as DesktopFrpTunnel from "../backend/DesktopFrpTunnel.ts";
 import * as DesktopServerExposure from "../backend/DesktopServerExposure.ts";
 import * as ElectronApp from "../electron/ElectronApp.ts";
 import * as ElectronDialog from "../electron/ElectronDialog.ts";
@@ -90,6 +91,13 @@ it.effect.each([false, true])(
       const runApp = DesktopApp.program
         .pipe(
           Effect.provide(NodeCrypto.layer),
+          Effect.provideService(DesktopFrpTunnel.DesktopFrpTunnel, {
+            restore: () => Effect.void,
+            stop: Effect.void,
+            state: Effect.succeed({ status: "disabled" as const, url: null, message: null }),
+            endpoint: Effect.succeed(null),
+            configure: () => Effect.die("unexpected FRP configuration"),
+          }),
           Effect.provideService(DesktopAppIdentity.DesktopAppIdentity, {
             resolveUserDataPath: Effect.succeed("/isolated/userdata"),
             configure: record("identity"),

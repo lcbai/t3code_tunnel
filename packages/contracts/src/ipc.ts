@@ -513,6 +513,16 @@ export const DesktopServerExposureStateSchema = Schema.Struct({
   tailscaleServePort: Schema.Number,
 });
 
+export const DesktopFrpTunnelState = Schema.Struct({
+  status: Schema.Literals(["disabled", "connecting", "connected", "error"]),
+  url: Schema.NullOr(Schema.String),
+  message: Schema.NullOr(Schema.String),
+});
+export type DesktopFrpTunnelState = typeof DesktopFrpTunnelState.Type;
+
+export const DesktopFrpTunnelConfig = Schema.Struct({ url: Schema.String, token: Schema.String });
+export type DesktopFrpTunnelConfig = typeof DesktopFrpTunnelConfig.Type;
+
 export interface PickFolderOptions {
   initialPath?: string | null;
   targetEnvironmentId?: string;
@@ -1101,6 +1111,8 @@ export interface DesktopBridge {
     readonly port?: number;
   }) => Promise<DesktopServerExposureState>;
   getAdvertisedEndpoints: () => Promise<readonly AdvertisedEndpoint[]>;
+  getFrpTunnelState: () => Promise<DesktopFrpTunnelState>;
+  setFrpTunnel: (input: DesktopFrpTunnelConfig | null) => Promise<DesktopFrpTunnelState>;
   getWslState: () => Promise<DesktopWslState>;
   setWslBackendEnabled: (enabled: boolean) => Promise<DesktopWslState>;
   setWslDistro: (distro: string | null) => Promise<DesktopWslState>;

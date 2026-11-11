@@ -1,5 +1,7 @@
 import {
   AdvertisedEndpoint,
+  DesktopFrpTunnelConfig,
+  DesktopFrpTunnelState,
   DesktopServerExposureModeSchema,
   DesktopServerExposureStateSchema,
 } from "@t3tools/contracts";
@@ -7,6 +9,7 @@ import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
 
 import * as DesktopLifecycle from "../../app/DesktopLifecycle.ts";
+import * as DesktopFrpTunnel from "../../backend/DesktopFrpTunnel.ts";
 import * as DesktopServerExposure from "../../backend/DesktopServerExposure.ts";
 import * as IpcChannels from "../channels.ts";
 import * as DesktopIpc from "../DesktopIpc.ts";
@@ -64,6 +67,29 @@ export const getAdvertisedEndpoints = DesktopIpc.makeIpcMethod({
   result: Schema.Array(AdvertisedEndpoint),
   handler: Effect.fn("desktop.ipc.serverExposure.getAdvertisedEndpoints")(function* () {
     const serverExposure = yield* DesktopServerExposure.DesktopServerExposure;
-    return yield* serverExposure.getAdvertisedEndpoints;
+    const tunnel = yield* DesktopFrpTunnel.DesktopFrpTunnel;
+    const endpoints = yield* serverExposure.getAdvertisedEndpoints;
+    const frpEndpoint = yield* tunnel.endpoint;
+    return frpEndpoint ? [frpEndpoint, ...endpoints] : endpoints;
+  }),
+});
+
+export const getFrpTunnelState = DesktopIpc.makeIpcMethod({
+  channel: IpcChannels.GET_FRP_TUNNEL_STATE_CHANNEL,
+  payload: Schema.Void,
+  result: DesktopFrpTunnelState,
+  handler: Effect.fn("desktop.ipc.serverExposure.getFrpTunnelState")(function* () {
+    const tunnel = yield* DesktopFrpTunnel.DesktopFrpTunnel;
+    return yield* tunnel.state;
+  }),
+});
+
+export const setFrpTunnel = DesktopIpc.makeIpcMethod({
+  channel: IpcChannels.SET_FRP_TUNNEL_CHANNEL,
+  payload: Schema.NullOr(DesktopFrpTunnelConfig),
+  result: DesktopFrpTunnelState,
+  handler: Effect.fn("desktop.ipc.serverExposure.setFrpTunnel")(function* (input) {
+    const tunnel = yield* DesktopFrpTunnel.DesktopFrpTunnel;
+    return yield* tunnel.configure(input);
   }),
 });
