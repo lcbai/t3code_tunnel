@@ -9,6 +9,19 @@ remain stable and nightly. To ship 0.1.0 Beta, use `channel=stable` and
 `version=0.1.0`. Removing the Beta label later is a branding change independent of
 the version.
 
+## Fork installation packages
+
+在 fork 的 GitHub **Actions** 页面选择下面的工作流，然后点击 **Run workflow**。构建成功后，从本次运行的 **Artifacts** 下载产物。产物保留 14 天。
+
+| 工作流                                                          | 产物                                                                  |
+| --------------------------------------------------------------- | --------------------------------------------------------------------- |
+| [构建 Android APK](../../.github/workflows/fork-android.yml)    | 使用调试密钥签名的 ARM64 预览版 APK，可直接安装到手机                 |
+| [构建 iOS 安装包](../../.github/workflows/fork-ios.yml)         | 默认生成待签名的 iPhone IPA，可选择签名 IPA 或 Apple Silicon 模拟器包 |
+| [构建 macOS DMG](../../.github/workflows/fork-macos.yml)        | Apple Silicon 预览版 DMG                                              |
+| [构建 Windows 安装包](../../.github/workflows/fork-windows.yml) | Windows x64 预览版 NSIS 安装程序                                      |
+
+要生成可装到已登记 iPhone 的 IPA，在仓库的 **Settings → Secrets and variables → Actions** 中添加 `IOS_SIGNING_CERTIFICATE_BASE64`（含私钥的 Apple Distribution `.p12`）、`IOS_PROVISIONING_PROFILE_BASE64`（Ad Hoc 描述文件）和 `IOS_SIGNING_CERTIFICATE_PASSWORD`（证书文件有密码时）。前两个文件以 Base64 保存。运行时选择 `iphone-signed`，并输入描述文件对应的 Bundle ID。
+
 ## What the workflow does
 
 - Workflow: `.github/workflows/release.yml`

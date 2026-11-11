@@ -1,0 +1,67 @@
+name: 构建 Windows 安装包
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Windows x64
+    # The native build uses Visual Studio 2022, including its Spectre libraries.
+    runs-on: windows-2022
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          sparse-checkout: |
+            /*
+            !/.repos/
+          sparse-checkout-cone-mode: false
+
+      - name: Set up Vite+ and Node.js
+        uses: voidzero-dev/setup-vp@v1
+        with:
+          node-version-file: package.json
+          cache: false
+          run-install: false
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # stable
+        with:
+          toolchain: stable
+          targets: x86_64-pc-windows-msvc
+
+      - name: Install workspace dependencies
+        run: vp install --frozen-lockfile --filter=@t3tools/desktop... --filter=@t3tools/web... --filter=t3... --filter=@t3tools/scripts...
+
+      - name: Build Windows installer
+        id: installer
+        run: |
+          $baseVersion = (Get-Content apps/desktop/package.json -Raw | ConvertFrom-Json).version
+          $buildDate = (Get-Date).ToUniversalTime().ToString('yyyyMMdd')
+          $version = "$baseVersion-preview.$buildDate.$env:GITHUB_RUN_NUMBER"
+          vp run dist:desktop:win:x64 --build-version "$version"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+          $installer = "release/T3-Code-$version-x64.exe"
+          if (!(Test-Path -LiteralPath $installer -PathType Leaf)) { throw "Missing installer: $installer" }
+          $file = [System.IO.BinaryReader]::new([System.IO.File]::OpenRead((Resolve-Path $installer).Path))
+          try {
+            if ($file.ReadUInt16() -ne 0x5A4D) { throw "Invalid Windows executable: $installer" }
+          } finally {
+            $file.Dispose()
+          }
+          Get-FileHash -Algorithm SHA256 -LiteralPath $installer
+          "path=$installer" >> $env:GITHUB_OUTPUT
+
+      - name: Upload installer
+        uses: actions/upload-artifact@v7
+        with:
+          name: t3-code-windows-x64
+          path: ${{ steps.installer.outputs.path }}
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14

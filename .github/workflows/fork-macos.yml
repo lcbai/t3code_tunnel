@@ -1,0 +1,46 @@
+name: 构建 macOS DMG
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: macos-26
+    timeout-minutes: 45
+    env:
+      NODE_OPTIONS: --max-old-space-size=4096
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          sparse-checkout: |
+            /*
+            !/.repos/
+          sparse-checkout-cone-mode: false
+
+      - uses: ./.github/actions/setup-ci-deps
+        with:
+          install-args: --frozen-lockfile --filter=@t3tools/desktop... --filter=@t3tools/web... --filter=t3... --filter=@t3tools/scripts...
+
+      - name: Set up Rust
+        run: rustup default stable
+
+      - name: Build and verify Apple Silicon installer
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(node -p 'require("./apps/desktop/package.json").version')"
+          preview_version="${version%%-*}-preview.$(date -u +%Y%m%d).${GITHUB_RUN_NUMBER}"
+          output_dir="$RUNNER_TEMP/t3-macos"
+          vp run dist:desktop:dmg:arm64 --build-version "$preview_version" --output-dir "$output_dir"
+          hdiutil verify "$output_dir/T3-Code-$preview_version-arm64.dmg"
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: t3code-macos-arm64
+          path: ${{ runner.temp }}/t3-macos/*.dmg
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0
