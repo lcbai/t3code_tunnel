@@ -69,23 +69,21 @@ function routesList(routes: ReadonlyArray<ConnectionRoute>) {
 
 it("shows a route added after a reorder was saved, once another route is removed", async () => {
   await using screen = await render(routesList([LAN, TAILNET]));
-  await userEvent.click(screen.getByRole("button", { name: "Reorder LAN, position 1" }));
+  await userEvent.click(screen.getByRole("button", { name: "重排LAN，位置1" }));
   await userEvent.keyboard(" ");
   await userEvent.keyboard("{ArrowDown}");
   await userEvent.keyboard(" ");
-  await expect
-    .element(screen.getByRole("button", { name: "Reorder Tailscale, position 1" }))
-    .toBeVisible();
+  await expect.element(screen.getByRole("button", { name: "重排Tailscale，位置1" })).toBeVisible();
 
   await screen.rerender(routesList([TAILNET, LAN]));
   await screen.rerender(routesList([TAILNET, LAN, PUBLIC]));
   await screen.rerender(routesList([TAILNET, PUBLIC]));
 
   await expect
-    .element(screen.getByRole("button", { name: "Reorder desk.example.com, position 2" }))
+    .element(screen.getByRole("button", { name: "重排desk.example.com，位置2" }))
     .toBeVisible();
   expect(screen.getByRole("listitem").elements()).toHaveLength(2);
   await expect
-    .element(screen.getByRole("button", { name: "Remove desk.example.com route" }))
+    .element(screen.getByRole("button", { name: "移除 desk.example.com 连接路径" }))
     .toBeVisible();
 });

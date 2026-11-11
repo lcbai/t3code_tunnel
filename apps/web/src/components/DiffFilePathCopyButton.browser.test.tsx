@@ -24,7 +24,7 @@ it("explains a denied clipboard write and lets the same path be copied again", a
   await page.getByRole("button", { name: "解雇通知" }).click();
   await copy.click();
 
-  await expect.element(page.getByText("被复制了! Copy!", { exact: true })).toBeVisible();
+  await expect.element(page.getByText("已复制", { exact: true })).toBeVisible();
   expect(write).toHaveBeenCalledTimes(2);
   expect(write).toHaveBeenLastCalledWith("apps/web/src/index.ts");
 });

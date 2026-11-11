@@ -49,26 +49,26 @@ it("keeps pending merges with their pull request when navigating between threads
   const button = screen.getByRole("button");
 
   await userEvent.click(button);
-  await expect.element(button).toHaveTextContent("合并中…");
+  await expect.element(button).toHaveTextContent("Merging...");
   await screen.rerender(<MergeButton reference={second} />);
-  await expect.element(button).toHaveTextContent("合并");
+  await expect.element(button).toHaveTextContent("Merge");
   await expect.element(button).toBeEnabled();
   await userEvent.click(button);
   expect(state.runAction).toHaveBeenCalledTimes(2);
 
   await screen.rerender(<MergeButton reference={first} />);
-  await expect.element(button).toHaveTextContent("合并中…");
+  await expect.element(button).toHaveTextContent("Merging...");
   await expect.element(button).toBeDisabled();
   await act(async () => {
     firstResult.resolve({ _tag: "Success", value: undefined });
     await firstResult.promise;
   });
-  await expect.element(button).toHaveTextContent("合并");
+  await expect.element(button).toHaveTextContent("Merge");
   await screen.rerender(<MergeButton reference={second} />);
-  await expect.element(button).toHaveTextContent("合并中…");
+  await expect.element(button).toHaveTextContent("Merging...");
   await act(async () => {
     secondResult.resolve({ _tag: "Success", value: undefined });
     await secondResult.promise;
   });
-  await expect.element(button).toHaveTextContent("合并");
+  await expect.element(button).toHaveTextContent("Merge");
 });

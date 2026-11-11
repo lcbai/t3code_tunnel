@@ -108,8 +108,8 @@ it.each([{ cpu: null, accelerated: 2.1 }, { cpu: 5, accelerated: null }, { accel
         secondsPer30s,
       },
     };
-    const cpuBenchmark = `Speed: ${secondsPer30s.cpu === undefined ? "update server" : secondsPer30s.cpu === null ? "not benchmarked" : `${secondsPer30s.cpu} s / 30 s`}`;
-    const gpuBenchmark = `Speed: ${secondsPer30s.accelerated === null ? "not benchmarked" : `${secondsPer30s.accelerated} s / 30 s`}`;
+    const cpuBenchmark = `速度：${secondsPer30s.cpu === undefined ? "更新服务器" : secondsPer30s.cpu === null ? "未测试" : `${secondsPer30s.cpu} 秒 / 30 秒`}`;
+    const gpuBenchmark = `速度：${secondsPer30s.accelerated === null ? "未测试" : `${secondsPer30s.accelerated} 秒 / 30 秒`}`;
     const fetch = globalThis.fetch;
     using _network = vi.spyOn(globalThis, "fetch").mockImplementation((input, init) => {
       const url = new URL(input instanceof Request ? input.url : input, window.location.href);
@@ -298,7 +298,7 @@ it("tests the selected model after download and preserves its transcript across 
           await expect.element(screen.getByText("没有模型匹配。")).toBeVisible();
           await userEvent.clear(search);
           await userEvent.fill(screen.getByRole("textbox", { name: "搜索语言" }), "fr");
-          const french = screen.getByRole("button", { name: "French", exact: true });
+          const french = screen.getByRole("button", { name: "法语", exact: true });
           await userEvent.click(french);
           await expect.element(screen.getByText("Bilingual", { exact: true })).toBeVisible();
           await expect.element(screen.getByText("B+", { exact: true })).toBeVisible();
@@ -306,9 +306,9 @@ it("tests the selected model after download and preserves its transcript across 
           await userEvent.click(french);
           await expect.element(result).toBeVisible();
           await vi.waitFor(() =>
-            expect(
-              screen.container.querySelector('[aria-label="Test transcript"]')?.textContent,
-            ).toBe(transcript),
+            expect(screen.container.querySelector('[aria-label="测试记录"]')?.textContent).toBe(
+              transcript,
+            ),
           );
         },
       );
@@ -461,9 +461,7 @@ it("recovers from a failed download progress poll without notifying, but reports
       expect(notify).not.toHaveBeenCalled();
       await screen.rerender(panel("reopened"));
       await vi.waitFor(() =>
-        expect(notify).toHaveBeenCalledWith(
-          expect.objectContaining({ title: "Could not load transcription models" }),
-        ),
+        expect(notify).toHaveBeenCalledWith(expect.objectContaining({ title: "无法加载转写模型" })),
       );
     },
   );
@@ -506,8 +504,8 @@ it("keeps a missing destination selected without claiming it cannot transcribe",
   );
   await expect
     .element(screen.getByRole("combobox", { name: "转写为" }))
-    .toHaveTextContent("选择环境( 不详)");
-  await expect.element(screen.getByText(/can’t transcribe audio/)).not.toBeInTheDocument();
+    .toHaveTextContent("所选环境不可用");
+  await expect.element(screen.getByText(/无法在本地输入音频/)).not.toBeInTheDocument();
 });
 
 it("shows the model's effective language and restores the saved preference when supported again", async () => {
@@ -516,14 +514,14 @@ it("shows the model's effective language and restores the saved preference when 
   cleanup.defer(() => __setClientSettingsForTests(previous));
   __setClientSettingsForTests({ ...previous, speechLanguage: "fr" });
   await using screen = await render(<SpeechLanguageSelect model={{ languages: ["en"] }} />);
-  const picker = screen.getByRole("combobox", { name: "译名语言" });
-  await expect.element(picker).toHaveTextContent("English (French unavailable)");
+  const picker = screen.getByRole("combobox", { name: "转写语言" });
+  await expect.element(picker).toHaveTextContent("英语（法语不可用）");
   await screen.rerender(
     <SpeechLanguageSelect model={{ languages: ["en", "de"], supportsLanguageDetection: true }} />,
   );
-  await expect.element(picker).toHaveTextContent("Auto-detect (French unavailable)");
+  await expect.element(picker).toHaveTextContent("自动检测（法语不可用）");
   await screen.rerender(<SpeechLanguageSelect model={{ languages: ["en", "fr"] }} />);
-  await expect.element(picker).toHaveTextContent("French");
+  await expect.element(picker).toHaveTextContent("法语");
   expect(getClientSettings().speechLanguage).toBe("fr");
 });
 
@@ -538,13 +536,13 @@ it("keeps punctuation in a saved dictionary term and its alias", async () => {
     </SettingsScopeProvider>,
   );
   await userEvent.type(
-    screen.getByRole("textbox", { name: "Add a word or phrase to the dictionary" }),
+    screen.getByRole("textbox", { name: "向 词典 添加单词或短语" }),
     "O'Reilly{Enter}",
   );
   expect(getClientSettings().speechCustomWords[0]?.term).toBe("O'Reilly");
-  await userEvent.click(screen.getByRole("button", { name: "Add an alias for O'Reilly" }));
+  await userEvent.click(screen.getByRole("button", { name: "为 O'Reilly 添加别名" }));
   await userEvent.type(
-    screen.getByRole("textbox", { name: "Alias for O'Reilly" }),
+    screen.getByRole("textbox", { name: "O'Reilly 的别名" }),
     '"Oh Really"{Enter}',
   );
   expect(getClientSettings().speechCustomWords).toEqual([

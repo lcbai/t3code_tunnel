@@ -132,7 +132,7 @@ function ProviderSetupActions({
     installation === null
       ? "正在检查Antigravity 运行环境。"
       : installation?.phase === "downloading"
-        ? `正在下载${(installation.downloadedBytes / 1_000_000).toFixed(1)}MB${installation.totalBytes === null ? "" : ` of ${(installation.totalBytes / 1_000_000).toFixed(1)} MB`}。`
+        ? `正在下载：${(installation.downloadedBytes / 1_000_000).toFixed(1)} MB${installation.totalBytes === null ? "" : ` / ${(installation.totalBytes / 1_000_000).toFixed(1)} MB`}`
         : installation?.phase === "extracting"
           ? "正在提取Antigravity。"
           : installation?.phase === "verifying"

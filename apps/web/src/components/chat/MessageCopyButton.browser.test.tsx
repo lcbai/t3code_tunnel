@@ -25,6 +25,6 @@ it("explains a denied clipboard write and lets the same message be copied again"
   await page.getByRole("button", { name: "解雇通知" }).click();
   await copy.click();
 
-  await expect.element(page.getByText("被复制了! Copy!", { exact: true })).toBeVisible();
+  await expect.element(page.getByText("已复制", { exact: true })).toBeVisible();
   await expect.element(copy).toBeDisabled();
 });

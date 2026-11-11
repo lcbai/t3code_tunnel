@@ -93,19 +93,19 @@ it("draws an agent's reasoning as bars and keeps its mode out of the levels", as
   expect(status.element().querySelector("[data-composer-effort-glyph]")).not.toBeNull();
   await expect.element(status).toHaveTextContent("");
 
-  const levels = screen.getByRole("radiogroup", { name: "思考中" });
+  const levels = screen.getByRole("radiogroup", { name: "Thinking" });
   await expect.element(levels.getByRole("radio")).toHaveLength(3);
-  await expect.element(screen.getByRole("radio", { name: "计划" })).not.toBeInTheDocument();
+  await expect.element(screen.getByRole("radio", { name: "Plan" })).not.toBeInTheDocument();
 
   // Up and Down walk from the levels through the option rows without opening their menus.
   await userEvent.tab();
-  await expect.element(screen.getByRole("radio", { name: "中型" })).toHaveFocus();
+  await expect.element(screen.getByRole("radio", { name: "Medium" })).toHaveFocus();
   await userEvent.keyboard("{ArrowDown}{ArrowDown}{ArrowDown}");
   const speed = screen.getByRole("button", { name: "Speed: Standard" });
   await expect.element(speed).toHaveFocus();
   await expect.element(page.getByRole("menuitemradio")).not.toBeInTheDocument();
   await userEvent.keyboard("{ArrowRight}");
-  await expect.element(page.getByRole("menuitemradio", { name: "标准" })).toHaveFocus();
+  await expect.element(page.getByRole("menuitemradio", { name: "Standard" })).toHaveFocus();
   await userEvent.keyboard("{ArrowLeft}");
   await expect.element(page.getByRole("menuitemradio")).not.toBeInTheDocument();
   await expect.element(speed).toHaveFocus();
@@ -116,7 +116,7 @@ it("draws an agent's reasoning as bars and keeps its mode out of the levels", as
     .toHaveAttribute("aria-checked", "true");
 
   await userEvent.click(screen.getByRole("button", { name: "Session Mode: Bypass Permissions" }));
-  await userEvent.click(page.getByRole("menuitemradio", { name: "计划" }));
+  await userEvent.click(page.getByRole("menuitemradio", { name: "Plan" }));
   await expect
     .element(screen.getByRole("button", { name: "Session Mode: Plan" }))
     .toBeInTheDocument();

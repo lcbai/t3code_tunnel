@@ -40,7 +40,7 @@ describe("CommandPaletteContent", () => {
   it("focuses the search input, not the Back button, when it opens into a submenu", async () => {
     await using _screen = await render(<SubmenuPalette />);
 
-    await userEvent.click(page.getByRole("button", { name: "打开" }));
+    await userEvent.click(page.getByRole("button", { name: "Open" }));
 
     await expect.element(page.getByPlaceholder("Search projects")).toHaveFocus();
   });

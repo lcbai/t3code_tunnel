@@ -62,7 +62,7 @@ const THEME_EDITOR_ROLE_GROUPS: ReadonlyArray<{
     families: [
       {
         id: "background",
-        label: "背景情况",
+        label: "背景",
         role: "canvas",
         roles: ["canvas", "chrome", "toolbar"],
       },
@@ -109,7 +109,7 @@ const THEME_EDITOR_ROLE_GROUPS: ReadonlyArray<{
   },
   {
     id: "brand-content",
-    title: "品牌内容( C)",
+    title: "品牌与操作",
     families: [
       {
         id: "subtle-surface",
@@ -125,7 +125,7 @@ const THEME_EDITOR_ROLE_GROUPS: ReadonlyArray<{
       },
       {
         id: "accent",
-        label: "百分点",
+        label: "强调色",
         role: "accent",
         roles: [
           "accent",
@@ -177,7 +177,7 @@ const THEME_EDITOR_ROLE_GROUPS: ReadonlyArray<{
   },
   {
     id: "context",
-    title: "一.背景情况",
+    title: "界面区域",
     families: [
       {
         id: "sidebar-background",
@@ -929,7 +929,7 @@ export function ThemeEditorPanel({
       <div>
         <h3 className="text-sm font-medium">颜色</h3>
         {isAdvanced ? null : (
-          <p className="text-xs text-muted-foreground">两种颜色，其余部分导出</p>
+          <p className="text-xs text-muted-foreground">设置两种基础颜色，其余颜色会自动生成。</p>
         )}
       </div>
       <div className="flex min-w-0 items-start gap-3">
@@ -1011,7 +1011,7 @@ export function ThemeEditorPanel({
             onSelect={selectThemeRole}
             onToggleSelected={toggleThemeRole}
             role={role}
-            label={role === "canvas" ? "背景情况" : "百分点"}
+            label={role === "canvas" ? "背景" : "强调色"}
             selected={selectedRole === role}
             value={colorsByAppearance[activeAppearance][role]}
           />

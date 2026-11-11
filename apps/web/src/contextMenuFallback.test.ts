@@ -229,7 +229,7 @@ describe("showContextMenuFallback", () => {
     });
 
     const selectionPromise = showContextMenuFallback([{ id: "rename", label: "Rename" }]);
-    const renameButton = findButton("重命名");
+    const renameButton = findButton("Rename");
 
     renameButton?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
     enablePointerSelection?.(0);

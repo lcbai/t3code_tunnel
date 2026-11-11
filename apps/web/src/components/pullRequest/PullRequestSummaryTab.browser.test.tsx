@@ -129,13 +129,13 @@ it("keeps an unsaved description when collapsed and reopened, and after a failed
   state.update.mockResolvedValue({ _tag: "Failure", cause: new Error("offline") });
   await using screen = await render();
   await act(async () =>
-    screen.container.querySelector<HTMLButtonElement>('[aria-label="Edit description"]')!.click(),
+    screen.container.querySelector<HTMLButtonElement>('[aria-label="编辑描述"]')!.click(),
   );
   const textarea = screen.container.querySelector("textarea")!;
   await userEvent.clear(textarea);
   await userEvent.type(textarea, "Unsaved description");
   await screen.click("说明");
-  expect(screen.expanded("Description")).toBe("false");
+  expect(screen.expanded("说明")).toBe("false");
   await screen.click("说明");
   expect(screen.container.querySelector("textarea")!.value).toBe("Unsaved description");
 
@@ -165,7 +165,7 @@ it("ticks a description checkbox placed after an attachment and edits from the t
 
   // The host has not been read since the save, so the editor starts from the ticked body.
   await act(async () =>
-    screen.container.querySelector<HTMLButtonElement>('[aria-label="Edit description"]')!.click(),
+    screen.container.querySelector<HTMLButtonElement>('[aria-label="编辑描述"]')!.click(),
   );
   expect(screen.container.querySelector("textarea")!.value).toBe(ticked);
 });

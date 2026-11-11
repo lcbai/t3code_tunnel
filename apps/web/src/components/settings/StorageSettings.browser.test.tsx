@@ -73,9 +73,7 @@ vi.mock(import("./settingsLayout"), async (original) => ({
       <h3>{title}</h3>
       {description}
       {status && (
-        <div
-          data-testid={`${title === "Delete old browser artifacts" ? "artifact" : "logs"}-retention-status`}
-        >
+        <div data-testid={`${title === "删除旧浏览器文件" ? "artifact" : "logs"}-retention-status`}>
           {status}
         </div>
       )}
@@ -141,7 +139,7 @@ const panel = () => (
 );
 const deleteButton = (container: HTMLElement) =>
   Array.from(container.querySelectorAll("button")).find(
-    (button) => button.textContent === "Delete now",
+    (button) => button.textContent === "现在删除",
   )!;
 
 it("keeps cleanup disabled when settled retention and all other rules are off", async () => {

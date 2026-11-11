@@ -80,7 +80,7 @@ it("leaves out the details button when only a link's hit area reaches past the t
     ),
   );
 
-  await expect.element(screen.getByText("审查")).toBeVisible();
+  await expect.element(screen.getByText("Review")).toBeVisible();
   const details = [
     ...inserted,
     ...mutations.takeRecords().flatMap((record) => [...record.addedNodes]),
@@ -95,7 +95,7 @@ it("leaves out the details button when only a link's hit area reaches past the t
 
 it("shows the details button while text or nested text is cut, until it fits again", async () => {
   await using screen = await render(noticeRow("4rem", "Waiting on a subagent with a long name"));
-  const details = screen.getByRole("button", { name: "显示细节" });
+  const details = screen.getByRole("button", { name: "Show details" });
   await expect.element(details).toBeInTheDocument();
 
   await screen.rerender(noticeRow("4rem", "Ready"));
@@ -135,7 +135,7 @@ it("opens the details of a long notice right above its button", async () => {
   const container = document.createElement("div");
   container.style.cssText = "position: fixed; bottom: 4rem; right: 4rem;";
   await using screen = await render(noticeRow("40rem", script), { container });
-  const details = screen.getByRole("button", { name: "显示细节" });
+  const details = screen.getByRole("button", { name: "Show details" });
   await userEvent.hover(details);
   const popup = page.getByLabelText("通知细节");
   await expect.element(popup).toBeVisible();

@@ -12,7 +12,7 @@ const sources = [
   { id: work, kind: SecretProviderKind.make("one_password"), label: "Work" },
 ];
 
-const reference = (screen: Screen) => screen.getByRole("textbox", { name: "API key reference" });
+const reference = (screen: Screen) => screen.getByRole("textbox", { name: "API key 参考" });
 
 async function commitReference(screen: Screen, value: string) {
   await userEvent.clear(reference(screen));
@@ -35,7 +35,7 @@ describe("SecretSourceInput", () => {
       />,
     );
 
-    await userEvent.click(screen.getByRole("combobox", { name: "API key source" }));
+    await userEvent.click(screen.getByRole("combobox", { name: "API key 来源" }));
     await userEvent.click(screen.getByRole("option", { name: "Work" }));
     expect(onSecretChange).not.toHaveBeenCalled();
     expect(onValidityChange).toHaveBeenLastCalledWith(false);

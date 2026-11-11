@@ -127,8 +127,8 @@ export function ColorSaturationValuePlane({
       </span>
       {(
         [
-          ["s", "Saturation"],
-          ["v", "Brightness"],
+          ["s", "饱和度"],
+          ["v", "亮度"],
         ] as const
       ).map(([axis, axisLabel]) => (
         <label key={axis} className="contents">
@@ -139,7 +139,7 @@ export function ColorSaturationValuePlane({
             max={100}
             step="any"
             value={value[axis] * 100}
-            aria-label={`${label} ${axisLabel.toLowerCase()}`}
+            aria-label={`${label} ${axisLabel}`}
             aria-describedby={instructionsId}
             aria-valuetext={`${Math.round(value[axis] * 100)}%`}
             className="peer sr-only"

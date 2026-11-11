@@ -79,7 +79,7 @@ function renderedToggleLabel(
   if (mode === "mermaid") return rendered ? "显示 Mermaid 源码" : "显示已渲染的图表";
   if (mode === "markdown") return rendered ? "显示 Markdown 源码" : "显示已渲染的Markdown";
   if (mode === "table") return rendered ? "显示源" : "显示表格";
-  return rendered ? "显示HTML 源代码" : "显示已渲染的页面";
+  return rendered ? "显示 HTML 源码" : "显示已渲染的页面";
 }
 
 export function AttachmentFilePreview(props: {
@@ -166,7 +166,7 @@ export function AttachmentFilePreview(props: {
     void refresh()
       .then((url) => {
         if (cancelled) return;
-        if (!url) throw new Error("Reconnect to the environment and try again.");
+        if (!url) throw new Error("请重新连接环境后重试。");
         authorizedAt.current = Date.now();
         setRemoteUrl(url);
       })
@@ -197,7 +197,7 @@ export function AttachmentFilePreview(props: {
       if (!file && Date.now() - authorizedAt.current > STALE_URL_MS) {
         const target = await refresh();
         if (controller.signal.aborted) return;
-        if (!target) throw new Error("Reconnect to the environment and try again.");
+        if (!target) throw new Error("请重新连接环境后重试。");
         authorizedAt.current = Date.now();
         if (target !== url) {
           setRemoteUrl(target);
@@ -238,7 +238,7 @@ export function AttachmentFilePreview(props: {
       let file = props.file;
       if (!file) {
         const target = await prepareDownload();
-        if (!target) throw new Error("Reconnect to the environment and try again.");
+        if (!target) throw new Error("请重新连接环境后重试。");
         const response = await fetch(target);
         if (!response.ok) throw new Error("The file could not be loaded. Try again.");
         file = await response.blob();

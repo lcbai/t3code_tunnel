@@ -194,7 +194,7 @@ describe("bounded binary previews", () => {
       await act(() => child()!.click());
       await vi.waitFor(() => expect(child()?.textContent).toBe("hello.txt"));
       const parent = () =>
-        screen.container.querySelector<HTMLButtonElement>('[aria-label="Parent folder"]')!;
+        screen.container.querySelector<HTMLButtonElement>('[aria-label="上级文件夹"]')!;
       await act(() => parent().click());
       await act(() => parent().click());
       expect(parent().disabled).toBe(true);
@@ -300,11 +300,11 @@ describe("bounded binary previews", () => {
           "21",
           "14",
         ]);
-        const trigger = screen.container.querySelector<HTMLButtonElement>('[aria-label="Table"]')!;
+        const trigger = screen.container.querySelector<HTMLButtonElement>('[aria-label="数据表"]')!;
         await act(() => trigger.focus());
         await userEvent.keyboard("{Enter}");
         await expect
-          .element(page.getByRole("option", { name: "zzInventory (1 rows)" }))
+          .element(page.getByRole("option", { name: "zzInventory（1 行）" }))
           .toBeVisible();
         await userEvent.keyboard("{ArrowDown}{Enter}");
         await vi.waitFor(() =>
@@ -315,7 +315,7 @@ describe("bounded binary previews", () => {
         await vi.waitFor(() => expect(document.activeElement).toBe(trigger));
         await userEvent.keyboard("{Enter}");
         await expect
-          .element(page.getByRole("option", { name: "zzInventory (1 rows)" }))
+          .element(page.getByRole("option", { name: "zzInventory（1 行）" }))
           .toBeVisible();
         await userEvent.keyboard("{Escape}");
       } finally {
@@ -565,7 +565,7 @@ describe("large text preview recovery", () => {
       await vi.waitFor(() => expect(screen.container.textContent).toContain("original"));
       assetUrlState.mockReturnValue({ _tag: "Failure" });
       await screen.rerender(preview("legacy-edit", 1));
-      expect(screen.container.textContent).toContain("Unable to load file preview.");
+      expect(screen.container.textContent).toContain("无法装入文件预览。");
       refresh.mockClear();
       refresh.mockImplementation(async () => {
         state(`${changed}#retried`);
@@ -891,10 +891,7 @@ describe("large text preview recovery", () => {
       10_000,
     );
     await screen.rerender(<LargeTextViewer name="log.txt" text="" delimiter={null} />);
-    await vi.waitFor(
-      () => expect(screen.container.textContent).toContain("This file is empty."),
-      10_000,
-    );
+    await vi.waitFor(() => expect(screen.container.textContent).toContain("此文件为空。"), 10_000);
     expect(screen.container.querySelector('[role="alert"]')).toBeNull();
   });
 
@@ -1886,7 +1883,7 @@ describe("standalone Mermaid previews", () => {
     await using screen = await render(<MermaidFilePreview text={`flowchart LR\n${node}`} />);
     await vi.waitFor(() =>
       expect(screen.container.querySelector('[role="alert"]')?.textContent).toContain(
-        "显示美人鱼源",
+        "请查看 Mermaid 源码",
       ),
     );
     expect(imageSource).not.toHaveBeenCalled();
@@ -1964,14 +1961,14 @@ it("clears an Office metadata error when the same URL becomes previewable", asyn
   await using screen = await render(
     <OfficeFilePreview src={src} name="report.docx" kind="docx" sizeBytes={51 * 1024 * 1024} />,
   );
-  await vi.waitFor(() => expect(screen.container.textContent).toContain("under 50 MB"));
+  await vi.waitFor(() => expect(screen.container.textContent).toContain("50 MB以下"));
   await screen.rerender(
     <OfficeFilePreview src={src} name="report.docx" kind="docx" sizeBytes={100} />,
   );
   await vi.waitFor(() =>
-    expect(screen.container.querySelector('[aria-label="Loading file"]')).not.toBeNull(),
+    expect(screen.container.querySelector('[aria-label="正在装入文件"]')).not.toBeNull(),
   );
-  expect(screen.container.textContent).not.toContain("under 50 MB");
+  expect(screen.container.textContent).not.toContain("50 MB以下");
   resolveBody("invalid-office-file");
   await vi.waitFor(() => expect(screen.container.textContent).toContain("not a readable ZIP"), {
     timeout: 10_000,
@@ -2023,7 +2020,7 @@ describe("attachment HTML preview recovery", () => {
     await using screen = await openRemote();
     expect(screen.container.querySelector("iframe")?.getAttribute("src")).toBe(originalUrl);
     now = 61 * 60_000;
-    await toggleMode(screen, "Show HTML source");
+    await toggleMode(screen, "显示 HTML 源码");
     await act(async () => {
       await import("./ReadOnlySourcePreview");
     });
@@ -2032,9 +2029,9 @@ describe("attachment HTML preview recovery", () => {
       expect(screen.container.querySelector("pre")?.textContent).toBe("<p>Captured HTML</p>"),
     );
 
-    await toggleMode(screen, "Show rendered page");
+    await toggleMode(screen, "显示已渲染的页面");
     expect(screen.container.querySelector("iframe")?.getAttribute("src")).toBe(renewedUrl);
-    await toggleMode(screen, "Show HTML source");
+    await toggleMode(screen, "显示 HTML 源码");
     expect(refresh).toHaveBeenCalledTimes(2);
     expect(attachmentFetches()).toEqual([renewedUrl, renewedUrl]);
   });
@@ -2050,12 +2047,12 @@ describe("attachment HTML preview recovery", () => {
     await using screen = await openRemote();
     now = 61 * 60_000;
     refresh.mockResolvedValue(null);
-    await toggleMode(screen, "Show HTML source");
+    await toggleMode(screen, "显示 HTML 源码");
     expect(attachmentFetches()).toEqual([]);
-    expect(alert(screen)?.textContent).toContain("Reconnect to the environment and try again.");
+    expect(alert(screen)?.textContent).toContain("请重新连接环境后重试。");
 
-    await toggleMode(screen, "Show rendered page");
-    await toggleMode(screen, "Show HTML source");
+    await toggleMode(screen, "显示已渲染的页面");
+    await toggleMode(screen, "显示 HTML 源码");
     expect(refresh).toHaveBeenCalledTimes(3);
     expect(attachmentFetches()).toEqual([]);
   });
@@ -2077,10 +2074,10 @@ describe("attachment HTML preview recovery", () => {
         file={file}
       />,
     );
-    await toggleMode(screen, "Show HTML source");
+    await toggleMode(screen, "显示 HTML 源码");
     await vi.waitFor(() => expect(alert(screen)?.textContent).toContain("not UTF-8"));
 
-    await toggleMode(screen, "Show rendered page");
+    await toggleMode(screen, "显示已渲染的页面");
     expect(alert(screen)).toBeNull();
     expect(screen.container.querySelector("iframe")?.title).toBe("document.html");
   });
@@ -2130,10 +2127,7 @@ it("opens a known empty attachment even when its range response is inaccessible"
       asset={{ environmentId: EnvironmentId.make("test"), attachmentId: "empty" }}
     />,
   );
-  await vi.waitFor(
-    () => expect(screen.container.textContent).toContain("This file is empty."),
-    10_000,
-  );
+  await vi.waitFor(() => expect(screen.container.textContent).toContain("此文件为空。"), 10_000);
 });
 
 it.each(["draft", "thread"] as const)(
@@ -2164,7 +2158,7 @@ it.each(["draft", "thread"] as const)(
       ),
     );
     expect(fetch).toHaveBeenCalled();
-    expect(screen.container.textContent).not.toContain("This file is empty.");
+    expect(screen.container.textContent).not.toContain("此文件为空。");
   },
 );
 
@@ -2359,7 +2353,7 @@ it("toggles a Mermaid attachment between diagram and source through the lazy pre
   });
   await page.getByRole("button", { name: "关闭图片预览" }).click();
   await vi.waitFor(() => expect(document.querySelector('[role="dialog"]')).toBeNull());
-  await screen.getByRole("button", { name: "显示美人鱼源" }).click();
+  await screen.getByRole("button", { name: "显示 Mermaid 源码" }).click();
   await vi.waitFor(() => expect(screen.container.querySelector("pre")?.textContent).toBe(text));
   await screen.getByRole("button", { name: "显示已渲染的图表" }).click();
   await vi.waitFor(() =>
@@ -2521,15 +2515,15 @@ it("keeps a workspace PDF's page, offset and zoom when a new revision reloads it
     const loaded = nextPdfLoad();
     await using screen = await render(preview(original, "one"));
     await loaded;
-    await expect.element(screen.getByText("1 / 3 pages", { exact: true })).toBeVisible();
+    await expect.element(screen.getByText("第 1 页，共 3 页", { exact: true })).toBeVisible();
     using workers = vi.spyOn(window, "Worker");
     const region = () => screen.getByRole("region", { name: "Planning PDF" }).element();
     const offset = () =>
       region().getBoundingClientRect().top -
-      region().querySelector('canvas[aria-label="Page 2"]')!.getBoundingClientRect().top;
-    await screen.getByRole("button", { name: "缩放", exact: true }).click();
+      region().querySelector('canvas[aria-label="第 2 页"]')!.getBoundingClientRect().top;
+    await screen.getByRole("button", { name: "放大", exact: true }).click();
     await screen.getByRole("button", { name: "下一页", exact: true }).click();
-    await expect.element(screen.getByText("2 / 3 pages", { exact: true })).toBeVisible();
+    await expect.element(screen.getByText("第 2 页，共 3 页", { exact: true })).toBeVisible();
     const zoom = screen.container.textContent!.match(/\d+%/)![0];
     const top = region().scrollTop + 100;
     await act(async () => {
@@ -2542,15 +2536,15 @@ it("keeps a workspace PDF's page, offset and zoom when a new revision reloads it
     const savedOffset = offset();
 
     await reload(screen, preview(updated, "two"));
-    await expect.element(screen.getByText("2 / 3 pages", { exact: true })).toBeVisible();
+    await expect.element(screen.getByText("第 2 页，共 3 页", { exact: true })).toBeVisible();
     expect(screen.container.textContent).toContain(zoom);
     expect(region().scrollLeft).toBe(80);
     expect(offset()).toBeCloseTo(savedOffset, 0);
     expect(workers).not.toHaveBeenCalled();
 
     await reload(screen, preview(updated, "two", "/repo/another.pdf"));
-    await expect.element(screen.getByText("1 / 3 pages", { exact: true })).toBeVisible();
-    expect(screen.container.textContent).toContain("Fit width");
+    await expect.element(screen.getByText("第 1 页，共 3 页", { exact: true })).toBeVisible();
+    expect(screen.container.textContent).toContain("适应宽度");
     expect(region().scrollTop).toBe(0);
   } finally {
     URL.revokeObjectURL(original);
@@ -2762,8 +2756,8 @@ it.each(["rtf", "epub", "ods"] as const)(
           expect(screen.container.textContent).toContain("North");
           expect(screen.container.textContent).toContain("150");
           expect(screen.container.textContent).not.toContain("private note");
-          expect(screen.container.textContent).toContain("1 rows · 2 columns");
-          expect(screen.container.textContent).not.toContain("Limited to 500");
+          expect(screen.container.textContent).toContain("1 行 · 2 列");
+          expect(screen.container.textContent).not.toContain("预览最多显示 500 行");
         } else {
           const frame = screen.container.querySelector("iframe");
           expect(frame?.srcdoc).toContain(kind === "rtf" ? "10–20" : "first<br>second<br>third");

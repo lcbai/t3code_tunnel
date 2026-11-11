@@ -81,9 +81,9 @@ it("opens full command details for short labels and keeps pending tasks current"
   await expect.element(page.getByText("Command output stream")).not.toBeInTheDocument();
 
   await screen.rerender(view(command));
-  await expect.element(page.getByRole("heading", { name: "命令", exact: true })).toBeVisible();
+  await expect.element(page.getByRole("heading", { name: "Command", exact: true })).toBeVisible();
   await screen.rerender(view());
-  await expect.element(page.getByRole("heading", { name: "命令", exact: true })).toBeVisible();
+  await expect.element(page.getByRole("heading", { name: "Command", exact: true })).toBeVisible();
 
   await screen.rerender(view("Check remaining modules", "running"));
   await expect

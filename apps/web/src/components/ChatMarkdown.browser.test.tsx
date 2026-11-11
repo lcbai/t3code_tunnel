@@ -276,7 +276,7 @@ describe("ChatMarkdown streaming", () => {
     );
     await using screen = await render(message("```bash\necho hello\n```", true));
     const { container, rerender } = screen;
-    const runButtons = () => buttonsLabelled(container, "Run in terminal");
+    const runButtons = () => buttonsLabelled(container, "在终端中运行");
     expect(runButtons()).toHaveLength(0);
 
     await rerender(message("```bash\necho hello\n```"));
@@ -425,7 +425,7 @@ describe("ChatMarkdown skill chips", () => {
       .spyOn(useRightPanelStore.getState(), "openFile")
       .mockImplementation(() => {});
 
-    await userEvent.click(screen.getByRole("button", { name: "Skill Review. Show details" }));
+    await userEvent.click(screen.getByRole("button", { name: "Skill Review. 显示细节" }));
     await expect.element(page.getByText("Reviews the current branch.")).toBeVisible();
     await userEvent.click(page.getByRole("button", { name: "查看指令" }));
 
@@ -439,7 +439,7 @@ describe("ChatMarkdown skill chips", () => {
     });
 
     await expect
-      .element(screen.getByRole("button", { name: "Model GPT-6.1. Show details" }))
+      .element(screen.getByRole("button", { name: "Model GPT-6.1. 显示细节" }))
       .toBeVisible();
     expect(buttonsLabelled(screen.container, "Model gpt-4o. Show details")).toEqual([]);
     expect(screen.container.textContent).toBe("Ask (GPT-6.1), not model:openai/gpt-4o.");

@@ -141,14 +141,14 @@ it("requires login for local installs and updates until the new version is loade
 
 it("never changes the global user-extensions preference", async () => {
   const { setup, call } = fixture({ state: 2, version: 3, enabled: false });
-  await expect(setup.perform("enable-extension")).rejects.toThrow("GNOME has disabled");
+  await expect(setup.perform("enable-extension")).rejects.toThrow("GNOME 已禁用用户扩展");
   expect(call.mock.calls.every(([message]) => message.member.startsWith("Get"))).toBe(true);
   setup.close();
 });
 
 it("surfaces desktop rejection and disconnect as actionable failures", async () => {
   const { setup, bus } = fixture({ state: 2, version: 3, accepted: false });
-  await expect(setup.perform("enable-extension")).rejects.toThrow("Sign out");
+  await expect(setup.perform("enable-extension")).rejects.toThrow("退出并重新登录");
   bus.emit("error", new Error("Session bus disconnected"));
   expect(await setup.state()).toEqual({ status: "error", message: "Session bus disconnected" });
   setup.close();

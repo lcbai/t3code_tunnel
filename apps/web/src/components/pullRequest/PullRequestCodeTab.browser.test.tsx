@@ -230,8 +230,6 @@ it("never requests the diff of a selected commit the pull request no longer has"
   );
 
   await expect.element(screen.getByText("1 file", { exact: true })).toBeVisible();
-  await expect
-    .element(screen.getByRole("button", { name: "Diff scope: All commits" }))
-    .toBeVisible();
+  await expect.element(screen.getByRole("button", { name: "差异范围：全部提交" })).toBeVisible();
   expect(mocks.diffCommits).not.toContain("gone");
 });

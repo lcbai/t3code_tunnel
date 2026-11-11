@@ -171,7 +171,7 @@ it("shows who sent a queued message and folds automation and agent prompts", asy
   expect(onOpenThread).toHaveBeenCalledExactlyOnceWith("thread:lead");
 
   await expect.element(page.getByText("发件人:T3 Code")).toBeVisible();
-  await expect.element(page.getByText("继续你离开的地方。")).toBeVisible();
+  await expect.element(page.getByText("Continue where you left off.")).toBeVisible();
 });
 
 it("stays inside the timeline scroller instead of growing the chat column", async () => {
@@ -199,7 +199,7 @@ it("stays inside the timeline scroller instead of growing the chat column", asyn
       </div>
     </div>,
   );
-  await expect.element(page.getByText("回头见", { exact: true })).toBeInTheDocument();
+  await expect.element(page.getByText("Later", { exact: true })).toBeInTheDocument();
   const column = screen.getByTestId("column").element();
   expect(column.scrollHeight).toBe(column.clientHeight);
 });

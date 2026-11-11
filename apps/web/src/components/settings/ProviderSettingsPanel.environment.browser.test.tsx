@@ -270,7 +270,7 @@ describe("EnvironmentProviderSettings routing", () => {
       },
     };
     await using _screen = await render(panel());
-    await userEvent.click(page.getByRole("switch", { name: "Enable Work" }).first());
+    await userEvent.click(page.getByRole("switch", { name: "启用Work" }).first());
 
     expect(state.mutateProviderInstance).toHaveBeenCalledWith(
       {
@@ -382,7 +382,7 @@ describe("EnvironmentProviderSettings instance removal", () => {
     };
     await setProviders([provider()]);
     await using _screen = await render(panel({ targetInstanceId: codexId }));
-    const reset = page.getByRole("button", { name: "Reset Codex provider settings to default" });
+    const reset = page.getByRole("button", { name: "重置Codex 代理提供方设置 默认值" });
     await userEvent.click(reset);
 
     expect(state.mutateProviderInstance).not.toHaveBeenCalled();
@@ -414,14 +414,11 @@ describe("EnvironmentProviderSettings instance removal", () => {
     };
     await setProviders([{ ...provider(), instanceId: antigravityId, driver: antigravity }]);
     await using _screen = await render(panel({ targetInstanceId: antigravityId }));
-    await userEvent.click(page.getByRole("button", { name: /^Reset .* provider settings/ }));
+    await userEvent.click(page.getByRole("button", { name: /^重置.*代理提供方设置/ }));
 
-    expect(state.confirm).toHaveBeenCalledWith(
-      expect.stringContaining("It will also be turned off."),
-      {
-        variant: "destructive",
-      },
-    );
+    expect(state.confirm).toHaveBeenCalledWith(expect.stringContaining("该提供者也将被停用。"), {
+      variant: "destructive",
+    });
     expect(state.mutateProviderInstance).not.toHaveBeenCalled();
   });
 
@@ -434,7 +431,7 @@ describe("EnvironmentProviderSettings instance removal", () => {
       },
     };
     await using _screen = await render(panel({ targetInstanceId: customId }));
-    const remove = page.getByRole("button", { name: `Delete instance ${customId}` });
+    const remove = page.getByRole("button", { name: `删除实例${customId}` });
     await userEvent.click(remove);
 
     expect(state.mutateProviderInstance).not.toHaveBeenCalled();
@@ -455,7 +452,7 @@ describe("EnvironmentProviderSettings health check interval", () => {
   it("commits interval drafts and allows retrying rejected edits", async () => {
     await setup();
     await using _screen = await render(panel());
-    const input = page.getByRole("textbox", { name: "Provider health check interval in seconds" });
+    const input = page.getByRole("textbox", { name: "提供者健康检查间隔（秒）" });
 
     await userEvent.type(input, "{ArrowUp}{ArrowDown}");
     expect(
@@ -496,7 +493,7 @@ describe("EnvironmentProviderSettings health check interval", () => {
   it("restores the saved interval when a cleared field loses focus", async () => {
     await setup();
     await using _screen = await render(panel());
-    const input = page.getByRole("textbox", { name: "Provider health check interval in seconds" });
+    const input = page.getByRole("textbox", { name: "提供者健康检查间隔（秒）" });
 
     await userEvent.type(input, "{Backspace}{Backspace}{Backspace}");
     await userEvent.tab();

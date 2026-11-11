@@ -40,7 +40,7 @@ const SIGNALS = [
 type SignalDescriptor = (typeof SIGNALS)[number];
 type SignalKey = SignalDescriptor["key"];
 
-const OVERRIDE_LABELS = { environment: "Set by environment", bootstrap: "Set by desktop" } as const;
+const OVERRIDE_LABELS = { environment: "由环境设置", bootstrap: "由桌面端设置" } as const;
 
 function runningOverride(
   running: ServerObservability | undefined,
@@ -63,9 +63,9 @@ function endpointStatus(url: string, check: EndpointCheck | undefined) {
   if (result === null) return { label: "正在检查…", dot: "bg-warning" };
   switch (result._tag) {
     case "Accepted":
-      return { label: `已连接 ^${Math.round(result.latencyMs)} ms`, dot: "bg-success" };
+      return { label: `已连接 · ${Math.round(result.latencyMs)} ms`, dot: "bg-success" };
     case "Rejected":
-      return { label: `Rejected · HTTP ${result.status}`, dot: "bg-destructive" };
+      return { label: `请求被拒绝 · HTTP ${result.status}`, dot: "bg-destructive" };
     case "Unreachable":
       return { label: result.timedOut ? "超时" : "无法达到", dot: "bg-destructive" };
   }
@@ -164,7 +164,7 @@ function TelemetryExportForm() {
           setSaving(false);
           if (result._tag === "Success") {
             setDraft({});
-            setMessage("Saved. Restart the server to apply.");
+            setMessage("已保存，重启服务器后生效。");
           }
         }}
       >
@@ -232,11 +232,11 @@ function TelemetryExportForm() {
               </div>
               {(saved[key] !== (running?.[key] ?? "") || override?.variable) && (
                 <p className="break-all text-xs text-muted-foreground">
-                  运行中 : {running?.[key] || "已禁用"}
+                  正在使用：{running?.[key] || "已禁用"}
                   {override?.variable && (
                     <>
                       {" "}
-                      from <code className="font-mono">{override.variable}</code>
+                      来源：<code className="font-mono">{override.variable}</code>
                     </>
                   )}
                 </p>

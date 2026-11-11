@@ -232,6 +232,7 @@ describe("readManagedPolicy", () => {
               // Registry names ignore case.
               text("maxRuntimeMode", "auto-accept-edits"),
               dword("Telemetry", 0),
+              dword("CONNECT", 0),
               text("Settings", '{"enableAgentBrowserAccess": {"value": false, "locked": true}}'),
               text("UpdatesMode", "off"),
               dword("AllowNightly", 1),
@@ -289,6 +290,7 @@ describe("readManagedPolicy", () => {
           }),
         ),
       );
+      assert.isUndefined(yield* document(policyKey([dword("Connect", 0)])));
       assert.isUndefined(yield* document(policyKey([])));
 
       // Anything the template does not write fails closed rather than being ignored.

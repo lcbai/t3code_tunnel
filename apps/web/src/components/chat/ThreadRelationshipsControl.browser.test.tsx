@@ -86,8 +86,8 @@ function setup() {
 }
 
 it.each([
-  ["merge", "Could not merge back"],
-  ["disconnect", "Could not disconnect agent session"],
+  ["merge", "无法返回合并"],
+  ["disconnect", "无法断开代理会话"],
 ])("reports a rejected %s command and clears the busy state", async (action, title) => {
   setup();
   await using screen = await render(
@@ -112,15 +112,15 @@ it.each([
   await expect
     .element(
       screen.getByRole("button", {
-        name: action === "merge" ? "Merge back to source conversation" : "More thread actions",
+        name: action === "merge" ? "合并到源头对话" : "更多会话动作",
       }),
     )
     .toBeEnabled();
 });
 
 it.each([
-  ["merge", "Could not merge back"],
-  ["disconnect", "Could not disconnect agent session"],
+  ["merge", "无法返回合并"],
+  ["disconnect", "无法断开代理会话"],
 ])("clears the previous %s error after a successful retry", async (action, title) => {
   setup();
   await using screen = await render(

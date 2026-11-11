@@ -543,13 +543,13 @@ it.each([
     "does not advance a cancelled download when another model is ready",
     "downloadable",
     [],
-    "The model is not ready. Try downloading it again.",
+    "模型还没有准备好，请再下载一次。",
   ],
   [
     "reports a failed selection apart from the download",
     "installed",
     ["german"],
-    "The model downloaded, but this environment could not select it. Try again.",
+    "模型下载，但环境无法选择。请再试一次。",
   ],
 ] as const)("%s", async (_, landedState, selected, error) => {
   setup({ destination: "env-a" });

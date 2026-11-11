@@ -64,10 +64,10 @@ function threadInput(threadId: string, branch: string) {
 type ThreadInput = ReturnType<typeof threadInput>;
 
 it.each([
-  { remote: false, approval: false, link: "Open question" },
-  { remote: true, approval: false, link: "Open question" },
+  { remote: false, approval: false, link: "查看问题" },
+  { remote: true, approval: false, link: "查看问题" },
   { remote: true, approval: false, link: "Child" },
-  { remote: true, approval: true, link: "Open approval" },
+  { remote: true, approval: true, link: "查看审批" },
 ])("opens the child in its environment ($remote, $link)", async ({ remote, approval, link }) => {
   setup();
   const parent = threadInput("parent", "main");
@@ -178,14 +178,14 @@ it.each(["a", "b", "navigation"] as const)(
       return 0;
     });
 
-    await page.getByRole("button", { name: "恢复分支" }).click();
-    await expect.element(page.getByRole("button", { name: "恢复状态…" })).toBeDisabled();
+    await page.getByRole("button", { name: "Restore branch" }).click();
+    await expect.element(page.getByRole("button", { name: "Restoring..." })).toBeDisabled();
 
     // ChatView stays mounted across server threads, so the hook sees thread B in place.
     currentRouteThreadKeyRef.current = threadB.routeThreadKey;
     await screen.rerender(harness(threadB));
-    await expect.element(page.getByRole("button", { name: "恢复分支" })).toBeEnabled();
-    await page.getByRole("button", { name: "恢复分支" }).click();
+    await expect.element(page.getByRole("button", { name: "Restore branch" })).toBeEnabled();
+    await page.getByRole("button", { name: "Restore branch" }).click();
     expect(switchRef).toHaveBeenLastCalledWith(
       expect.objectContaining({ input: { cwd: "/repo", refName: "feature-b" } }),
     );
@@ -193,7 +193,7 @@ it.each(["a", "b", "navigation"] as const)(
     // Back on thread A, its own restore is still pending, so it can't start a second one.
     currentRouteThreadKeyRef.current = threadA.routeThreadKey;
     await screen.rerender(harness(threadA));
-    await expect.element(page.getByRole("button", { name: "恢复状态…" })).toBeDisabled();
+    await expect.element(page.getByRole("button", { name: "Restoring..." })).toBeDisabled();
     currentRouteThreadKeyRef.current = threadB.routeThreadKey;
     await screen.rerender(harness(threadB));
 
@@ -207,14 +207,14 @@ it.each(["a", "b", "navigation"] as const)(
     });
     await vi.waitFor(() => expect(refreshGitStatus).toHaveBeenCalledOnce());
     expect(focusComposer).not.toHaveBeenCalled();
-    await expect.element(page.getByRole("button", { name: "恢复状态…" })).toBeDisabled();
+    await expect.element(page.getByRole("button", { name: "Restoring..." })).toBeDisabled();
     expect(switchRef).toHaveBeenCalledTimes(2);
 
     completions[first === "a" ? 1 : 0]!({
       _tag: "Success",
       value: { refName: pending.localCheckoutBranchMismatch.threadBranch },
     });
-    await expect.element(page.getByRole("button", { name: "恢复分支" })).toBeEnabled();
+    await expect.element(page.getByRole("button", { name: "Restore branch" })).toBeEnabled();
     expect(refreshGitStatus).toHaveBeenCalledTimes(2);
     expect(focusComposer).not.toHaveBeenCalled();
     expect(focusFrames).toHaveLength(1);

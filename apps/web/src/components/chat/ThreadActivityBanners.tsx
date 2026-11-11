@@ -80,7 +80,7 @@ export function childInputNowItem(input: {
     )),
     actions: (
       <InlineButton onClick={() => onOpenThread(first.id, first.environmentId)}>
-        {first.hasPendingApprovals ? "公开批准" : "待问题"}
+        {first.hasPendingApprovals ? "查看审批" : "查看问题"}
       </InlineButton>
     ),
   };

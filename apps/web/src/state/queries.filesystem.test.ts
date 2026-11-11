@@ -133,7 +133,7 @@ it("shows content-search denial before typing and never issues an unauthorized r
       canReadFiles: false,
       isCheckingAccess: false,
       matches: [],
-      error: "This connection cannot search host files.",
+      error: "此连接无法搜索主机文件。",
       isPending: false,
     });
   }
@@ -156,7 +156,7 @@ it("keeps confirmed content access during revalidation and drops results when it
   expect(result).toMatchObject({
     canReadFiles: false,
     matches: [],
-    error: "This connection cannot search host files.",
+    error: "此连接无法搜索主机文件。",
     isPending: false,
   });
   expect(state.contentRequests).not.toHaveBeenCalled();

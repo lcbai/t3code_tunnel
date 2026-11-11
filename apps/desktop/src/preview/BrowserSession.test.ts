@@ -294,9 +294,9 @@ describe("BrowserSession", () => {
       assert.strictEqual(showMessageBox.mock.calls.length, 1);
       assert.strictEqual(
         showMessageBox.mock.calls[0]?.[0].message,
-        "https://allowed.test wants to see text and images copied to the clipboard",
+        "https://allowed.test 请求读取剪贴板中的文字和图片",
       );
-      assert.deepStrictEqual(showMessageBox.mock.calls[0]?.[0].buttons, ["Allow", "Block"]);
+      assert.deepStrictEqual(showMessageBox.mock.calls[0]?.[0].buttons, ["允许", "阻止"]);
       // Enter must not accept a prompt the page raised while the user was typing.
       assert.strictEqual(showMessageBox.mock.calls[0]?.[0].defaultId, 1);
 

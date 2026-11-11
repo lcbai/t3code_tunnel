@@ -137,7 +137,7 @@ it("completes @mentions and !references on Enter, and Escape closes the list unt
   await expect.element(page.getByRole("option", { name: /theo/ })).toBeVisible();
 
   await userEvent.type(textarea, " fixes !1");
-  await expect.element(page.getByRole("option", { name: /修补/ })).toBeVisible();
+  await expect.element(page.getByRole("option", { name: /Fix/ })).toBeVisible();
   await userEvent.keyboard("{Enter}");
   expect(textarea.value).toBe("Thanks @julius and @t fixes !12 ");
   expect(onCancel).not.toHaveBeenCalled();

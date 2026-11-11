@@ -195,7 +195,7 @@ it.each([
   {
     name: "a saved unrelated branch",
     failedBaseRef: "origin/orphan",
-    recovery: "Automatic",
+    recovery: "自动",
     baseRef: null,
   },
   {
@@ -214,7 +214,7 @@ it.each([
       </RegistryContext.Provider>,
     );
     await expect.element(screen.getByText(errorMessage, { exact: true })).toBeVisible();
-    const selector = screen.getByRole("combobox", { name: /Change comparison target/ });
+    const selector = screen.getByRole("combobox", { name: /更改比较目标/ });
     await vi.waitFor(() => expect(selector.query()).not.toBeNull());
     await userEvent.click(selector);
     await expect.element(page.getByRole("option", { name: "main", exact: true })).toBeVisible();
@@ -249,7 +249,7 @@ it.each([false, true])(
         </div>
       </RegistryContext.Provider>,
     );
-    const toggle = screen.getByRole("button", { name: `Expand ${path}`, exact: true });
+    const toggle = screen.getByRole("button", { name: `展开${path}`, exact: true });
     await expect.element(toggle).toHaveAttribute("aria-expanded", "false");
     await userEvent.click(toggle);
     await act(() =>
@@ -261,7 +261,7 @@ it.each([false, true])(
         }),
       ),
     );
-    const loadedToggle = screen.getByRole("button", { name: `Collapse ${path}`, exact: true });
+    const loadedToggle = screen.getByRole("button", { name: `折叠${path}`, exact: true });
     await expect.element(loadedToggle).toHaveAttribute("aria-expanded", "true");
     await expect.element(screen.getByText("after", { exact: true })).toBeVisible();
     await userEvent.click(loadedToggle);

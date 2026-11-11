@@ -118,7 +118,7 @@ function ModelPicker({
       >
         <ComboboxInput
           id="voice-cloud-model"
-          aria-label="OpenRouter 型号"
+          aria-label="OpenRouter 模型"
           placeholder="搜索转写模型"
           autoFocus
           size="sm"
@@ -301,10 +301,10 @@ export function CloudVoiceConfiguration({
         {draft.trim() && !credential
           ? (source?.invalidReferenceMessage ?? "输入API 密钥，而不是URL 或秘密引用。")
           : active && !routed
-            ? "更新密钥时会启用拼写。"
+            ? "更新密钥时，语音转写保持开启。"
             : routed && saved
               ? "留空以保留保存的密钥。"
-              : `任何可以使用${environment.label}的密码的人都可以向这个密钥收费。`}
+              : `拥有 ${environment.label} 语音转写权限的用户可以使用此密钥，相关费用由该密钥承担。`}
       </p>
     </>
   );
@@ -323,9 +323,9 @@ export function CloudVoiceConfiguration({
               ? `删除${company} 密钥吗 ?`
               : active
                 ? routed
-                  ? "管理OpenRouter dictation"
+                  ? "管理 OpenRouter 转写"
                   : `管理${company} 密钥`
-                : `用${name} 来拼写吗 ?`}
+                : `使用 ${name} 进行语音转写？`}
           </DialogTitle>
           <DialogDescription>
             {remove

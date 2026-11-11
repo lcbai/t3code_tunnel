@@ -62,7 +62,7 @@ function Composer({ dialog = false }: { dialog?: boolean }) {
   );
 }
 
-const editor = () => page.getByRole("textbox", { name: "消息" });
+const editor = () => page.getByRole("textbox", { name: "Message" });
 const stash = () => page.getByRole("list", { name: "粘贴的提示" });
 const press = (keys: string) => userEvent.keyboard(keys);
 const focus = (element: Element) => act(async () => (element as HTMLElement).focus());
@@ -92,13 +92,13 @@ it("leaves dialog, unrelated input and question button shortcuts alone while the
   expect(stash().element().textContent).toContain("second prompt");
   await expect.element(editor()).toHaveValue("Unsent draft");
 
-  await focus(page.getByRole("textbox", { name: "搜索会话" }).element());
+  await focus(page.getByRole("textbox", { name: "Search threads" }).element());
   await press("{ArrowDown}{Enter}{Control>}{Backspace}{/Control}{Meta>}{Backspace}{/Meta}{Escape}");
   expect(stash().element().textContent).toContain("first prompt");
   expect(stash().element().textContent).toContain("second prompt");
   await expect.element(editor()).toHaveValue("Unsent draft");
 
-  await focus(page.getByRole("button", { name: "继续", exact: true }).element());
+  await focus(page.getByRole("button", { name: "Continue", exact: true }).element());
   await press("{Enter}");
   expect(page.getByRole("status").element().textContent).toBe("Selected: Continue");
   expect(stash().element().textContent).toContain("first prompt");

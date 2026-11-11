@@ -17,10 +17,10 @@ describe("ProviderEnvironmentSection saved secrets", () => {
     await using screen = await render(
       <ProviderEnvironmentSection environment={[savedSecret]} onChange={onChange} />,
     );
-    const name = screen.getByRole("textbox", { name: "Environment variable name 1" });
-    const value = screen.getByLabelText("Environment variable value 1");
+    const name = screen.getByRole("textbox", { name: "环境变量名称1" });
+    const value = screen.getByLabelText("环境变量值1");
     const lock = screen.getByRole("button", {
-      name: "Mark environment variable FAKE_API_KEY as sensitive",
+      name: "将环境变量FAKE_API_KEY 标为敏感",
     });
 
     await expect.element(name).toBeDisabled();
@@ -41,15 +41,11 @@ describe("ProviderEnvironmentSection saved secrets", () => {
     await expect.element(lock).toBeEnabled();
     await userEvent.fill(name, "RENAMED_KEY");
     await userEvent.tab();
-    await userEvent.click(
-      screen.getByRole("button", { name: "Mark environment variable RENAMED_KEY as sensitive" }),
-    );
+    await userEvent.click(screen.getByRole("button", { name: "将环境变量RENAMED_KEY 标为敏感" }));
     expect(onChange).toHaveBeenLastCalledWith([
       { name: "RENAMED_KEY", value: "fake-replacement", sensitive: false, valueRedacted: false },
     ]);
-    await userEvent.click(
-      screen.getByRole("button", { name: "Remove environment variable RENAMED_KEY" }),
-    );
+    await userEvent.click(screen.getByRole("button", { name: "删除环境变量RENAMED_KEY" }));
     expect(onChange).toHaveBeenLastCalledWith([]);
   });
 });
@@ -62,10 +58,7 @@ describe("ProviderEnvironmentSection external settings writes", () => {
     );
 
     await userEvent.click(screen.getByRole("button", { name: "添加变量" }));
-    await userEvent.type(
-      screen.getByRole("textbox", { name: "Environment variable name 1" }),
-      "KEEP_ME_TYPED",
-    );
+    await userEvent.type(screen.getByRole("textbox", { name: "环境变量名称1" }), "KEEP_ME_TYPED");
     expect(onChange).not.toHaveBeenCalled();
 
     // A settings write from elsewhere on the instance redelivers a redacted, stored variable.
@@ -77,7 +70,7 @@ describe("ProviderEnvironmentSection external settings writes", () => {
     );
 
     await expect
-      .element(screen.getByRole("textbox", { name: "Environment variable name 2" }))
+      .element(screen.getByRole("textbox", { name: "环境变量名称2" }))
       .toHaveValue("KEEP_ME_TYPED");
   });
 
@@ -88,21 +81,15 @@ describe("ProviderEnvironmentSection external settings writes", () => {
     );
 
     await userEvent.click(screen.getByRole("button", { name: "添加变量" }));
-    await userEvent.fill(
-      screen.getByRole("textbox", { name: "Environment variable name 1" }),
-      "STORE_ME",
-    );
-    await userEvent.fill(screen.getByLabelText("Environment variable value 1"), "fake-secret");
+    await userEvent.fill(screen.getByRole("textbox", { name: "环境变量名称1" }), "STORE_ME");
+    await userEvent.fill(screen.getByLabelText("环境变量值1"), "fake-secret");
     await userEvent.tab();
     expect(onChange).toHaveBeenLastCalledWith([
       { name: "STORE_ME", value: "fake-secret", sensitive: true, valueRedacted: false },
     ]);
 
     await userEvent.click(screen.getByRole("button", { name: "添加变量" }));
-    await userEvent.type(
-      screen.getByRole("textbox", { name: "Environment variable name 2" }),
-      "UNPUBLISHED_ONE",
-    );
+    await userEvent.type(screen.getByRole("textbox", { name: "环境变量名称2" }), "UNPUBLISHED_ONE");
 
     // The stored secret comes back redacted, so the rows reseed without matching the echo.
     await screen.rerender(
@@ -113,10 +100,10 @@ describe("ProviderEnvironmentSection external settings writes", () => {
     );
 
     await expect
-      .element(screen.getByRole("textbox", { name: "Environment variable name 1" }))
+      .element(screen.getByRole("textbox", { name: "环境变量名称1" }))
       .toHaveValue("STORE_ME");
     await expect
-      .element(screen.getByRole("textbox", { name: "Environment variable name 2" }))
+      .element(screen.getByRole("textbox", { name: "环境变量名称2" }))
       .toHaveValue("UNPUBLISHED_ONE");
   });
 
@@ -127,10 +114,7 @@ describe("ProviderEnvironmentSection external settings writes", () => {
     );
 
     await userEvent.click(screen.getByRole("button", { name: "添加变量" }));
-    await userEvent.fill(
-      screen.getByRole("textbox", { name: "Environment variable name 1" }),
-      "KEEP-ME",
-    );
+    await userEvent.fill(screen.getByRole("textbox", { name: "环境变量名称1" }), "KEEP-ME");
     await userEvent.tab();
     expect(onChange).not.toHaveBeenCalled();
 
@@ -141,7 +125,7 @@ describe("ProviderEnvironmentSection external settings writes", () => {
       />,
     );
     await expect
-      .element(screen.getByRole("textbox", { name: "Environment variable name 2" }))
+      .element(screen.getByRole("textbox", { name: "环境变量名称2" }))
       .toHaveValue("KEEP-ME");
   });
 
@@ -152,10 +136,7 @@ describe("ProviderEnvironmentSection external settings writes", () => {
     );
 
     await userEvent.click(screen.getByRole("button", { name: "添加变量" }));
-    await userEvent.fill(
-      screen.getByRole("textbox", { name: "Environment variable name 1" }),
-      "PUBLISH_ME",
-    );
+    await userEvent.fill(screen.getByRole("textbox", { name: "环境变量名称1" }), "PUBLISH_ME");
     await userEvent.tab();
     expect(onChange).toHaveBeenLastCalledWith([{ name: "PUBLISH_ME", value: "", sensitive: true }]);
 
@@ -167,7 +148,7 @@ describe("ProviderEnvironmentSection external settings writes", () => {
       />,
     );
     expect(onChange).toHaveBeenCalledTimes(1);
-    const acknowledged = screen.getByRole("textbox", { name: "Environment variable name 1" });
+    const acknowledged = screen.getByRole("textbox", { name: "环境变量名称1" });
 
     // Another client deletes the variable. The row must not come back.
     await screen.rerender(<ProviderEnvironmentSection environment={[]} onChange={onChange} />);

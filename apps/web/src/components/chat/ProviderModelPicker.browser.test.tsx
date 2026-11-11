@@ -152,20 +152,20 @@ it("keeps a docked picker open after a pick and hands focus to that model's effo
   }
 
   await using screen = await render(<Picker />);
-  await screen.getByRole("button", { name: "选择模型" }).click();
+  await screen.getByRole("button", { name: "Choose model" }).click();
   const search = page.getByPlaceholder("搜索模型…");
   await expect.element(search).toHaveFocus();
   await userEvent.keyboard("{ArrowRight}");
-  await expect.element(page.getByRole("radio", { name: "高级" })).toHaveFocus();
+  await expect.element(page.getByRole("radio", { name: "High" })).toHaveFocus();
   await userEvent.keyboard("{ArrowLeft}");
   await expect.element(search).toHaveFocus();
 
   await page.getByRole("option", { name: /Second model/ }).click();
-  await expect.element(page.getByRole("radio", { name: "中型" })).toHaveFocus();
+  await expect.element(page.getByRole("radio", { name: "Medium" })).toHaveFocus();
 
   await page.getByRole("option", { name: /Plain model/ }).click();
   await page.getByRole("option", { name: /Second model/ }).click();
-  await expect.element(page.getByRole("radio", { name: "中型" })).toHaveFocus();
+  await expect.element(page.getByRole("radio", { name: "Medium" })).toHaveFocus();
   await userEvent.keyboard("{Escape}");
   await expect.element(search).not.toBeInTheDocument();
 });

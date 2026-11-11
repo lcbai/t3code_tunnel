@@ -41,15 +41,13 @@ function OverflowMenu() {
 
 it("reaches Permissions with arrow keys, previews, and picks with Enter", async () => {
   await using screen = await render(<OverflowMenu />, { router: false }); // no routes involved
-  const trigger = screen.getByRole("button", { name: "更多( E)" });
+  const trigger = screen.getByRole("button", { name: "More" });
   await userEvent.tab();
   await expect.element(trigger).toHaveFocus();
   await userEvent.keyboard("{ArrowDown}");
   const supervised = page.getByRole("menuitemradio", { name: "监督" });
   await expect.element(supervised).toHaveFocus();
-  await expect
-    .element(supervised)
-    .toHaveAccessibleDescription("Ask before commands and file changes.");
+  await expect.element(supervised).toHaveAccessibleDescription("在命令和文件更改前询问。");
 
   await userEvent.keyboard("{ArrowRight}");
   await expect.element(page.getByRole("menuitemradio", { name: "自动接受编辑" })).toHaveFocus();
@@ -70,7 +68,7 @@ it("marks the current mode as checked and closes on Escape", async () => {
   await expect.element(fullAccess).toHaveAttribute("aria-checked", "true");
   await userEvent.keyboard("{Escape}");
   await expect.element(fullAccess).not.toBeInTheDocument();
-  await expect.element(screen.getByRole("button", { name: "更多( E)" })).toHaveFocus();
+  await expect.element(screen.getByRole("button", { name: "More" })).toHaveFocus();
 });
 
 // The real composer menu focus rule (useComposerMenuProps), with a stub composer handle.
@@ -93,7 +91,7 @@ it("returns focus to the editor after a pick", async () => {
 
 it("opens on the checked permission when composer.mode marked the trigger", async () => {
   await using screen = await render(<OverflowMenu />, { router: false }); // no routes involved
-  const trigger = screen.getByRole("button", { name: "更多( E)" });
+  const trigger = screen.getByRole("button", { name: "More" });
   markOpenToPermissions(trigger.element() as HTMLElement);
   await userEvent.click(trigger);
   await expect.element(page.getByRole("menuitemradio", { name: "完全访问" })).toHaveFocus();
@@ -127,10 +125,10 @@ function PermissionsChip() {
 it("returns focus to the editor when picking the default hides the chip", async () => {
   const { handle, ui } = withComposer(<PermissionsChip />);
   await using screen = await render(ui, { router: false }); // no routes involved
-  await userEvent.click(screen.getByRole("button", { name: "Permissions: Supervised" }));
+  await userEvent.click(screen.getByRole("button", { name: "权限 :监督" }));
   await userEvent.click(page.getByRole("menuitemradio", { name: "完全访问" }));
   await vi.waitFor(() => expect(handle.focusAtEnd).toHaveBeenCalled());
-  await expect.element(screen.getByRole("button", { name: "模型" })).not.toHaveFocus();
+  await expect.element(screen.getByRole("button", { name: "Model" })).not.toHaveFocus();
 });
 
 function ContextPermissions() {
@@ -147,7 +145,7 @@ function ContextPermissions() {
 
 it("opens permissions directly from the context strip and applies a supported mode", async () => {
   await using screen = await render(<ContextPermissions />, { router: false }); // no routes involved
-  await userEvent.click(screen.getByRole("button", { name: "Permissions: Full access" }));
+  await userEvent.click(screen.getByRole("button", { name: "权限 :完全访问" }));
   await expect
     .element(page.getByRole("menuitemradio", { name: "完全访问" }))
     .toHaveAttribute("aria-checked", "true");
@@ -155,7 +153,7 @@ it("opens permissions directly from the context strip and applies a supported mo
     .element(page.getByRole("menuitemradio", { name: "自动", exact: true }))
     .not.toBeInTheDocument();
   await userEvent.click(page.getByRole("menuitemradio", { name: "监督" }));
-  const trigger = screen.getByRole("button", { name: "Permissions: Supervised" });
+  const trigger = screen.getByRole("button", { name: "权限 :监督" });
   await expect.element(trigger).toBeVisible();
   await expect.element(page.getByRole("menuitemradio", { name: "监督" })).not.toBeInTheDocument();
   await userEvent.click(trigger);

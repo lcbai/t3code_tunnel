@@ -114,12 +114,12 @@ export function PullRequestGuideTab({
         </p>
         <p className="max-w-md text-xs text-muted-foreground">
           {running
-            ? "代理正在读取更改。 大型更改需要几分钟。您可以离开，准备就绪时会被告知。"
+            ? "代理正在读取更改。较大的更改可能需要几分钟，指南就绪后会通知你。"
             : failure === null
-              ? (query.error ?? "向导是指对变化的巡视:按读取顺序通过代码停止，只有维护者才能拨打。")
+              ? (query.error ?? "审查指南按阅读顺序带你查看改动，只有维护者可以生成指南。")
               : FAILURE_HINT}
         </p>
-        {writeButton(failure === null ? "Write guide" : "Try again", "sm")}
+        {writeButton(failure === null ? "编写指南" : "重试", "sm")}
         {failure === null || running ? null : <FailureDetails detail={failure} />}
       </div>
     );
@@ -131,9 +131,9 @@ export function PullRequestGuideTab({
         {running ? <Spinner /> : <TriangleAlertIcon />}
         <AlertDescription>
           {running ? (
-            "重写这个向导，新向导准备好后，你就会被告知。"
+            "正在重写审查指南，就绪后会通知你。"
           ) : failure === null ? (
-            "在最新的推前写成。"
+            "此指南早于最近一次推送。"
           ) : (
             <>
               {`无法重写此指南。${FAILURE_HINT}`}
@@ -141,7 +141,7 @@ export function PullRequestGuideTab({
             </>
           )}
         </AlertDescription>
-        {!running && canWrite ? <AlertAction>{writeButton("Rewrite", "xs")}</AlertAction> : null}
+        {!running && canWrite ? <AlertAction>{writeButton("重写指南", "xs")}</AlertAction> : null}
       </Alert>
     ) : null;
 
@@ -169,7 +169,7 @@ export function PullRequestGuideTab({
   );
 }
 
-const FAILURE_HINT = "Check the review guide model in Settings → Source control.";
+const FAILURE_HINT = "请在「设置 → 源代码管理」中检查审查指南所用的模型。";
 
 function FailureDetails({ detail }: { detail: string }) {
   return (

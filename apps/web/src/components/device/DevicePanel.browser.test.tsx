@@ -221,11 +221,11 @@ describe("DevicePanel discovery warning", () => {
       ...deviceState,
       hostStatuses: { local: { status: "ready", detail, incompletePlatforms: ["ios"] } },
     });
-    const warning = "iOS list on This Mac may be incomplete.";
+    const warning = "This Mac 上的 iOS 设备列表可能不完整。";
     currentState = withCause("first cause");
     await using screen = await render(devicePanel(threadA), { container });
 
-    await screen.getByRole("button", { name: "Dismiss device warning for This Mac" }).click();
+    await screen.getByRole("button", { name: "关闭 This Mac 的设备警告" }).click();
     await screen.rerender(devicePanel(threadA));
     await expect.element(screen.getByText(warning)).not.toBeInTheDocument();
 

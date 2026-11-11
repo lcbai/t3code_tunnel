@@ -373,7 +373,7 @@ function DictionaryEditor(props: {
                   autoFocus
                   value={aliasDraft.value}
                   maxLength={50}
-                  aria-label={`别名${term}`}
+                  aria-label={`${term} 的别名`}
                   placeholder="拼错"
                   className="w-32"
                   onChange={(event) => setAliasDraft({ term, value: event.target.value })}
@@ -607,7 +607,7 @@ function useVoiceModels(prepared: PreparedConnection | null) {
         if (current !== epoch.current || revision !== refreshRevision.current) return;
         toastManager.add({
           type: "error",
-          title: "无法装入转写模型",
+          title: "无法加载转写模型",
           description: error instanceof Error ? error.message : String(error),
         });
       }
@@ -1177,7 +1177,7 @@ export function VoiceSettingsPanel() {
     (env) => env.environmentId === pendingCloud?.environmentId,
   );
   // OpenRouter users without settings access still manage their own model choice.
-  const manageLabel = destination.cloudProvider === "openrouter" ? "管理OpenRouter" : "管理密钥";
+  const manageLabel = destination.cloudProvider === "openrouter" ? "管理 OpenRouter" : "管理密钥";
   const chosenEnvironment = environments.find(
     (environment) => environment.environmentId === destination.environmentId,
   );
@@ -1324,12 +1324,11 @@ export function VoiceSettingsPanel() {
                         {destination.cloudProvider
                           ? CLOUD_SPEECH_LABELS[destination.cloudProvider]
                           : destination.environmentId
-                            ? (chosenEnvironment?.label ?? "选择环境( 不详)")
+                            ? (chosenEnvironment?.label ?? "所选环境不可用")
                             : "关闭"}
                         {destination.cloudProvider && (
                           <span className="text-muted-foreground">
-                            {" via "}
-                            {chosenEnvironment?.label ?? "无法使用的环境"}
+                            {`（通过 ${chosenEnvironment?.label ?? "不可用的环境"}）`}
                           </span>
                         )}
                       </span>
@@ -1377,7 +1376,7 @@ export function VoiceSettingsPanel() {
                   (!chosenEnvironment ||
                     (destination.cloudProvider &&
                       !cloudChoices.some((option) => option.value === destinationValue))) ? (
-                    <SelectItem value={destinationValue}>选择环境( 不详)</SelectItem>
+                    <SelectItem value={destinationValue}>所选环境不可用</SelectItem>
                   ) : null}
                 </SelectPopup>
               </Select>
@@ -1515,14 +1514,13 @@ export function VoiceSettingsPanel() {
           description="名称和术语转写应该拼写您的方式，保存在这个设备上。当它不断听到一个术语错误时，添加一个别名。您指定的工程名称也会作为提示发送。"
           control={
             <span className="text-xs text-muted-foreground">
-              {settings.speechCustomWords.length}{" "}
-              {settings.speechCustomWords.length === 1 ? "entry" : "entries"}
+              {settings.speechCustomWords.length} 项
             </span>
           }
         >
           <div className="mt-2 pb-3.5">
             <DictionaryEditor
-              label="dictionary"
+              label="词典"
               words={settings.speechCustomWords}
               onChange={(words) => void updateClientSettings({ speechCustomWords: words })}
             />

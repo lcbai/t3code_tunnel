@@ -74,45 +74,42 @@ const theme = (name: string, accent = "#3b82f6") => ({
 const themeFile = (name: string, accent?: string) =>
   new File([JSON.stringify(theme(name, accent))], `${name}.json`, { type: "application/json" });
 
-it.each(["Update existing", "Keep both"])(
-  "keeps batch failures visible after %s",
-  async (choice) => {
-    using _themes = {
-      [Symbol.dispose]() {
-        window.localStorage.removeItem(CUSTOM_THEMES_STORAGE_KEY);
-        invalidateCustomThemes();
-      },
-    };
-    installCustomTheme(parseThemeFile(theme("Dusk")));
-    const onOpenChange = vi.fn();
-    await using _screen = await render(
-      <ThemeImportDialog
-        open
-        onOpenChange={onOpenChange}
-        onImported={() => true}
-        onImportedMany={() => {}}
-      />,
-    );
-    const input = document.querySelector<HTMLInputElement>('input[type="file"]')!;
-    await userEvent.upload(input, [
-      themeFile("Dawn"),
-      themeFile("Dusk", "#f97316"),
-      new File(["{"], "broken.json", { type: "application/json" }),
-    ]);
+it.each(["更新现有", "都留着"])("keeps batch failures visible after %s", async (choice) => {
+  using _themes = {
+    [Symbol.dispose]() {
+      window.localStorage.removeItem(CUSTOM_THEMES_STORAGE_KEY);
+      invalidateCustomThemes();
+    },
+  };
+  installCustomTheme(parseThemeFile(theme("Dusk")));
+  const onOpenChange = vi.fn();
+  await using _screen = await render(
+    <ThemeImportDialog
+      open
+      onOpenChange={onOpenChange}
+      onImported={() => true}
+      onImportedMany={() => {}}
+    />,
+  );
+  const input = document.querySelector<HTMLInputElement>('input[type="file"]')!;
+  await userEvent.upload(input, [
+    themeFile("Dawn"),
+    themeFile("Dusk", "#f97316"),
+    new File(["{"], "broken.json", { type: "application/json" }),
+  ]);
 
-    await expect.element(page.getByText("已安装")).toBeVisible();
-    await expect.element(page.getByText(/^broken\.json:/)).toBeVisible();
-    expect(getCustomThemes().map((theme) => theme.label)).toContain("Dawn");
-    await page.getByRole("button", { name: choice }).click();
-    invalidateCustomThemes();
-    const label = choice === "Update existing" ? "Dusk" : "Dusk (1)";
-    expect(getCustomThemes().find((theme) => theme.label === label)?.colors).toEqual(
-      parseThemeFile(theme("Dusk", "#f97316")).colors,
-    );
-    await expect.element(page.getByText(/^broken\.json:/)).toBeVisible();
-    expect(onOpenChange).not.toHaveBeenCalledWith(false);
-  },
-);
+  await expect.element(page.getByText("已安装")).toBeVisible();
+  await expect.element(page.getByText(/^broken\.json:/)).toBeVisible();
+  expect(getCustomThemes().map((theme) => theme.label)).toContain("Dawn");
+  await page.getByRole("button", { name: choice }).click();
+  invalidateCustomThemes();
+  const label = choice === "更新现有" ? "Dusk" : "Dusk (1)";
+  expect(getCustomThemes().find((theme) => theme.label === label)?.colors).toEqual(
+    parseThemeFile(theme("Dusk", "#f97316")).colors,
+  );
+  await expect.element(page.getByText(/^broken\.json:/)).toBeVisible();
+  expect(onOpenChange).not.toHaveBeenCalledWith(false);
+});
 
 function isolateThemes() {
   const previous = localStorage.getItem(CUSTOM_THEMES_STORAGE_KEY);

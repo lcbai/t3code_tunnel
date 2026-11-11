@@ -25,14 +25,14 @@ it("confirms on the second click and disarms on Escape", async () => {
   const button = screen.getByRole("button");
 
   await userEvent.click(button);
-  await expect.element(button).toHaveTextContent("确认合并吗 ?");
+  await expect.element(button).toHaveTextContent("Confirm merge?");
   expect(pressEscape().defaultPrevented).toBe(true);
-  await expect.element(button).toHaveTextContent("合并");
+  await expect.element(button).toHaveTextContent("Merge");
 
   await userEvent.click(button);
   await userEvent.click(button);
   expect(onConfirm).toHaveBeenCalledTimes(1);
-  await expect.element(button).toHaveTextContent("合并");
+  await expect.element(button).toHaveTextContent("Merge");
 });
 
 it("stops swallowing Escape once the scope changes", async () => {
@@ -41,13 +41,13 @@ it("stops swallowing Escape once the scope changes", async () => {
   const button = screen.getByRole("button");
 
   await userEvent.click(button);
-  await expect.element(button).toHaveTextContent("确认合并吗 ?");
+  await expect.element(button).toHaveTextContent("Confirm merge?");
   await screen.rerender(<MergeButton scopeKey="b" onConfirm={onConfirm} />);
-  await expect.element(button).toHaveTextContent("合并");
+  await expect.element(button).toHaveTextContent("Merge");
   expect(pressEscape().defaultPrevented).toBe(false);
 
   await screen.rerender(<MergeButton scopeKey="a" onConfirm={onConfirm} />);
-  await expect.element(button).toHaveTextContent("合并");
+  await expect.element(button).toHaveTextContent("Merge");
 });
 
 // The hook's owner stays mounted while the armed button goes away, as when the primary
@@ -68,13 +68,13 @@ it("stops swallowing Escape once the armed button unmounts", async () => {
   const button = screen.getByRole("button");
 
   await userEvent.click(button);
-  await expect.element(button).toHaveTextContent("确认合并吗 ?");
+  await expect.element(button).toHaveTextContent("Confirm merge?");
   await screen.rerender(<ToolbarWithMergeButton shown={false} />);
   await expect.element(screen.getByText("gone")).toBeVisible();
   expect(pressEscape().defaultPrevented).toBe(false);
 
   await screen.rerender(<ToolbarWithMergeButton shown />);
-  await expect.element(screen.getByRole("button")).toHaveTextContent("合并");
+  await expect.element(screen.getByRole("button")).toHaveTextContent("Merge");
 });
 
 it.each(["merge", "enable-auto-merge"] as const)(

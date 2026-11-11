@@ -123,7 +123,7 @@ function PdfPage(props: {
   }, [props.query]);
   return (
     <>
-      <canvas ref={canvas} aria-label={`页${index + 1}`} className="block h-full w-full" />
+      <canvas ref={canvas} aria-label={`第 ${index + 1} 页`} className="block h-full w-full" />
       <div ref={text} data-pdf-text-layer />
     </>
   );
@@ -369,17 +369,17 @@ export default function PdfViewer(props: {
           <MinusIcon className="size-3.5" />
         </FileSurfaceAction>
         <span className="min-w-14 text-center tabular-nums">
-          {zoom === null ? "适切宽度" : `${Math.round(scale * 100)}%`}
+          {zoom === null ? "适应宽度" : `${Math.round(scale * 100)}%`}
         </span>
         <FileSurfaceAction
-          label="缩放"
+          label="放大"
           disabled={scale >= PDF_MAX_ZOOM}
           onPress={() => changeZoom(stepPdfZoom(scale, 1))}
         >
           <PlusIcon className="size-3.5" />
         </FileSurfaceAction>
         <FileSurfaceAction
-          label="适切宽度"
+          label="适应宽度"
           onPress={() => {
             changeZoom(null);
             scroll.current?.scrollTo({ left: 0 });
@@ -392,8 +392,8 @@ export default function PdfViewer(props: {
             ref={find}
             size="compact"
             type="search"
-            aria-label="查找于PDF"
-            placeholder="查找于PDF"
+            aria-label="在 PDF 中查找"
+            placeholder="在 PDF 中查找"
             value={query}
             onChange={(event) => {
               setQuery(event.target.value);

@@ -216,11 +216,11 @@ describe("ServerUpdatesAction", () => {
     expect(testState.updateServer).toHaveBeenCalledTimes(2);
     expect(testState.toast).toHaveBeenCalledWith({
       type: "error",
-      title: "Laptop update failed",
+      title: "Laptop 更新失败",
       description: "Download failed",
     });
     expect(testState.toast).toHaveBeenCalledWith(
-      expect.objectContaining({ type: "success", title: "Office updated" }),
+      expect.objectContaining({ type: "success", title: "Office 更新" }),
     );
     expect(button(screen, "全部更新")!.disabled).toBe(false);
   });
@@ -234,7 +234,7 @@ describe("ServerUpdatesAction", () => {
 
     expect(testState.updateServer).toHaveBeenCalledTimes(1);
     expect(testState.toast).toHaveBeenCalledWith(
-      expect.objectContaining({ type: "success", title: "Office updated" }),
+      expect.objectContaining({ type: "success", title: "Office 更新" }),
     );
   });
 });

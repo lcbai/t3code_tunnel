@@ -250,8 +250,8 @@ function ExtendedOfficeViewer(props: {
           className="flex min-h-10 shrink-0 flex-wrap items-center gap-x-1 border-b border-border/60 px-3 py-2 text-xs text-muted-foreground tabular-nums"
           role="status"
         >
-          工作表 {page + 1} of {count} · {sheet.rowCount.toLocaleString()} 行数 ^{" "}
-          {sheet.columns.toLocaleString()} columns
+          工作表 {page + 1} / {count} · {sheet.rowCount.toLocaleString()} 行 ·{" "}
+          {sheet.columns.toLocaleString()} 列
           {fileSize !== undefined
             ? ` · ${fileSize === 0 ? "0 bytes" : formatAttachmentSize(fileSize)}`
             : ""}
@@ -276,7 +276,7 @@ function ExtendedOfficeViewer(props: {
             只显示单元格值。没有显示图表、图像和格式。
             {sheet.truncated
               ? props.kind === "ods"
-                ? " 限于500列和50列。"
+                ? " 预览最多显示 500 行和 50 列。"
                 : " 预览限制在25万行,1024列，以及边框单元格文本。"
               : ""}
           </FileSurfaceNotice>

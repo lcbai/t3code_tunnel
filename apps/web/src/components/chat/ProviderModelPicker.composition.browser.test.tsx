@@ -60,7 +60,7 @@ function Picker({ keybindings = [] }: { keybindings?: ResolvedKeybindingsConfig 
 
 it("keeps composition keys out of model selection and dismissal", async () => {
   await using screen = await render(<Picker />);
-  await page.getByRole("button", { name: "选择模型" }).click();
+  await page.getByRole("button", { name: "Choose model" }).click();
   const search = page.getByPlaceholder("搜索模型…");
   await search.fill("Target");
   await expect.element(page.getByRole("option", { name: /Target model/ })).toBeVisible();
@@ -87,7 +87,7 @@ it("keeps composition keys out of model selection and dismissal", async () => {
   await expect
     .element(screen.getByRole("status", { name: "Selected model" }))
     .toHaveTextContent("target");
-  await page.getByRole("button", { name: "选择模型" }).click();
+  await page.getByRole("button", { name: "Choose model" }).click();
   await expect.element(search).toBeVisible();
   await userEvent.keyboard("{Escape}");
   await expect.element(search).not.toBeInTheDocument();
@@ -98,7 +98,7 @@ it("keeps composing keys from triggering model jump shortcuts", async () => {
     { key: "enter", command: "modelPicker.jump.1", when: "modelPickerOpen" },
   ]);
   await using screen = await render(<Picker keybindings={keybindings} />);
-  await page.getByRole("button", { name: "选择模型" }).click();
+  await page.getByRole("button", { name: "Choose model" }).click();
   const search = page.getByPlaceholder("搜索模型…");
   await search.fill("Target");
   await expect.element(page.getByRole("option", { name: /Target model/ })).toBeVisible();

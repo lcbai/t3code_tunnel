@@ -216,7 +216,7 @@ export function ThreadAutomationsPanel(props: {
                       size="icon-xs"
                       variant="ghost"
                       part="icon"
-                      aria-label={`运行${task.title}现在`}
+                      aria-label={`立即运行 ${task.title}`}
                       disabled={
                         !canOperate || busyTaskId !== null || task.lastRunStatus === "running"
                       }
@@ -232,7 +232,7 @@ export function ThreadAutomationsPanel(props: {
             <Switch
               checked={task.enabled}
               disabled={!canOperate || busyTaskId !== null}
-              aria-label={task.enabled ? `暂停${task.title}` : `继续 ${task.title}`}
+              aria-label={task.enabled ? `暂停 ${task.title}` : `继续 ${task.title}`}
               onCheckedChange={(enabled) => void toggleEnabled(task, enabled)}
             />
           </li>

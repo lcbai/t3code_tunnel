@@ -15,7 +15,7 @@ export default function MermaidViewer(props: { readonly text: string }) {
   )
     return (
       <div role="alert" className="p-6 text-xs text-muted-foreground">
-        此图包含资源 URL、 标记、 节点元数据或自定义配置。 显示人鱼源以安全检查。
+        此图表包含资源网址、标记、节点元数据或自定义配置。请查看 Mermaid 源码以安全检查。
       </div>
     );
   return (

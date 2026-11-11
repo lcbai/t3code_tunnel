@@ -395,8 +395,8 @@ export function usePendingThreadRequests(input: {
       setComposerDraftPrompt(composerDraftTarget, nextPrompt);
       toastManager.add({
         type: "info",
-        title: "您的输入文本被丢弃",
-        description: "一旦问题得到回答，它就会回到消息输入框的行列。",
+        title: "已暂存你输入的文字",
+        description: "回答问题后，文字会恢复到消息输入框。",
         data: { threadRef: activeThreadId ? { environmentId, threadId: activeThreadId } : null },
       });
       if (activeThreadId) {

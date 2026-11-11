@@ -210,7 +210,7 @@ describe("Antigravity setup", () => {
     await act(async () => resolveStart());
     await expect.element(screen.getByRole("button", { name: "取消安装" })).toBeEnabled();
     await expect
-      .element(screen.getByRole("status").filter({ hasText: "Downloading 1.0 MB of 2.0 MB." }))
+      .element(screen.getByRole("status").filter({ hasText: "正在下载：1.0 MB / 2.0 MB" }))
       .toBeVisible();
   });
 
@@ -225,19 +225,19 @@ describe("Antigravity setup", () => {
       environmentId,
       input: { instanceId, flowId: "flow-1", callbackUrl },
     });
-    expect(screen.occurrences("Signed in.")).toBe(0);
+    expect(screen.occurrences("已登录。")).toBe(0);
     expect(screen.callbackInput().value).toBe("");
 
     setup.auth = authState({ phase: "verifying", authorizationUrl: null });
     await publish();
-    expect(screen.occurrences("Signed in.")).toBe(0);
+    expect(screen.occurrences("已登录。")).toBe(0);
     setup.auth = authState({ phase: "succeeded", authorizationUrl: null });
     await screen.rerender(
       section({
         provider: { ...provider, status: "ready", auth: { status: "authenticated" } },
       }),
     );
-    expect(screen.occurrences("Signed in.")).toBe(1);
+    expect(screen.occurrences("已登录。")).toBe(1);
   });
 
   it("does not send a callback left over from a replaced sign-in flow", async () => {

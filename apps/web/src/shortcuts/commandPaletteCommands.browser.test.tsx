@@ -69,7 +69,7 @@ describe("command palette shortcuts", () => {
       installCommandPaletteCommands(screen.router!, { keybindings: () => keybindings }),
     );
     dispatchCommandPalette({ _tag: "ToggleMode", mode: "files" });
-    const input = page.getByRole("textbox", { name: "搜索文件" });
+    const input = page.getByRole("textbox", { name: "Search files" });
     await input.fill("にほん");
 
     for (const composition of [

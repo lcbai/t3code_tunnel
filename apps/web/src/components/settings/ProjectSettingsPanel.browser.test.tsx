@@ -302,12 +302,12 @@ async function mountSettings(search: SettingsScopeSearch) {
 }
 
 const nameInput = (screen: Screen) =>
-  screen.container.querySelector<HTMLInputElement>('[aria-label="Project name"]')!;
+  screen.container.querySelector<HTMLInputElement>('[aria-label="项目名称"]')!;
 const removeCheckout = (screen: Screen, root: string) =>
-  screen.container.querySelector<HTMLButtonElement>(`[aria-label="Remove checkout ${root}"]`)!;
+  screen.container.querySelector<HTMLButtonElement>(`[aria-label="删除检出${root}"]`)!;
 const removeAll = (screen: Screen) =>
   [...screen.container.querySelectorAll("button")].find((button) =>
-    button.textContent?.includes("Remove all entries"),
+    button.textContent?.includes("删除所有条目"),
   )!;
 
 async function grant(id: EnvironmentId, result: SessionResult) {
@@ -480,7 +480,7 @@ describe("project settings permissions", () => {
 describe("project identity reset", () => {
   const scratchIcon = { kind: "lucide", name: "message-square-dashed", color: "gray" } as const;
   const resetButton = (screen: Screen, label: string) =>
-    screen.container.querySelector<HTMLButtonElement>(`[aria-label="Reset ${label} to default"]`);
+    screen.container.querySelector<HTMLButtonElement>(`[aria-label="重置${label} 默认值"]`);
   const asScratch = (project: Project): Project => ({
     ...project,
     isScratch: true,
@@ -494,14 +494,14 @@ describe("project identity reset", () => {
     state.projects = [{ ...asScratch(state.projects[0]!), faviconPath: null, projectIcon: null }];
     await using screen = await mountPanel();
 
-    await userEvent.click(resetButton(screen, "project name")!);
+    await userEvent.click(resetButton(screen, "项目名称")!);
     await vi.waitFor(() =>
       expect(state.update).toHaveBeenCalledWith({
         environmentId: primaryId,
-        input: { projectId: state.projects[0]!.id, title: "No project" },
+        input: { projectId: state.projects[0]!.id, title: "无项目" },
       }),
     );
-    await userEvent.click(resetButton(screen, "project icon")!);
+    await userEvent.click(resetButton(screen, "工程图标")!);
     await vi.waitFor(() =>
       expect(state.update).toHaveBeenLastCalledWith({
         environmentId: primaryId,
@@ -516,8 +516,8 @@ describe("project identity reset", () => {
     state.projects = [asScratch(primary!), { ...remote!, faviconPath: "logo.png" }];
     await using screen = await mountPanel();
 
-    expect(resetButton(screen, "project name")).toBeNull();
-    await userEvent.click(resetButton(screen, "project icon")!);
+    expect(resetButton(screen, "项目名称")).toBeNull();
+    await userEvent.click(resetButton(screen, "工程图标")!);
     await vi.waitFor(() => expect(state.update).toHaveBeenCalledTimes(2));
     expect(state.update.mock.calls.map(([request]) => request)).toEqual([
       {
@@ -575,7 +575,7 @@ it("opens the fallback search target across all environments from a checkout", a
 });
 
 describe("project settings scope", () => {
-  const environmentMenu = () => page.getByRole("button", { name: /^Environment scope:/ });
+  const environmentMenu = () => page.getByRole("button", { name: /^环境范围:/ });
   const primaryOption = () => page.getByRole("menuitemradio", { name: /^primary/ });
   const remoteOption = () => page.getByRole("menuitemradio", { name: /^remote/ });
 
@@ -634,19 +634,15 @@ describe("project settings scope", () => {
     });
 
     await expect.element(page.getByText(message, { exact: true })).toBeVisible();
-    await expect.element(page.getByRole("button", { name: /^Project scope:/ })).toBeVisible();
-    await expect
-      .element(page.getByRole("button", { name: "Environment scope: remote" }))
-      .toBeVisible();
+    await expect.element(page.getByRole("button", { name: /^项目范围:/ })).toBeVisible();
+    await expect.element(page.getByRole("button", { name: "环境范围: remote" })).toBeVisible();
     await userEvent.click(page.getByRole("button", { name: "显示所有环境" }));
 
     await expect
       .element(page.getByRole("textbox", { name: "项目名称" }))
       .toHaveValue("Shared repo");
     expect(screen.router.state.location.search).toEqual({ project: key });
-    await expect
-      .element(page.getByRole("button", { name: "Environment scope: All environments" }))
-      .toBeVisible();
+    await expect.element(page.getByRole("button", { name: "环境范围: 所有环境" })).toBeVisible();
     await expect.element(page.getByText(message, { exact: true })).not.toBeInTheDocument();
     await expect.element(page.getByRole("button", { name: "删除工程", exact: true })).toBeEnabled();
   });
@@ -657,7 +653,7 @@ it("returns to the project overview after removal, clearing the selection but ke
   state.projects = [state.projects[1]!];
   await using screen = await mountPanel({ machine: remoteId, checkout: "remote:/work/remote" });
   const removeProject = [...screen.container.querySelectorAll("button")].find(
-    (button) => button.textContent === "Remove project",
+    (button) => button.textContent === "删除工程",
   )!;
 
   await userEvent.click(removeProject);

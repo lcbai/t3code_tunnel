@@ -177,7 +177,7 @@ describe("AddProviderInstanceDialog environment routing", () => {
     await click("Use Kilo Code");
     await act(async () =>
       document
-        .querySelector<HTMLButtonElement>('button[aria-label="Add accent color for Kilo Code"]')!
+        .querySelector<HTMLButtonElement>('button[aria-label="添加 Kilo Code 的强调色"]')!
         .click(),
     );
     await click("添加颜色");
@@ -257,18 +257,16 @@ describe("AddProviderInstanceDialog environment routing", () => {
     const commandArgs = ["--profile", "acp", " literal $(value) ; ", ""];
     for (const [index, argument] of commandArgs.entries()) {
       await click("添加参数");
-      if (argument) await type(`input[aria-label="Argument ${index + 1}"]`, argument);
+      if (argument) await type(`input[aria-label="参数${index + 1}"]`, argument);
     }
     await click("添加变量");
-    await type('input[aria-label="Environment variable name 1"]', "DSH_PROFILE");
+    await type('input[aria-label="环境变量名称1"]', "DSH_PROFILE");
     await act(async () =>
       document
-        .querySelector<HTMLButtonElement>(
-          'button[aria-label="Mark environment variable DSH_PROFILE as sensitive"]',
-        )!
+        .querySelector<HTMLButtonElement>('button[aria-label="将环境变量DSH_PROFILE 标为敏感"]')!
         .click(),
     );
-    await type('input[aria-label="Environment variable value 1"]', "work");
+    await type('input[aria-label="环境变量值1"]', "work");
     await click("下一步");
     await type("#add-provider-label", "Deepseek Harness");
     await click("添加实例");

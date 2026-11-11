@@ -92,7 +92,7 @@ describe("ExpandedImageDialog", () => {
       // The dialog renders no links and reads no route.
       { router: false },
     );
-    const viewportLocator = screen.getByRole("region", { name: "large.png, zoomable image" });
+    const viewportLocator = screen.getByRole("region", { name: "large.png，可缩放的图片" });
     const viewport = viewportLocator.element() as HTMLElement;
     const image = screen.getByRole("img", { name: "large.png" }).element() as HTMLElement;
     await vi.waitFor(() => expect(image.style.width).not.toBe(""));

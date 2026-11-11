@@ -29,13 +29,12 @@ function setup(detail: string) {
 const HEAD_MOVED = "The stack head moved. Refresh the stack before trying again.";
 
 it.each([
-  { label: "Merge stack", detail: HEAD_MOVED, description: HEAD_MOVED },
-  { label: "Rebase stack", detail: HEAD_MOVED, description: HEAD_MOVED },
+  { label: "合并堆栈", detail: HEAD_MOVED, description: HEAD_MOVED },
+  { label: "堆栈变基", detail: HEAD_MOVED, description: HEAD_MOVED },
   {
-    label: "Rebase stack",
+    label: "堆栈变基",
     detail: "GitHub CLI command failed.",
-    description:
-      "The host refused the rebase. A rebase stops at the first commit that does not apply cleanly.",
+    description: "托管平台拒绝了变基。变基会在遇到第一个无法应用的提交时停止。",
   },
 ])("$label refused with $detail shows $description", async (row) => {
   setup(row.detail);
@@ -65,8 +64,8 @@ it.each([
       />
     </ToastProvider>,
   );
-  if (row.label === "Rebase stack") {
-    await screen.getByRole("button", { name: "Stack 1, layer 1 of 1" }).click();
+  if (row.label === "堆栈变基") {
+    await screen.getByRole("button", { name: "堆栈 #1，第 1 层，共 1 层" }).click();
     await page.getByRole("menuitem", { name: row.label }).click();
   } else {
     await screen.getByRole("button", { name: row.label, exact: true }).click();

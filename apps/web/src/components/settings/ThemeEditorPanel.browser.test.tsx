@@ -126,10 +126,10 @@ describe("ThemeEditorPanel", () => {
 
   it("restores the colors from before the picker opened when Escape closes it", async () => {
     await using _view = await renderPanel();
-    const hex = page.getByRole("textbox", { name: "Accent hex value" });
+    const hex = page.getByRole("textbox", { name: "强调色 十六进制值" });
     const original = (hex.element() as HTMLInputElement).value;
-    await userEvent.click(page.getByRole("button", { name: "Choose Accent color" }));
-    const hue = page.getByRole("slider", { name: "Accent hue" });
+    await userEvent.click(page.getByRole("button", { name: "选择强调色" }));
+    const hue = page.getByRole("slider", { name: "强调色 的色相" });
     await expect.element(hue).toBeInTheDocument();
     const hueSlider = hue.element() as HTMLElement;
 

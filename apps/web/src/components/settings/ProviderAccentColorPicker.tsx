@@ -57,7 +57,7 @@ function ProviderCustomColorPanel(props: {
     <div className="w-56 bg-popover">
       <div onPointerDownCapture={startDrag}>
         <ColorSaturationValuePlane
-          label="星座颜色"
+          label="强调色"
           value={hsv}
           onChange={changeHsv}
           onInteractionEnd={endDrag}
@@ -67,7 +67,7 @@ function ProviderCustomColorPanel(props: {
       <div className="grid gap-3 p-3">
         <div onPointerDownCapture={startDrag}>
           <ColorHueSlider
-            label="调色色调色调"
+            label="强调色 的色相"
             value={hsv.h}
             onChange={(h) => changeHsv({ ...hsv, h })}
             onInteractionEnd={endDrag}
@@ -86,7 +86,7 @@ function ProviderCustomColorPanel(props: {
           }}
           onBlur={() => setHexDraft(null)}
           font="mono"
-          aria-label="自定义十六进制口音颜色"
+          aria-label="自定义十六进制强调色"
           spellCheck={false}
         />
         {props.showAddButton ? (
@@ -126,7 +126,7 @@ function ProviderCustomColorPicker(props: {
             size="icon-sm"
             variant="ghost-muted"
             style={normalized ? { backgroundColor: normalized } : undefined}
-            aria-label={`${props.displayName} 的强调色 ${normalized ? "Change" : "Add"}`}
+            aria-label={`${normalized ? "更改" : "添加"} ${props.displayName} 的强调色`}
           >
             {normalized ? <span className="sr-only">更改重音颜色</span> : <PlusIcon aria-hidden />}
           </Button>

@@ -110,7 +110,6 @@ export const WINDOWS_POLICY_VALUES = {
   SupportUrl: { type: "string", path: ["supportUrl"] },
   Settings: { type: "json", path: ["settings"] },
   MaxRuntimeMode: { type: "string", path: ["limits", "maxRuntimeMode"] },
-  Connect: { type: "boolean", path: ["limits", "connect"] },
   WebhookTasks: { type: "boolean", path: ["limits", "webhookTasks"] },
   Telemetry: { type: "boolean", path: ["limits", "telemetry"] },
   BrowserCookieImport: { type: "boolean", path: ["limits", "browserCookieImport"] },
@@ -537,10 +536,11 @@ const readPlatformPolicy = Effect.fnUntraced(function* (
     const refuse = (reason: string) => new ManagedPolicyFileError({ path, reason });
     const root = yield* readKey(WINDOWS_POLICY_SUBKEY);
     if (root === undefined) return undefined;
-    const json = root.values.find((value) => value.name.toLowerCase() === "policy");
+    const rootValues = root.values.filter((value) => value.name.toLowerCase() !== "connect");
+    const json = rootValues.find((value) => value.name.toLowerCase() === "policy");
     if (json !== undefined) {
       // Not Configured clears a list policy's values but can leave its empty subkey behind.
-      let templateSettings = root.values.length > 1;
+      let templateSettings = rootValues.length > 1;
       for (const subkey of root.subkeys) {
         if (templateSettings) break;
         const child = yield* readKey(`${WINDOWS_POLICY_SUBKEY}\\${subkey}`);
@@ -555,7 +555,7 @@ const readPlatformPolicy = Effect.fnUntraced(function* (
       if (json.type !== "REG_SZ") return yield* refuse("its Policy value is not a string (REG_SZ)");
       return { source: path, document: yield* decodeDocument(path, json.data) };
     }
-    const values: Array<PolicyRegistryValue> = root.values.map((value) => ({ ...value, key: "" }));
+    const values: Array<PolicyRegistryValue> = rootValues.map((value) => ({ ...value, key: "" }));
     for (const subkey of root.subkeys) {
       // Registry names ignore case.
       const list = Object.keys(WINDOWS_POLICY_LISTS).find(

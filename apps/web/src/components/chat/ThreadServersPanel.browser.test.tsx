@@ -34,15 +34,15 @@ it("pages servers four at a time, collapses back, and resets on thread switch", 
   const expectRows = (rows: number) => vi.waitFor(() => expect(count("li")).toBe(rows));
 
   await expectRows(4);
-  await page.getByRole("button", { name: "Show 4 more" }).click();
+  await page.getByRole("button", { name: "显示4 更多" }).click();
   await expectRows(8);
   expect(count("[data-thread-details-server-overflow]")).toBe(4);
-  await page.getByRole("button", { name: "Show 2 more" }).click();
+  await page.getByRole("button", { name: "显示2 更多" }).click();
   await expectRows(10);
   await page.getByRole("button", { name: "显示少一点" }).click();
   await expectRows(4);
 
-  await page.getByRole("button", { name: "Show 4 more" }).click();
+  await page.getByRole("button", { name: "显示4 更多" }).click();
   await expectRows(8);
   await screen.rerender(panel("b"));
   await expectRows(4);

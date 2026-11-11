@@ -237,16 +237,16 @@ describe("GuestPage", () => {
     await userEvent.click(screen.getByText("vp run check:changed"));
     await expect.element(screen.getByText("4 files checked")).toBeVisible();
     await expect
-      .element(screen.getByTitle("图表"))
+      .element(screen.getByTitle("Chart"))
       .toHaveAttribute(
         "src",
         expect.stringContaining(`${GUEST_RENDER_ROUTE}?share=${SHARE_ID}&item=visual`),
       );
     // Guests cannot act on the thread, so no control offers to.
-    expect(screen.container.querySelector('[aria-label="Fork from this response"]')).toBeNull();
+    expect(screen.container.querySelector('[aria-label="从这个响应中叉出"]')).toBeNull();
     expect(socket).not.toHaveBeenCalled();
     // The composer names the thread's model, as the owner's does, with nothing to pick.
-    await expect.element(screen.getByLabelText("Model: GPT-5.4")).toBeVisible();
+    await expect.element(screen.getByLabelText("型号:GPT-5.4")).toBeVisible();
   });
 
   it("sends attached files with the message, as form data", async () => {
@@ -339,7 +339,7 @@ describe("GuestPage", () => {
     node.dispatchEvent(new WheelEvent("wheel", { deltaY: -400, bubbles: true }));
     node.scrollTop = node.scrollTop - 400;
     node.dispatchEvent(new Event("scroll"));
-    await expect.element(screen.getByRole("button", { name: /scroll to/i })).toBeVisible();
+    await expect.element(screen.getByRole("button", { name: "滚动到结束" })).toBeVisible();
 
     // The guest sends; their message waits at the end for the owner.
     const waiting = {

@@ -190,7 +190,7 @@ export default function BinaryViewer(props: {
       {archive ? (
         <div className="flex h-10 shrink-0 items-center gap-2 border-b border-border/60 px-3 text-xs">
           <FileSurfaceAction
-            label={selectedPath ? "返回归档" : "父文件夹"}
+            label={selectedPath ? "返回归档" : "上级文件夹"}
             disabled={!selectedPath && !folder}
             onPress={() => {
               setError(null);
@@ -218,15 +218,15 @@ export default function BinaryViewer(props: {
                   if (!busy && value !== null) selectPage(0, value);
                 }}
               >
-                <SelectTrigger aria-label="图表" aria-disabled={busy} aria-busy={busy} size="xs">
+                <SelectTrigger aria-label="数据表" aria-disabled={busy} aria-busy={busy} size="xs">
                   <SelectValue>
-                    {table.name} ({table.count.toLocaleString()} (行数)
+                    {table.name}（{table.count.toLocaleString()} 行）
                   </SelectValue>
                 </SelectTrigger>
                 <SelectPopup>
                   {database.tables.map((item) => (
                     <SelectItem key={item.name} value={item.name}>
-                      {item.name} ({item.count.toLocaleString()} (行数)
+                      {item.name}（{item.count.toLocaleString()} 行）
                     </SelectItem>
                   ))}
                 </SelectPopup>
@@ -256,7 +256,7 @@ export default function BinaryViewer(props: {
             className="border-b border-border/60 px-3 py-2 text-xs text-muted-foreground tabular-nums"
             role="status"
           >
-            {table.count.toLocaleString()} 行数 ^ {rows?.columns.length ?? "…"} columns
+            {table.count.toLocaleString()} 行 · {rows?.columns.length ?? "…"} 列
             {sizeBytes !== null ? ` · ${formatAttachmentSize(sizeBytes)}` : ""}
           </div>
           <FileSurfaceNotice>

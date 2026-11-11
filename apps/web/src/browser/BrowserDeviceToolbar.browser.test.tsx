@@ -36,7 +36,9 @@ it.each([
   { width: 390, height: 844, axis: "height", typed: "2532", expected: "1170 × 2532" },
 ])("keeps each typed $axis digit until the locked size is committed", async (testCase) => {
   await using screen = await render(<Viewport {...testCase} />);
-  const input = screen.getByRole("spinbutton", { name: `Viewport ${testCase.axis}` });
+  const input = screen.getByRole("spinbutton", {
+    name: testCase.axis === "width" ? "视图端口宽度" : "视图端口高度",
+  });
   await userEvent.clear(input);
   await userEvent.type(input, testCase.typed);
   await expect.element(input).toHaveValue(Number(testCase.typed));

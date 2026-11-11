@@ -192,8 +192,8 @@ export function PullRequestActionsMenu({
       setMaintainerEditsChoice(previousChoice);
       toastManager.add({
         type: "error",
-        title: "无法保存维护者访问",
-        description: readableFailure(squashAtomCommandFailure(result), "Try again."),
+        title: "无法保存维护者权限",
+        description: readableFailure(squashAtomCommandFailure(result), "请重试。"),
       });
       return;
     }
@@ -207,9 +207,7 @@ export function PullRequestActionsMenu({
             <MenuTrigger
               render={
                 <Button
-                  aria-label={
-                    refreshing ? `刷新${terminology.singular}` : `更多${terminology.singular} 动作`
-                  }
+                  aria-label={refreshing ? "刷新" : "更多操作"}
                   size="icon-xs"
                   variant="ghost-muted"
                 />
@@ -223,9 +221,7 @@ export function PullRequestActionsMenu({
             </MenuTrigger>
           }
         />
-        <TooltipPopup>
-          {refreshing ? `刷新${terminology.singular}` : `更多${terminology.singular} 动作`}
-        </TooltipPopup>
+        <TooltipPopup>{refreshing ? "刷新" : "更多操作"}</TooltipPopup>
       </Tooltip>
       <MenuPopup align="end" side="bottom">
         <PullRequestThreadLinks
@@ -284,14 +280,14 @@ export function PullRequestActionsMenu({
               checked={maintainerCanModify === true}
               disabled={!canSaveMaintainerEdits}
               closeOnClick={false}
-              aria-label="允许从维护者编辑"
+              aria-label="允许维护者编辑"
               aria-describedby={maintainerEditsHintId}
               onCheckedChange={(value) => void saveMaintainerEdits(value)}
             >
               <span className="flex max-w-xs flex-col gap-0.5">
-                <span>允许从维护者编辑</span>
+                <span>允许维护者编辑</span>
                 <span id={maintainerEditsHintId} className="text-xs text-muted-foreground">
-                  维护者可以推向这个分支。如果您的叉子有工作流程，这也可以允许访问它的秘密。
+                  维护者可以向此分支推送提交。如果派生仓库包含工作流，维护者也可能获得访问工作流密钥的权限。
                 </span>
                 {maintainerEditsSaving ? (
                   <span role="status" className="text-xs text-muted-foreground">

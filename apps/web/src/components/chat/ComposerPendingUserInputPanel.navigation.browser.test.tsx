@@ -167,8 +167,8 @@ it("tells the user when an option click moves their typed answer into the hidden
   expect(toast).toHaveBeenCalledWith(
     expect.objectContaining({
       type: "info",
-      title: "Your typed text was set aside",
-      description: "It will be back in the composer once the question is answered.",
+      title: "已暂存你输入的文字",
+      description: "回答问题后，文字会恢复到消息输入框。",
       data: { threadRef: draftTarget },
     }),
   );
@@ -206,7 +206,7 @@ it("stays on an unanswered question when the composer submits", async () => {
       projection={questionProjection(threadRef.threadId)}
     />,
   );
-  const submit = screen.getByRole("button", { name: "提交" });
+  const submit = screen.getByRole("button", { name: "Submit" });
   await userEvent.click(submit);
   await expect.element(screen.getByRole("status")).toHaveTextContent("Question 1");
 

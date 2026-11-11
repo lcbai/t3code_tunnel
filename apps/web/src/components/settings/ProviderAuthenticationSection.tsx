@@ -89,7 +89,7 @@ export function ProviderAuthenticationSection({
             ? "在下面输入您的证书。"
             : "在浏览器中完成登录。"
     : signedIn
-      ? "签入。"
+      ? "已登录。"
       : isDiscovering
         ? "发现登录方法…"
         : needsExternalSetup
