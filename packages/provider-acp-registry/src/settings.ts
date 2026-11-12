@@ -10,12 +10,12 @@ export const AcpRegistrySettings = makeProviderSettingsSchema(
     source: Schema.Literals(["registry", "local"]).pipe(
       Schema.withDecodingDefault(Effect.succeed("registry")),
       Schema.annotateKey({
-        title: "ACP source",
+        title: "ACP 来源",
         providerSettingsForm: {
           control: "select",
           options: [
-            { value: "registry", label: "ACP Registry" },
-            { value: "local", label: "Local command" },
+            { value: "registry", label: "ACP 注册表" },
+            { value: "local", label: "本地命令" },
           ],
         },
       }),
@@ -27,18 +27,18 @@ export const AcpRegistrySettings = makeProviderSettingsSchema(
     agentId: TrimmedString.pipe(
       Schema.withDecodingDefault(Effect.succeed("")),
       Schema.annotateKey({
-        title: "Registry agent ID",
-        description: "Agent identifier from the official ACP Registry, for example 'devin'.",
+        title: "注册表代理 ID",
+        description: "ACP 官方注册表中的代理标识，例如 devin。",
         providerSettingsForm: { placeholder: "devin", clearWhenEmpty: "persist" },
       }),
     ),
     commandPath: TrimmedString.pipe(
       Schema.withDecodingDefault(Effect.succeed("")),
       Schema.annotateKey({
-        title: "Executable override",
+        title: "自定义可执行文件",
         description:
-          "Executable on this environment. For registry agents, this overrides the distribution executable while keeping its arguments and environment.",
-        providerSettingsForm: { placeholder: "Registry default", clearWhenEmpty: "omit" },
+          "当前环境中的可执行文件。对于注册表代理，这会替换默认可执行文件，并保留参数和环境变量。",
+        providerSettingsForm: { placeholder: "使用注册表默认值", clearWhenEmpty: "omit" },
       }),
     ),
     commandArgs: Schema.Array(Schema.String).pipe(
@@ -48,10 +48,9 @@ export const AcpRegistrySettings = makeProviderSettingsSchema(
     authMethodId: TrimmedString.pipe(
       Schema.withDecodingDefault(Effect.succeed("")),
       Schema.annotateKey({
-        title: "Authentication method",
-        description:
-          "Optional ACP authentication method ID. By default, the first agent-managed method is selected.",
-        providerSettingsForm: { placeholder: "auto", clearWhenEmpty: "omit" },
+        title: "认证方式",
+        description: "可选的 ACP 认证方式 ID。默认使用第一个由代理管理的认证方式。",
+        providerSettingsForm: { placeholder: "自动", clearWhenEmpty: "omit" },
       }),
     ),
     distribution: AcpRegistryDistributionPreference.pipe(

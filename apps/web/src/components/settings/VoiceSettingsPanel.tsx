@@ -136,18 +136,18 @@ function CloudSpeechLogo({ provider }: { provider: CloudSpeechProvider }) {
 const SYSTEM_DEFAULT = "system-default";
 const formatSize = (bytes: number) => `${Math.round(bytes / 1024 / 1024)} MB`;
 const SHORTCUT_MODE_LABELS: Record<VoiceShortcutMode, string> = {
-  auto: "Auto: press to toggle, hold to record",
-  hold: "Hold: record while held",
-  toggle: "Toggle: press to start, press again to stop",
+  auto: "自动（轻按切换，长按录音）",
+  hold: "长按录音，松开停止",
+  toggle: "轻按开始，再按停止",
 };
 const UNLOAD_LABELS: Record<SpeechModelUnloadTimeout, string> = {
-  never: "Never",
-  immediately: "Immediately",
-  min_2: "After 2 minutes",
-  min_5: "After 5 minutes",
-  min_10: "After 10 minutes",
-  min_15: "After 15 minutes",
-  hour_1: "After 1 hour",
+  never: "从不卸载",
+  immediately: "立即卸载",
+  min_2: "2 分钟后",
+  min_5: "5 分钟后",
+  min_10: "10 分钟后",
+  min_15: "15 分钟后",
+  hour_1: "1 小时后",
 };
 const normalizeTerm = (value: string) => value.replace(/\s+/g, " ").trim().normalize("NFC");
 const spellingsOf = (words: SpeechCustomWords) =>
@@ -789,10 +789,10 @@ function SpeechModelBrowser(props: {
   );
   const accuracyLanguage = selectedLanguages[0] ?? "en";
   const sortLabels: Record<SpeechModelSort, string> = {
-    recommended: "Recommended",
-    size: "Smallest download",
-    accuracy: `Best ${languageLabel(accuracyLanguage)} accuracy`,
-    speed: "Fastest transcription",
+    recommended: "推荐",
+    size: "下载体积最小",
+    accuracy: `${languageLabel(accuracyLanguage)}准确率最高`,
+    speed: "转写速度最快",
   };
   const sortedModels = filterSpeechModels(models, {
     search,
@@ -870,8 +870,8 @@ function SpeechModelBrowser(props: {
               <div className="space-y-2 p-3">
                 <p className="text-sm font-medium">
                   {selectedLanguages.length
-                    ? "Models for " + selectedLanguages.map(languageLabel).join(", ")
-                    : "所有型号"}
+                    ? `支持${selectedLanguages.map(languageLabel).join("、")}的模型`
+                    : "所有模型"}
                 </p>
                 <InputGroup>
                   <InputGroupInput
@@ -1253,7 +1253,7 @@ export function VoiceSettingsPanel() {
         <SettingsRow
           {...searchableSetting("dictation-shortcut-mode")}
           title="拼写快捷键"
-          description="拼写快捷键是如何开始和停止录制的。"
+          description="选择如何使用快捷键开始和停止录音。"
           control={
             <Select
               value={settings.voiceShortcutMode}
@@ -1262,7 +1262,7 @@ export function VoiceSettingsPanel() {
                   void updateClientSettings({ voiceShortcutMode: value as VoiceShortcutMode });
               }}
             >
-              <SelectTrigger size="sm" aria-label="拼写快捷模式" className="max-w-72">
+              <SelectTrigger size="sm" aria-label="录音快捷键模式" className="max-w-72">
                 <SelectValue>{SHORTCUT_MODE_LABELS[settings.voiceShortcutMode]}</SelectValue>
               </SelectTrigger>
               <SelectPopup align="end" alignItemWithTrigger={false}>

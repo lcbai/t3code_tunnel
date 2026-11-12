@@ -38,11 +38,11 @@ import { TypographySection } from "./TypographySettings";
 import { ThreadDetailsItemsRow } from "./ThreadDetailsItemsRow";
 
 const ENVIRONMENT_IDENTIFICATION_LABELS: Record<EnvironmentIdentificationMode, string> = {
-  artwork: "Artwork",
-  "nightly-artwork": "Nightly artwork",
-  "dev-artwork": "Dev artwork",
-  pill: "Version pill",
-  none: "None",
+  artwork: "背景图案",
+  "nightly-artwork": "每日构建版图案",
+  "dev-artwork": "开发版图案",
+  pill: "版本标记",
+  none: "不显示",
 };
 
 // The default "artwork" follows the running channel, so it is labeled as that channel's art,
@@ -52,36 +52,36 @@ function environmentIdentificationOptions(
 ): ReadonlyArray<readonly [EnvironmentIdentificationMode, string]> {
   if (stageVariant === "dev") {
     return [
-      ["artwork", "Dev artwork"],
-      ["nightly-artwork", "Nightly artwork"],
-      ["pill", "Version pill"],
-      ["none", "None"],
+      ["artwork", ENVIRONMENT_IDENTIFICATION_LABELS["dev-artwork"]],
+      ["nightly-artwork", ENVIRONMENT_IDENTIFICATION_LABELS["nightly-artwork"]],
+      ["pill", ENVIRONMENT_IDENTIFICATION_LABELS.pill],
+      ["none", ENVIRONMENT_IDENTIFICATION_LABELS.none],
     ];
   }
   if (stageVariant === "nightly") {
     return [
-      ["artwork", "Nightly artwork"],
-      ["dev-artwork", "Dev artwork"],
-      ["pill", "Version pill"],
-      ["none", "None"],
+      ["artwork", ENVIRONMENT_IDENTIFICATION_LABELS["nightly-artwork"]],
+      ["dev-artwork", ENVIRONMENT_IDENTIFICATION_LABELS["dev-artwork"]],
+      ["pill", ENVIRONMENT_IDENTIFICATION_LABELS.pill],
+      ["none", ENVIRONMENT_IDENTIFICATION_LABELS.none],
     ];
   }
   return [
-    ["artwork", "None"],
-    ["nightly-artwork", "Nightly artwork"],
-    ["dev-artwork", "Dev artwork"],
+    ["artwork", ENVIRONMENT_IDENTIFICATION_LABELS.none],
+    ["nightly-artwork", ENVIRONMENT_IDENTIFICATION_LABELS["nightly-artwork"]],
+    ["dev-artwork", ENVIRONMENT_IDENTIFICATION_LABELS["dev-artwork"]],
   ];
 }
 
 const CHAT_WIDTH_LABELS: Record<ChatWidth, string> = {
-  comfortable: "Comfortable",
-  wide: "Wide",
-  full: "Full",
+  comfortable: "舒适",
+  wide: "宽屏",
+  full: "全宽",
 };
 
 const EFFORT_DISPLAY_LABELS: Record<EffortDisplay, string> = {
-  label: "单词",
-  bars: "Bars",
+  label: "文字",
+  bars: "条形图",
 };
 
 export function AppearanceSettingsPanel() {
@@ -281,9 +281,11 @@ export function AppearanceSettingsPanel() {
                   <SelectValue>{CHAT_WIDTH_LABELS[settings.chatWidth]}</SelectValue>
                 </SelectTrigger>
                 <SelectPopup align="end" alignItemWithTrigger={false}>
-                  <SelectItem value="comfortable">舒适( 默认)</SelectItem>
-                  <SelectItem value="wide">宽</SelectItem>
-                  <SelectItem value="full">满</SelectItem>
+                  <SelectItem value="comfortable">
+                    {CHAT_WIDTH_LABELS.comfortable}（默认）
+                  </SelectItem>
+                  <SelectItem value="wide">{CHAT_WIDTH_LABELS.wide}</SelectItem>
+                  <SelectItem value="full">{CHAT_WIDTH_LABELS.full}</SelectItem>
                 </SelectPopup>
               </Select>
             </div>
@@ -316,8 +318,8 @@ export function AppearanceSettingsPanel() {
                   <SelectValue>{EFFORT_DISPLAY_LABELS[settings.effortDisplay]}</SelectValue>
                 </SelectTrigger>
                 <SelectPopup align="end" alignItemWithTrigger={false}>
-                  <SelectItem value="label">单词( 默认)</SelectItem>
-                  <SelectItem value="bars">栏</SelectItem>
+                  <SelectItem value="label">{EFFORT_DISPLAY_LABELS.label}（默认）</SelectItem>
+                  <SelectItem value="bars">{EFFORT_DISPLAY_LABELS.bars}</SelectItem>
                 </SelectPopup>
               </Select>
             </div>

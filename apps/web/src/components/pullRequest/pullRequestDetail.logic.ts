@@ -43,9 +43,9 @@ import {
 import { inferReviewCommentFenceLanguage, type ReviewCommentContext } from "~/reviewCommentContext";
 
 export const PULL_REQUEST_MERGE_METHOD_LABELS: Record<PullRequestMergeMethod, string> = {
-  merge: "Merge",
-  squash: "Squash and merge",
-  rebase: "Rebase and merge",
+  merge: "合并",
+  squash: "压缩提交并合并",
+  rebase: "变基并合并",
 };
 
 export function allowsSinglePullRequestMerge(input: {

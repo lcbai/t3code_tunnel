@@ -12,7 +12,7 @@ import { cn } from "../../lib/cn";
 import { useEnvironments } from "../../state/environments";
 import { voiceSpeechBenchmarksAtom } from "../voice-input/voiceDestination";
 import { PullRequestSearchSheet } from "../pull-requests/PullRequestSearchSheet";
-import { useVoiceModels, VoiceModelRow } from "./VoiceModelSection";
+import { useVoiceModels, voiceModelLanguageLabel, VoiceModelRow } from "./VoiceModelSection";
 
 export function SettingsVoiceModelsRouteScreen({
   route,
@@ -20,7 +20,7 @@ export function SettingsVoiceModelsRouteScreen({
   const { environments } = useEnvironments();
   const label =
     environments.find((environment) => environment.environmentId === route.params.environmentId)
-      ?.label ?? "This environment";
+      ?.label ?? "此环境";
   const voice = useVoiceModels(route.params.environmentId, label);
   const benchmarks = new Map(
     (
@@ -40,7 +40,13 @@ export function SettingsVoiceModelsRouteScreen({
       return benchmark ? { ...model, benchmark } : model;
     })
     .filter((model) =>
-      `${model.name} ${model.description} ${model.languages.join(" ")}`
+      [
+        model.name,
+        model.description,
+        ...model.languages,
+        ...model.languages.map(voiceModelLanguageLabel),
+      ]
+        .join(" ")
         .toLowerCase()
         .includes(needle),
     );
@@ -48,8 +54,8 @@ export function SettingsVoiceModelsRouteScreen({
     <PullRequestSearchSheet
       title="转录模型"
       placeholder="搜索模型或语言"
-      closeAccessibilityLabel="Close transcription models"
-      clearAccessibilityLabel="Clear model search"
+      closeAccessibilityLabel="关闭转录模型列表"
+      clearAccessibilityLabel="清除模型搜索"
       query={query}
       onQueryChange={setQuery}
     >
@@ -67,7 +73,7 @@ export function SettingsVoiceModelsRouteScreen({
           ListHeaderComponent={
             voice.canManage ? undefined : (
               <Text className="pb-3 text-xs text-foreground-muted">
-                此连接无权修改以下位置的设置： {label}.
+                此连接无权修改 {label} 的设置。
               </Text>
             )
           }
@@ -88,7 +94,7 @@ export function SettingsVoiceModelsRouteScreen({
             ) : (
               <EmptyState
                 title={needle ? "没有匹配的模型" : "没有转录模型"}
-                detail={needle ? "请尝试其他名称或语言。" : `${label} has no models to list.`}
+                detail={needle ? "请尝试其他名称或语言。" : `${label} 没有可用的模型。`}
                 variant="plain"
               />
             )

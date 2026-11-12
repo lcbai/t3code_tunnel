@@ -1,6 +1,7 @@
 import {
   DEFAULT_SERVER_SETTINGS,
   PROJECT_FILE_BACKED_SETTINGS,
+  type BackgroundActivityProfile,
   type ProjectFileBackedSettingKey,
   resolveEnvironmentMachineKind,
   type ServerSettings,
@@ -19,6 +20,7 @@ import { Collapsible, CollapsiblePanel, CollapsibleTrigger } from "../ui/collaps
 import { Popover, PopoverPopup, PopoverTrigger } from "../ui/popover";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "../ui/tooltip";
 import { useOptionalSettingsScope } from "./SettingsScopeContext";
+import { BACKGROUND_ACTIVITY_PROFILE_LABELS } from "./SettingsPanels.logic";
 import type { ProjectOverrideEntry, ScopedSettingsTarget } from "./scopedSettings";
 import { isProjectScopedSettingKey } from "./scopedSettings";
 import { settingsScopeEnvironmentLabels } from "./settingsScopeAxis";
@@ -32,39 +34,30 @@ interface InheritanceLayer {
 }
 
 const WRITING_STYLE_LABELS: Record<string, string> = {
-  repo_conventions: "Repository conventions",
+  repo_conventions: "遵循仓库约定",
   conventional_commits: "Conventional Commits",
-  custom: "Custom instructions",
-};
-
-const BACKGROUND_ACTIVITY_PROFILE_LABELS: Record<string, string> = {
-  balanced: "Balanced",
-  performance: "Performance",
-  "battery-saver": "Battery saver",
-  custom: "Advanced",
+  custom: "自定义指令",
 };
 
 function formatValue(key: keyof ServerSettings, value: unknown): string {
   if (value === null || value === undefined) {
     return key === "pullRequestMergeMethod"
-      ? "Last selected"
+      ? "上次选择"
       : key === "sidebarAutoSettleAfterDays"
-        ? "Never"
+        ? "从不"
         : key === "defaultModelSelection"
-          ? "Automatic"
+          ? "自动"
           : key === "sourceControlWriterModelSelection"
-            ? "Text generation model"
+            ? "文本生成模型"
             : key === "reviewGuideModelSelection"
-              ? "Source control writer model"
+              ? "版本控制写作模型"
               : key === "defaultThreadEnvMode" || key === "worktreeSubmodules"
-                ? "Inherit"
-                : "Not set";
+                ? "继承"
+                : "未设置";
   }
-  if (typeof value === "boolean") return value ? "On" : "Off";
+  if (typeof value === "boolean") return value ? "开启" : "关闭";
   if (typeof value === "number") {
-    return key === "sidebarAutoSettleAfterDays"
-      ? `${value} ${value === 1 ? "day" : "days"}`
-      : String(value);
+    return key === "sidebarAutoSettleAfterDays" ? `${value} 天` : String(value);
   }
   if (typeof value === "string") {
     if (key === "defaultThreadEnvMode" && (value === "local" || value === "worktree")) {
@@ -78,22 +71,25 @@ function formatValue(key: keyof ServerSettings, value: unknown): string {
         value as keyof typeof PULL_REQUEST_MERGE_METHOD_LABELS
       ];
     }
-    return value === "" ? "Empty" : value;
+    return value === "" ? "空" : value;
   }
-  if (Array.isArray(value)) return `${value.length} ${value.length === 1 ? "item" : "items"}`;
+  if (Array.isArray(value)) return `${value.length} 项`;
   if (typeof value === "object") {
     if (key === "backgroundActivity" && "profile" in value && typeof value.profile === "string") {
-      return BACKGROUND_ACTIVITY_PROFILE_LABELS[value.profile] ?? value.profile;
+      return value.profile === "custom"
+        ? "高级"
+        : (BACKGROUND_ACTIVITY_PROFILE_LABELS[value.profile as BackgroundActivityProfile] ??
+            value.profile);
     }
     if ("model" in value && typeof value.model === "string") return value.model;
     if ("mode" in value && typeof value.mode === "string") {
-      if (key === "worktreeCleanup") return value.mode === "off" ? "Off" : "Custom";
+      if (key === "worktreeCleanup") return value.mode === "off" ? "关闭" : "自定义";
       return key === "sourceControlWritingStyle"
         ? (WRITING_STYLE_LABELS[value.mode] ?? value.mode)
         : value.mode;
     }
   }
-  return "Custom";
+  return "自定义";
 }
 
 /** Matches resolveProjectSettings order. */
@@ -111,7 +107,7 @@ export function settingInheritanceLayers(
     layers.push({
       key: "project",
       label: "项目",
-      value: source === "project" ? formatValue(key, target.settings[key]) : "Inherits",
+      value: source === "project" ? formatValue(key, target.settings[key]) : "继承",
       effective: source === "project",
       set: source === "project",
     });
@@ -119,7 +115,7 @@ export function settingInheritanceLayers(
   layers.push({
     key: "environment",
     label: target.label,
-    value: environmentSet ? formatValue(key, environmentValue) : "Inherits",
+    value: environmentSet ? formatValue(key, environmentValue) : "继承",
     effective: source === "environment" && environmentSet,
     set: environmentSet,
   });
@@ -127,7 +123,7 @@ export function settingInheritanceLayers(
     layers.push({
       key: "t3.json",
       label: "t3.json",
-      value: source === "t3.json" ? formatValue(key, target.settings[key]) : "Inherits",
+      value: source === "t3.json" ? formatValue(key, target.settings[key]) : "继承",
       effective: source === "t3.json",
       set: source === "t3.json",
     });

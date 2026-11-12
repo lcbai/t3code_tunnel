@@ -4,6 +4,7 @@ import {
   getProviderOptionCurrentLabel,
   getProviderOptionCurrentValue,
   isClaudeUltrathinkPrompt,
+  localizeProviderOptionLabel,
 } from "@t3tools/shared/model";
 import { REASONING_EFFORT_OPTION_IDS } from "./state/threadExecution.ts";
 
@@ -131,7 +132,7 @@ export function buildTraitsTriggerDisplay(input: {
     if (descriptor.id === "ultracode" && descriptor.type === "boolean") {
       if (descriptor.currentValue === true) {
         ultracodeLabelIndex = labels.length;
-        labels.push(descriptor.label);
+        labels.push(localizeProviderOptionLabel(descriptor.label));
       }
       continue;
     }
@@ -159,7 +160,7 @@ export function buildTraitsTriggerDisplay(input: {
       input.ultrathinkPromptControlled && descriptor.id === input.primarySelectDescriptorId
         ? "Ultrathink"
         : descriptor.type === "boolean"
-          ? `${descriptor.label} ${descriptor.currentValue === true ? "On" : "Off"}`
+          ? `${localizeProviderOptionLabel(descriptor.label)}${descriptor.currentValue === true ? "已开启" : "已关闭"}`
           : (getProviderOptionCurrentLabel(
               descriptor,
               input.modelSelection,
@@ -169,19 +170,20 @@ export function buildTraitsTriggerDisplay(input: {
       if (reasoningLabelIndex === -1 && isReasoningSelect(descriptor)) {
         reasoningLabelIndex = labels.length;
       }
-      labels.push(label);
+      labels.push(localizeProviderOptionLabel(label));
     }
   }
 
   const ultracode = ultracodeLabelIndex >= 0;
   if (labels.length === 0 && fastModeFallbackLabel !== null) {
-    return { label: fastModeFallbackLabel, speedLabel, ultracode };
+    return { label: localizeProviderOptionLabel(fastModeFallbackLabel), speedLabel, ultracode };
   }
   if (speedLabel) {
+    const displaySpeed = localizeProviderOptionLabel(speedLabel);
     if (reasoningLabelIndex >= 0) {
-      labels[reasoningLabelIndex] = `${labels[reasoningLabelIndex]} ${speedLabel}`;
+      labels[reasoningLabelIndex] = `${labels[reasoningLabelIndex]} ${displaySpeed}`;
     } else {
-      labels.push(speedLabel);
+      labels.push(displaySpeed);
     }
   }
   return { label: labels.join(" · "), speedLabel, ultracode };

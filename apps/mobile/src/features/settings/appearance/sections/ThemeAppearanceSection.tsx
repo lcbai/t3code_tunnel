@@ -124,8 +124,8 @@ function ThemeCard(props: {
 }) {
   const choice = (appearance: MobileThemeAppearance, selected: boolean) => (
     <Pressable
-      accessibilityHint={`Sets the ${appearance} appearance only`}
-      accessibilityLabel={`${props.label} ${appearance} theme`}
+      accessibilityHint="只设置此配色模式下的主题"
+      accessibilityLabel={`${props.label} ${appearance === "light" ? "浅色" : "深色"}主题`}
       accessibilityRole="button"
       accessibilityState={{ disabled: props.disabled, selected }}
       className={cn(
@@ -154,7 +154,7 @@ function ThemeCard(props: {
     <View className="min-w-36 flex-1 basis-[47%] gap-3 rounded-[24px] border border-border bg-grouped-card px-2 py-4">
       <Pressable
         accessibilityHint="同时设置浅色和深色外观"
-        accessibilityLabel={`${props.label} theme`}
+        accessibilityLabel={`${props.label} 主题`}
         accessibilityRole="button"
         accessibilityState={{
           disabled: props.disabled,
@@ -254,7 +254,7 @@ function ModeCard(props: {
 }) {
   return (
     <Pressable
-      accessibilityLabel={`${props.label} appearance`}
+      accessibilityLabel={`${props.label}外观`}
       accessibilityRole="radio"
       accessibilityState={{ checked: props.selected, disabled: props.disabled }}
       className={cn(

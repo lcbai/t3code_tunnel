@@ -147,7 +147,7 @@ export function SnapShotSettings() {
     shortcutChanged && candidateConflict === null && shortcutCheck.availability?.available === true;
   const soundSelection = settings.snapShotPlaySound ? settings.snapShotSound : "off";
   const soundLabel =
-    soundSelection === "off" ? "关闭" : soundSelection === "soft-pop" ? "Whoosh( 过失)" : "单击";
+    soundSelection === "off" ? "关闭" : soundSelection === "soft-pop" ? "轻提示音" : "快门声";
 
   const setup = async (action: DesktopSnapShotSetupAction) => {
     if (!bridge || setupBusy) return;
@@ -476,20 +476,15 @@ export function SnapShotSettings() {
                 control={
                   <Menu>
                     <MenuTrigger
-                      aria-label={"Snapshot sound: " + soundLabel}
+                      aria-label={`截图提示音：${soundLabel}`}
                       render={<SelectButton size="sm" />}
                       className="w-auto min-w-0"
                       disabled={!captureAvailable}
                     >
-                      {soundSelection === "off" ? (
-                        "关闭"
-                      ) : soundSelection === "soft-pop" ? (
-                        <>
-                          呜呼 <span className="text-muted-foreground">(过失)</span>
-                        </>
-                      ) : (
-                        "单击"
-                      )}
+                      {soundLabel}
+                      {soundSelection === "soft-pop" ? (
+                        <span className="text-muted-foreground">（默认）</span>
+                      ) : null}
                     </MenuTrigger>
                     <MenuPopup align="end">
                       <MenuRadioGroup
@@ -503,10 +498,10 @@ export function SnapShotSettings() {
                         </MenuRadioItem>
                         <div className={soundOptionRowClassName}>
                           <MenuRadioItem closeOnClick value="soft-pop">
-                            呜呼 <span className="text-muted-foreground">(过失)</span>
+                            轻提示音 <span className="text-muted-foreground">（默认）</span>
                           </MenuRadioItem>
                           <MenuItem
-                            aria-label="播放呜呼"
+                            aria-label="播放轻提示音"
                             closeOnClick={false}
                             onClick={() => playSnapShotSound("soft-pop")}
                           >
@@ -515,10 +510,10 @@ export function SnapShotSettings() {
                         </div>
                         <div className={soundOptionRowClassName}>
                           <MenuRadioItem closeOnClick value="camera-shutter">
-                            单击
+                            快门声
                           </MenuRadioItem>
                           <MenuItem
-                            aria-label="播放点击"
+                            aria-label="播放快门声"
                             closeOnClick={false}
                             onClick={() => playSnapShotSound("camera-shutter")}
                           >

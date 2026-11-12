@@ -127,7 +127,7 @@ export function resolveSettingsScope(
       kind: "project",
       group,
       environmentId: environment?.environmentId ?? null,
-      label: `${group.displayName} / ${environment?.label ?? "All checkouts"}`,
+      label: `${group.displayName} / ${environment?.label ?? "所有检出目录"}`,
       members,
       environmentIds: [...new Set(members.map((member) => member.environmentId))],
     };

@@ -282,8 +282,7 @@ it.each([true, false])(
     });
     await using screen = await renderSection({ canList, projects: [project, second] });
     await screen.getByRole("combobox").click();
-    if (canList) await userEvent.keyboard("{ArrowDown}{Enter}");
-    else await screen.getByRole("option", { name: "Second", exact: true }).click();
+    await screen.getByRole("option", { name: "Second", exact: true }).click();
     await expect
       .element(
         screen.getByRole("combobox", {
@@ -293,6 +292,10 @@ it.each([true, false])(
       .toHaveFocus();
     if (canList) await screen.getByRole("button", { name: "清单会议" }).click();
     await screen.getByRole("button", { name: "名单提供者" }).click();
+    const protocol = screen.getByRole("combobox", { name: "google 协议" });
+    await expect.element(protocol).toHaveTextContent("OpenAI 接口");
+    await userEvent.click(protocol);
+    await userEvent.click(screen.getByRole("option", { name: "OpenAI 接口", exact: true }));
     await userEvent.fill(
       screen.getByRole("textbox", { name: "google 的基础 URL" }),
       "https://draft.test",

@@ -18,6 +18,12 @@ import {
 import * as Duration from "effect/Duration";
 import * as Equal from "effect/Equal";
 
+export const BACKGROUND_ACTIVITY_PROFILE_LABELS: Record<BackgroundActivityProfile, string> = {
+  balanced: "均衡",
+  performance: "性能优先",
+  "battery-saver": "省电",
+};
+
 export function isProjectGroupingEnabled(mode: SidebarProjectGroupingMode): boolean {
   return mode !== "separate";
 }

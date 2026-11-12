@@ -34,6 +34,17 @@ interface AcpSessionProject {
   readonly workspaceRoot: string;
 }
 
+function providerProtocolLabel(protocol: string): string {
+  switch (protocol) {
+    case "openai":
+      return "OpenAI 接口";
+    case "anthropic":
+      return "Anthropic 接口";
+    default:
+      return protocol;
+  }
+}
+
 function reportFailure(title: string, result: AtomCommandResult<unknown, unknown>) {
   if (result._tag !== "Failure" || isAtomCommandInterrupted(result)) return;
   const error = squashAtomCommandFailure(result);
@@ -629,12 +640,12 @@ function InstanceSessionManagement(
                         }}
                       >
                         <SelectTrigger aria-label={`${provider.providerId} 协议`} size="sm">
-                          <SelectValue>{draft.apiType}</SelectValue>
+                          <SelectValue>{providerProtocolLabel(draft.apiType)}</SelectValue>
                         </SelectTrigger>
                         <SelectPopup>
                           {provider.supported.map((protocol) => (
                             <SelectItem key={protocol} value={protocol}>
-                              {protocol}
+                              {providerProtocolLabel(protocol)}
                             </SelectItem>
                           ))}
                         </SelectPopup>

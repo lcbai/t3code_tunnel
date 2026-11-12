@@ -146,12 +146,12 @@ export function SourceControlAccountSettings({
                       });
                     }}
                   >
-                    <SelectTrigger size="sm" aria-label={`${label} 账户为${group.host}`}>
+                    <SelectTrigger size="sm" aria-label={`${group.host} 的 ${label} 账户`}>
                       <SelectValue>
                         {(value: string) =>
                           value === ACTIVE_ACCOUNT ? (
                             <span className="flex min-w-0 items-center gap-1">
-                              活动 {cliName} account
+                              当前 {cliName} 账户
                               {group.activeAccount ? (
                                 <>
                                   (
@@ -172,7 +172,7 @@ export function SourceControlAccountSettings({
                     <SelectPopup align="end" alignItemWithTrigger={false}>
                       <SelectItem value={ACTIVE_ACCOUNT}>
                         <span className="flex min-w-0 items-center gap-1">
-                          活动 {cliName} account
+                          当前 {cliName} 账户
                           {group.activeAccount ? (
                             <>
                               (<RedactedLogin revealed={revealed} account={group.activeAccount} />)

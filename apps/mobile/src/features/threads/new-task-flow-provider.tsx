@@ -111,16 +111,16 @@ export function branchBadgeLabel(input: {
   readonly project: EnvironmentProject | null;
 }): string | null {
   if (input.branch.current) {
-    return "current";
+    return "当前分支";
   }
   if (input.branch.worktreePath && input.branch.worktreePath !== input.project?.workspaceRoot) {
-    return "worktree";
+    return "工作树";
   }
   if (input.branch.isRemote) {
-    return "remote";
+    return "远端分支";
   }
   if (input.branch.isDefault) {
-    return "default";
+    return "默认分支";
   }
   return null;
 }

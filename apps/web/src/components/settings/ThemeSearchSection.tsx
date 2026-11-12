@@ -36,10 +36,10 @@ const DOWNLOAD_FORMAT = new Intl.NumberFormat(undefined, {
 });
 const SUGGESTED_SEARCHES = ["Dracula", "Catppuccin", "Nord", "Tokyo Night"];
 const SORT_OPTIONS: ReadonlyArray<{ value: OpenVsxThemeSort; label: string }> = [
-  { value: "downloadCount", label: "大部分下载" },
+  { value: "downloadCount", label: "下载量最高" },
   { value: "rating", label: "评分最高" },
-  { value: "timestamp", label: "最新数据" },
-  { value: "relevance", label: "最相关的" },
+  { value: "timestamp", label: "最新发布" },
+  { value: "relevance", label: "相关性最高" },
 ];
 const SEARCH_DEBOUNCE_MS = 350;
 

@@ -45,11 +45,11 @@ export const TEXT_GENERATOR_PRESETS: ReadonlyArray<TextGeneratorPreset> = [
   },
   {
     id: "anthropic",
-    label: "人类",
+    label: "Anthropic",
     kind: "anthropic",
     baseUrl: "https://api.anthropic.com/v1",
   },
-  { id: "custom", label: "自定义 (OpenAI -compatible)", kind: "openaiCompatible", baseUrl: "" },
+  { id: "custom", label: "自定义（兼容 OpenAI）", kind: "openaiCompatible", baseUrl: "" },
 ];
 
 export function textGeneratorDisplayName(config: TextGeneratorConfig): string {

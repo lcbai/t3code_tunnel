@@ -34,11 +34,11 @@ export const WEBHOOK_FILTER_OPS: ReadonlyArray<{
   readonly op: ScheduledTaskWebhookFilterOp;
   readonly label: string;
 }> = [
-  { op: "equals", label: "equals" },
-  { op: "notEquals", label: "does not equal" },
-  { op: "in", label: "is one of" },
-  { op: "startsWith", label: "starts with" },
-  { op: "exists", label: "exists" },
+  { op: "equals", label: "等于" },
+  { op: "notEquals", label: "不等于" },
+  { op: "in", label: "是列表中的一项" },
+  { op: "startsWith", label: "开头为" },
+  { op: "exists", label: "存在" },
 ];
 
 let lastWebhookFilterDraftId = 0;

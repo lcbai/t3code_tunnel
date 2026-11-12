@@ -314,6 +314,36 @@ export function getProviderOptionCurrentLabel(
   );
 }
 
+const providerOptionDisplayLabels = new Map([
+  ["reasoning", "推理"],
+  ["reasoning effort", "推理强度"],
+  ["thinking", "思考"],
+  ["none", "无"],
+  ["minimal", "极低"],
+  ["low", "低"],
+  ["medium", "中"],
+  ["high", "高"],
+  ["extra high", "极高"],
+  ["max", "最高"],
+  ["default", "默认"],
+  ["unknown", "未知"],
+  ["auto", "自动"],
+  ["automatic", "自动"],
+  ["adaptive", "自适应"],
+  ["normal", "标准"],
+  ["standard", "标准"],
+  ["fast", "快速"],
+  ["ultrafast", "极速"],
+  ["on", "开启"],
+  ["off", "关闭"],
+  ["enabled", "启用"],
+  ["disabled", "禁用"],
+]);
+
+export function localizeProviderOptionLabel(label: string): string {
+  return providerOptionDisplayLabels.get(label.trim().toLowerCase()) ?? label;
+}
+
 export function buildProviderOptionSelectionsFromDescriptors(
   descriptors: ReadonlyArray<ProviderOptionDescriptor> | null | undefined,
 ): Array<ProviderOptionSelection> | undefined {

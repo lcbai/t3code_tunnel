@@ -18,11 +18,11 @@ export function resolveNewTaskWorkspaceSelection(input: {
 export function resolveNewTaskWorkspaceLabel(input: {
   readonly workspaceMode: WorkspaceMode;
   readonly worktreePath: string | null;
-}): "Current checkout" | "Current worktree" | "New worktree" {
+}): string {
   if (input.workspaceMode === "worktree") {
-    return "New worktree";
+    return "新建工作树";
   }
-  return input.worktreePath ? "Current worktree" : "Current checkout";
+  return input.worktreePath ? "当前工作树" : "当前检出目录";
 }
 
 export function resolveNewTaskBranchWorktreePath(input: {
@@ -80,10 +80,10 @@ export function resolveNewTaskBranchLabel(input: {
 }): string {
   if (input.workspaceMode === "worktree" && input.pullRequestReference) {
     const parsed = sourceControlClients.parseChangeRequestUrl(input.pullRequestReference);
-    if (parsed) return `From ${parsed.definition.changeRequest.shortLabel} #${parsed.link.number}`;
+    if (parsed) return `基于 ${parsed.definition.changeRequest.shortLabel} #${parsed.link.number}`;
   }
   if (!input.branchName) {
-    return "Choose branch";
+    return "请选择分支";
   }
 
   if (input.workspaceMode === "local") {
@@ -91,7 +91,7 @@ export function resolveNewTaskBranchLabel(input: {
   }
 
   // Only the server can determine a local branch's configured remote.
-  return input.startFromOrigin ? `From ${input.branchName} (remote)` : `From ${input.branchName}`;
+  return input.startFromOrigin ? `基于 ${input.branchName}（远端）` : `基于 ${input.branchName}`;
 }
 
 export function shouldCheckoutNewTaskBranch(input: {

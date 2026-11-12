@@ -115,7 +115,7 @@ export const ModelListRow = memo(function ModelListRow(props: {
                   event.stopPropagation();
                 }}
                 disabled={Boolean(props.disabledReason)}
-                aria-label={props.isFavorite ? "从最爱中删除" : "添加到最爱"}
+                aria-label={props.isFavorite ? "取消收藏" : "收藏模型"}
               >
                 <StarIcon
                   className={cn(
@@ -129,7 +129,7 @@ export const ModelListRow = memo(function ModelListRow(props: {
             }
           />
           <TooltipPopup side="top" align="center">
-            {props.isFavorite ? "从最爱中删除" : "添加到最爱"}
+            {props.isFavorite ? "取消收藏" : "收藏模型"}
           </TooltipPopup>
         </Tooltip>
         {props.jumpLabel ? <Kbd>{props.jumpLabel}</Kbd> : null}

@@ -90,8 +90,8 @@ const KINDS: Record<
     row: "其他蓝牙设备",
     rowDescription:
       Platform.OS === "android"
-        ? "Earbuds, headsets, and cars, including Android Auto, not listed here"
-        : "AirPods, headsets, and cars not listed here",
+        ? "未列出的耳机、耳麦和车载设备，包括 Android Auto"
+        : "未列出的 AirPods、耳麦和车载设备",
     icon: "headphones",
   },
   builtIn: {
@@ -103,15 +103,15 @@ const KINDS: Record<
   carPlay: {
     label: "CarPlay",
     row: "CarPlay",
-    rowDescription: "The car’s microphone",
+    rowDescription: "车载麦克风",
     icon: "car",
   },
 };
 
 const UNAVAILABLE_EXPLANATION =
   Platform.OS === "android"
-    ? "Dictation on this device needs Android 12 or later and Google speech services that support your language. Your keyboard’s voice typing is separate."
-    : "Dictation on this device needs iOS 26 or later, a supported device, and a supported language. Your keyboard’s dictation is separate.";
+    ? "设备端语音输入需要 Android 12 或更新版本，以及支持所选语言的 Google 语音服务。键盘语音输入独立运行。"
+    : "设备端语音输入需要 iOS 26 或更新版本，以及受支持的设备和语言。键盘听写独立运行。";
 
 function saveDestination(id: EnvironmentId | null) {
   try {
@@ -156,8 +156,8 @@ function EnvironmentChoice({
       onPress={() => {
         if (!selected)
           Dialog.confirm({
-            title: `Send microphone audio to ${environment.label}?`,
-            message: `Finished recordings will be sent to ${environment.displayUrl ?? environment.label} for transcription. You can switch back to This device at any time.`,
+            title: `将麦克风录音发送到 ${environment.label}？`,
+            message: `录音完成后将发送到 ${environment.displayUrl ?? environment.label} 进行转录。你可以随时切换回「此设备」。`,
             confirmText: "使用环境",
             onConfirm: () => saveDestination(environment.environmentId),
           });
@@ -384,7 +384,7 @@ function MicrophoneRow(props: {
     <View className="flex-row items-center bg-grouped-card">
       <View
         accessible
-        accessibilityLabel={`${title}, ${kind.label}, ${props.position} of ${props.count}`}
+        accessibilityLabel={`${title}，${kind.label}，第 ${props.position} 项，共 ${props.count} 项`}
         accessibilityActions={onForget ? [{ name: "forget", label: "移除" }] : undefined}
         onAccessibilityAction={({ nativeEvent }) => {
           if (nativeEvent.actionName === "forget") onForget?.();

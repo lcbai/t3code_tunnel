@@ -116,7 +116,7 @@ function CheckoutGroupingSelect({ member }: { member: SidebarProjectGroupMember 
       >
         <SelectValue>
           {selection === "inherit"
-            ? `默认 (${PROJECT_GROUPING_MODE_LABELS[globalMode]})`
+            ? `默认（${PROJECT_GROUPING_MODE_LABELS[globalMode]}）`
             : PROJECT_GROUPING_MODE_LABELS[selection]}
         </SelectValue>
       </SelectTrigger>

@@ -14,9 +14,9 @@ import {
 } from "./useScopedSettings";
 
 const MODES = {
-  static: "Static prefix",
-  semantic: "Semantic prefix",
-  custom: "Custom instructions",
+  static: "固定前缀",
+  semantic: "语义前缀",
+  custom: "自定义指令",
 } satisfies Record<BranchNamingMode, string>;
 
 export function BranchNamingSettings() {
@@ -36,10 +36,10 @@ export function BranchNamingSettings() {
         serverScoped
         settingKeys={["branchNamingMode"]}
         {...searchableSetting("worktree-branch-naming")}
-        description="从您的第一个消息中选择新工作树树枝的命名方式。"
+        description="选择新工作树的分支命名方式。"
         status={
           !modeMixed && settings.branchNamingMode === "semantic"
-            ? "The model chooses a prefix that describes the work, such as feat/add-search, fix/login-timeout, or refactor/auth."
+            ? "模型根据首条消息选择前缀，例如 feat/add-search、fix/login-timeout 或 refactor/auth。"
             : undefined
         }
         resetAction={
@@ -63,7 +63,9 @@ export function BranchNamingSettings() {
           >
             <SelectTrigger size="sm" aria-label="工作树分支命名">
               <SelectValue>
-                {(value: BranchNamingMode | null) => (value === null ? "Mixed" : MODES[value])}
+                {(value: BranchNamingMode | null) =>
+                  value === null ? "设置值不一致" : MODES[value]
+                }
               </SelectValue>
             </SelectTrigger>
             <SelectPopup align="end" alignItemWithTrigger={false}>
@@ -81,7 +83,7 @@ export function BranchNamingSettings() {
           serverScoped
           settingKeys={["branchNamePrefix"]}
           title="分支前缀"
-          description="例如,t3 或t3/ 生成t3/add- 搜索。 留空没有前缀。"
+          description="填写 t3 或 t3/ 可生成 t3/add-search 这样的分支名。留空则省略前缀。"
           resetAction={
             prefixMixed ||
             settings.branchNamePrefix !== DEFAULT_SERVER_SETTINGS.branchNamePrefix ? (
@@ -102,7 +104,7 @@ export function BranchNamingSettings() {
               onChange={() => {
                 prefixEdited.current = true;
               }}
-              placeholder={prefixMixed ? "混合" : "无前缀"}
+              placeholder={prefixMixed ? "设置值不一致" : "无前缀"}
               defaultValue={prefixMixed ? "" : settings.branchNamePrefix}
               onBlur={(event) => {
                 const value = event.target.value.trim();
@@ -140,8 +142,8 @@ export function BranchNamingSettings() {
               defaultValue={instructionsMixed ? "" : settings.branchNameInstructions}
               placeholder={
                 instructionsMixed
-                  ? "混合。 输入对所有选定目标适用的指令。"
-                  : "使用julius/，然后是问题ID和简短的描述。"
+                  ? "设置值不一致。输入适用于所有选定目标的指令。"
+                  : "使用 t3/ 前缀，后接问题 ID 和简短描述。"
               }
               onBlur={(event) => {
                 const value = event.target.value.trim();

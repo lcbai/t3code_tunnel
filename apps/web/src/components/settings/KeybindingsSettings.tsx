@@ -145,6 +145,11 @@ function KeybindingsSearchInput({
 
 type BooleanOperator = "and" | "or";
 
+const BOOLEAN_OPERATOR_LABELS: Record<BooleanOperator, string> = {
+  and: "且",
+  or: "或",
+};
+
 function flattenWhenChildren(
   node: KeybindingWhenNode,
   operator: BooleanOperator,
@@ -498,11 +503,11 @@ function WhenExpressionNodeEditor({
       <div className="flex flex-wrap items-center gap-2">
         <Select value={operator} onValueChange={(value) => setOperator(value as BooleanOperator)}>
           <SelectTrigger size="compact" className="w-24">
-            <SelectValue />
+            <SelectValue>{BOOLEAN_OPERATOR_LABELS[operator]}</SelectValue>
           </SelectTrigger>
           <SelectContent alignItemWithTrigger={false} matchTriggerWidth={false}>
-            <SelectItem value="and">and</SelectItem>
-            <SelectItem value="or">or</SelectItem>
+            <SelectItem value="and">{BOOLEAN_OPERATOR_LABELS.and}</SelectItem>
+            <SelectItem value="or">{BOOLEAN_OPERATOR_LABELS.or}</SelectItem>
           </SelectContent>
         </Select>
         <Button type="button" variant="outline" size="compact" onClick={addCondition}>
@@ -1125,7 +1130,9 @@ function NewKeybindingCommandSelect({
       onValueChange={(value) => draft.setCommandDraft(value as KeybindingCommand)}
     >
       <SelectTrigger size="sm" className={className}>
-        <SelectValue placeholder="命令" />
+        <SelectValue placeholder="命令">
+          {(value: KeybindingCommand | null) => (value ? commandLabel(value) : "选择命令")}
+        </SelectValue>
       </SelectTrigger>
       <SelectContent alignItemWithTrigger={false} matchTriggerWidth={false} className="max-h-72">
         {commandOptions.map((command) => (

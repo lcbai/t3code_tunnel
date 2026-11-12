@@ -143,8 +143,8 @@ function EnvironmentSecretProviders({
                       <RedactedSensitiveText
                         value={classified.account}
                         ariaLabel="切换账户可见度"
-                        revealTooltip="Click to reveal account"
-                        hideTooltip="Click to hide account"
+                        revealTooltip="显示账户"
+                        hideTooltip="隐藏账户"
                         className="max-w-full truncate"
                       />
                     </span>

@@ -268,7 +268,7 @@ function EnvironmentScopeMenu({
       }
       value={environmentValue}
       onChange={(next) => onChange(selectEnvironmentAxis(value, next))}
-      searchLabel="Search environments"
+      searchLabel="搜索环境"
       allOption={
         singleEnvironment
           ? null
@@ -314,7 +314,7 @@ function ProjectScopeMenu({ value, groups, environments, onChange }: SettingsSco
       label={selected?.displayName ?? (value.project ? "无法使用的项目" : "所有项目")}
       value={projectAxisValue(value)}
       onChange={(next) => onChange(selectProjectAxis(value, next))}
-      searchLabel="Search projects"
+      searchLabel="搜索项目"
       allOption={{ value: ALL_PROJECTS_VALUE, label: "所有项目" }}
       options={projects.map(({ group, machines }) => {
         const sameName = projects.filter(
@@ -333,7 +333,7 @@ function ProjectScopeMenu({ value, groups, environments, onChange }: SettingsSco
         return {
           value: group.projectKey,
           label: group.displayName,
-          secondary: group.archived ? ["Archived", location].filter(Boolean).join(" · ") : location,
+          secondary: group.archived ? ["已归档", location].filter(Boolean).join(" · ") : location,
           icon: <ProjectFavicon project={group} className="size-3.5 shrink-0" />,
         };
       })}

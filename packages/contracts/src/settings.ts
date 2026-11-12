@@ -736,9 +736,9 @@ export type CodexSettings = typeof CodexSettings.Type;
 const CLAUDE_AUTO_COMPACT_WINDOW_PATTERN = /^(?:|[1-9]\d{5}|1000000)$/;
 
 export const IDLE_COMPACTION_MODES = [
-  { value: "onReturn", label: "When you return" },
-  { value: "beforeCacheExpires", label: "Before the cache expires (beta)" },
-  { value: "off", label: "Never" },
+  { value: "onReturn", label: "返回会话时" },
+  { value: "beforeCacheExpires", label: "缓存过期前（测试版）" },
+  { value: "off", label: "从不" },
 ] as const;
 export const IdleCompactionMode = Schema.Literals(IDLE_COMPACTION_MODES.map((mode) => mode.value));
 export type IdleCompactionMode = typeof IdleCompactionMode.Type;
@@ -748,7 +748,7 @@ export type IdleCompactionMode = typeof IdleCompactionMode.Type;
 const LegacyCompactIdleThreads = Schema.Union([Schema.Boolean, IdleCompactionMode]);
 
 const INSTANCE_IDLE_COMPACTION_MODES = [
-  { value: "default", label: "Use default" },
+  { value: "default", label: "使用默认设置" },
   ...IDLE_COMPACTION_MODES,
 ] as const;
 const InstanceIdleCompaction = Schema.Literals(
@@ -809,9 +809,9 @@ export const ClaudeSettings = makeProviderSettingsSchema(
     idleCompaction: InstanceIdleCompaction.pipe(
       Schema.withDecodingDefault(Effect.succeed("default" as const)),
       Schema.annotateKey({
-        title: "Compact idle threads",
+        title: "压缩空闲会话",
         description:
-          "When to compact an idle thread over 200,000 tokens: after you return, just before its prompt cache expires, or never. Overrides the default in Providers > Advanced.",
+          "超过 20 万个词元的空闲会话可在返回时或提示词缓存过期前压缩，也可以关闭压缩。此项优先于「供应商 → 高级」中的默认设置。",
         providerSettingsForm: {
           control: "select",
           options: INSTANCE_IDLE_COMPACTION_MODES,
@@ -827,10 +827,10 @@ export const ClaudeSettings = makeProviderSettingsSchema(
 export type ClaudeSettings = typeof ClaudeSettings.Type;
 
 export const ANTIGRAVITY_AUTH_METHODS = [
-  { value: "oauth-personal", label: "Google account" },
+  { value: "oauth-personal", label: "Google 账号" },
   { value: "oauth-business", label: "Gemini Enterprise" },
-  { value: "gemini-api-key", label: "Gemini API key" },
-  { value: "agent-platform", label: "Agent Platform (Vertex AI)" },
+  { value: "gemini-api-key", label: "Gemini API 密钥" },
+  { value: "agent-platform", label: "Vertex AI 智能体平台" },
 ] as const satisfies ReadonlyArray<ProviderSettingsFormOption>;
 export const AntigravityAuthMethod = Schema.Literals(
   ANTIGRAVITY_AUTH_METHODS.map((method) => method.value),
@@ -846,9 +846,8 @@ export const AntigravitySettings = makeProviderSettingsSchema(
     authMethod: AntigravityAuthMethod.pipe(
       Schema.withDecodingDefault(Effect.succeed("oauth-personal" as const)),
       Schema.annotateKey({
-        title: "Sign-in method",
-        description:
-          "Google accounts use your subscription; API keys and Agent Platform bill usage.",
+        title: "登录方式",
+        description: "Google 账号使用你的订阅。API 密钥和智能体平台按用量计费。",
         providerSettingsForm: {
           control: "select",
           options: ANTIGRAVITY_AUTH_METHODS,

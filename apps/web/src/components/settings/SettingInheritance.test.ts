@@ -30,9 +30,9 @@ describe("worktree cleanup inheritance", () => {
       "worktreeCleanup",
     );
     expect(layers.map((layer) => [layer.key, layer.value, layer.effective])).toEqual([
-      ["project", "Off", true],
-      ["environment", "Custom", false],
-      ["built-in", "Not set", false],
+      ["project", "关闭", true],
+      ["environment", "自定义", false],
+      ["built-in", "未设置", false],
     ]);
   });
 });
@@ -58,8 +58,8 @@ describe("settingInheritanceLayers", () => {
       "backgroundActivity",
     );
     expect(layers.map((layer) => [layer.key, layer.value, layer.effective])).toEqual([
-      ["environment", "Performance", true],
-      ["built-in", "Balanced", false],
+      ["environment", "性能优先", true],
+      ["built-in", "均衡", false],
     ]);
   });
 
@@ -76,8 +76,8 @@ describe("settingInheritanceLayers", () => {
       "defaultThreadEnvMode",
     );
     expect(fromFile.map((layer) => [layer.label, layer.value, layer.effective])).toEqual([
-      ["项目", "Inherits", false],
-      ["Laptop", "Inherits", false],
+      ["项目", "继承", false],
+      ["Laptop", "继承", false],
       ["t3.json", "新建工作树", true],
       ["默认", "当前检出目录", false],
     ]);
@@ -93,9 +93,9 @@ describe("settingInheritanceLayers", () => {
       "defaultThreadEnvMode",
     );
     expect(fromEnvironment.map((layer) => [layer.value, layer.effective])).toEqual([
-      ["Inherits", false],
+      ["继承", false],
       ["当前检出目录", true],
-      ["Inherits", false],
+      ["继承", false],
       ["当前检出目录", false],
     ]);
   });

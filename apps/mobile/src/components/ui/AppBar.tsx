@@ -131,6 +131,7 @@ export function AppBar(props: AppBarProps) {
                   ? undefined
                   : {
                       allowToolbarIntegration: true,
+                      cancelButtonText: "取消",
                       ...(duoBottomSearch
                         ? { placement: "integrated" as const }
                         : NATIVE_MAIL_SEARCH_TOOLBAR_SUPPORTED && search.mode === "inline"

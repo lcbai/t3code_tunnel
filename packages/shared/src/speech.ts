@@ -12,8 +12,8 @@ const encodeOptions = Schema.encodeSync(Schema.fromJsonString(SpeechTranscriptio
 
 export function cloudSpeechDisclosure(provider: CloudSpeechProvider, environment: string) {
   return provider === "openrouter"
-    ? `After you stop, ${environment} sends the recording to OpenRouter. OpenRouter chooses who runs your model. T3 requests zero data retention; your OpenRouter account may allow safety retention.`
-    : `After you stop, ${environment} sends your recording and vocabulary hints, including project names, to ${CLOUD_SPEECH_PROVIDER_NAMES[provider]}.`;
+    ? `录音结束后，${environment} 会将录音发送给 OpenRouter。OpenRouter 会选择运行模型的服务商。T3 请求零数据保留，你的 OpenRouter 账号设置可能允许出于安全目的保留数据。`
+    : `录音结束后，${environment} 会将录音和词汇提示（包括项目名称）发送给 ${CLOUD_SPEECH_PROVIDER_NAMES[provider]}。`;
 }
 
 // Only offer explicit hints understood by all cloud APIs; other languages can still be detected.

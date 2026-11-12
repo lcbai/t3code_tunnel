@@ -151,15 +151,20 @@ import {
 
 const WEEKDAY_ORDER = [1, 2, 3, 4, 5, 6, 0] as const;
 const WEEKDAY_LABELS = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"] as const;
-const WEEKDAY_SHORT = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"] as const;
+const WEEKDAY_SHORT = ["日", "一", "二", "三", "四", "五", "六"] as const;
 
 // Thread ids are trimmed, so the leading space keeps this from matching one.
 const NEW_THREAD_DESTINATION = " new-thread";
 
 const WORKSPACE_MODE_LABELS: Record<WorkspaceMode, string> = {
-  worktree: "Create a new worktree",
-  root: "Use the project checkout",
-  existing_worktree: "Use a specific checkout",
+  worktree: "创建新工作树",
+  root: "使用项目检出目录",
+  existing_worktree: "使用指定检出目录",
+};
+
+const SIGNATURE_ENCODING_LABELS: Record<DraftState["signatureEncoding"], string> = {
+  hex: "十六进制（Hex）",
+  base64: "Base64",
 };
 
 const EMPTY_DRAFT: DraftState = {
@@ -210,8 +215,7 @@ function WebhookFiltersField({
         <div className="min-w-0 space-y-1">
           <Label>过滤器</Label>
           <p className="text-sm text-muted-foreground">
-            只在每次过滤匹配时运行。 其它请求会被记录为过滤。 单独使用逗号的“是”
-            值;一个值不能包含逗号。
+            仅在所有条件都匹配时运行任务。选择「是列表中的一项」时，用英文逗号分隔多个值。
           </p>
         </div>
         <Button
@@ -233,7 +237,7 @@ function WebhookFiltersField({
           <div className="flex items-center gap-2">
             <div className="grid min-w-0 flex-1 grid-cols-1">
               <Input
-                aria-label={`过滤${index + 1} 路径`}
+                aria-label={`过滤器 ${index + 1} 的字段路径`}
                 placeholder="body.action"
                 value={filter.path}
                 onChange={(event) => update(index, { path: event.target.value })}
@@ -257,7 +261,7 @@ function WebhookFiltersField({
               }}
             >
               <div className="grid w-44 shrink-0 grid-cols-1">
-                <SelectTrigger size="sm" aria-label={`过滤器${index + 1} 测试`}>
+                <SelectTrigger size="sm" aria-label={`过滤器 ${index + 1} 的匹配条件`}>
                   <SelectValue>
                     {WEBHOOK_FILTER_OPS.find((option) => option.op === filter.op)?.label}
                   </SelectValue>
@@ -274,8 +278,8 @@ function WebhookFiltersField({
             {filter.op === "exists" ? null : (
               <div className="grid min-w-0 flex-1 grid-cols-1">
                 <Input
-                  aria-label={`过滤${index + 1} value`}
-                  placeholder={filter.op === "in" ? "打开、重新打开" : "opened"}
+                  aria-label={`过滤器 ${index + 1} 的值`}
+                  placeholder={filter.op === "in" ? "opened, reopened" : "opened"}
                   value={filter.value}
                   onChange={(event) => update(index, { value: event.target.value })}
                 />
@@ -1166,9 +1170,9 @@ function ScheduledTaskEditorDialog({
 }
 
 const THREAD_MODE_LABELS: Record<ScheduledTaskThreadMode, string> = {
-  new_thread: "New thread each run",
-  continue: "One thread, continuing the conversation",
-  fresh_session: "One thread, fresh session each run",
+  new_thread: "每次新建会话",
+  continue: "在同一会话中继续",
+  fresh_session: "在同一会话中从头开始",
 };
 
 function ScheduledTaskDestination({
@@ -1202,8 +1206,8 @@ function ScheduledTaskDestination({
     ref !== null
       ? thread?.title.trim() || `会话${ref.threadId}`
       : threadMode === "new_thread"
-        ? "每个运行新会话"
-        : "开始于第一跑步";
+        ? THREAD_MODE_LABELS.new_thread
+        : "首次运行时创建会话";
   const shells = useVisibleThreadShells(open);
   // Mounts older settled threads matching the query, which shells may leave out.
   useThreadSearch(open && projectId ? [environmentId] : [], query, {
@@ -1228,14 +1232,14 @@ function ScheduledTaskDestination({
   };
   const detail =
     threadMode === "new_thread"
-      ? "Each run starts a new thread with the workspace and model below."
+      ? "每次运行都使用下方的工作空间和模型新建会话。"
       : ref === null
         ? threadMode === "continue"
-          ? "The first run starts a thread with the workspace and model below. Later runs continue that conversation."
-          : "The first run starts a thread with the workspace and model below. Later runs post there, each in a fresh session without earlier runs' context."
+          ? "首次运行使用下方的工作空间和模型创建会话，之后继续该会话。"
+          : "首次运行使用下方的工作空间和模型创建会话。之后每次运行都在同一会话中开始，不读取此前运行的上下文。"
         : threadMode === "continue"
-          ? "Each run continues this conversation, in its workspace and with its current model."
-          : "Each run starts a fresh session in this thread, without earlier runs' context.";
+          ? "每次运行都在所选会话中继续，并使用该会话的工作空间和模型。"
+          : "每次运行都在所选会话中从头开始，不读取此前运行的上下文。";
   return (
     <Field label="目标" htmlFor="scheduled-task-destination">
       {onThreadModeChange ? (
@@ -1303,7 +1307,7 @@ function ScheduledTaskDestination({
                 <ComboboxItem key={value} index={index} value={value}>
                   <span className="block truncate">
                     {value === NEW_THREAD_DESTINATION
-                      ? "每个运行新会话"
+                      ? THREAD_MODE_LABELS.new_thread
                       : value === threadId
                         ? currentLabel
                         : threads.find((row) => row.id === value)?.title || "无标题会话"}
@@ -1696,16 +1700,18 @@ function ScheduledTaskEditorForm({
                   <SelectValue>{WORKSPACE_MODE_LABELS[draft.workspaceMode]}</SelectValue>
                 </SelectTrigger>
                 <SelectPopup>
-                  <SelectItem value="worktree">创建新工作树</SelectItem>
-                  <SelectItem value="root">使用项目检出</SelectItem>
-                  <SelectItem value="existing_worktree">使用特定的退出</SelectItem>
+                  {(Object.keys(WORKSPACE_MODE_LABELS) as WorkspaceMode[]).map((mode) => (
+                    <SelectItem key={mode} value={mode}>
+                      {WORKSPACE_MODE_LABELS[mode]}
+                    </SelectItem>
+                  ))}
                 </SelectPopup>
               </Select>
             </Field>
           </div>
 
           {draft.workspaceMode === "worktree" ? (
-            <Field label="基地分支" htmlFor="scheduled-task-base-ref">
+            <Field label="基准分支" htmlFor="scheduled-task-base-ref">
               <WorktreeBaseBranchPicker
                 key={`${environmentId}:${selectedProjectId}`}
                 id="scheduled-task-base-ref"
@@ -1722,7 +1728,7 @@ function ScheduledTaskEditorForm({
             </Field>
           ) : null}
           {draft.workspaceMode === "existing_worktree" ? (
-            <Field label="退出路径" htmlFor="scheduled-task-checkout">
+            <Field label="检出目录" htmlFor="scheduled-task-checkout">
               <Input
                 id="scheduled-task-checkout"
                 value={draft.existingWorktreePath}
@@ -1970,11 +1976,13 @@ function ScheduledTaskEditorForm({
                         }
                       >
                         <SelectTrigger size="sm" id="scheduled-task-signature-encoding">
-                          <SelectValue>{draft.signatureEncoding}</SelectValue>
+                          <SelectValue>
+                            {SIGNATURE_ENCODING_LABELS[draft.signatureEncoding]}
+                          </SelectValue>
                         </SelectTrigger>
                         <SelectPopup>
-                          <SelectItem value="hex">hex</SelectItem>
-                          <SelectItem value="base64">base64</SelectItem>
+                          <SelectItem value="hex">{SIGNATURE_ENCODING_LABELS.hex}</SelectItem>
+                          <SelectItem value="base64">{SIGNATURE_ENCODING_LABELS.base64}</SelectItem>
                         </SelectPopup>
                       </Select>
                     </Field>

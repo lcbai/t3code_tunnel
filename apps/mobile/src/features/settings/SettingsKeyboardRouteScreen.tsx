@@ -29,7 +29,7 @@ const ENTER_BEHAVIOR_OPTIONS: ReadonlyArray<{
   {
     behavior: "newline",
     label: "插入换行",
-    description: `Return inserts a new line. ${SEND_MODIFIER}-Return sends the message.`,
+    description: `回车换行，${SEND_MODIFIER} + 回车发送消息。`,
   },
 ];
 

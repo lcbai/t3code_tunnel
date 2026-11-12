@@ -18,11 +18,11 @@ import { searchableSetting } from "./settingsSearch";
 
 const options: ReadonlyArray<{ value: PullRequestRoutingPermission; label: string }> = [
   { value: "off", label: "关闭" },
-  { value: "read", label: "读取公关" },
-  { value: "read-write", label: "阅读和行为" },
+  { value: "read", label: "只读" },
+  { value: "read-write", label: "读取并操作" },
 ];
 
-const summaryLabels = { "read-write": "read and act", read: "read PRs" } as const;
+const summaryLabels = { "read-write": "可读取并操作", read: "可读取" } as const;
 
 function summarizePullRequestRouting(
   entries: ReadonlyArray<{
@@ -34,7 +34,7 @@ function summarizePullRequestRouting(
     const labels = entries.filter((entry) => entry.permission === permission);
     return labels.length === 0
       ? []
-      : [`${labels.map((entry) => entry.label).join(", ")} ${summaryLabels[permission]}`];
+      : [`${labels.map((entry) => entry.label).join("、")}${summaryLabels[permission]}`];
   });
   return groups.length === 0 ? null : groups.join(" · ");
 }
@@ -66,8 +66,8 @@ export function PullRequestRoutingSettings({
       }
     >
       <p className="px-3 py-2.5 text-xs text-muted-foreground sm:px-4">
-        您信任的机器可以通过对方的源代码管理访问读取PR 数据。 启用两台机器。
-        读取和操作可能使用比拥有它们机器更广泛的权限，这仅适用于此设备。
+        为两台受信任的机器启用后，它们可以借用对方的源代码管理权限读取拉取请求。
+        「读取并操作」可能使用权限更高的凭据。此设置仅适用于当前设备。
       </p>
       {environments.map((environment) => (
         <EnvironmentRow

@@ -12,9 +12,9 @@ import {
 import type { Project } from "./types";
 
 export const PROJECT_GROUPING_MODE_LABELS: Record<SidebarProjectGroupingMode, string> = {
-  repository: "Group by repository",
-  repository_path: "Group by repository path",
-  separate: "Keep separate",
+  repository: "按仓库分组",
+  repository_path: "按仓库路径分组",
+  separate: "分别显示",
 };
 
 export function withProjectGroupingOverride(

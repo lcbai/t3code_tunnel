@@ -83,12 +83,12 @@ export function useVoiceModels(environmentId: EnvironmentId, label: string) {
     download: (model: EnvironmentSpeechModel) => {
       if (!ready) return;
       Dialog.confirm({
-        title: `下载 ${model.name}?`,
-        message: `${label} will download ${formatBytes(model.size)} and use it as its transcription model.`,
+        title: `下载 ${model.name}？`,
+        message: `${label} 将下载 ${formatBytes(model.size)}，并使用此模型进行转录。`,
         confirmText: "下载",
         onConfirm: () =>
           void run(
-            "Could not download the model",
+            "无法下载模型",
             async () => {
               await runSpeech(downloadEnvironmentSpeechModel(connection, model.id));
               if (model.id !== status.modelId)
@@ -100,13 +100,11 @@ export function useVoiceModels(environmentId: EnvironmentId, label: string) {
     },
     select: (model: EnvironmentSpeechModel) => {
       if (!ready || model.active) return;
-      void run("Could not select the model", () =>
-        runSpeech(selectEnvironmentSpeechModel(connection, model.id)),
-      );
+      void run("无法选择模型", () => runSpeech(selectEnvironmentSpeechModel(connection, model.id)));
     },
     cancel: (model: EnvironmentSpeechModel) => {
       if (!ready) return;
-      void run("Could not cancel the download", () =>
+      void run("无法取消下载", () =>
         runSpeech(cancelEnvironmentSpeechModelDownload(connection, model.id)),
       );
     },
@@ -117,9 +115,16 @@ export type VoiceModels = ReturnType<typeof useVoiceModels>;
 
 const languageNames =
   typeof Intl.DisplayNames === "function"
-    ? new Intl.DisplayNames(undefined, { type: "language" })
+    ? new Intl.DisplayNames("zh-CN", { type: "language" })
     : null;
-const languageLabel = (code: string) => languageNames?.of(code) ?? code.toUpperCase();
+export function voiceModelLanguageLabel(code: string): string {
+  const fallback = code.toUpperCase();
+  try {
+    return languageNames?.of(code) ?? fallback;
+  } catch {
+    return fallback;
+  }
+}
 
 function ModelStats(props: { readonly model: EnvironmentSpeechModel; readonly language: string }) {
   const { model, language } = props;
@@ -136,9 +141,9 @@ function ModelStats(props: { readonly model: EnvironmentSpeechModel; readonly la
           [
             "score",
             <>
-              {languageLabel(code)}{" "}
-              <Text className="font-t3-medium text-foreground">{score.grade}</Text> (
-              {score.errorPercent}% error)
+              {voiceModelLanguageLabel(code)}{" "}
+              <Text className="font-t3-medium text-foreground">{score.grade}</Text>（错误率{" "}
+              {score.errorPercent}%）
             </>,
           ],
         ] as const)
@@ -175,7 +180,7 @@ function ModelStats(props: { readonly model: EnvironmentSpeechModel; readonly la
         ] as const)
       : score
         ? []
-        : ([["languages", languageLabel(model.languages[0] ?? "")]] as const)),
+        : ([["languages", voiceModelLanguageLabel(model.languages[0] ?? "")]] as const)),
     ["size", formatBytes(model.size)],
   ];
   return (
@@ -246,7 +251,7 @@ export function VoiceModelRow(props: {
           description={
             model.state === "verifying"
               ? "正在验证下载…"
-              : `${Math.round((progress ?? 0) * 100)}% downloaded · Tap to cancel`
+              : `已下载 ${Math.round((progress ?? 0) * 100)}% · 轻点取消`
           }
           disabled={!voice.canManage || voice.busy}
           onPress={() => voice.cancel(model)}
@@ -254,7 +259,7 @@ export function VoiceModelRow(props: {
         <Progress
           className="bg-grouped-card px-4 pb-3"
           value={model.state === "verifying" ? undefined : progress}
-          label={`${model.name} download progress`}
+          label={`${model.name} 下载进度`}
         />
       </View>
     );
@@ -280,7 +285,7 @@ export function VoiceModelSection(props: {
   const voice = useVoiceModels(props.environmentId, props.label);
   const { status } = voice;
   if (!voice.connection || !status) return null;
-  const title = `Transcription model on ${props.label}`;
+  const title = `${props.label} 上的转录模型`;
   if (!status.supported) {
     return (
       <SettingsSection title={title} footer={status.reason}>
@@ -299,7 +304,7 @@ export function VoiceModelSection(props: {
       footer={
         voice.canManage
           ? undefined
-          : `This connection can’t change settings on ${props.label}. Add a transcription model using T3 Code on that machine.`
+          : `此连接无权修改 ${props.label} 的设置。请在对应设备上的 T3 Code 中添加转录模型。`
       }
     >
       <ListRow

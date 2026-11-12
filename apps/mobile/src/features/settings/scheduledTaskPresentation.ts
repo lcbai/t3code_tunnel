@@ -4,23 +4,22 @@ const DAY = 24 * HOUR;
 
 export function formatScheduledTaskInterval(everyMs: number): string {
   const units = [
-    [7 * DAY, "week"],
-    [DAY, "day"],
-    [HOUR, "hour"],
-    [MINUTE, "minute"],
-    [1_000, "second"],
-    [1, "millisecond"],
+    [7 * DAY, "周"],
+    [DAY, "天"],
+    [HOUR, "小时"],
+    [MINUTE, "分钟"],
+    [1_000, "秒"],
+    [1, "毫秒"],
   ] as const;
   let remaining = everyMs;
   const parts: string[] = [];
   for (const [size, unit] of units) {
     const count = Math.floor(remaining / size);
     if (count === 0) continue;
-    if (count === 1 && remaining === everyMs && remaining === size) return `Every ${unit}`;
-    parts.push(`${count} ${unit}${count === 1 ? "" : "s"}`);
+    parts.push(`${count} ${unit}`);
     remaining %= size;
   }
-  return `Every ${parts.join(" ")}`;
+  return `每 ${parts.join(" ")}运行一次`;
 }
 
 function localCalendarDay(date: Date): number {
@@ -32,26 +31,26 @@ export function formatNextScheduledTaskRun(nextRunAt: string, now: number): stri
   const next = new Date(nextRunAt);
   const current = new Date(now);
   const remaining = next.getTime() - now;
-  if (!Number.isFinite(remaining)) return "Next run unavailable";
-  if (remaining <= 0) return "Next run due";
+  if (!Number.isFinite(remaining)) return "下次运行时间未知";
+  if (remaining <= 0) return "已到下次运行时间";
 
   const days = localCalendarDay(next) - localCalendarDay(current);
   if (days === 0) {
-    if (remaining < MINUTE) return "Next run in less than a minute";
-    const unit = remaining < HOUR ? "minute" : "hour";
+    if (remaining < MINUTE) return "将在 1 分钟内运行";
+    const unit = remaining < HOUR ? "分钟" : "小时";
     const count = Math.round(remaining / (remaining < HOUR ? MINUTE : HOUR));
-    return `Next run in ${count} ${unit}${count === 1 ? "" : "s"}`;
+    return `将在 ${count} ${unit}后运行`;
   }
 
-  const time = next.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
-  if (days === 1) return `Next run tomorrow at ${time}`;
+  const time = next.toLocaleTimeString("zh-CN", { hour: "numeric", minute: "2-digit" });
+  if (days === 1) return `下次运行：明天 ${time}`;
   if (days <= 7) {
-    return `Next run next ${next.toLocaleDateString([], { weekday: "long" })} at ${time}`;
+    return `下次运行：${next.toLocaleDateString("zh-CN", { weekday: "long" })} ${time}`;
   }
-  const date = next.toLocaleDateString([], {
+  const date = next.toLocaleDateString("zh-CN", {
     month: "short",
     day: "numeric",
     ...(next.getFullYear() !== current.getFullYear() ? { year: "numeric" as const } : {}),
   });
-  return `Next run ${date} at ${time}`;
+  return `下次运行：${date} ${time}`;
 }

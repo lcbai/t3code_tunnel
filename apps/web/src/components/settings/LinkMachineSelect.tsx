@@ -7,6 +7,7 @@ import { Select, SelectItem, SelectPopup, SelectTrigger, SelectValue } from "../
 
 /** The machine choice for linking by an address typed in. */
 export const ANOTHER_ADDRESS = "another-address";
+const ANOTHER_ADDRESS_LABEL = "输入其他地址…";
 
 /** Whether a machine is linked already, or how this app knows it when not connected to it. */
 export function LinkMachineBadge({ machine }: { readonly machine: LinkableMachine }) {
@@ -62,9 +63,9 @@ export function LinkMachineSelect({
         <SelectTrigger aria-labelledby={labelId}>
           <SelectValue>
             {(selected: string | null) => {
-              if (selected === ANOTHER_ADDRESS) return "Another address…";
+              if (selected === ANOTHER_ADDRESS) return ANOTHER_ADDRESS_LABEL;
               const machine = machines.find((candidate) => candidate.environmentId === selected);
-              return machine === undefined ? "Choose a machine" : <MachineName machine={machine} />;
+              return machine === undefined ? "选择设备" : <MachineName machine={machine} />;
             }}
           </SelectValue>
         </SelectTrigger>
@@ -78,7 +79,7 @@ export function LinkMachineSelect({
             </SelectItem>
           ))}
           <SelectItem value={ANOTHER_ADDRESS} hideIndicator>
-            另一个地址…
+            {ANOTHER_ADDRESS_LABEL}
           </SelectItem>
         </SelectPopup>
       </Select>

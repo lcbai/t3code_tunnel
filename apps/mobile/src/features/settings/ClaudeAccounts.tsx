@@ -49,7 +49,7 @@ function useProviderInstanceMutation(environment: SettingsTarget) {
     if (result._tag === "Success") return true;
     if (!isAtomCommandInterrupted(result)) {
       const failure = squashAtomCommandFailure(result);
-      setError(failure instanceof Error ? failure.message : "Could not save the Claude account.");
+      setError(failure instanceof Error ? failure.message : "无法保存 Claude 账号。");
     }
     return false;
   }
@@ -69,13 +69,13 @@ export function ClaudeAccount({
   const configDir = claudeConfigDir(instance);
   const name = provider.displayName ?? "Claude";
   const status = !provider.enabled
-    ? "Turned off"
+    ? "已关闭"
     : provider.auth.status === "authenticated"
-      ? "Signed in"
+      ? "已登录"
       : provider.auth.status === "unauthenticated"
-        ? "Not signed in"
+        ? "未登录"
         : !provider.installed
-          ? "Not installed"
+          ? "未安装"
           : null;
   const removable =
     provider.instanceId !== DEFAULT_CLAUDE_INSTANCE_ID &&
@@ -120,14 +120,14 @@ export function ClaudeAccount({
             {name}
           </Text>
           <Text textRole="footnote" className="text-foreground-muted" numberOfLines={2}>
-            {[status, configDir || "Default config folder"].filter(Boolean).join(" · ")}
+            {[status, configDir || "默认配置目录"].filter(Boolean).join(" · ")}
           </Text>
         </View>
         {editing ? null : (
           <Menu
             accessible
             accessibilityRole="button"
-            accessibilityLabel={`${name} options`}
+            accessibilityLabel={`${name} 选项`}
             title={name}
             actions={actions}
             onPressAction={({ nativeEvent }) => {
@@ -136,11 +136,7 @@ export function ClaudeAccount({
               else if (nativeEvent.event === "remove") remove();
             }}
           >
-            <ControlPill
-              icon="ellipsis"
-              accessibilityLabel={`${name} options`}
-              disabled={pending}
-            />
+            <ControlPill icon="ellipsis" accessibilityLabel={`${name} 选项`} disabled={pending} />
           </Menu>
         )}
       </View>
@@ -231,8 +227,8 @@ function ClaudeAccountForm({
       <Text textRole="footnote" className="text-foreground-muted">
         {`选择 ${environment.label} 上已登录 Claude Code 的 CLAUDE_CONFIG_DIR 目录。请先在该设备上通过 Claude CLI 登录。`}
       </Text>
-      {field("name", "Account name", "Name, e.g. Work")}
-      {field("configDir", "Claude config folder", "Config folder, e.g. ~/.claude-work")}
+      {field("name", "账号名称", "名称，例如：工作")}
+      {field("configDir", "Claude 配置目录", "配置目录，例如：~/.claude-work")}
       {error ? (
         <Text accessibilityRole="alert" className="text-danger-foreground">
           {error}

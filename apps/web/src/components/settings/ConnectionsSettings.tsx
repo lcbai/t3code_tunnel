@@ -928,7 +928,7 @@ function ConnectionsSettingsContent({
       selectValue === BACKEND_VALUE_WSL_OFF
         ? "关闭"
         : selectValue === BACKEND_VALUE_DEFAULT_WSL
-          ? "默认 Distro"
+          ? "默认发行版"
           : selectValue;
     return (
       <>
@@ -966,13 +966,13 @@ function ConnectionsSettingsContent({
                 </SelectItem>
                 {desktopWslState.distros.length === 0 ? (
                   <SelectItem hideIndicator value={BACKEND_VALUE_DEFAULT_WSL}>
-                    默认 Distro
+                    默认发行版
                   </SelectItem>
                 ) : (
                   desktopWslState.distros.map((distro) => (
                     <SelectItem hideIndicator key={distro.name} value={distro.name}>
                       {distro.name}
-                      {distro.isDefault ? " (默认)" : ""}
+                      {distro.isDefault ? "（默认）" : ""}
                     </SelectItem>
                   ))
                 )}

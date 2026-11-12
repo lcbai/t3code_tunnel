@@ -186,8 +186,8 @@ describe("collectChannelSwitchTargets", () => {
     expect(targets.every((target) => target.targetDatabaseMigration === 69)).toBe(true);
     expect(skipped.map((entry) => [entry.label, entry.reason])).toEqual([
       ["newer-service", "run `t3 update --channel stable --allow-downgrade` there"],
-      ["new-service", "其数据库有更改0.1.3 尚未支持; 保留在Nightly 直至Stable 拥有它们"],
-      ["old-server", "它的服务器在数据库检查前会更新; 更新到Nightly first"],
+      ["new-service", "0.1.3 尚不支持当前数据库。请继续使用每日构建版，等待支持此数据库的稳定版。"],
+      ["old-server", "当前服务器版本无法检查数据库，请先更新到较新的每日构建版。"],
       ["mac-desktop", "switch the Mac app on that Mac"],
       ["preview", "runs a preview build"],
     ]);
@@ -232,7 +232,7 @@ describe("collectChannelSwitchTargets", () => {
       ["service", NIGHTLY],
     ]);
     expect(skipped.map((entry) => [entry.label, entry.reason])).toEqual([
-      ["ahead", `其数据库有更改${NIGHTLY} 尚未支持; 保留在Stable 直至Nightly 拥有它们`],
+      ["ahead", `${NIGHTLY} 尚不支持当前数据库。请继续使用稳定版，等待支持此数据库的每日构建版。`],
       ["old-desktop", "needs a newer desktop app"],
       [
         "no-nightly",
@@ -257,7 +257,7 @@ describe("localSwitchBlockReason", () => {
         [windows, { connected: true, databaseMigration: 72 }],
         2,
       ),
-    ).toContain("尚未支持");
+    ).toContain("尚不支持");
     // A WSL backend still starting has no client entry, so its database is unchecked.
     expect(localSwitchBlockReason(nightly, stable, [windows], 2)).toBe(
       "它的服务器没有连接，因此无法检查其数据库",

@@ -132,7 +132,7 @@ export function deriveProviderSettingsFields(
               ? { description: annotatedDescription }
               : {}),
           ...(isLocalAcp && key === "commandPath"
-            ? { placeholder: "例如，干线" }
+            ? { placeholder: "例如 amp" }
             : formAnnotation.placeholder !== undefined
               ? { placeholder: formAnnotation.placeholder }
               : {}),

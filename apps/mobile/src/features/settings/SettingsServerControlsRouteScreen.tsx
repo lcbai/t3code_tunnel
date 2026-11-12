@@ -535,8 +535,8 @@ function ServerSettingsDetail(props: { readonly page: SettingsPage }) {
                     subtitle={managedSubtitle(
                       "enableProviderUpdateChecks",
                       projectSelected
-                        ? "Environment-wide setting. Select All projects to change it."
-                        : "Check installed provider CLIs for newer versions and fetch model catalog updates. When off, new models may not appear.",
+                        ? "这是环境级设置。选择「所有项目」后即可修改。"
+                        : "检查已安装的提供方 CLI 是否有新版本，并获取模型列表更新。关闭后，可能看不到新模型。",
                     )}
                     value={uniform("enableProviderUpdateChecks")}
                     disabled={disabledFor("enableProviderUpdateChecks")}
@@ -548,7 +548,7 @@ function ServerSettingsDetail(props: { readonly page: SettingsPage }) {
                       label="重启后继续"
                       subtitle={managedSubtitle(
                         "continueThreadsAfterServerUpdate",
-                        "Resume interrupted threads after an update or restart.",
+                        "更新或重启后继续中断的会话。",
                       )}
                       value={uniform("continueThreadsAfterServerUpdate")}
                       disabled={disabledFor("continueThreadsAfterServerUpdate")}

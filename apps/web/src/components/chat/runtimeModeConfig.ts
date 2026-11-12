@@ -11,22 +11,22 @@ export const runtimeModeConfig: Record<
 > = {
   "approval-required": {
     label: "监督",
-    description: "在命令和文件更改前询问。",
+    description: "运行命令或修改文件前请求确认。",
     icon: LockIcon,
   },
   "auto-accept-edits": {
     label: "自动接受编辑",
-    description: "自动认可编辑，询问其他动作之前。",
+    description: "自动接受文件修改，执行其他操作前请求确认。",
     icon: PenLineIcon,
   },
   auto: {
     label: "自动",
-    description: "支持的提供者批准例行行动;其他人仍然要求这样做。",
+    description: "支持此模式的提供方会自动批准常规操作，其余提供方仍会请求确认。",
     icon: SparklesIcon,
   },
   "full-access": {
     label: "完全访问",
-    description: "允许命令和编辑而不提示。",
+    description: "运行命令和修改文件时无需确认。",
     // An open lock reads like a closed one at small sizes; a crossed shield does not.
     icon: ShieldOffIcon,
   },

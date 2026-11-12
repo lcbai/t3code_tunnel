@@ -28,6 +28,7 @@ import {
   getProviderOptionCurrentLabel,
   getProviderOptionCurrentValue,
   getProviderOptionDescriptors,
+  localizeProviderOptionLabel,
 } from "@t3tools/shared/model";
 import {
   useNavigation,
@@ -178,7 +179,7 @@ function ProviderHeader(props: {
   if (props.collapsible) {
     return (
       <Pressable
-        accessibilityLabel={`${props.label}, ${props.modelCount} models`}
+        accessibilityLabel={`${props.label}，${props.modelCount} 个模型`}
         accessibilityRole="button"
         accessibilityState={{ expanded: !props.collapsed }}
         className="mx-4 mt-1 min-h-11 flex-row items-center gap-2 rounded-xl px-1 pt-2 active:opacity-60 android:min-h-12"
@@ -834,6 +835,11 @@ function ThreadSettingsOptionsItem(props: {
       >
         {session.displayedDescriptors.map((descriptor) => {
           if (descriptor.type === "select") {
+            const currentLabel = getProviderOptionCurrentLabel(
+              descriptor,
+              session.displayedModelSelection,
+              session.reportedModelSelection,
+            );
             return (
               <Animated.View
                 key={descriptor.id}
@@ -844,16 +850,12 @@ function ThreadSettingsOptionsItem(props: {
                 layout={THREAD_SETTINGS_OPTIONS_LAYOUT_TRANSITION}
               >
                 <DisclosureRow
-                  label={descriptor.label}
+                  label={localizeProviderOptionLabel(descriptor.label)}
                   value={
                     session.promptTraits.ultrathinkPromptControlled &&
                     descriptor.id === session.promptTraits.primarySelectDescriptor?.id
                       ? "Ultrathink"
-                      : getProviderOptionCurrentLabel(
-                          descriptor,
-                          session.displayedModelSelection,
-                          session.reportedModelSelection,
-                        )
+                      : currentLabel && localizeProviderOptionLabel(currentLabel)
                   }
                   onPress={() => props.onOpenSubmenu({ kind: "descriptor", id: descriptor.id })}
                 />
@@ -868,7 +870,7 @@ function ThreadSettingsOptionsItem(props: {
               layout={THREAD_SETTINGS_OPTIONS_LAYOUT_TRANSITION}
             >
               <SwitchRow
-                label={descriptor.label}
+                label={localizeProviderOptionLabel(descriptor.label)}
                 value={descriptor.currentValue ?? false}
                 onValueChange={(value) => session.applyOptionChange(descriptor.id, value)}
               />
@@ -1065,7 +1067,7 @@ function ThreadSettingsChoiceContent(props: {
         ? {
             rows: selectableChoices(activeDescriptor).map((choice) => ({
               id: choice.id,
-              label: choice.label,
+              label: localizeProviderOptionLabel(choice.label),
               description: choice.description,
               disabled: false,
               selected:
@@ -1170,7 +1172,7 @@ function ThreadSettingsModelsScreen() {
     value: session.searchQuery,
     onChangeText: session.setSearchQuery,
     placeholder: "查找模型",
-    clearAccessibilityLabel: "Clear model search",
+    clearAccessibilityLabel: "清除模型搜索",
     mode: "inline",
     compactToolbar: true,
   };
@@ -1190,7 +1192,7 @@ function ThreadSettingsModelsScreen() {
       <AppBar
         title="会话设置"
         onClose={presentation.onClose}
-        closeAccessibilityLabel="Cancel thread settings"
+        closeAccessibilityLabel="取消会话设置"
         search={search}
         menus={[
           {
@@ -1241,9 +1243,11 @@ function ThreadSettingsModelsScreen() {
             const title =
               submenu.kind === "runtime"
                 ? "运行时"
-                : (session.displayedDescriptors.find(
-                    (descriptor) => descriptor.type === "select" && descriptor.id === submenu.id,
-                  )?.label ?? "Option");
+                : localizeProviderOptionLabel(
+                    session.displayedDescriptors.find(
+                      (descriptor) => descriptor.type === "select" && descriptor.id === submenu.id,
+                    )?.label ?? "选项",
+                  );
             navigation.navigate("ThreadSettingsChoice", { ...submenu, title });
           }}
         />

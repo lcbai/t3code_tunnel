@@ -165,10 +165,10 @@ export function AcpRegistrySearchStep({
             <SearchIcon />
           </InputGroupAddon>
           <InputGroupInput
-            aria-label="搜索ACP 注册"
+            aria-label="搜索 ACP 注册表"
             disabled={preparingId !== null}
             onChange={(event) => registry.type(event.currentTarget.value)}
-            placeholder="搜索人员…"
+            placeholder="搜索 ACP 代理…"
             size="sm"
             type="search"
             value={query}
@@ -191,16 +191,16 @@ export function AcpRegistrySearchStep({
             type="button"
             variant="outline"
           >
-            本地ACP command
+            本地 ACP 命令
           </Button>
         ) : null}
       </form>
 
       <div className="sr-only" role="status">
         {isInitialSearch
-          ? "正在搜索ACP 注册。"
+          ? "正在搜索 ACP 注册表。"
           : isRefreshing
-            ? "刷新ACP 登记结果。"
+            ? "正在刷新 ACP 搜索结果。"
             : results
               ? `找到 ${resultCount} 个兼容的代理。`
               : ""}
@@ -214,7 +214,7 @@ export function AcpRegistrySearchStep({
 
       {isInitialSearch ? (
         <div className="flex min-h-20 items-center justify-center text-sm text-muted-foreground">
-          正在搜索注册…
+          正在搜索 ACP 注册表…
         </div>
       ) : null}
 
@@ -222,7 +222,7 @@ export function AcpRegistrySearchStep({
         results.length === 0 ? (
           <div className="flex min-h-28 flex-col items-center justify-center rounded-2xl border border-dashed px-4 text-center">
             <p className="text-sm font-medium">没有找到兼容的代理</p>
-            <p className="mt-1 text-xs text-muted-foreground">尝试一个更广泛的搜索。</p>
+            <p className="mt-1 text-xs text-muted-foreground">试试更简短的关键词。</p>
           </div>
         ) : (
           <ScrollArea scrollFade className="max-h-64">
@@ -299,7 +299,7 @@ function AcpRegistryAgentRow({
             </Tooltip>
           ) : null}
           <Button
-            aria-label={`${alreadyAdded ? "Already added" : isPreparing ? progressLabel : "Add"} ${agent.name}`}
+            aria-label={`${alreadyAdded ? "已添加" : isPreparing ? progressLabel : "添加"} ${agent.name}`}
             disabled={!canAdd || alreadyAdded}
             onClick={() => onAdd(agent)}
             size="xs"

@@ -19,7 +19,7 @@ import {
   type ScheduledTaskEditor,
 } from "./scheduled-task-editor-state";
 
-export const NEW_THREAD_DESTINATION_LABEL = "New thread each run";
+export const NEW_THREAD_DESTINATION_LABEL = "每次运行都新建会话";
 
 export function useScheduledTaskDestinationLabel(
   environmentId: EnvironmentId | null,
@@ -36,7 +36,7 @@ export function useScheduledTaskDestinationLabel(
   );
   const thread = shell ?? family.data?.threads.find((row) => row.id === threadId);
   if (ref === null) return NEW_THREAD_DESTINATION_LABEL;
-  return thread?.title.trim() || `Thread ${ref.threadId}`;
+  return thread?.title.trim() || `会话 ${ref.threadId}`;
 }
 
 /** The form draft lives in an atom, so it survives while its native picker routes are on top. */

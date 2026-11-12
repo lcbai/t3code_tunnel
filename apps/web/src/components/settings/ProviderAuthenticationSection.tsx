@@ -172,8 +172,8 @@ export function ProviderAuthenticationSection({
               key={provider.auth.email}
               value={provider.auth.email}
               ariaLabel="切换账户电子邮件可见度"
-              revealTooltip="Click to reveal email"
-              hideTooltip="Click to hide email"
+              revealTooltip="显示邮箱地址"
+              hideTooltip="隐藏邮箱地址"
               className="max-w-full truncate"
             />
           </span>
@@ -196,13 +196,14 @@ export function ProviderAuthenticationSection({
               disabled={disabled}
               onValueChange={(value) => setMethodId(value ?? "")}
             >
-              <SelectTrigger size="sm" aria-label="登录方法" className="w-44">
+              <SelectTrigger size="sm" aria-label="登录方式" className="w-44">
                 <SelectValue>
-                  {auth?.methods?.find((method) => method.id === methodId)?.name ?? "提供者默认"}
+                  {auth?.methods?.find((method) => method.id === methodId)?.name ??
+                    "使用提供方默认方式"}
                 </SelectValue>
               </SelectTrigger>
               <SelectPopup>
-                <SelectItem value="">提供者默认</SelectItem>
+                <SelectItem value="">使用提供方默认方式</SelectItem>
                 {auth?.methods?.map((method) => (
                   <SelectItem key={method.id} value={method.id}>
                     {method.name}

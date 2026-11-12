@@ -81,7 +81,11 @@ import {
   type ScheduledTaskDraft as Draft,
 } from "./scheduledTaskDraft";
 import { settingsTargetsForProject } from "./settings-environment-filter.logic";
-import { useScheduledTaskDestinationLabel, useScheduledTaskEditor } from "./scheduled-task-editor";
+import {
+  NEW_THREAD_DESTINATION_LABEL,
+  useScheduledTaskDestinationLabel,
+  useScheduledTaskEditor,
+} from "./scheduled-task-editor";
 import {
   discardScheduledTaskEditor,
   markScheduledTaskEditorSaved,
@@ -111,21 +115,29 @@ const DAYS = [
   { index: 0, label: "周日" },
 ] as const;
 
+const WEEKDAYS = [1, 2, 3, 4, 5] as const;
+
 const THREAD_MODE_LABELS: Record<ScheduledTaskThreadMode, string> = {
-  new_thread: "New thread each run",
-  continue: "One thread, same conversation",
-  fresh_session: "One thread, fresh session",
+  new_thread: NEW_THREAD_DESTINATION_LABEL,
+  continue: "在同一会话中继续",
+  fresh_session: "在同一会话中重新开始",
+};
+
+const WORKSPACE_LABELS: Record<Draft["workspace"], string> = {
+  worktree: "新建工作树",
+  root: "项目检出目录",
+  existing_worktree: "指定检出目录",
 };
 
 function describeSchedule(task: ScheduledTask): string {
-  if (task.schedule.type === "webhook") return "On webhook";
+  if (task.schedule.type === "webhook") return "收到 Webhook 时";
   if (task.schedule.type === "once") {
     const runAt = new Date(task.schedule.runAt);
-    return `Once, ${formatRunAtDate(runAt)} at ${formatRunAtTime(runAt)}`;
+    return `运行一次，${formatRunAtDate(runAt)} ${formatRunAtTime(runAt)}`;
   }
   if (task.schedule.type === "interval") return formatScheduledTaskInterval(task.schedule.everyMs);
-  const days = task.schedule.weekdays?.length ? repeatLabel(task.schedule.weekdays) : "Every day";
-  return `${days} at ${formatTime(task.schedule.timeOfDay)}`;
+  const days = task.schedule.weekdays?.length ? repeatLabel(task.schedule.weekdays) : "每天";
+  return `${days} ${formatTime(task.schedule.timeOfDay)}`;
 }
 
 function formatTime(value: string): string {
@@ -156,14 +168,18 @@ function timePickerValue(value: string): Date {
   return time;
 }
 
+function isWeekdaySchedule(days: ReadonlySet<number>): boolean {
+  return days.size === WEEKDAYS.length && WEEKDAYS.every((day) => days.has(day));
+}
+
 function repeatLabel(weekdays: ReadonlyArray<number>): string {
   const days = new Set(weekdays);
-  if (days.size === 7) return "Every day";
-  if (days.size === 5 && [1, 2, 3, 4, 5].every((day) => days.has(day))) return "Weekdays";
+  if (days.size === 7) return "每天";
+  if (isWeekdaySchedule(days)) return "工作日";
   return (
     DAYS.filter((day) => days.has(day.index))
       .map((day) => day.label)
-      .join(", ") || "Choose days"
+      .join("、") || "请选择日期"
   );
 }
 
@@ -297,7 +313,7 @@ function WebhookFilterRows(props: {
             onChange={(path) => update(index, { path })}
           />
           <SelectRow
-            label="测试"
+            label="匹配条件"
             value={WEBHOOK_FILTER_OPS.find((option) => option.op === filter.op)?.label ?? ""}
             actions={WEBHOOK_FILTER_OPS.map((option) => ({
               id: option.op,
@@ -862,7 +878,7 @@ function TaskForm({
             label="项目"
             value={
               projects.find((project) => project.id === draft.projectId)?.title ??
-              (projects.length ? "Choose project" : "No projects available")
+              (projects.length ? "请选择项目" : "没有可用的项目")
             }
             actions={projects.map((project) => ({
               id: project.id,
@@ -900,7 +916,7 @@ function TaskForm({
                   option.selection.model === draft.modelSelection?.model,
               )?.label ??
               draft.modelSelection?.model ??
-              (modelOptions.length ? "Choose model" : "No models available")
+              (modelOptions.length ? "请选择模型" : "没有可用的模型")
             }
             onPress={() => navigation.navigate("SettingsScheduledTaskModel")}
             disabled={saving || dictationPending || environmentUnavailable}
@@ -911,14 +927,12 @@ function TaskForm({
           title="目标位置"
           footer={
             draft.threadMode === "new_thread"
-              ? "Each run starts a new thread."
+              ? "每次运行都会新建会话。"
               : `${
                   draft.threadMode === "continue"
-                    ? "Runs continue one conversation."
-                    : "Runs share one thread, each in a fresh session without earlier runs' context."
-                }${
-                  draft.threadId === null ? " The first run starts the thread." : ""
-                } Deleting it also deletes this task.`
+                    ? "每次运行都会继续当前会话。"
+                    : "各次运行使用同一会话，每次都从空白上下文开始。"
+                }${draft.threadId === null ? "首次运行时创建会话。" : ""}删除会话也会删除此任务。`
           }
         >
           {offersThreadModes ? (
@@ -946,7 +960,7 @@ function TaskForm({
               borderTop={offersThreadModes}
               value={
                 draft.threadId === null && draft.threadMode !== "new_thread"
-                  ? "Started by the first run"
+                  ? "首次运行时创建"
                   : destinationLabel
               }
               onPress={() => navigation.navigate("SettingsScheduledTaskThread")}
@@ -958,30 +972,12 @@ function TaskForm({
         <SettingsSection title="工作区">
           <SelectRow
             label="运行位置"
-            value={
-              draft.workspace === "worktree"
-                ? "New worktree"
-                : draft.workspace === "root"
-                  ? "Project checkout"
-                  : "Specific checkout"
-            }
-            actions={[
-              {
-                id: "worktree",
-                title: "新建工作树",
-                state: draft.workspace === "worktree" ? "on" : undefined,
-              },
-              {
-                id: "root",
-                title: "项目检出目录",
-                state: draft.workspace === "root" ? "on" : undefined,
-              },
-              {
-                id: "existing_worktree",
-                title: "指定检出目录",
-                state: draft.workspace === "existing_worktree" ? "on" : undefined,
-              },
-            ]}
+            value={WORKSPACE_LABELS[draft.workspace]}
+            actions={Object.entries(WORKSPACE_LABELS).map(([id, title]) => ({
+              id,
+              title,
+              state: draft.workspace === id ? "on" : undefined,
+            }))}
             onSelect={(id) => {
               if (id === "worktree" || id === "root" || id === "existing_worktree")
                 setDraft({ ...draft, workspace: id });
@@ -1082,6 +1078,9 @@ function TaskForm({
                   value={timePickerValue(draft.schedule.timeOfDay)}
                   mode="time"
                   display={Platform.OS === "ios" ? "spinner" : "default"}
+                  locale="zh_CN"
+                  positiveButton={{ label: "确定" }}
+                  negativeButton={{ label: "取消" }}
                   onDismiss={() => setTimePickerOpen(false)}
                   onValueChange={(_, selected) => {
                     const timeOfDay = `${String(selected.getHours()).padStart(2, "0")}:${String(selected.getMinutes()).padStart(2, "0")}`;
@@ -1102,7 +1101,7 @@ function TaskForm({
                   {
                     id: "weekdays",
                     title: "工作日",
-                    state: repeatLabel(draft.schedule.weekdays) === "Weekdays" ? "on" : undefined,
+                    state: isWeekdaySchedule(new Set(draft.schedule.weekdays)) ? "on" : undefined,
                   },
                   ...DAYS.map((day) => ({
                     id: String(day.index),
@@ -1118,7 +1117,7 @@ function TaskForm({
                     id === "every_day"
                       ? DAYS.map((day) => day.index)
                       : id === "weekdays"
-                        ? [1, 2, 3, 4, 5]
+                        ? WEEKDAYS
                         : (() => {
                             const day = DAYS.find((item) => String(item.index) === id);
                             if (!day) return draft.schedule.weekdays;
@@ -1137,17 +1136,18 @@ function TaskForm({
           ) : draft.schedule.mode === "once" ? (
             (["date", "time"] as const).map((field) => {
               const runAt = new Date(draft.schedule.runAt);
+              const fieldLabel = field === "date" ? "日期" : "时间";
               const label = field === "date" ? formatRunAtDate(runAt) : formatRunAtTime(runAt);
               return (
                 <View key={field}>
                   <Pressable
                     accessibilityRole="button"
-                    accessibilityLabel={`${field === "date" ? "Date" : "Time"}, ${label}`}
+                    accessibilityLabel={`${fieldLabel}：${label}`}
                     onPress={() => setRunAtPicker((open) => (open === field ? null : field))}
                     className="min-h-14 flex-row items-center gap-3 border-t border-border-subtle px-4 py-3 active:opacity-70"
                   >
                     <Text textRole="body" className="text-foreground">
-                      {field === "date" ? "日期" : "时间"}
+                      {fieldLabel}
                     </Text>
                     <Text
                       textRole="footnote"
@@ -1167,6 +1167,9 @@ function TaskForm({
                       value={runAt}
                       mode={field}
                       display={Platform.OS === "ios" ? "spinner" : "default"}
+                      locale="zh_CN"
+                      positiveButton={{ label: "确定" }}
+                      negativeButton={{ label: "取消" }}
                       onDismiss={() => setRunAtPicker(null)}
                       onValueChange={(_, selected) => {
                         // Android shows a dialog that closes on pick; iOS stays inline.

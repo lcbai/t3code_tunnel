@@ -208,7 +208,7 @@ function CloudChoices({ environment, active, onClose }: Props & { onClose: () =>
       await runSpeech(setCloudSpeechKey(connection, provider, value));
     } catch {
       setSaving(false);
-      Dialog.alert("Could not update the API key", "请检查环境连接和设置权限。");
+      Dialog.alert("无法更新 API 密钥", "请检查环境连接和设置权限。");
       return;
     }
     setSaving(false);
@@ -224,7 +224,7 @@ function CloudChoices({ environment, active, onClose }: Props & { onClose: () =>
           !connection
             ? "环境未连接"
             : keys._tag === "Failure"
-              ? "Could not load keys · Retry"
+              ? "无法加载密钥 · 重试"
               : "正在检查 API 密钥…"
         }
         disabled={!connection || keys._tag !== "Failure"}
@@ -284,7 +284,7 @@ function CloudChoices({ environment, active, onClose }: Props & { onClose: () =>
                   saved === undefined
                     ? "更新环境以使用此提供方"
                     : isActive && routed
-                      ? `${activeModel} · Tap to change model${canManage ? " or key" : ""}`
+                      ? `${activeModel} · 轻点更换模型${canManage ? "或密钥" : ""}`
                       : isActive && saved && canManage
                         ? "轻点管理密钥"
                         : saved
@@ -303,8 +303,8 @@ function CloudChoices({ environment, active, onClose }: Props & { onClose: () =>
                     return;
                   }
                   Dialog.confirm({
-                    title: `使用 ${label} for dictation?`,
-                    message: `${disclosure} Select This device to stop sharing.`,
+                    title: `使用 ${label} 进行语音输入？`,
+                    message: `${disclosure} 选择「此设备」即可停止共享。`,
                     confirmText: `使用 ${label}`,
                     onConfirm: () => enable(pendingCloudVoiceChoice(id, provider)),
                   });
@@ -365,9 +365,7 @@ function CloudChoices({ environment, active, onClose }: Props & { onClose: () =>
                 {canManage && (
                   <TextInput
                     key={sourceId ?? "literal"}
-                    accessibilityLabel={
-                      sourceId ? `${label} API key reference` : `${label} API key`
-                    }
+                    accessibilityLabel={sourceId ? `${label} API 密钥引用` : `${label} API 密钥`}
                     placeholder={
                       source?.referencePlaceholder ??
                       (routed && saved ? "密钥已保存 · 输入新密钥可替换" : "API 密钥")
@@ -412,10 +410,10 @@ function CloudChoices({ environment, active, onClose }: Props & { onClose: () =>
                         : routed
                           ? saved && !credential
                             ? "使用保存在此环境上的 API 密钥。所选模型仅在当前设备上生效。"
-                            : `Anyone with dictation access to ${environment.label} can bill this key.`
+                            : `有权在 ${environment.label} 使用语音输入的人都可以使用此密钥并产生费用。`
                           : editing.enable
-                            ? `${disclosure} Anyone with dictation access to ${environment.label} can bill this key.`
-                            : `Updates the ${company} key on ${environment.label}. Your dictation destination stays the same.`
+                            ? `${disclosure} 有权在 ${environment.label} 使用语音输入的人都可以使用此密钥并产生费用。`
+                            : `将更新 ${environment.label} 上的 ${company} 密钥，转录位置保持不变。`
                     }
                     disabled={(routed ? !routedReady : !credential) || saving}
                     onPress={() => {
@@ -431,7 +429,7 @@ function CloudChoices({ environment, active, onClose }: Props & { onClose: () =>
                     disabled={saving}
                     onPress={() =>
                       Dialog.confirm({
-                        title: `Remove the ${label} key from ${environment.label}?`,
+                        title: `从 ${environment.label} 移除 ${label} 密钥？`,
                         message: "使用此密钥进行语音输入的用户将失去访问权限。",
                         confirmText: "移除密钥",
                         destructive: true,

@@ -48,16 +48,16 @@ import { searchableSetting } from "./settingsSearch";
 const MODE_OPTIONS: Record<SourceControlWritingStyleMode, { label: string; description: string }> =
   {
     repo_conventions: {
-      label: "仓库公约",
-      description: "提交信件并拉取请求标题和描述与每个项目的历史相匹配。",
+      label: "遵循仓库惯例",
+      description: "参照各项目的历史记录生成提交信息及拉取请求的标题和描述。",
     },
     conventional_commits: {
-      label: "常规武器委员会",
-      description: "常规提交前缀，带有短拉取请求标题和描述。",
+      label: "约定式提交",
+      description: "使用约定式提交前缀，并生成简短的拉取请求标题和描述。",
     },
     custom: {
       label: "自定义指令",
-      description: "您的指示形状会传递消息并拉取请求标题和描述。",
+      description: "按照你的指令生成提交信息及拉取请求的标题和描述。",
     },
   };
 
@@ -227,10 +227,14 @@ export function SourceControlWritingSettingsSection() {
               });
             }}
           >
-            <SelectTrigger size="sm" className="w-full sm:w-56" aria-label="提交和拉取请求写入">
+            <SelectTrigger
+              size="sm"
+              className="w-full sm:w-56"
+              aria-label="提交和拉取请求的写作风格"
+            >
               <SelectValue>
                 {(value: SourceControlWritingStyleMode | null) =>
-                  value === null ? "Mixed" : MODE_OPTIONS[value].label
+                  value === null ? "设置值不一致" : MODE_OPTIONS[value].label
                 }
               </SelectValue>
             </SelectTrigger>
@@ -345,8 +349,8 @@ export function SourceControlWritingSettingsSection() {
                       instanceEntries={instanceEntries}
                       modelOptionsByInstance={reviewGuideModelOptionsByInstance}
                       triggerClassName={SETTINGS_PICKER_TRIGGER_CLASSNAME}
-                      triggerAriaLabel="Review guide model"
-                      {...(mixedReviewGuideModel ? { triggerLabel: "Mixed" } : {})}
+                      triggerAriaLabel="审查指南模型"
+                      {...(mixedReviewGuideModel ? { triggerLabel: "设置值不一致" } : {})}
                       getModelDisabledReason={writerModelDisabledReason}
                       onInstanceModelChange={(instanceId, model) => {
                         const reason = writerModelDisabledReason(instanceId, model);
@@ -532,8 +536,8 @@ export function SourceControlWritingSettingsSection() {
                     instanceEntries={writerEntries}
                     modelOptionsByInstance={modelOptionsByInstance}
                     triggerClassName={SETTINGS_PICKER_TRIGGER_CLASSNAME}
-                    triggerAriaLabel="Source control writer model"
-                    {...(mixedWriterModel ? { triggerLabel: "Mixed" } : {})}
+                    triggerAriaLabel="源代码管理文案模型"
+                    {...(mixedWriterModel ? { triggerLabel: "设置值不一致" } : {})}
                     {...(environmentId
                       ? {
                           onOpenProviderSetup: (instanceId: ProviderInstanceId) => {

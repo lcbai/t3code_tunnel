@@ -228,7 +228,7 @@ export function TextGeneratorsSettings({
   );
 }
 
-const STEPS = ["Connect", "Use it"] as const;
+const STEPS = ["连接", "选择用途"] as const;
 
 /** Text tasks a generator can write, in the order the settings pages show them. */
 const TASKS = [
@@ -237,7 +237,7 @@ const TASKS = [
     key: "sourceControlWriterModelSelection",
     label: "提交信件、拉取请求和分支名称",
   },
-  { key: "speechPostProcessingModelSelection", label: "语音记录清理" },
+  { key: "speechPostProcessingModelSelection", label: "语音转录整理" },
 ] as const;
 
 /**
@@ -390,7 +390,7 @@ function TextGeneratorWizard({
                 ) : null}
                 {showBaseUrl ? (
                   <div className="grid gap-1.5">
-                    <Label htmlFor="text-generator-url">基数URL</Label>
+                    <Label htmlFor="text-generator-url">基础 URL</Label>
                     <Input
                       id="text-generator-url"
                       placeholder="http://localhost:11434/v1"
@@ -550,7 +550,7 @@ function TextGenerationTaskPicker({
           </span>
         ) : shown ? (
           <span role="status" className="text-xs text-muted-foreground">
-            {selection.model} 答了，这很有效
+            {selection.model} 响应正常
           </span>
         ) : own === null ? (
           <span className="text-xs text-muted-foreground">遵循文本生成模型</span>

@@ -38,7 +38,7 @@ export function SourceControlTokenSettings({
     readHostCredentialSettings(settings, definition.kind),
   );
   const updateSettings = useAtomCommand(serverEnvironment.updateSettings, {
-    label: `保存${definition.label} 符号`,
+    label: `保存 ${definition.label} 访问令牌`,
   });
   const defaultHost = definition.publicHost ?? "";
   const [host, setHost] = useState(defaultHost);
@@ -103,7 +103,7 @@ export function SourceControlTokenSettings({
                 />
               }
             >
-              创建符号
+              创建访问令牌
               <ExternalLinkIcon aria-hidden className="size-3" />
             </InlineButton>
           ) : null}
@@ -121,11 +121,11 @@ export function SourceControlTokenSettings({
             />
           </div>
           <div className="grid gap-1.5">
-            <Label htmlFor={`${definition.kind}-token-${environmentId}`}>Token</Label>
+            <Label htmlFor={`${definition.kind}-token-${environmentId}`}>访问令牌</Label>
             <SecretSourceInput
               id={`${definition.kind}-token-${environmentId}`}
               size="sm"
-              aria-label={`${definition.label} 符号@ action`}
+              aria-label={`${definition.label} 访问令牌`}
               configured={isSaved && !isSecretReference(savedToken)}
               value={draft}
               sources={secretSources}

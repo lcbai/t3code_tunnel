@@ -241,10 +241,10 @@ export function AddProviderInstanceDialog({
       : "需要可执行文件。"
     : selectedAcp !== null || (isManualAcpConfiguration && manualAgentId.length > 0)
       ? null
-      : "选择一个ACP 或手动配置。";
+      : "请选择一个 ACP 代理或手动配置。";
   const wizardStepSummaries = isAcpRegistry
     ? ([
-        isLocalAcp ? "Local ACP command" : (selectedAcp?.name ?? (manualAgentId || null)),
+        isLocalAcp ? "本地 ACP 命令" : (selectedAcp?.name ?? (manualAgentId || null)),
         previewLabel,
         null,
       ] as const)
@@ -490,7 +490,7 @@ export function AddProviderInstanceDialog({
                 <Collapsible open={showMoreProviders} onOpenChange={setShowMoreProviders}>
                   <div className="flex pt-2">
                     <CollapsibleTrigger render={<Button variant="ghost-muted" size="xs" />}>
-                      {showMoreProviders ? "显示少一点" : "显示更多"}
+                      {showMoreProviders ? "收起" : "显示更多"}
                       <ChevronDownIcon
                         aria-hidden
                         className={cn("transition-transform", showMoreProviders && "rotate-180")}
@@ -510,7 +510,7 @@ export function AddProviderInstanceDialog({
                       {!acpRegistryAllowed ? null : (
                         <div className="flex items-center gap-3 text-xs text-muted-foreground">
                           <div aria-hidden className="flex-1 border-t border-border/70" />
-                          <span>或从ACP 注册处选择</span>
+                          <span>或从 ACP 注册表选择</span>
                           <div aria-hidden className="flex-1 border-t border-border/70" />
                         </div>
                       )}
@@ -519,12 +519,12 @@ export function AddProviderInstanceDialog({
                           <div className="flex items-start justify-between gap-3">
                             <div>
                               <h3 className="text-sm font-medium text-foreground">
-                                {isLocalAcp ? "本地ACP command" : "手动输入"}
+                                {isLocalAcp ? "本地 ACP 命令" : "手动输入"}
                               </h3>
                               <p className="mt-0.5 text-xs text-muted-foreground">
                                 {isLocalAcp
-                                  ? `在${environmentLabel}上运行一个已安装的ACP可执行文件。`
-                                  : "输入正式的注册ID和任何本地可执行文件或认证的覆盖。"}
+                                  ? `在 ${environmentLabel} 上运行已安装的 ACP 可执行文件。`
+                                  : "输入注册表中的代理 ID。可选填本地可执行文件和认证方式。"}
                               </p>
                             </div>
                             <Button
@@ -535,7 +535,7 @@ export function AddProviderInstanceDialog({
                               size="xs"
                               variant="ghost"
                             >
-                              搜索注册
+                              搜索注册表
                             </Button>
                           </div>
                           <SettingsGroup variant="plain">
@@ -673,8 +673,8 @@ export function AddProviderInstanceDialog({
                   }
                 />
                 <SettingsRow
-                  title="星座颜色"
-                  description="选取器中显示的可选标记。"
+                  title="强调色"
+                  description="用颜色区分模型选择器中的提供方实例。"
                   control={
                     <ProviderAccentColorPicker
                       displayName={label || driverOption.label}

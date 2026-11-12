@@ -101,7 +101,7 @@ function EnvironmentPickerRow(props: {
         </Pressable>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={`${expanded ? "Hide" : "Show"} connection details for ${props.title}`}
+          accessibilityLabel={`${expanded ? "隐藏" : "显示"} ${props.title} 的连接详情`}
           accessibilityState={{ expanded }}
           onPress={() => setExpanded(!expanded)}
           className="min-h-11 min-w-11 items-center justify-center active:opacity-65"
@@ -357,7 +357,7 @@ export function BranchPickerScreen(props: {
     value: props.query,
     onChangeText: props.onQueryChange,
     placeholder: "查找分支",
-    clearAccessibilityLabel: "Clear branch search",
+    clearAccessibilityLabel: "清除分支搜索",
     mode: "inline",
     compactToolbar: true,
   };
@@ -385,7 +385,7 @@ export function BranchPickerScreen(props: {
       isLast={index === props.branches.length - 1}
       onPress={() => props.onSelect(item)}
       selected={selectedBranchName === item.name}
-      subtitle={branchBadgeLabel({ branch: item, project: props.project })?.toUpperCase()}
+      subtitle={branchBadgeLabel({ branch: item, project: props.project }) ?? undefined}
       title={item.name}
     />
   );

@@ -148,7 +148,7 @@ export interface ChannelSwitchRelease {
 }
 
 export const channelSwitchLabel = (channel: DesktopUpdateChannel) =>
-  channel === "nightly" ? "Nightly" : "Stable";
+  channel === "nightly" ? "每日构建版" : "稳定版";
 
 /** Stable and Nightly each build their own commits, so either can hold migrations the other lacks.
  * Crossing tracks needs proof that the target release knows every migration the database holds. */
@@ -164,13 +164,13 @@ function channelSwitchBlockReason(
   const from = channelSwitchLabel(desktopUpdateChannelOf(fromVersion));
   // Servers and releases from before this check report no migration number.
   if (currentMigration === undefined) {
-    return `它的服务器在数据库检查前会更新; 更新到${from} first`;
+    return `当前服务器版本无法检查数据库，请先更新到较新的${from}。`;
   }
   if (release.databaseMigration === undefined) {
-    return `${release.version} 日期在数据库检查前; 等待更新的${channelSwitchLabel(release.channel)} 释放`;
+    return `${release.version} 无法检查数据库，请等待较新的${channelSwitchLabel(release.channel)}。`;
   }
   return currentMigration > release.databaseMigration
-    ? `其数据库有更改${release.version} 尚未支持; 保留在${from} 直至${channelSwitchLabel(release.channel)} 拥有它们`
+    ? `${release.version} 尚不支持当前数据库。请继续使用${from}，等待支持此数据库的${channelSwitchLabel(release.channel)}。`
     : null;
 }
 

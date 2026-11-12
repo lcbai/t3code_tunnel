@@ -368,37 +368,90 @@ export function buildKeybindingCommandOptions(
   return [...commands].toSorted((left, right) => compareCommands(left, right, commandLabel));
 }
 
-export function commandLabel(command: KeybindingCommand): string {
-  if (command === "workspace.focusNext") return "聚焦下一个工作空间区域";
-  if (command === "workspace.focusPrevious") return "聚焦上一个工作空间区域";
-  if (command === "composer.sendAlternate") return "消息输入框:对面的队列或引导动作";
-  if (command === "composer.sendBackground") return "消息输入框: 开始于背景";
-  if (command === "composer.sendAndNewThread") return "消息输入框: 发送并启动新会话";
-  if (command === "composer.dictation") return "消息输入框: 开始或完成拼写";
-  if (command === "thread.steerQueuedMessage") return "队列: 发送第一个队列的信件";
-  if (command === "thread.editQueuedMessage") return "队列: 编辑最后的队列信件";
-  if (command === "thread.copyReference") return "拉取请求:复制链接或会话";
-  const usageMetric = METRIC_OPTIONS.find((option) => option.command === command);
-  if (usageMetric) return `用法 :${usageMetric.label}`;
-  const usagePeriod = WINDOW_OPTIONS.find((option) => option.command === command);
-  if (usagePeriod) return `用法: 期间 :${usagePeriod.label}`;
-  if (command === "view.reopenClosed") return "重新打开已关闭标签";
-  if (command === "preview.focusUrl") return "预览: 聚焦URL";
-  const raw = String(command);
-  if (raw.startsWith("script.") && raw.endsWith(".run")) {
-    return `运行脚本 :${titleCaseCommandSegment(raw.slice("script.".length, -".run".length))}`;
-  }
-  return raw.split(".").map(titleCaseCommandSegment).join(": ");
-}
+type LabeledKeybindingCommand = Exclude<
+  (typeof STATIC_KEYBINDING_COMMANDS)[number],
+  | `thread.jump.${number}`
+  | `modelPicker.jump.${number}`
+  | (typeof METRIC_OPTIONS)[number]["command"]
+  | (typeof WINDOW_OPTIONS)[number]["command"]
+>;
 
-function titleCaseCommandSegment(segment: string): string {
-  const words: Array<string> = [];
-  for (const part of segment.replace(/([a-z0-9])([A-Z])/g, "$1 $2").split(/[-_\s]+/)) {
-    if (part.length > 0) {
-      words.push(part.slice(0, 1).toUpperCase() + part.slice(1));
-    }
+const KEYBINDING_COMMAND_LABELS: Record<LabeledKeybindingCommand, string> = {
+  "workspace.focusNext": "聚焦下一个工作空间区域",
+  "workspace.focusPrevious": "聚焦上一个工作空间区域",
+  "sidebar.toggle": "切换侧边栏",
+  "navigation.back": "后退",
+  "navigation.forward": "前进",
+  "terminal.toggle": "切换终端",
+  "terminal.split": "横向拆分终端",
+  "terminal.splitVertical": "纵向拆分终端",
+  "terminal.new": "新建终端",
+  "terminal.close": "关闭终端",
+  "rightPanel.toggle": "切换右侧面板",
+  "rightPanel.new": "在右侧面板新建标签页",
+  "threadPanel.toggle": "切换会话详情面板",
+  "rightPanel.toggleMaximized": "切换右侧面板最大化",
+  "rightPanel.close": "关闭右侧面板",
+  "view.reopenClosed": "重新打开已关闭的标签页",
+  "pullRequest.copyNumber": "复制拉取请求编号",
+  "diff.toggle": "切换差异视图",
+  "preview.toggle": "切换预览",
+  "preview.refresh": "刷新预览",
+  "preview.focusUrl": "聚焦预览地址栏",
+  "preview.zoomIn": "放大预览",
+  "preview.zoomOut": "缩小预览",
+  "preview.resetZoom": "重置预览缩放",
+  "commandPalette.toggle": "切换命令面板",
+  "filePicker.toggle": "切换文件选择器",
+  "projectSearch.toggle": "切换项目搜索",
+  "usage.open": "打开用量统计",
+  "theme.select": "选择主题",
+  "appearance.cycle": "切换外观模式",
+  "themeEditor.toggle": "切换主题编辑器",
+  "composer.stash": "暂存输入内容",
+  "composer.sendAlternate": "以另一种模式发送",
+  "composer.sendBackground": "在后台发送",
+  "composer.sendAndNewThread": "发送并新建会话",
+  "composer.dictation": "开始或结束语音输入",
+  "composer.host": "选择主机",
+  "composer.cycleHost": "切换主机",
+  "composer.effort": "选择推理强度",
+  "composer.increaseEffort": "提高推理强度",
+  "composer.decreaseEffort": "降低推理强度",
+  "composer.mode": "选择权限模式",
+  "composer.workspace": "选择工作空间",
+  "composer.previousWorktree": "选择上一个工作树",
+  "composer.branch": "选择分支",
+  "chat.new": "新建会话",
+  "chat.newLocal": "新建本地会话",
+  "chat.newWithoutProject": "新建独立会话",
+  "chat.find": "搜索会话",
+  "editor.openFavorite": "在首选编辑器中打开",
+  "modelPicker.toggle": "切换模型选择器",
+  "modelPicker.previousProvider": "切换到上一个提供方",
+  "modelPicker.nextProvider": "切换到下一个提供方",
+  "thread.stop": "停止会话",
+  "thread.steerQueuedMessage": "立即发送首条排队消息",
+  "thread.editQueuedMessage": "编辑最后一条排队消息",
+  "thread.previous": "切换到上一条会话",
+  "thread.next": "切换到下一条会话",
+  "thread.copyReference": "复制拉取请求或会话链接",
+  "thread.settle": "标记会话为已完成",
+  "thread.pin": "置顶会话",
+  "thread.undo": "撤销上一步会话操作",
+};
+
+export function commandLabel(command: KeybindingCommand): string {
+  const usageMetric = METRIC_OPTIONS.find((option) => option.command === command);
+  if (usageMetric) return `用量统计（${usageMetric.label}）`;
+  const usagePeriod = WINDOW_OPTIONS.find((option) => option.command === command);
+  if (usagePeriod) return `用量统计（${usagePeriod.label}）`;
+  const jump = /^(thread|modelPicker)\.jump\.([1-9])$/.exec(command);
+  if (jump) return `切换到第 ${jump[2]} 个${jump[1] === "thread" ? "会话" : "模型"}`;
+  if (command.startsWith("script.") && command.endsWith(".run")) {
+    return `运行脚本 ${command.slice("script.".length, -".run".length)}`;
   }
-  return words.join(" ");
+  return KEYBINDING_COMMAND_LABELS[command as LabeledKeybindingCommand] ?? command;
 }
 
 function recordedLayoutShortcutKey(

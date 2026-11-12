@@ -782,7 +782,7 @@ export const ModelPickerContent = memo(function ModelPickerContent(props: {
       setSearchQuery("");
       handleSelectInstance(next);
       announce(
-        next === "favorites" ? "Favorites" : (entryByInstanceId.get(next)?.displayName ?? next),
+        next === "favorites" ? "收藏的模型" : (entryByInstanceId.get(next)?.displayName ?? next),
         "model-picker",
       );
       return;
@@ -899,6 +899,7 @@ export const ModelPickerContent = memo(function ModelPickerContent(props: {
           >
             <ComboboxSearchInput
               ref={searchInputRef}
+              aria-label="搜索模型"
               placeholder="搜索模型…"
               value={searchQuery}
               onChange={(e) => {
@@ -1045,7 +1046,9 @@ export const ModelPickerContent = memo(function ModelPickerContent(props: {
               setupEntries={providerSetupEntries}
               updateRequiredNotices={updateRequiredNotices}
               emptyLabel={
-                selectedInstanceId === "favorites" && !isSearching ? "还没有喜欢的" : "没有找到模型"
+                selectedInstanceId === "favorites" && !isSearching
+                  ? "还没有收藏的模型"
+                  : "没有找到模型"
               }
               onRequestClose={onRequestClose}
               onOpenProviderSetup={onOpenProviderSetup}

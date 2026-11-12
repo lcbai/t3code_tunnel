@@ -29,6 +29,7 @@ export interface SecretSource {
 
 const NO_SECRET_SOURCES: ReadonlyArray<SecretSource> = [];
 const STORED_VALUE = "__stored__";
+const STORED_VALUE_LABEL = "直接输入";
 const decodeSecretReference = Schema.decodeUnknownOption(SecretReference);
 
 /** Secret providers a setting can point at; empty when the environment cannot read references. */
@@ -71,7 +72,9 @@ export function SecretSourceSelect(props: {
   const { value, sources } = props;
   const known = value === null || sources.some((source) => source.id === value);
   const title =
-    value === null ? "Value" : (sources.find((source) => source.id === value)?.label ?? value);
+    value === null
+      ? STORED_VALUE_LABEL
+      : (sources.find((source) => source.id === value)?.label ?? value);
   return (
     <Select
       value={value ?? STORED_VALUE}
@@ -94,7 +97,7 @@ export function SecretSourceSelect(props: {
       </SelectTrigger>
       <SelectPopup align="start" alignItemWithTrigger={false}>
         <SelectItem value={STORED_VALUE}>
-          <SourceLabel icon={TypeIcon} label="数值" />
+          <SourceLabel icon={TypeIcon} label={STORED_VALUE_LABEL} />
         </SelectItem>
         {sources.map((source) => (
           <SelectItem key={source.id} value={source.id}>
@@ -142,7 +145,7 @@ export function SecretSourceInput({
   const reference = secret !== undefined && secret.provider === provider ? secret.reference : "";
   const providerSource = sources.find((source) => source.id === provider);
   const definition = providerSource && builtInSecretProviderDefinitions.find(providerSource.kind);
-  const label = input["aria-label"] ?? "Secret";
+  const label = input["aria-label"] ?? "密钥";
   const source =
     sources.length === 0 && provider === null ? null : (
       <SecretSourceSelect

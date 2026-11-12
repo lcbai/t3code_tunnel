@@ -173,9 +173,9 @@ function RetentionControl({
 }
 
 const KEEP_WHEN_LABELS = {
-  "any-local-files": "Any local files",
-  "uncommitted-changes": "Uncommitted changes",
-  "tracked-changes": "Edited tracked files",
+  "any-local-files": "任何本地文件",
+  "uncommitted-changes": "未提交的更改",
+  "tracked-changes": "已修改的跟踪文件",
 } as const;
 
 function lastRunSummary(
@@ -691,9 +691,15 @@ export function WorktreeCleanupSection() {
                         </SelectValue>
                       </SelectTrigger>
                       <SelectPopup align="end" alignItemWithTrigger={false}>
-                        <SelectItem value="any-local-files">任何本地文件</SelectItem>
-                        <SelectItem value="uncommitted-changes">未承诺的更改</SelectItem>
-                        <SelectItem value="tracked-changes">已编辑的跟踪文件</SelectItem>
+                        <SelectItem value="any-local-files">
+                          {KEEP_WHEN_LABELS["any-local-files"]}
+                        </SelectItem>
+                        <SelectItem value="uncommitted-changes">
+                          {KEEP_WHEN_LABELS["uncommitted-changes"]}
+                        </SelectItem>
+                        <SelectItem value="tracked-changes">
+                          {KEEP_WHEN_LABELS["tracked-changes"]}
+                        </SelectItem>
                       </SelectPopup>
                     </Select>
                   }

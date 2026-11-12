@@ -25,10 +25,7 @@ export function useSettingsEnvironmentMenu(): AppBarMenu {
     items: [
       {
         id: "environments",
-        title:
-          selectedIds === null
-            ? "所有环境"
-            : `${selectedTargets.length} ${selectedTargets.length === 1 ? "environment" : "environments"}`,
+        title: selectedIds === null ? "所有环境" : `${selectedTargets.length} 个环境`,
         items: [
           {
             id: "all",
@@ -71,4 +68,4 @@ export function useSettingsEnvironmentMenu(): AppBarMenu {
 }
 
 const projectMenuLabel = (group: { readonly label: string; readonly archived: boolean }) =>
-  group.archived ? `${group.label} · Archived` : group.label;
+  group.archived ? `${group.label} · 已归档` : group.label;

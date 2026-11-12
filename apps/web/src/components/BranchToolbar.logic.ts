@@ -94,9 +94,9 @@ export function resolveEnvModeLabel(mode: EnvMode): string {
 }
 
 export const WORKTREE_SUBMODULES_LABELS: Record<WorktreeSubmodules, string> = {
-  recursive: "Recursive",
-  "top-level": "Top level only",
-  none: "Skip",
+  recursive: "递归初始化",
+  "top-level": "仅初始化顶层",
+  none: "跳过",
 };
 
 export function resolveCurrentWorkspaceLabel(activeWorktreePath: string | null): string {

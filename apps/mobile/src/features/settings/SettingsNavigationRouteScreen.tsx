@@ -68,7 +68,7 @@ export function SettingsNavigationRouteScreen() {
               </View>
               <IconButton
                 icon={hidden.includes(tab) ? "eye.slash" : "eye"}
-                accessibilityLabel={`${hidden.includes(tab) ? "Show" : "Hide"} ${WORKSPACE_TAB_LABELS[tab]}`}
+                accessibilityLabel={`${hidden.includes(tab) ? "显示" : "隐藏"}${WORKSPACE_TAB_LABELS[tab]}`}
                 disabled={!ready}
                 onPress={() =>
                   save({
@@ -83,7 +83,7 @@ export function SettingsNavigationRouteScreen() {
               />
               <IconButton
                 icon="arrow.up"
-                accessibilityLabel={`移动 ${WORKSPACE_TAB_LABELS[tab]} up`}
+                accessibilityLabel={`上移${WORKSPACE_TAB_LABELS[tab]}`}
                 disabled={!ready || index === 0}
                 onPress={() =>
                   save({
@@ -99,7 +99,7 @@ export function SettingsNavigationRouteScreen() {
               />
               <IconButton
                 icon="arrow.down"
-                accessibilityLabel={`移动 ${WORKSPACE_TAB_LABELS[tab]} down`}
+                accessibilityLabel={`下移${WORKSPACE_TAB_LABELS[tab]}`}
                 disabled={!ready || index === order.length - 1}
                 onPress={() =>
                   save({

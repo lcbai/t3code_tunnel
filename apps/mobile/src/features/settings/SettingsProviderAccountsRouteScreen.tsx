@@ -130,6 +130,15 @@ function canManageProvider(provider: ServerProvider) {
   );
 }
 
+const PROVIDER_AUTH_METHOD_LABELS = new Map([
+  ["Sign in with ChatGPT", "使用 ChatGPT 登录"],
+  ["Use a different ChatGPT account", "使用其他 ChatGPT 账号"],
+  ["Sign in with Cursor", "使用 Cursor 登录"],
+]);
+
+const providerAuthMethodLabel = (name: string) =>
+  PROVIDER_AUTH_METHOD_LABELS.get(name) ?? name.replace(/^ChatGPT account · /, "ChatGPT 账号 · ");
+
 function ProviderAccount({
   environment,
   provider,
@@ -247,22 +256,22 @@ function ProviderAccount({
     active || state?.phase === "failed" || state?.phase === "cancelled"
       ? state.message
       : !provider.enabled
-        ? "Turned off"
+        ? "已关闭"
         : signedIn
-          ? "Signed in"
+          ? "已登录"
           : isDiscovering
             ? "正在查找登录方式…"
             : needsExternalSetup
               ? "此提供方未提供应用内登录。请参照提供方文档完成设置。"
               : !provider.installed
-                ? "Not installed"
+                ? "未安装"
                 : usesCredentials
-                  ? "Connect to load models"
-                  : "Not signed in";
+                  ? "连接后加载模型"
+                  : "未登录";
   // A provider with several sign-in methods picks one from a menu on the same control.
   const methodActions: MenuAction[] = methods.map((method) => ({
     id: `method:${method.id}`,
-    title: method.name,
+    title: providerAuthMethodLabel(method.name),
   }));
   const removableMethods = methods.filter((method) => method.canRemove);
   const removeActions: MenuAction[] = removableMethods.length
@@ -273,7 +282,7 @@ function ProviderAccount({
           attributes: { disabled: disabled || active || !canRemoveMethod },
           subactions: removableMethods.map((method) => ({
             id: `remove:${method.id}`,
-            title: method.name,
+            title: providerAuthMethodLabel(method.name),
             attributes: { destructive: true, disabled: disabled || active || !canRemoveMethod },
           })),
         },
@@ -351,7 +360,7 @@ function ProviderAccount({
       label="文档"
       onPress={() => {
         void Linking.openURL(provider.setup!.documentationUrl!).catch(() =>
-          setError("Could not open the provider docs."),
+          setError("无法打开提供方文档。"),
         );
       }}
     />
@@ -369,12 +378,12 @@ function ProviderAccount({
     <Menu
       accessible
       accessibilityRole="button"
-      accessibilityLabel={`${name} account options`}
+      accessibilityLabel={`${name} 账号选项`}
       title={name}
       actions={accountActions}
       onPressAction={({ nativeEvent }) => onMenuAction(nativeEvent.event)}
     >
-      <ControlPill icon="ellipsis" accessibilityLabel={`${name} account options`} />
+      <ControlPill icon="ellipsis" accessibilityLabel={`${name} 账号选项`} />
     </Menu>
   ) : canSignIn && !signedIn && methodActions.length > 1 && !signInDisabled ? (
     <Menu

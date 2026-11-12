@@ -13,9 +13,9 @@ import { FoldedSettingsSection } from "./FoldedSettingsSection";
 import { searchableSetting } from "./settingsSearch";
 
 const preferences = [
-  { value: 100, label: "偏爱" },
-  { value: 50, label: "常规" },
-  { value: 25, label: "少时" },
+  { value: 100, label: "优先使用" },
+  { value: 50, label: "正常使用" },
+  { value: 25, label: "较少使用" },
   { value: 0, label: "仅手动" },
 ] as const;
 
@@ -102,7 +102,11 @@ export function LoadBalancingSettings({
               });
             }}
           >
-            <SelectTrigger size="xs" className="w-32" aria-label={`${environment.label}加载首选项`}>
+            <SelectTrigger
+              size="xs"
+              className="w-32"
+              aria-label={`${environment.label}负载均衡偏好`}
+            >
               <SelectValue />
             </SelectTrigger>
             <SelectPopup align="end" alignItemWithTrigger={false}>

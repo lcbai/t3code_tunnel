@@ -145,7 +145,7 @@ export function ProjectDefaultsSettings({ category }: { category: ProjectSetting
       }
       status={
         mixedModel
-          ? `${automaticModel ? "Automatic defaults differ." : "Defaults differ."} Select one environment or choose a shared model to edit effort.`
+          ? `${automaticModel ? "各环境自动选择的默认模型不同。" : "各环境的默认模型不同。"}选择单个环境或共同支持的模型后，即可调整推理强度。`
           : effortDisabledReason
       }
       resetAction={
@@ -164,9 +164,7 @@ export function ProjectDefaultsSettings({ category }: { category: ProjectSetting
               instanceEntries={entries}
               modelOptionsByInstance={modelOptions}
               triggerClassName={SETTINGS_PICKER_TRIGGER_CLASSNAME}
-              {...(mixedModel
-                ? { triggerLabel: automaticModel ? "Automatic (mixed)" : "Mixed" }
-                : {})}
+              {...(mixedModel ? { triggerLabel: automaticModel ? "自动（混合）" : "混合" } : {})}
               getModelDisabledReason={modelDisabledReason}
               onOpenProviderSetup={(instanceId) => {
                 if (representative)
@@ -235,8 +233,8 @@ export function ProjectDefaultsSettings({ category }: { category: ProjectSetting
                 value === "local" || value === "worktree"
                   ? resolveEnvModeLabel(value)
                   : unavailable
-                    ? "Unavailable"
-                    : "Mixed"
+                    ? "不可用"
+                    : "混合"
               }
             </SelectValue>
           </SelectTrigger>
@@ -275,11 +273,11 @@ export function ProjectDefaultsSettings({ category }: { category: ProjectSetting
               instanceEntries={entries}
               modelOptionsByInstance={fallbackModelOptions}
               triggerClassName={SETTINGS_PICKER_TRIGGER_CLASSNAME}
-              triggerAriaLabel="Fallback model"
+              triggerAriaLabel="备用模型"
               {...(mixedFallback
-                ? { triggerLabel: "Mixed" }
+                ? { triggerLabel: "混合" }
                 : settings.fallbackModelSelection === null
-                  ? { triggerLabel: "None" }
+                  ? { triggerLabel: "无" }
                   : {})}
               getModelDisabledReason={modelDisabledReason}
               onInstanceModelChange={(instanceId, model) => {
@@ -474,13 +472,13 @@ export function ProjectDefaultsSettings({ category }: { category: ProjectSetting
             description={
               isProjectScope
                 ? "在此工程中拉取请求从这种方法开始。"
-                : "拖动请求从这种方法开始。 上次选中的复用，无论您最近选择了哪种方法。"
+                : "为拉取请求预选合并方式。选择「上次选择」可沿用最近使用的方式。"
             }
             resetAction={
               settings.pullRequestMergeMethod !== null ? (
                 <SettingResetButton
                   label="默认合并方法"
-                  tooltip="重置为上次选中"
+                  tooltip="重置为上次选择"
                   onClick={() => updateSettings({ pullRequestMergeMethod: null })}
                 />
               ) : null
@@ -500,13 +498,13 @@ export function ProjectDefaultsSettings({ category }: { category: ProjectSetting
                       value === "merge" || value === "squash" || value === "rebase"
                         ? PULL_REQUEST_MERGE_METHOD_LABELS[value]
                         : value === "last"
-                          ? "Last selected"
-                          : "Mixed"
+                          ? "上次选择"
+                          : "混合"
                     }
                   </SelectValue>
                 </SelectTrigger>
                 <SelectPopup align="end" alignItemWithTrigger={false}>
-                  <SelectItem value="last">上次选中</SelectItem>
+                  <SelectItem value="last">上次选择</SelectItem>
                   <SelectItem value="merge">{PULL_REQUEST_MERGE_METHOD_LABELS.merge}</SelectItem>
                   <SelectItem value="squash">{PULL_REQUEST_MERGE_METHOD_LABELS.squash}</SelectItem>
                   <SelectItem value="rebase">{PULL_REQUEST_MERGE_METHOD_LABELS.rebase}</SelectItem>
@@ -563,8 +561,8 @@ export function WorktreeSubmodulesRow() {
                 isWorktreeSubmodules(value)
                   ? WORKTREE_SUBMODULES_LABELS[value]
                   : unavailable
-                    ? "Unavailable"
-                    : "Mixed"
+                    ? "不可用"
+                    : "混合"
               }
             </SelectValue>
           </SelectTrigger>

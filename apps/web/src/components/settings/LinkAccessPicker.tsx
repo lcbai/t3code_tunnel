@@ -19,7 +19,7 @@ export function LinkAccessPicker({
   return (
     <div className="space-y-1.5">
       <span id={labelId} className="block text-xs font-medium">
-        这儿的特工可能在那里做什么
+        此处的代理可在目标环境执行的操作
       </span>
       <Select
         value={value}
