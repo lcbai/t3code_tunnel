@@ -73,15 +73,25 @@ curl -fsS -o /dev/null -w 'HTTP %{http_code}\n' https://t3.icbai.com/.well-known
 
 下面以当前服务器同款的 Alibaba Cloud Linux 3 和 systemd 为例。先给穿透域名配置指向公网服务器的 DNS A 记录，并在云安全组及系统防火墙放行 TCP `80` 和 `443`。使用 IPv6 时，AAAA 记录和 Nginx 的 IPv6 HTTPS 监听也需可达。该域名应留给此穿透站点，Nginx 的 `http` 配置需包含 `/etc/nginx/conf.d/*.conf`。
 
-登录新服务器，替换域名和证书联系邮箱后执行。当前 `t3.icbai.com` 已部署，可直接使用下节的维护命令。
+当前 `t3.icbai.com` 已部署，可直接使用下节的维护命令。原服务器访问 GitHub Raw 的测试失败，FRP 和 Caddy 的 GitHub Releases 下载地址返回 HTTP 200。首次部署时可以在 Mac 上从仓库根目录复制脚本，替换下面的服务器地址。
 
 ```bash
-sudo dnf install -y nginx certbot ca-certificates curl openssl tar gzip shadow-utils util-linux
+scp infra/frp-tunnel/deploy-native.sh root@NEW_SERVER_IP:/root/t3-tunnel-deploy.sh
+ssh root@NEW_SERVER_IP
+```
 
-installer=$(mktemp)
-curl -fsSL https://raw.githubusercontent.com/lcbai/t3code_tunnel/main/infra/frp-tunnel/deploy-native.sh -o "$installer" &&
-  sudo bash "$installer" t3.example.com admin@example.com &&
-  rm -f "$installer"
+在新服务器上安装依赖并运行脚本。将示例域名和邮箱换成自己的值。
+
+```bash
+dnf install -y nginx certbot ca-certificates curl openssl tar gzip shadow-utils util-linux
+bash /root/t3-tunnel-deploy.sh t3.example.com admin@example.com
+```
+
+服务器可直连 GitHub Raw 时，也可以直接下载脚本。下载成功后执行相同的依赖安装和部署命令。
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/lcbai/t3code_tunnel/main/infra/frp-tunnel/deploy-native.sh \
+  -o /root/t3-tunnel-deploy.sh
 ```
 
 如果软件源缺少 `certbot`，先启用适合该发行版的软件源再安装依赖。启用了 SELinux 的服务器还需允许 Nginx 连接到 Caddy 的 loopback 端口，可以在看到相关 SELinux 拒绝后按主机策略配置。当前服务器的 SELinux 处于 Disabled 状态。[阿里云软件源说明](https://www.alibabacloud.com/help/en/ecs/user-guide/manage-and-use-linux-software-repositories)
