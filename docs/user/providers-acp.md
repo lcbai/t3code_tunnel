@@ -28,6 +28,14 @@ provider instance's environment overrides to use ACP v1.
 Search only shows agents that can run on the connected server. Registry agents are third-party
 code; review an agent's source and license before adding it.
 
+### Qoder CLI
+
+Search for **Qoder CLI** in the ACP Registry and add it. The environment needs Node.js and npm
+for the managed installation. Use **Sign in** on the provider card, or run `qoder login` on the
+environment if Qoder CLI is already installed there. To use a Qoder personal access token, set
+`QODER_PERSONAL_ACCESS_TOKEN` in the instance's environment settings using a secret source.
+See [Qoder's ACP documentation](https://docs.qoder.com/zh/cli/acp).
+
 ## Add a local command
 
 In **Settings → Providers → Add provider**, select **Show more**, then **Local ACP command**. Enter the executable

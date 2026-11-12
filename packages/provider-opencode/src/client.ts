@@ -8,6 +8,15 @@ export const openCodeClient = defineProviderClient({
   label: "OpenCode",
   acpRegistryAgentIds: ["opencode", "opencode-v2"],
   settingsSchema: OpenCodeSettings,
+  environmentFields: [
+    {
+      name: "ARK_CODING_PLAN_API_KEY",
+      label: "火山方舟 Coding Plan 密钥",
+      description: "为 T3 Code 启动的 OpenCode 添加豆包模型。请填写套餐专属 API 密钥。",
+      placeholder: "粘贴 API 密钥",
+      sensitive: true,
+    },
+  ],
   icon: {
     viewBox: "0 0 32 40",
     fill: { light: "#211E1E", dark: "#F1ECEC" },

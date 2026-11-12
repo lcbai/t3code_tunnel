@@ -44,6 +44,16 @@ fail, check the URL, credentials, and OpenCode version, then refresh provider st
 After a lost connection, send another prompt to reconnect to the same OpenCode
 session.
 
+## 豆包与火山方舟 Coding Plan
+
+在桌面或网页打开 **设置 → 代理提供方 → OpenCode**，留空服务器地址，在 OpenCode 的
+**设置**中填写**火山方舟 Coding Plan 密钥**。使用方舟 Coding Plan 套餐的专属密钥。
+刷新提供方状态，然后在新建会话时选用 OpenCode 下的豆包模型，例如
+`volcengine-coding-plan/doubao-seed-evolving`。配对到同一环境的手机也可以选择这些模型。
+
+连接已有 OpenCode 服务器时，在该服务器上配置方舟套餐，再刷新 T3 Code 的模型列表。
+[火山方舟 OpenCode 配置指南](https://console.volcengine.com/ark/region%3Acn-beijing/docs/coding-plan-personal-ai-opencode)
+
 ## Approvals
 
 OpenCode follows the shared [permission modes](./permission-modes.md). **Auto** has

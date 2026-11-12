@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vite-plus/test";
+import { assert, describe, expect, it } from "vite-plus/test";
+import { getProviderClient } from "@t3tools/client-runtime/provider-clients";
 import { SecretProviderId, type ServerProviderModel } from "@t3tools/contracts";
 
 import {
@@ -46,18 +47,28 @@ describe("provider environment helpers", () => {
     sensitive: true,
   };
 
-  it("writes dedicated provider secrets as sensitive environment variables", () => {
-    expect(
-      nextProviderEnvironmentWithFieldValue(
-        [{ name: "EXTRA_FLAG", value: "1", sensitive: false }],
-        cursorApiKeyField,
-        "  cursor-key  ",
-      ),
-    ).toEqual([
-      { name: "EXTRA_FLAG", value: "1", sensitive: false },
-      { name: "CURSOR_API_KEY", value: "cursor-key", sensitive: true },
-    ]);
-  });
+  it.each([
+    ["cursor", "CURSOR_API_KEY"],
+    ["opencode", "ARK_CODING_PLAN_API_KEY"],
+  ] as const)(
+    "writes dedicated provider secrets as sensitive environment variables for %s",
+    (driver, name) => {
+      const field = getProviderClient(driver)?.environmentFields?.find(
+        (entry) => entry.name === name,
+      );
+      assert.isDefined(field);
+      expect(
+        nextProviderEnvironmentWithFieldValue(
+          [{ name: "EXTRA_FLAG", value: "1", sensitive: false }],
+          field,
+          "  test-key  ",
+        ),
+      ).toEqual([
+        { name: "EXTRA_FLAG", value: "1", sensitive: false },
+        { name, value: "test-key", sensitive: true },
+      ]);
+    },
+  );
 
   it("replaces redacted provider secrets without preserving redaction markers", () => {
     expect(

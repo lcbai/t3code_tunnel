@@ -234,7 +234,7 @@ class T3WorkspaceNavigationView(
                 role = Role.Tab,
                 onClick = { onTabSelected(mapOf("tab" to tab)) },
               )
-              .semantics { contentDescription = expandedTabTitle(tab) }
+              .semantics { contentDescription = tabTitle(tab) }
               .padding(4.dp)
               .background(if (selected) Color(indicatorColor) else Color.Transparent, CircleShape),
             contentAlignment = Alignment.Center,
@@ -310,7 +310,7 @@ class T3WorkspaceNavigationView(
             onClick = { expanded = !expanded },
             modifier = Modifier.semantics {
               contentDescription =
-                if (expanded) "Collapse navigation rail" else "Expand navigation rail"
+                if (expanded) "收起侧边导航" else "展开侧边导航"
             },
           ) {
             Icon(
@@ -382,7 +382,7 @@ class T3WorkspaceNavigationView(
   @Composable
   private fun railItem(tab: String, fraction: Float, onClick: () -> Unit) {
     val selected = selectedTab == tab
-    val title = expandedTabTitle(tab)
+    val title = tabTitle(tab)
     val tint = Color(if (selected) selectedColor else unselectedColor)
     Box(
       Modifier
@@ -413,14 +413,11 @@ class T3WorkspaceNavigationView(
   }
 
   private fun tabTitle(tab: String) = when (tab) {
-    "threads" -> "Chats"
-    "pullRequests" -> "Pulls"
-    "usage" -> "Usage"
-    else -> "Settings"
+    "threads" -> "会话"
+    "pullRequests" -> "拉取请求"
+    "usage" -> "用量"
+    else -> "设置"
   }
-
-  private fun expandedTabTitle(tab: String) =
-    if (tab == "pullRequests") "Pull Requests" else tabTitle(tab)
 
   @Composable
   private fun tabIconPainter(tab: String) = painterResource(
