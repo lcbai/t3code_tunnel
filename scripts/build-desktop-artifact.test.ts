@@ -572,6 +572,33 @@ it.layer(NodeServices.layer)("build-desktop-artifact", (it) => {
     }),
   );
 
+  it.effect("uses ad hoc signing for local macOS artifacts", () =>
+    Effect.gen(function* () {
+      const local = yield* createBuildConfig(
+        "mac",
+        "dmg",
+        "0.1.0",
+        false,
+        false,
+        undefined,
+        undefined,
+      );
+      const release = yield* createBuildConfig(
+        "mac",
+        "dmg",
+        "0.1.0",
+        true,
+        false,
+        undefined,
+        undefined,
+      );
+
+      assert.include(local.mac, { identity: "-", hardenedRuntime: false, notarize: false });
+      assert.notProperty(release.mac, "identity");
+      assert.property(release.mac, "sign");
+    }),
+  );
+
   // pnpm writes "set this to true or false" placeholders into allowBuilds when a
   // tarball changes. pnpm ignores them, but the release build decode rejects them.
   it.effect("decodes the repo allowBuilds and every file: tarball it names exists", () =>
@@ -1572,7 +1599,7 @@ it.layer(NodeServices.layer)("build-desktop-artifact", (it) => {
   });
 
   it("wraps unknown passkey signing configuration defects without copying cause text", () => {
-    const secret = "do-not-retain";
+    const secret = "test-secret";
     const cause = new Error(secret);
     const error = MacPasskeySigningConfigurationResolutionError.fromCause(cause);
 
