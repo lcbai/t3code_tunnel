@@ -69,6 +69,57 @@ curl -fsS -o /dev/null -w 'HTTP %{http_code}\n' https://t3.icbai.com/.well-known
 
 检查顺序是域名和 TLS、Nginx 转发、Caddy 分流、FRP 密钥与控制连接、桌面端 T3 server。环境发现接口返回成功且桌面显示已连接后，再检查手机配对与授权。服务器配置和密钥由服务器运维管理，交接时使用已授权的密钥存取方式。
 
+### 新服务器首次部署命令
+
+下面以当前服务器同款的 Alibaba Cloud Linux 3 和 systemd 为例。先给穿透域名配置指向公网服务器的 DNS A 记录，并在云安全组及系统防火墙放行 TCP `80` 和 `443`。使用 IPv6 时，AAAA 记录和 Nginx 的 IPv6 HTTPS 监听也需可达。该域名应留给此穿透站点，Nginx 的 `http` 配置需包含 `/etc/nginx/conf.d/*.conf`。
+
+登录新服务器，替换域名和证书联系邮箱后执行。当前 `t3.icbai.com` 已部署，可直接使用下节的维护命令。
+
+```bash
+sudo dnf install -y nginx certbot ca-certificates curl openssl tar gzip shadow-utils util-linux
+
+installer=$(mktemp)
+curl -fsSL https://raw.githubusercontent.com/lcbai/t3code_tunnel/main/infra/frp-tunnel/deploy-native.sh -o "$installer" &&
+  sudo bash "$installer" t3.example.com admin@example.com &&
+  rm -f "$installer"
+```
+
+如果软件源缺少 `certbot`，先启用适合该发行版的软件源再安装依赖。启用了 SELinux 的服务器还需允许 Nginx 连接到 Caddy 的 loopback 端口，可以在看到相关 SELinux 拒绝后按主机策略配置。当前服务器的 SELinux 处于 Disabled 状态。[阿里云软件源说明](https://www.alibabacloud.com/help/en/ecs/user-guide/manage-and-use-linux-software-repositories)
+
+脚本下载并校验固定版本的 `frps` 和 Caddy，创建服务用户、配置和 systemd 服务。FRP 密钥只在文件缺失时生成。Nginx 先提供 ACME HTTP 验证路径，Certbot 通过 webroot 签发证书后再启用 HTTPS 反向代理。证书续期由 `certbot-renew.timer` 调度，续期成功时验证并重载 Nginx。已有不同的站点或穿透配置时脚本会停止，避免覆盖。证书签发失败时，修好 DNS 或端口后可用同一命令重试。[原生部署脚本](../../infra/frp-tunnel/deploy-native.sh) · [FRP 发布包](https://github.com/fatedier/frp/releases/tag/v0.72.0) · [Caddy 发布包](https://github.com/caddyserver/caddy/releases/tag/v2.11.9) · [Certbot webroot 与续期](https://eff-certbot.readthedocs.io/en/stable/using.html)
+
+部署完成后，在服务器的可信终端读取 FRP 密钥，填到电脑端的 **配置穿透**。域名使用完整的 `https://` 地址，手机扫码使用电脑生成的一次性码。
+
+```sh
+sudo cat /etc/t3-tunnel/frps/token
+```
+
+### 已部署服务器的维护命令
+
+下面在服务器上执行。前四条验证服务配置和运行状态，最后一条使用 Let's Encrypt 测试环境验证续期流程。
+
+```sh
+sudo runuser -u t3-frps -- /usr/local/libexec/t3-tunnel/frps verify -c /etc/t3-tunnel/frps/frps.toml
+sudo /usr/local/libexec/t3-tunnel/caddy validate --config /etc/t3-tunnel/Caddyfile --adapter caddyfile
+sudo nginx -t
+sudo systemctl status nginx t3-caddy t3-frps certbot-renew.timer --no-pager
+sudo certbot renew --cert-name t3.icbai.com --dry-run
+```
+
+修改了某个组件的配置时，先验证相应配置，再执行对应的重启或重载命令。重启穿透服务会短暂断开已连接设备，原授权仍可在恢复后重连。
+
+```sh
+sudo systemctl restart t3-frps
+sudo systemctl restart t3-caddy
+sudo nginx -t && sudo systemctl reload nginx
+```
+
+部署后从外部访问环境发现接口。桌面尚未注册域名时，HTTP 404 可以是正常结果。桌面显示 **已连接** 后，接口应返回 HTTP 200，再在手机上扫码验证。
+
+```sh
+curl -sS -o /dev/null -w 'HTTP %{http_code}\n' https://t3.icbai.com/.well-known/t3/environment
+```
+
 ### 仓库中的 Compose 示例
 
 [`infra/frp-tunnel`](../../infra/frp-tunnel/) 是可供新服务器采用的部署示例。示例直接由 Caddy 接管公网 `80` 和 `443` 并申请证书，容器内 `frps` 使用 `7000` 和 `8080`。把域名写入本地 `.env`，用 `.env.token` 保存生成的密钥。当前实例采用上面的原生服务与 Nginx，接手时先确认正在维护哪套部署。[Compose 部署步骤](../user/remote-access.md#自建-frp-穿透)
