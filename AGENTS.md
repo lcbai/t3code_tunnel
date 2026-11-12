@@ -210,3 +210,4 @@ Architecture and its constraints: `docs/internals/overview.md`. Glossary: `docs/
 ## Additional tips
 
 - Security is important, but should not be over-indexed on, especially for dev mode/maintainer-only features.
+- Use placeholders for the operator's server IP addresses and personal local directory paths in replies, deployment examples, and shared documentation.
