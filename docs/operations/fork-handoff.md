@@ -24,7 +24,7 @@
 
 ## 现在如何连接手机
 
-1. 公网服务器准备 HTTPS 域名和 FRP 密钥。当前实例使用 `https://t3.icbai.com`。每个域名接入一台电脑，这台电脑可以授权多部手机。
+1. 公网服务器准备 HTTPS 域名和 FRP 密钥。以下示例用 `https://t3.example.com`，操作时替换为自己的穿透域名。每个域名接入一台电脑，这台电脑可以授权多部手机。
 2. 在电脑打开 **设置 → 共享与访问 → FRP 穿透 → 配置穿透**，填入完整的 HTTPS 地址和服务器提供的密钥，点 **保存并连接**。
 3. 状态显示 **已连接** 后点 **手机扫码配对**。手机进入 **设置 → 环境 → ＋**，扫码后点右上角勾号确认。Android 和 iOS 共用直接配对流程。
 4. 后续直接打开手机的已保存环境。电脑需要开机、保持可联网并运行 T3 Code。桌面重启后会恢复已保存的穿透设置。穿透掉线恢复后，同一地址和环境可用已有设备授权重连。
@@ -49,11 +49,11 @@
 
 ### 当前运行的原生部署
 
-服务器沿用现有 Nginx，对外提供 `t3.icbai.com` 的 HTTP 和 HTTPS。Nginx 使用 Let's Encrypt 证书并转发 WebSocket Upgrade 和原始 Host，后面的 Caddy 与 FRP 端口只监听 loopback。服务由 systemd 管理。
+服务器沿用现有 Nginx，对外提供穿透域名的 HTTP 和 HTTPS。下文的 `t3.example.com` 是占位符。Nginx 使用 Let's Encrypt 证书并转发 WebSocket Upgrade 和原始 Host，后面的 Caddy 与 FRP 端口只监听 loopback。服务由 systemd 管理。
 
 | 组件           | 当前部署位置和职责                                                                                                                                  |
 | -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Nginx          | `nginx.service` 对外监听 TCP `80` 和 `443`。站点配置在 `/etc/nginx/conf.d/t3.icbai.com.conf`，HTTPS 请求转发至 `127.0.0.1:18081`                    |
+| Nginx          | `nginx.service` 对外监听 TCP `80` 和 `443`。站点配置在 `/etc/nginx/conf.d/t3.example.com.conf`，HTTPS 请求转发至 `127.0.0.1:18081`                  |
 | Caddy `2.11.9` | `t3-caddy.service`，配置 `/etc/t3-tunnel/Caddyfile`。在 `127.0.0.1:18081` 处理该站点，将 `/~!frp` 分给 FRP 控制端口，其余请求送到 FRP HTTP 虚拟主机 |
 | FRP `0.72.0`   | `t3-frps.service`，配置 `/etc/t3-tunnel/frps/frps.toml`。控制端口 `127.0.0.1:17000`，HTTP 虚拟主机 `127.0.0.1:18080`，启用 token 认证               |
 | 二进制和续期   | `frps` 与 `caddy` 位于 `/usr/local/libexec/t3-tunnel/`，证书续期由 `certbot-renew.timer` 调度                                                       |
@@ -64,7 +64,7 @@
 systemctl status nginx t3-caddy t3-frps --no-pager
 systemctl list-timers --all certbot-renew.timer
 journalctl -u t3-caddy -u t3-frps -n 80 --no-pager
-curl -fsS -o /dev/null -w 'HTTP %{http_code}\n' https://t3.icbai.com/.well-known/t3/environment
+curl -fsS -o /dev/null -w 'HTTP %{http_code}\n' https://t3.example.com/.well-known/t3/environment
 ```
 
 检查顺序是域名和 TLS、Nginx 转发、Caddy 分流、FRP 密钥与控制连接、桌面端 T3 server。环境发现接口返回成功且桌面显示已连接后，再检查手机配对与授权。服务器配置和密钥由服务器运维管理，交接时使用已授权的密钥存取方式。
@@ -73,7 +73,7 @@ curl -fsS -o /dev/null -w 'HTTP %{http_code}\n' https://t3.icbai.com/.well-known
 
 下面以当前服务器同款的 Alibaba Cloud Linux 3 和 systemd 为例。先给穿透域名配置指向公网服务器的 DNS A 记录，并在云安全组及系统防火墙放行 TCP `80` 和 `443`。使用 IPv6 时，AAAA 记录和 Nginx 的 IPv6 HTTPS 监听也需可达。该域名应留给此穿透站点，Nginx 的 `http` 配置需包含 `/etc/nginx/conf.d/*.conf`。
 
-当前 `t3.icbai.com` 已部署，可直接使用下节的维护命令。原服务器访问 GitHub Raw 的测试失败，FRP 和 Caddy 的 GitHub Releases 下载地址返回 HTTP 200。首次部署时可以在 Mac 上从仓库根目录复制脚本，替换下面的服务器地址。
+已有部署时使用下节的维护命令。原部署环境访问 GitHub Raw 的测试失败，FRP 和 Caddy 的 GitHub Releases 下载地址返回 HTTP 200。首次部署时可以在 Mac 上从仓库根目录复制脚本，替换下面的服务器地址。
 
 ```bash
 scp infra/frp-tunnel/deploy-native.sh root@NEW_SERVER_IP:/root/t3-tunnel-deploy.sh
@@ -106,14 +106,14 @@ sudo cat /etc/t3-tunnel/frps/token
 
 ### 已部署服务器的维护命令
 
-下面在服务器上执行。前四条验证服务配置和运行状态，最后一条使用 Let's Encrypt 测试环境验证续期流程。
+下面在服务器上执行，先将 `t3.example.com` 换成实际域名。前四条验证服务配置和运行状态，最后一条使用 Let's Encrypt 测试环境验证续期流程。
 
 ```sh
 sudo runuser -u t3-frps -- /usr/local/libexec/t3-tunnel/frps verify -c /etc/t3-tunnel/frps/frps.toml
 sudo /usr/local/libexec/t3-tunnel/caddy validate --config /etc/t3-tunnel/Caddyfile --adapter caddyfile
 sudo nginx -t
 sudo systemctl status nginx t3-caddy t3-frps certbot-renew.timer --no-pager
-sudo certbot renew --cert-name t3.icbai.com --dry-run
+sudo certbot renew --cert-name t3.example.com --dry-run
 ```
 
 修改了某个组件的配置时，先验证相应配置，再执行对应的重启或重载命令。重启穿透服务会短暂断开已连接设备，原授权仍可在恢复后重连。
@@ -127,7 +127,7 @@ sudo nginx -t && sudo systemctl reload nginx
 部署后从外部访问环境发现接口。桌面尚未注册域名时，HTTP 404 可以是正常结果。桌面显示 **已连接** 后，接口应返回 HTTP 200，再在手机上扫码验证。
 
 ```sh
-curl -sS -o /dev/null -w 'HTTP %{http_code}\n' https://t3.icbai.com/.well-known/t3/environment
+curl -sS -o /dev/null -w 'HTTP %{http_code}\n' https://t3.example.com/.well-known/t3/environment
 ```
 
 ### 仓库中的 Compose 示例
@@ -177,6 +177,7 @@ f94633a95527ba907ea995420ac31004d783786ba05cac25e3aef568acd04787  T3Code-ios-uns
 - **改构建**。Android 语音转写使用的 ML Kit alpha2 需要兼容 Kotlin 2.4 元数据，Expo Android 配置固定到 Kotlin `2.4.0`。在该编译器上，`expo-quick-actions` 的图标模块需要显式返回类型。对应补丁、版本 override 和 lockfile 一起维护。Windows 文件数量检查保留 80 个的上限，独立排除生成的 `resources/server-compile-cache` 目录。首次原生 Windows 打包的 90 个文件中有 22 个是该缓存，修复后其余 68 个通过上限和运行时验证。[Android 配置](../../apps/mobile/app.config.ts) · [Kotlin 兼容补丁](../../patches/expo-quick-actions@6.0.2.patch) · [桌面打包脚本](../../scripts/build-desktop-artifact.ts)
 - **本批验证范围**。已校验四个安装包的完整性。Android 校验签名和内置 JS，iOS 核对真机架构与 JS，Mac 校验 DMG 并确认资源中的 ARM64 `frpc`，Windows 核对 PE 和打包运行时。真机安装、实际 iOS 签名和 Windows WSL 模式属于另外的验证场景。
 - **修改与推送**。先读 [仓库指引](../../AGENTS.md)。使用隔离开发状态和已有的针对性测试，推送前运行 `vp run check:changed`。汉化变更记得同步用户可见标签、搜索词、无障碍名称和对应测试。部分上游文档仍有 T3 Connect 旧描述，核对现行代码和这份交接后再使用。
+- **隐私检查**。仓库的 Vite+ 钩子在 `git push` 前检查待上传提交及其文件、提交信息和标签。按正常的工作区安装流程启用钩子。检查识别常见明文凭据、IP、个人目录和敏感文件，也匹配 Git 本地 `info/t3-private-values` 中逐行记录的私有值。这个文件应只保存在 Git 本地目录。共享内容统一使用占位符，推送前也要人工检查附件、截图和扫描规则难以识别的私人信息。[推送检查脚本](../../.vite-hooks/check-push-privacy.mjs)
 
 ## 提交索引
 

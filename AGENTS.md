@@ -210,4 +210,5 @@ Architecture and its constraints: `docs/internals/overview.md`. Glossary: `docs/
 ## Additional tips
 
 - Security is important, but should not be over-indexed on, especially for dev mode/maintainer-only features.
-- Use placeholders for the operator's server IP addresses and personal local directory paths in replies, deployment examples, and shared documentation.
+- Keep operator IPs, hostnames, personal paths and contact details, tokens, AK/SK, passwords, cookies, private keys, and other private data out of Git, including filenames and commit or tag metadata. Use placeholders in replies, examples, and shared documentation. Keep any private match values in local Git metadata only.
+- Let the Vite+ pre-push privacy check run on every upload. Review pending changes for private data the pattern check may miss. Use a public noreply identity for project commits and tags.

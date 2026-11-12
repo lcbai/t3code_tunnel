@@ -1,0 +1,11 @@
+#!/bin/sh
+
+if ! command -v node >/dev/null 2>&1; then
+  printf '%s\n' '推送已阻止。隐私检查需要 Node.js。' >&2
+  exit 1
+fi
+if [ ! -r .vite-hooks/check-push-privacy.mjs ]; then
+  printf '%s\n' '推送已阻止。隐私检查脚本不可读。' >&2
+  exit 1
+fi
+exec node .vite-hooks/check-push-privacy.mjs "$@"
