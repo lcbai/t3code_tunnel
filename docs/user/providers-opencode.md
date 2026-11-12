@@ -51,6 +51,10 @@ session.
 刷新提供方状态，然后在新建会话时选用 OpenCode 下的豆包模型，例如
 `volcengine-coding-plan/doubao-seed-evolving`。配对到同一环境的手机也可以选择这些模型。
 
+OpenCode 2.0.28 可以自动发现方舟套餐模型。使用 OpenCode 1.14.19 时，先按下方指南
+在 OpenCode 中配置 `volcengine-coding-plan`，并用 `{env:ARK_CODING_PLAN_API_KEY}` 引用
+T3 Code 设置中的密钥。
+
 连接已有 OpenCode 服务器时，在该服务器上配置方舟套餐，再刷新 T3 Code 的模型列表。
 [火山方舟 OpenCode 配置指南](https://console.volcengine.com/ark/region%3Acn-beijing/docs/coding-plan-personal-ai-opencode)
 
