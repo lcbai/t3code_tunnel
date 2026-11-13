@@ -20,6 +20,7 @@ import * as Ref from "effect/Ref";
 import * as Result from "effect/Result";
 import * as Schema from "effect/Schema";
 import * as Semaphore from "effect/Semaphore";
+import * as HttpClient from "effect/http/HttpClient";
 import * as ChildProcessSpawner from "effect/process/ChildProcessSpawner";
 
 import * as ProviderHost from "@t3tools/provider-core/server/ProviderHost";
@@ -37,7 +38,12 @@ import {
   providerModelsFromSettings,
   providerProbeEnvironment,
 } from "@t3tools/provider-core/server/snapshotProbe";
-import { makeManualOnlyProviderMaintenanceCapabilities } from "@t3tools/provider-core/server/maintenanceResolver";
+import * as ProviderLatestVersions from "@t3tools/provider-core/server/ProviderLatestVersions";
+import {
+  enrichProviderSnapshotWithVersionAdvisory,
+  makeCachedProviderMaintenanceResolution,
+  makeManualOnlyProviderMaintenanceCapabilities,
+} from "@t3tools/provider-core/server/maintenanceResolver";
 import {
   haveProviderSnapshotSettingsChanged,
   makeProviderSnapshotSettingsSource,
@@ -60,6 +66,11 @@ import * as AcpRegistrySupport from "./AcpRegistrySupport.ts";
 import * as AcpRegistryRuntimeCoordinator from "./AcpRegistryRuntimeCoordinator.ts";
 import * as AcpRegistryAuth from "./auth.ts";
 import * as AcpRegistryAuthenticationState from "./authenticationState.ts";
+import {
+  isQoderCnLocalSettings,
+  readQoderCnInstalledVersion,
+  resolveQoderCnMaintenance,
+} from "./qoderCnMaintenance.ts";
 
 const DRIVER_KIND = ProviderDriverKind.make("acpRegistry");
 const decodeSettings = Schema.decodeSync(AcpRegistrySettings);
@@ -471,6 +482,8 @@ export const checkAcpRegistryProviderReadiness = Effect.fn(
 export type AcpRegistryDriverEnv =
   | AcpRegistryAdapterV2DriverEnv
   | Digest.Digest
+  | HttpClient.HttpClient
+  | ProviderLatestVersions.ProviderLatestVersions
   | ProviderHost.ProviderHost;
 
 export const AcpRegistryDriver: ProviderDriver<AcpRegistrySettings, AcpRegistryDriverEnv> = {
@@ -505,6 +518,8 @@ export const AcpRegistryDriver: ProviderDriver<AcpRegistrySettings, AcpRegistryD
     }
     const random = yield* SecureRandom.SecureRandom;
     const spawner = yield* ChildProcessSpawner.ChildProcessSpawner;
+    const httpClient = yield* HttpClient.HttpClient;
+    const latestVersions = yield* ProviderLatestVersions.ProviderLatestVersions;
     const hostEnvironment = yield* HostProcess.Environment;
     const host = yield* ProviderHost.ProviderHost;
     const continuationIdentity = defaultProviderContinuationIdentity({
@@ -522,6 +537,17 @@ export const AcpRegistryDriver: ProviderDriver<AcpRegistrySettings, AcpRegistryD
       environment,
       hostEnvironment,
     );
+    const qoderCn = isQoderCnLocalSettings(effectiveConfig);
+    const resolveQoderCn = catalog.resolve(effectiveConfig, host.paths.cwd, processEnvironment);
+    const resolveMaintenance = qoderCn
+      ? yield* makeCachedProviderMaintenanceResolution(
+          resolveQoderCn.pipe(
+            Effect.flatMap(({ spawn }) => resolveQoderCnMaintenance(spawn)),
+            Effect.orElseSucceed(() => MAINTENANCE),
+            Effect.provideContext(yield* Effect.context<AcpRegistryDriverEnv>()),
+          ),
+        )
+      : () => Effect.succeed(MAINTENANCE);
     const orchestrationAdapter = yield* AcpRegistryAdapterV2Driver.create({
       instanceId,
       displayName,
@@ -586,10 +612,24 @@ export const AcpRegistryDriver: ProviderDriver<AcpRegistrySettings, AcpRegistryD
             }),
           );
     });
-    const checkProvider = checkAcpRegistryProviderReadiness(readinessInput).pipe(
+    const checkReadiness = checkAcpRegistryProviderReadiness(readinessInput).pipe(
       Effect.provideService(AcpRegistrySupport.AcpRegistryCatalog, catalog),
       Effect.flatMap(withLiveRuntimeState),
     );
+    const checkProvider = qoderCn
+      ? checkReadiness.pipe(
+          Effect.filterOrElse(
+            (provider) => !provider.enabled || !provider.installed,
+            (provider) =>
+              resolveQoderCn.pipe(
+                Effect.flatMap(({ spawn }) => readQoderCnInstalledVersion(spawn)),
+                Effect.orElseSucceed(() => null),
+                Effect.provideService(ChildProcessSpawner.ChildProcessSpawner, spawner),
+                Effect.map((version) => ({ ...provider, version })),
+              ),
+          ),
+        )
+      : checkReadiness;
     const enrichProvider = checkAcpRegistryProviderStatus(
       {
         ...readinessInput,
@@ -629,7 +669,8 @@ export const AcpRegistryDriver: ProviderDriver<AcpRegistrySettings, AcpRegistryD
           generation: cacheState.generation,
         };
       }
-      const enriched = yield* enrichProvider;
+      const discovered = yield* enrichProvider;
+      const enriched = qoderCn ? { ...discovered, version: baseSnapshot.version } : discovered;
       if (enriched.status === "ready") {
         yield* Ref.update(enrichmentCache, (current) =>
           current.generation === cacheState.generation
@@ -649,13 +690,14 @@ export const AcpRegistryDriver: ProviderDriver<AcpRegistrySettings, AcpRegistryD
     const snapshot = yield* makeManagedServerProvider<
       ProviderSnapshotSettings<AcpRegistrySettings>
     >({
-      resolveMaintenance: () => Effect.succeed(MAINTENANCE),
+      resolveMaintenance,
       getSettings: snapshotSettings.getSettings,
       streamSettings: snapshotSettings.streamSettings,
       haveSettingsChanged: haveProviderSnapshotSettingsChanged,
-      initialSnapshot: () => checkProvider,
+      initialSnapshot: () => checkReadiness,
       checkProvider,
       enrichSnapshot: Effect.fn("enrichSnapshot")(function ({
+        settings,
         snapshot,
         getSnapshot,
         publishSnapshot,
@@ -679,7 +721,15 @@ export const AcpRegistryDriver: ProviderDriver<AcpRegistrySettings, AcpRegistryD
                   Ref.get(enrichmentCache).pipe(
                     Effect.flatMap((current) =>
                       current.generation === generation
-                        ? withLiveRuntimeState(provider).pipe(Effect.flatMap(publishSnapshot))
+                        ? getSnapshot.pipe(
+                            Effect.flatMap(({ versionAdvisory }) =>
+                              withLiveRuntimeState({
+                                ...provider,
+                                ...(versionAdvisory === undefined ? {} : { versionAdvisory }),
+                              }),
+                            ),
+                            Effect.flatMap(publishSnapshot),
+                          )
                         : Effect.void,
                     ),
                   ),
@@ -687,7 +737,30 @@ export const AcpRegistryDriver: ProviderDriver<AcpRegistrySettings, AcpRegistryD
             }),
           ),
         );
-        if (Option.isNone(runtimeCoordinator)) return publishEnrichment;
+        const publishVersionAdvisory = qoderCn
+          ? resolveMaintenance().pipe(
+              Effect.flatMap((capabilities) =>
+                enrichProviderSnapshotWithVersionAdvisory(snapshot, capabilities, {
+                  enableProviderUpdateChecks: settings.enableProviderUpdateChecks,
+                }),
+              ),
+              Effect.provideService(HttpClient.HttpClient, httpClient),
+              Effect.provideService(ProviderLatestVersions.ProviderLatestVersions, latestVersions),
+              Effect.flatMap(({ versionAdvisory }) =>
+                liveSnapshotSemaphore.withPermit(
+                  getSnapshot.pipe(
+                    Effect.flatMap((current) => publishSnapshot({ ...current, versionAdvisory })),
+                  ),
+                ),
+              ),
+            )
+          : Effect.void;
+        if (Option.isNone(runtimeCoordinator)) {
+          return Effect.all([publishEnrichment, publishVersionAdvisory], {
+            concurrency: "unbounded",
+            discard: true,
+          });
+        }
 
         const publishLiveCommands = runtimeCoordinator.value.watchAvailableCommands(
           instanceId,
@@ -735,7 +808,13 @@ export const AcpRegistryDriver: ProviderDriver<AcpRegistrySettings, AcpRegistryD
             ),
         );
         return Effect.all(
-          [publishEnrichment, publishLiveCommands, publishLiveConfiguration, publishUrlAuthAction],
+          [
+            publishEnrichment,
+            publishVersionAdvisory,
+            publishLiveCommands,
+            publishLiveConfiguration,
+            publishUrlAuthAction,
+          ],
           {
             concurrency: "unbounded",
             discard: true,

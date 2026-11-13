@@ -3,6 +3,7 @@ import * as Option from "effect/Option";
 import * as Schema from "effect/Schema";
 import {
   acceptsSecretReference,
+  isQoderCnCommand,
   isSecretReference,
   isSecretSetting,
   type EnvironmentId,
@@ -93,9 +94,10 @@ export function deriveProviderSettingsFields(
   definition: SettingsFormDefinition,
   value?: unknown,
 ): ReadonlyArray<ProviderSettingsFieldModel> {
-  const isLocalAcp =
-    definition.driverKind === "acpRegistry" &&
-    readProviderConfigString(value, "source") === "local";
+  const isAcpRegistry = definition.driverKind === "acpRegistry";
+  const isLocalAcp = isAcpRegistry && readProviderConfigString(value, "source") === "local";
+  const isLocalQoderCn =
+    isLocalAcp && isQoderCnCommand(readProviderConfigString(value, "commandPath"));
   const schemaAnnotation = readProviderSettingsFormSchemaAnnotation(definition);
   const orderedKeys = new Map(
     (schemaAnnotation.order ?? []).map((key, index) => [key, index] as const),
@@ -114,7 +116,9 @@ export function deriveProviderSettingsFields(
       const fieldSchema = definition.settingsSchema.fields[key]!;
       const formAnnotation = readProviderSettingsFormAnnotation(fieldSchema);
       if (formAnnotation.hidden) return [];
-      if (isLocalAcp && key !== "source" && key !== "commandPath") return [];
+      if (isAcpRegistry && key === "autoUpdate" && !isLocalQoderCn) return [];
+      if (isLocalAcp && key !== "source" && key !== "commandPath" && key !== "autoUpdate")
+        return [];
 
       const annotatedTitle = readFieldAnnotationString(fieldSchema, "title");
       const annotatedDescription = readFieldAnnotationString(fieldSchema, "description");

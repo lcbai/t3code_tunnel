@@ -45,6 +45,14 @@ export const AcpRegistrySettings = makeProviderSettingsSchema(
       Schema.withDecodingDefault(Effect.succeed([])),
       Schema.annotateKey({ providerSettingsForm: { hidden: true } }),
     ),
+    autoUpdate: Schema.Boolean.pipe(
+      Schema.withDecodingDefault(Effect.succeed(false)),
+      Schema.annotateKey({
+        title: "自动升级 Qoder CN",
+        description: "检查到新版本后，在此环境中自动更新 Qoder CN CLI。",
+        providerSettingsForm: { control: "switch" },
+      }),
+    ),
     authMethodId: TrimmedString.pipe(
       Schema.withDecodingDefault(Effect.succeed("")),
       Schema.annotateKey({
@@ -63,7 +71,7 @@ export const AcpRegistrySettings = makeProviderSettingsSchema(
     ),
   },
   {
-    order: ["source", "agentId", "commandPath", "authMethodId"],
+    order: ["source", "agentId", "commandPath", "authMethodId", "autoUpdate"],
   },
 );
 export type AcpRegistrySettings = typeof AcpRegistrySettings.Type;

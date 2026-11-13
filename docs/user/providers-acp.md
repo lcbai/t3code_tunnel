@@ -42,6 +42,11 @@ See [Qoder's ACP documentation](https://docs.qoder.com/zh/cli/acp).
 打开 **设置 → 代理提供方 → 添加代理提供方 → Qoder CN**，确认名称后添加实例。
 T3 Code 会使用该环境上的 CLI。需要认证时，在提供方卡片上选择 **登录**。
 
+提供方卡片会显示已安装版本和可用更新。开启 **运行环境 → 自动升级 Qoder CN** 后，
+运行中的 T3 Code 服务会在后台检查并升级受支持的 CLI 安装。每个安装的同一版本在服务
+运行期间只自动尝试一次。升级失败时可以从提供方卡片手动重试。运行中的会话可继续使用
+原版本，新启动的会话使用更新后的 CLI。
+
 ## Add a local command
 
 In **Settings → Providers → Add provider**, select **Show more**, then **Local ACP command**. Enter the executable

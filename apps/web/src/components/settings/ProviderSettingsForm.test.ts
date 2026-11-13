@@ -67,6 +67,38 @@ describe("ProviderSettingsForm helpers", () => {
 
     expect(next).toEqual({ experimental: false });
   });
+
+  it.each([
+    ["local", "qoderclicn", true],
+    ["local", "/opt/tools/qoderclicn", true],
+    ["local", "C:\\tools\\qodercn.EXE", true],
+    ["local", "qodercn.cmd", true],
+    ["local", "qoder", false],
+    ["registry", "qoderclicn", false],
+  ] as const)(
+    "offers automatic updates for %s Qoder CN commands (%s)",
+    (source, commandPath, shown) => {
+      const acpRegistry = providerClients.get(ProviderDriverKind.make("acpRegistry"))!;
+      const config = { source, commandPath, commandArgs: ["--acp"] };
+      const autoUpdate = deriveProviderSettingsFields(acpRegistry, config).find(
+        (field) => field.key === "autoUpdate",
+      );
+
+      if (shown) {
+        expect(autoUpdate).toMatchObject({
+          label: "自动升级 Qoder CN",
+          control: "switch",
+          defaultBooleanValue: false,
+        });
+        expect(nextProviderConfigWithFieldValue(config, autoUpdate!, true)).toEqual({
+          ...config,
+          autoUpdate: true,
+        });
+      } else {
+        expect(autoUpdate).toBeUndefined();
+      }
+    },
+  );
 });
 
 describe("reconcileRowsDraft", () => {
