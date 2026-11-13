@@ -291,7 +291,7 @@ export function threadTerminalMenu(props: ThreadGitControlsProps): AppBarMenu | 
       })),
       {
         id: "terminal-doubao-cli",
-        title: "打开豆包 CLI",
+        title: "打开豆包 CLI（企业）",
         icon: "terminal",
         disabled: !props.canOperateTerminal,
         onPress: () =>

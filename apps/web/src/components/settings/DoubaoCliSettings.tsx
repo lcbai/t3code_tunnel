@@ -64,13 +64,16 @@ export function DoubaoCliSettings({ environmentId }: { readonly environmentId: E
       open={terminal === "login" && config !== null}
       onOpenChange={(open) => (open ? launch("login") : closeLogin())}
     >
-      <SettingsSection title="豆包" icon={<img src={doubaoLogo} alt="" className="size-4" />}>
+      <SettingsSection
+        title="豆包 CLI（企业）"
+        icon={<img src={doubaoLogo} alt="" className="size-4" />}
+      >
         <SettingsRow
-          title="豆包账号"
+          title="企业账号登录"
           description={
             openNativeLogin
-              ? "扫码登录将在 macOS 系统终端中打开。"
-              : "用豆包 App 扫码登录。要让豆包在项目目录中运行，请从该项目的会话详情打开豆包 CLI。"
+              ? "需已开通豆包 CLI 权限的企业账号。扫码将在 macOS 系统终端中打开。"
+              : "需已开通豆包 CLI 权限的企业账号。个人开发可添加「豆包（火山方舟）」。"
           }
           control={
             <div className="flex flex-wrap gap-2">
@@ -125,7 +128,7 @@ export function DoubaoCliSettings({ environmentId }: { readonly environmentId: E
           <DialogHeader>
             <DialogTitle>豆包扫码登录</DialogTitle>
             <DialogDescription>
-              请用豆包 App 扫描下方二维码。
+              请用已开通 CLI 权限的企业账号扫码。
               {config.environment.platform?.os === "darwin"
                 ? `如果系统提示找不到钥匙串，请到运行豆包的 Mac 上打开「终端」，运行 ${DOUBAO_CLI_LOGIN_COMMAND}。`
                 : null}

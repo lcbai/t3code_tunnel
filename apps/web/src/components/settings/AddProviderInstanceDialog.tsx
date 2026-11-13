@@ -108,7 +108,7 @@ const DOUBAO_OPTION = {
 } satisfies ProviderOption;
 const DOUBAO_CLI_OPTION = {
   value: "preset:doubao-cli",
-  label: "豆包",
+  label: "豆包 CLI（企业）",
   driverKind: OPENCODE_DRIVER_KIND,
   logo: doubaoLogo,
 } satisfies ProviderOption;
@@ -216,17 +216,17 @@ export function AddProviderInstanceDialog({
   const featuredDriverOptions: ProviderOption[] = FEATURED_DRIVER_OPTIONS.filter((option) =>
     isManagedDriverAllowed(managedPolicy, option.driverKind),
   );
-  const moreDriverOptions = MORE_DRIVER_OPTIONS.filter((option) =>
+  const moreDriverOptions: ProviderOption[] = MORE_DRIVER_OPTIONS.filter((option) =>
     isManagedDriverAllowed(managedPolicy, option.driverKind),
   );
   const acpRegistryAllowed = isManagedDriverAllowed(managedPolicy, ACP_REGISTRY_DRIVER_KIND);
   if (acpRegistryAllowed) {
     featuredDriverOptions.push({ ...QODER_CN_OPTION, disabled: !canManageProviders });
   }
-  if (onSelectDoubaoCli) featuredDriverOptions.push(DOUBAO_CLI_OPTION);
   if (DOUBAO_API_KEY_FIELD && isManagedDriverAllowed(managedPolicy, OPENCODE_DRIVER_KIND)) {
     featuredDriverOptions.push({ ...DOUBAO_OPTION, disabled: !canManageProviders });
   }
+  if (onSelectDoubaoCli) moreDriverOptions.push(DOUBAO_CLI_OPTION);
   const [providerOption, setProviderOption] = useState<string>(
     () =>
       (featuredDriverOptions.find((option) => !option.disabled) ?? moreDriverOptions[0])?.value ??
@@ -573,7 +573,11 @@ export function AddProviderInstanceDialog({
                 />
                 {isDoubaoCli ? (
                   <p className="text-sm text-muted-foreground">
-                    使用豆包 App 扫码登录，直接运行官方豆包 CLI。
+                    扫码需要已开通豆包 CLI 权限的企业账号。
+                  </p>
+                ) : isDoubao ? (
+                  <p className="text-sm text-muted-foreground">
+                    支持火山方舟 Coding Plan 个人版，需套餐专属 API 密钥和 OpenCode。
                   </p>
                 ) : null}
                 <MultipleAccountsNote environmentId={environmentId} driver={driver} />
@@ -859,7 +863,7 @@ export function AddProviderInstanceDialog({
               </Button>
               {isDoubaoCli ? (
                 <Button size="sm" disabled={isPreparingRegistryAgent} onClick={onSelectDoubaoCli}>
-                  前往豆包设置
+                  前往豆包 CLI 设置
                 </Button>
               ) : wizardStep === 0 && driver === "codex" ? (
                 <>

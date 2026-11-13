@@ -316,6 +316,7 @@ describe("EnvironmentProviderSettings routing", () => {
       },
     };
     await using _screen = await render(panel({ targetInstanceId: instanceId }));
+    await userEvent.click(page.getByRole("button", { name: "豆包 CLI（企业）" }));
     await userEvent.click(page.getByRole("button", { name: "扫码登录" }));
     expect(openDoubaoLoginTerminal).toHaveBeenCalledOnce();
     expect(state.openTerminal).not.toHaveBeenCalled();
@@ -345,6 +346,9 @@ describe("EnvironmentProviderSettings routing", () => {
       },
     };
     await using _screen = await render(panel({ targetInstanceId: instanceId }));
+    await expect.element(page.getByText("火山方舟 Coding Plan 密钥")).toBeVisible();
+    await expect.element(page.getByRole("button", { name: "扫码登录" })).not.toBeInTheDocument();
+    await userEvent.click(page.getByRole("button", { name: "豆包 CLI（企业）" }));
     await expect.element(page.getByText("火山方舟 Coding Plan 密钥")).toHaveLength(0);
     await userEvent.click(page.getByRole("button", { name: "扫码登录" }));
     const loginDialog = page.getByRole("dialog", { name: "豆包扫码登录" });
@@ -381,8 +385,6 @@ describe("EnvironmentProviderSettings routing", () => {
     await userEvent.keyboard("{Escape}");
     await vi.waitFor(() => expect(state.closeTerminal).toHaveBeenCalledTimes(2));
     expect(state.writeTerminal).toHaveBeenCalledOnce();
-    await userEvent.click(page.getByRole("button", { name: "火山方舟配置" }));
-    await expect.element(page.getByText("火山方舟 Coding Plan 密钥")).toBeVisible();
   });
 
   it("does not substitute another account when the requested instance was removed", async () => {

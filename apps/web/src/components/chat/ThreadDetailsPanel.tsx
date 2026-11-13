@@ -201,7 +201,9 @@ export function ThreadDetailsPanel(props: ThreadDetailsPanelProps) {
                         {props.onOpenDoubaoCli ? (
                           <ThreadDetailsControl onClick={props.onOpenDoubaoCli}>
                             <TerminalIcon className={THREAD_DETAILS_PANEL_ICON_CLASS} />
-                            <span className={THREAD_DETAILS_PANEL_LABEL_CLASS}>打开豆包 CLI</span>
+                            <span className={THREAD_DETAILS_PANEL_LABEL_CLASS}>
+                              打开豆包 CLI（企业）
+                            </span>
                           </ThreadDetailsControl>
                         ) : null}
                         <ProjectScriptsControl
