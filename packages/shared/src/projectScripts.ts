@@ -1,5 +1,13 @@
 import type { ProjectId, ProjectScript, ServerSettings } from "@t3tools/contracts";
 
+export const DOUBAO_CLI_PROJECT_SCRIPT = {
+  id: "doubao-cli",
+  name: "豆包 CLI",
+  command: "doubao",
+  icon: "play",
+  runOnWorktreeCreate: false,
+} satisfies ProjectScript;
+
 type ProjectScriptSettings = Pick<
   ServerSettings,
   | "defaultProjectScripts"

@@ -319,7 +319,7 @@ describe("AddProviderInstanceDialog environment routing", () => {
       providerInstances: { opencode_doubao: { driver: "opencode", enabled: true } },
     });
     await using _screen = await render(dialog());
-    await userEvent.click(radio("豆包")!);
+    await userEvent.click(radio("豆包（火山方舟）")!);
     await click("下一步");
     expect(input("#add-provider-label").value).toBe("豆包");
     await click("下一步");

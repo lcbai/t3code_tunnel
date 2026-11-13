@@ -1870,6 +1870,7 @@ export default function ChatView(props: ChatViewProps) {
     addTerminalSurfaceStable,
     closePanelTerminalStable,
     lastInvokedScriptByProjectId,
+    openDoubaoCliStable,
     runProjectScriptStable,
     runShellCommandStable,
     splitPanelTerminalStable,
@@ -3878,6 +3879,7 @@ export default function ChatView(props: ChatViewProps) {
                     ? { onOpenChanges: openChangesFromThreadPanelStable }
                     : {})}
                   onRunProjectScript={runProjectScriptStable}
+                  onOpenDoubaoCli={canOperateTerminal ? openDoubaoCliStable : undefined}
                   onAddProjectScript={saveProjectScriptStable}
                   onUpdateProjectScript={updateProjectScriptStable}
                   onDeleteProjectScript={deleteProjectScriptStable}

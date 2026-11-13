@@ -55,7 +55,7 @@ export function useThreadTerminalActions(threadRef: ScopedThreadRef | null) {
     threadRef !== null && readEnvironmentScope(threadRef.environmentId, AuthTerminalOperateScope);
 
   // Server lists lag and colliding ids share a PTY; without read access, suffix ids to avoid unseen sessions.
-  const allocateTerminalId = () => {
+  const allocateTerminalId = (unique: boolean) => {
     const ids = new Set([
       ...(knownSessions ?? []).map((session) => session.target.terminalId),
       ...drawerTerminalIds,
@@ -67,7 +67,7 @@ export function useThreadTerminalActions(threadRef: ScopedThreadRef | null) {
       knownSessions !== null &&
       threadRef !== null &&
       readEnvironmentScope(threadRef.environmentId, AuthTerminalReadScope);
-    return nextTerminalId([...ids], canReuse ? undefined : randomUUID());
+    return nextTerminalId([...ids], unique || !canReuse ? randomUUID() : undefined);
   };
 
   const defaultLaunchLocation = (): TerminalLaunchLocation | null =>
@@ -85,6 +85,7 @@ export function useThreadTerminalActions(threadRef: ScopedThreadRef | null) {
   const launchTerminal = (input: {
     readonly place: (terminalId: string) => void;
     readonly terminalId?: string;
+    readonly uniqueId?: boolean;
     readonly location?: TerminalLaunchLocation | null;
     readonly extraEnv?: Record<string, string>;
     readonly stopOnSettle?: boolean;
@@ -93,7 +94,7 @@ export function useThreadTerminalActions(threadRef: ScopedThreadRef | null) {
     if (!threadRef || !canWrite() || !project) return null;
     const location = input.location ?? defaultLaunchLocation();
     if (!location) return null;
-    const terminalId = input.terminalId ?? allocateTerminalId();
+    const terminalId = input.terminalId ?? allocateTerminalId(input.uniqueId ?? false);
     input.place(terminalId);
     const result = openTerminalCommand({
       environmentId: threadRef.environmentId,

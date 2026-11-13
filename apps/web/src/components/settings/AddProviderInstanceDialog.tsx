@@ -102,7 +102,7 @@ const QODER_CN_CONFIG: Record<string, unknown> = {
 };
 const DOUBAO_OPTION = {
   value: "preset:doubao",
-  label: "豆包",
+  label: "豆包（火山方舟）",
   driverKind: OPENCODE_DRIVER_KIND,
   logo: doubaoLogo,
 } satisfies ProviderOption;
@@ -256,11 +256,7 @@ export function AddProviderInstanceDialog({
   ]);
 
   const driverOption = providerClients.get(driver) ?? DEFAULT_DRIVER_OPTION;
-  const optionLabel = isQoderCn
-    ? QODER_CN_OPTION.label
-    : isDoubao
-      ? DOUBAO_OPTION.label
-      : driverOption.label;
+  const optionLabel = isQoderCn ? QODER_CN_OPTION.label : isDoubao ? "豆包" : driverOption.label;
   const isAcpRegistry = driver === ACP_REGISTRY_DRIVER_KIND;
   const showRegistrySearch =
     !createdInstanceId &&
@@ -565,6 +561,11 @@ export function AddProviderInstanceDialog({
                   onValueChange={selectProviderOption}
                   aria-labelledby="add-instance-driver-label"
                 />
+                {isDoubao ? (
+                  <p className="text-sm text-muted-foreground">
+                    使用豆包账号时，可在项目的会话详情中选择「打开豆包 CLI」。
+                  </p>
+                ) : null}
                 <MultipleAccountsNote environmentId={environmentId} driver={driver} />
               </div>
 

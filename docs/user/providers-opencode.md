@@ -47,7 +47,7 @@ session.
 ## 豆包与火山方舟 Coding Plan
 
 先在运行 T3 Code 环境的电脑上安装 OpenCode。在桌面或网页打开 **设置 → 代理提供方 →
-添加代理提供方**，选择**豆包**。进入**配置**后填写方舟 Coding Plan 套餐的专属密钥，
+添加代理提供方**，选择**豆包（火山方舟）**。进入**配置**后填写方舟 Coding Plan 套餐的专属密钥，
 或引用已有密钥。也可以先添加，再到豆包或已有 OpenCode 实例的设置中填写**火山方舟 Coding Plan 密钥**。
 
 留空服务器地址，由 T3 Code 启动 OpenCode。刷新提供方状态，在会话中选择刚配置的实例和豆包模型，
@@ -59,6 +59,20 @@ T3 Code 设置中的密钥。
 
 连接已有 OpenCode 服务器时，在该服务器上配置方舟套餐，再刷新 T3 Code 的模型列表。
 [火山方舟 OpenCode 配置指南](https://docs.volcengine.com/docs/ark/coding-plan-personal-ai-opencode?lang=zh)
+
+### 使用豆包账号
+
+在运行 T3 Code 环境的电脑上安装[官方豆包 CLI](https://www.npmjs.com/package/@bytedance/doubao-cli)，
+运行 `doubao login` 完成扫码登录。
+
+```sh
+npm install -g @bytedance/doubao-cli
+doubao login
+```
+
+在桌面或网页的 **会话详情** 中选择 **打开豆包 CLI**。在手机上，进入已有会话，从 **终端**
+菜单选择 **打开豆包 CLI**。T3 Code 会在该会话的工作区打开一个新终端。发送任务、继续会话
+和审批工具操作都在豆包终端里完成。按 `Esc` 可请求中断当前任务。
 
 ## Approvals
 

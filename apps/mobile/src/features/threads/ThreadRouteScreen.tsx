@@ -718,7 +718,10 @@ function ThreadRouteContent(
     });
   };
 
-  const handleRunProjectScript = async (script: ProjectScript) => {
+  const handleRunProjectScript = async (
+    script: ProjectScript,
+    options?: { readonly preferNewTerminal?: boolean },
+  ) => {
     if (
       !selectedThread ||
       !selectedThreadProject?.workspaceRoot ||
@@ -729,7 +732,8 @@ function ThreadRouteContent(
 
     const targetTerminalId = resolveProjectScriptTerminalId({
       existingTerminalIds: terminalMenuSessions.map((session) => session.terminalId),
-      ...(knownTerminalSessions === null ||
+      ...(options?.preferNewTerminal ||
+      knownTerminalSessions === null ||
       !readEnvironmentScope(selectedThread.environmentId, AuthTerminalReadScope)
         ? { uniqueSuffix: uuidv4() }
         : {}),

@@ -16,7 +16,10 @@ import {
   type ScopedThreadRef,
   type ThreadId,
 } from "@t3tools/contracts";
-import { projectScriptTerminalInput } from "@t3tools/shared/projectScripts";
+import {
+  DOUBAO_CLI_PROJECT_SCRIPT,
+  projectScriptTerminalInput,
+} from "@t3tools/shared/projectScripts";
 import { type SetStateAction } from "react";
 import {
   isAtomCommandInterrupted,
@@ -252,7 +255,10 @@ export function useChatTerminalActions(input: ChatTerminalActionsInput) {
           ? storeNewTerminal(activeThreadRef, terminalId)
           : storeEnsureTerminal(activeThreadRef, terminalId, { open: true }),
       ...(reusableTerminalId === null
-        ? { size: { cols: SCRIPT_TERMINAL_COLS, rows: SCRIPT_TERMINAL_ROWS } }
+        ? {
+            size: { cols: SCRIPT_TERMINAL_COLS, rows: SCRIPT_TERMINAL_ROWS },
+            ...(options?.preferNewTerminal ? { uniqueId: true } : {}),
+          }
         : { terminalId: reusableTerminalId }),
       location: { cwd: targetCwd, worktreePath: targetWorktreePath },
       stopOnSettle: script.stopOnSettle ?? false,
@@ -309,6 +315,14 @@ export function useChatTerminalActions(input: ChatTerminalActionsInput) {
     }
   };
   const runProjectScriptStable = useStableCallback(runProjectScript);
+
+  const openDoubaoCli = () => {
+    void runProjectScript(DOUBAO_CLI_PROJECT_SCRIPT, {
+      preferNewTerminal: true,
+      rememberAsLastInvoked: false,
+    });
+  };
+  const openDoubaoCliStable = useStableCallback(openDoubaoCli);
 
   const runShellCommand = (command: string) => {
     void runProjectScript(
@@ -448,6 +462,7 @@ export function useChatTerminalActions(input: ChatTerminalActionsInput) {
     closePanelTerminalStable,
     createNewTerminalStable,
     lastInvokedScriptByProjectId,
+    openDoubaoCliStable,
     requestClosePanelTerminalStable,
     requestCloseTerminalStable,
     runProjectScriptStable,

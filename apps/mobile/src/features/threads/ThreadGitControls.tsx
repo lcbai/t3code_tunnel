@@ -25,7 +25,7 @@ import {
   projectScriptMenuIcon,
   type TerminalMenuSession,
 } from "../terminal/terminalMenu";
-import { projectScriptMenuLabel } from "@t3tools/shared/projectScripts";
+import { DOUBAO_CLI_PROJECT_SCRIPT, projectScriptMenuLabel } from "@t3tools/shared/projectScripts";
 
 function truncateMiddle(value: string, maxLength: number): string {
   if (value.length <= maxLength) {
@@ -99,7 +99,10 @@ export type ThreadGitControlsProps = ThreadGitMenuProps & {
   readonly terminalSessions: ReadonlyArray<TerminalMenuSession>;
   readonly onOpenTerminal: (terminalId?: string | null) => void;
   readonly onOpenNewTerminal: () => void;
-  readonly onRunProjectScript: (script: ProjectScript) => Promise<void>;
+  readonly onRunProjectScript: (
+    script: ProjectScript,
+    options?: { readonly preferNewTerminal?: boolean },
+  ) => Promise<void>;
 };
 
 function useThreadGitControlModel(props: ThreadGitMenuProps) {
@@ -286,6 +289,14 @@ export function threadTerminalMenu(props: ThreadGitControlsProps): AppBarMenu | 
           .join(" · "),
         onPress: () => props.onOpenTerminal(session.terminalId),
       })),
+      {
+        id: "terminal-doubao-cli",
+        title: "打开豆包 CLI",
+        icon: "terminal",
+        disabled: !props.canOperateTerminal,
+        onPress: () =>
+          void props.onRunProjectScript(DOUBAO_CLI_PROJECT_SCRIPT, { preferNewTerminal: true }),
+      },
       {
         id: "terminal-new",
         title: "打开新终端",
