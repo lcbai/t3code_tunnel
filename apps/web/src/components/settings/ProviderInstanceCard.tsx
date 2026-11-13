@@ -673,6 +673,7 @@ interface ProviderInstanceCardProps {
   readonly onUpdate: (nextInstance: ProviderInstanceConfig) => void;
   readonly onDelete?: (() => void) | undefined;
   readonly headerAction?: ReactNode | undefined;
+  readonly icon?: ReactNode;
   readonly setup?: ReactNode;
   readonly runtime?: ReactNode;
   readonly hiddenModels: ReadonlyArray<string>;
@@ -720,6 +721,7 @@ export function ProviderInstanceCard({
   onUpdate,
   onDelete,
   headerAction,
+  icon,
   setup,
   runtime,
   hiddenModels,
@@ -909,7 +911,7 @@ export function ProviderInstanceCard({
   };
 
   const isLocalAcp = readConfigString(instance.config, "source") === "local";
-  const titleIconNode = (
+  const titleIconNode = icon ?? (
     <ProviderInstanceIcon
       driverKind={driverKind ?? instance.driver}
       displayName={displayName}

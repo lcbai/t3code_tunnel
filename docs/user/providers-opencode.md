@@ -63,14 +63,14 @@ T3 Code 设置中的密钥。
 ### 使用豆包账号
 
 在运行 T3 Code 环境的电脑上安装[官方豆包 CLI](https://www.npmjs.com/package/@bytedance/doubao-cli)，
-运行 `doubao login` 完成扫码登录。
+然后在桌面或网页打开 **设置 → 代理提供方 → 豆包**，选择 **扫码登录**。
 
 ```sh
 npm install -g @bytedance/doubao-cli
-doubao login
 ```
 
-在桌面或网页的 **会话详情** 中选择 **打开豆包 CLI**。在手机上，进入已有会话，从 **终端**
+已有豆包实例的 Coding Plan 密钥和 OpenCode 设置可以从 **火山方舟配置** 展开。
+要在项目目录中运行豆包，在桌面或网页的 **会话详情** 中选择 **打开豆包 CLI**。在手机上，进入已有会话，从 **终端**
 菜单选择 **打开豆包 CLI**。T3 Code 会在该会话的工作区打开一个新终端。发送任务、继续会话
 和审批工具操作都在豆包终端里完成。按 `Esc` 可请求中断当前任务。
 

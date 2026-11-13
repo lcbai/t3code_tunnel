@@ -95,6 +95,9 @@ import { useManagedPolicy } from "~/state/managedPolicy";
 import { ExpandableText } from "./ExpandableText";
 import { IntervalSecondsField } from "./IntervalSecondsField";
 import { ProviderInstanceCard } from "./ProviderInstanceCard";
+import { DoubaoCliSettings } from "./DoubaoCliSettings";
+import { FoldedSettingsSection } from "./FoldedSettingsSection";
+import doubaoLogo from "./provider-logos/doubao.png";
 import { useSecretSources } from "./SecretSourceInput";
 import { TextGeneratorsSettings } from "./TextGeneratorsSettings";
 import { UsageProviderSettings } from "./UsageProviderSettings";
@@ -526,6 +529,17 @@ function AccessGatedProviderSettings({
 
 const NO_PROJECT_IDS: readonly ProjectId[] = [];
 const NO_FAVORITES: UnifiedSettings["favorites"] = [];
+const DOUBAO_CLI_SELECTION = Symbol("doubao-cli");
+
+function isDoubaoArkInstance(
+  instanceId: ProviderInstanceId,
+  instance: ProviderInstanceConfig | undefined,
+) {
+  return (
+    instance?.driver === "opencode" &&
+    (/^opencode_doubao(?:_\d+)?$/.test(instanceId) || instance.displayName === "豆包")
+  );
+}
 
 export function EnvironmentProviderSettings({
   environmentId,
@@ -574,9 +588,9 @@ export function EnvironmentProviderSettings({
   });
   const [isRefreshingProviders, setIsRefreshingProviders] = useState(false);
   const [isAddInstanceDialogOpen, setIsAddInstanceDialogOpen] = useState(false);
-  const [selectedInstanceId, setSelectedInstanceId] = useState<ProviderInstanceId | null>(
-    targetInstanceId ?? null,
-  );
+  const [selectedInstanceId, setSelectedInstanceId] = useState<
+    ProviderInstanceId | typeof DOUBAO_CLI_SELECTION | null
+  >(targetInstanceId ?? null);
   const [updatingProviderInstanceIds, setUpdatingProviderInstanceIds] = useState<
     ReadonlySet<ProviderInstanceId>
   >(() => new Set());
@@ -766,13 +780,23 @@ export function EnvironmentProviderSettings({
     }
   }
 
+  const doubaoArkRow = rows.find((row) =>
+    isDoubaoArkInstance(row.instanceId, row.explicitInstance),
+  );
+  const showDoubaoCli = managedPolicy?.limits?.providers?.allowedDrivers === undefined;
+  const showStandaloneDoubao = showDoubaoCli && !doubaoArkRow;
+  const standaloneDoubaoSelected =
+    showStandaloneDoubao && selectedInstanceId === DOUBAO_CLI_SELECTION;
   const targetInstanceMissing =
     targetInstanceId !== undefined &&
     selectedInstanceId === targetInstanceId &&
     !rows.some((row) => row.instanceId === targetInstanceId);
-  const selectedRow =
-    rows.find((row) => row.instanceId === selectedInstanceId) ??
-    (targetInstanceMissing ? null : (rows[0] ?? null));
+  const selectedRow = standaloneDoubaoSelected
+    ? null
+    : (rows.find((row) => row.instanceId === selectedInstanceId) ??
+      (targetInstanceMissing ? null : (rows[0] ?? null)));
+  const selectedDoubaoArk =
+    selectedRow && isDoubaoArkInstance(selectedRow.instanceId, selectedRow.explicitInstance);
 
   const persistInstance = async (
     instanceId: ProviderInstanceId,
@@ -1043,6 +1067,20 @@ export function EnvironmentProviderSettings({
             >
               <div className="divide-y divide-border/50">
                 {rows.map((row) => renderProviderInstance(row, "list"))}
+                {showStandaloneDoubao ? (
+                  <button
+                    type="button"
+                    aria-pressed={standaloneDoubaoSelected}
+                    className={cn(
+                      "flex min-h-18 w-full cursor-pointer items-center gap-3 px-3 py-3 text-left text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring sm:px-4",
+                      standaloneDoubaoSelected ? "bg-foreground/[0.06]" : "hover:bg-muted/25",
+                    )}
+                    onClick={() => setSelectedInstanceId(DOUBAO_CLI_SELECTION)}
+                  >
+                    <img src={doubaoLogo} alt="" className="size-4 shrink-0" />
+                    豆包
+                  </button>
+                ) : null}
                 {canAddProvider ? (
                   <button
                     type="button"
@@ -1058,11 +1096,26 @@ export function EnvironmentProviderSettings({
           </div>
 
           <div data-provider-detail className="min-w-0 @min-[48rem]/providers:min-h-0">
-            {selectedRow ? (
+            {standaloneDoubaoSelected || selectedRow ? (
               <ScrollArea scrollFade chainVerticalScroll className="@min-[48rem]/providers:h-full">
                 {/* Flat sections run dividers edge to edge and inset text like the list beside them. */}
                 <div className="space-y-6 py-4">
-                  {renderProviderInstance(selectedRow, "editor")}
+                  {standaloneDoubaoSelected ? (
+                    <DoubaoCliSettings environmentId={environmentId} />
+                  ) : selectedRow && selectedDoubaoArk && showDoubaoCli ? (
+                    <>
+                      <DoubaoCliSettings environmentId={environmentId} />
+                      <FoldedSettingsSection
+                        key={selectedRow.instanceId}
+                        id={`doubao-ark-${selectedRow.instanceId}`}
+                        title="火山方舟配置"
+                      >
+                        {renderProviderInstance(selectedRow, "editor")}
+                      </FoldedSettingsSection>
+                    </>
+                  ) : selectedRow ? (
+                    renderProviderInstance(selectedRow, "editor")
+                  ) : null}
                 </div>
               </ScrollArea>
             ) : (
@@ -1165,6 +1218,14 @@ export function EnvironmentProviderSettings({
           environmentLabel={environmentLabel}
           onOpenChange={setIsAddInstanceDialogOpen}
           onCreated={setSelectedInstanceId}
+          onSelectDoubaoCli={
+            showDoubaoCli
+              ? () => {
+                  setSelectedInstanceId(doubaoArkRow?.instanceId ?? DOUBAO_CLI_SELECTION);
+                  setIsAddInstanceDialogOpen(false);
+                }
+              : undefined
+          }
         />
       ) : null}
     </>
@@ -1299,6 +1360,11 @@ function ProviderInstanceRow({
       instance={instance}
       driverOption={driverOption}
       liveProvider={liveProvider}
+      icon={
+        isDoubaoArkInstance(instanceId, explicitInstance) ? (
+          <img src={doubaoLogo} alt="" className="size-4 shrink-0" />
+        ) : undefined
+      }
       mode={mode}
       selected={selected}
       onSelect={mode === "list" ? () => actions.selectInstance(instanceId) : undefined}

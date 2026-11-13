@@ -106,6 +106,12 @@ const DOUBAO_OPTION = {
   driverKind: OPENCODE_DRIVER_KIND,
   logo: doubaoLogo,
 } satisfies ProviderOption;
+const DOUBAO_CLI_OPTION = {
+  value: "preset:doubao-cli",
+  label: "豆包",
+  driverKind: OPENCODE_DRIVER_KIND,
+  logo: doubaoLogo,
+} satisfies ProviderOption;
 const DOUBAO_API_KEY_FIELD = providerClients
   .get(OPENCODE_DRIVER_KIND)
   ?.environmentFields?.find((field) => field.name === "ARK_CODING_PLAN_API_KEY");
@@ -184,6 +190,7 @@ interface AddProviderInstanceDialogProps {
   readonly environmentLabel: string;
   readonly onOpenChange: (open: boolean) => void;
   readonly onCreated?: (instanceId: ProviderInstanceId, driver: ProviderDriverKind) => void;
+  readonly onSelectDoubaoCli?: (() => void) | undefined;
   /** Opens with "Show more" expanded, so the ACP Registry search is in view. */
   readonly showMoreProviders?: boolean;
 }
@@ -194,6 +201,7 @@ export function AddProviderInstanceDialog({
   environmentLabel,
   onOpenChange,
   onCreated,
+  onSelectDoubaoCli,
   showMoreProviders: initialShowMoreProviders = false,
 }: AddProviderInstanceDialogProps) {
   const settings = useEnvironmentSettings(environmentId);
@@ -215,6 +223,7 @@ export function AddProviderInstanceDialog({
   if (acpRegistryAllowed) {
     featuredDriverOptions.push({ ...QODER_CN_OPTION, disabled: !canManageProviders });
   }
+  if (onSelectDoubaoCli) featuredDriverOptions.push(DOUBAO_CLI_OPTION);
   if (DOUBAO_API_KEY_FIELD && isManagedDriverAllowed(managedPolicy, OPENCODE_DRIVER_KIND)) {
     featuredDriverOptions.push({ ...DOUBAO_OPTION, disabled: !canManageProviders });
   }
@@ -225,9 +234,10 @@ export function AddProviderInstanceDialog({
   );
   const isQoderCn = providerOption === QODER_CN_OPTION.value;
   const isDoubao = providerOption === DOUBAO_OPTION.value;
+  const isDoubaoCli = providerOption === DOUBAO_CLI_OPTION.value;
   const driver = isQoderCn
     ? QODER_CN_OPTION.driverKind
-    : isDoubao
+    : isDoubao || isDoubaoCli
       ? DOUBAO_OPTION.driverKind
       : ProviderDriverKind.make(providerOption);
   const [identityByOption, setIdentityByOption] = useState<Record<string, ProviderIdentityDraft>>(
@@ -518,7 +528,7 @@ export function AddProviderInstanceDialog({
           title="添加代理提供方"
           description={<>在其中添加账户或配置提供者 {environmentLabel}.</>}
         >
-          {isAcpRegistry ? (
+          {isDoubaoCli ? null : isAcpRegistry ? (
             <AddProviderInstanceWizardSteps
               currentStep={wizardStep}
               summaries={wizardStepSummaries}
@@ -561,9 +571,9 @@ export function AddProviderInstanceDialog({
                   onValueChange={selectProviderOption}
                   aria-labelledby="add-instance-driver-label"
                 />
-                {isDoubao ? (
+                {isDoubaoCli ? (
                   <p className="text-sm text-muted-foreground">
-                    使用豆包账号时，可在项目的会话详情中选择「打开豆包 CLI」。
+                    使用豆包 App 扫码登录，直接运行官方豆包 CLI。
                   </p>
                 ) : null}
                 <MultipleAccountsNote environmentId={environmentId} driver={driver} />
@@ -847,7 +857,11 @@ export function AddProviderInstanceDialog({
               >
                 {wizardStep === 0 ? "取消" : "返回"}
               </Button>
-              {wizardStep === 0 && driver === "codex" ? (
+              {isDoubaoCli ? (
+                <Button size="sm" disabled={isPreparingRegistryAgent} onClick={onSelectDoubaoCli}>
+                  前往豆包设置
+                </Button>
+              ) : wizardStep === 0 && driver === "codex" ? (
                 <>
                   <Button variant="outline" size="sm" onClick={() => navigateToStep(1)}>
                     手动配置

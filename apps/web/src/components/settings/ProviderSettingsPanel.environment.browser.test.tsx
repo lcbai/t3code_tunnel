@@ -6,8 +6,10 @@ import {
   ProviderInstanceId,
   type ProviderAuthState,
   type ServerProvider,
+  type ServerConfig,
   type UnifiedSettings,
 } from "@t3tools/contracts";
+import { DEFAULT_RESOLVED_KEYBINDINGS } from "@t3tools/shared/keybindings";
 import * as Duration from "effect/Duration";
 import { AsyncResult, type Atom } from "effect/reactivity";
 import type { ReactNode } from "react";
@@ -19,11 +21,16 @@ import { act, render } from "../../../test/render";
 
 const state = vi.hoisted(() => ({
   providers: null as unknown as Atom.Writable<ReadonlyArray<ServerProvider>>,
+  config: null as unknown as Atom.Writable<Pick<
+    ServerConfig,
+    "cwd" | "keybindings" | "environment"
+  > | null>,
   providerAuthQuery: null as unknown,
   providerAuth: null as ProviderAuthState | null,
   settings: null as unknown as UnifiedSettings,
   canManageProviders: true,
   canWriteSettings: true,
+  canOperateTerminal: false,
   searchTargetId: null as string | null,
   readEnvironmentIds: [] as string[],
   updateEnvironmentIds: [] as string[],
@@ -37,6 +44,9 @@ const state = vi.hoisted(() => ({
   toggleFavorite: vi.fn(),
   mutateProviderInstance: vi.fn(),
   confirm: vi.fn<() => Promise<boolean>>(),
+  openTerminal: vi.fn(),
+  writeTerminal: vi.fn(),
+  closeTerminal: vi.fn(),
 }));
 
 vi.mock(import("../../state/server"), async (original) => {
@@ -44,7 +54,8 @@ vi.mock(import("../../state/server"), async (original) => {
   const { Atom } = await import("effect/reactivity");
   const providers = Atom.make<ReadonlyArray<ServerProvider>>([]).pipe(Atom.keepAlive);
   state.providers = providers;
-  const config = Atom.make(null);
+  const config = Atom.make<Pick<ServerConfig, "cwd" | "keybindings" | "environment"> | null>(null);
+  state.config = config;
   const providerAuth = Atom.make(null);
   state.providerAuthQuery = providerAuth;
   const commandLabels = {
@@ -79,6 +90,9 @@ vi.mock(import("../../state/use-atom-command"), async (original) => ({
       update: state.updateProvider,
       uninstall: state.uninstall,
       "accept-url-auth": state.acceptUrlAuth,
+      "environment-data:terminal:open": state.openTerminal,
+      "environment-data:terminal:write": state.writeTerminal,
+      "environment-data:terminal:close": state.closeTerminal,
     })[command.label ?? ""] ?? vi.fn()) as never,
 }));
 vi.mock(import("~/localApi"), async (original) => {
@@ -122,7 +136,9 @@ vi.mock(import("../../state/session"), async (original) => {
       ? state.canManageProviders
       : requested === "settings:write"
         ? state.canWriteSettings
-        : requested === "orchestration:read");
+        : requested === "terminal:operate"
+          ? state.canOperateTerminal
+          : requested === "orchestration:read");
   return {
     ...(await original()),
     useEnvironmentScope: scope as never,
@@ -167,6 +183,9 @@ vi.mock(import("./UsageProviderSettings"), async (original) => ({
 vi.mock(import("../ProviderUpdatesAction"), async (original) => ({
   ...(await original()),
   ProviderUpdatesAction: (() => null) as never,
+}));
+vi.mock(import("../ThreadTerminalDrawer"), () => ({
+  TerminalViewport: () => <div aria-label="测试终端" />,
 }));
 
 import { appAtomRegistry } from "~/rpc/atomRegistry";
@@ -231,6 +250,8 @@ async function setup() {
   state.settings = DEFAULT_UNIFIED_SETTINGS;
   state.canManageProviders = true;
   state.canWriteSettings = true;
+  state.canOperateTerminal = false;
+  appAtomRegistry.set(state.config, null);
   state.searchTargetId = null;
   state.providerAuth = null;
   state.readEnvironmentIds = [];
@@ -245,10 +266,51 @@ async function setup() {
   state.updateProvider.mockReset().mockResolvedValue(AsyncResult.success(undefined));
   state.uninstall.mockReset().mockResolvedValue(AsyncResult.success({}));
   state.acceptUrlAuth.mockReset().mockResolvedValue(AsyncResult.success({ accepted: true }));
+  state.openTerminal.mockReset().mockResolvedValue(AsyncResult.success(undefined));
+  state.writeTerminal.mockReset().mockResolvedValue(AsyncResult.success(undefined));
+  state.closeTerminal.mockReset().mockResolvedValue(AsyncResult.success(undefined));
   await setProviders([]);
 }
 
 describe("EnvironmentProviderSettings routing", () => {
+  it("opens the Doubao login on the selected device without using the saved Ark instance", async () => {
+    await setup();
+    state.canOperateTerminal = true;
+    const cwd = "/workspace";
+    appAtomRegistry.set(state.config, {
+      cwd,
+      keybindings: DEFAULT_RESOLVED_KEYBINDINGS,
+      environment: { capabilities: {} } as ServerConfig["environment"],
+    });
+    const instanceId = ProviderInstanceId.make("opencode_doubao");
+    state.settings = {
+      ...DEFAULT_UNIFIED_SETTINGS,
+      providerInstances: {
+        [instanceId]: {
+          driver: ProviderDriverKind.make("opencode"),
+          displayName: "豆包",
+          enabled: true,
+        },
+      },
+    };
+    await using _screen = await render(panel({ targetInstanceId: instanceId }));
+    await expect.element(page.getByText("火山方舟 Coding Plan 密钥")).toHaveLength(0);
+    await userEvent.click(page.getByRole("button", { name: "扫码登录" }));
+    await vi.waitFor(() => expect(state.writeTerminal).toHaveBeenCalledOnce());
+    const input = state.openTerminal.mock.calls[0]?.[0]?.input;
+    expect(state.openTerminal).toHaveBeenCalledWith({
+      environmentId,
+      input: { cwd, threadId: input.threadId, terminalId: input.terminalId },
+    });
+    expect(state.writeTerminal).toHaveBeenCalledWith({
+      environmentId,
+      input: { threadId: input.threadId, terminalId: input.terminalId, data: "doubao login\r" },
+    });
+    expect(state.mutateProviderInstance).not.toHaveBeenCalled();
+    await userEvent.click(page.getByRole("button", { name: "火山方舟配置" }));
+    await expect.element(page.getByText("火山方舟 Coding Plan 密钥")).toBeVisible();
+  });
+
   it("does not substitute another account when the requested instance was removed", async () => {
     await setup();
     await setProviders([provider()]);
