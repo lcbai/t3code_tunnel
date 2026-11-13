@@ -11,7 +11,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { TYPOGRAPHY_ADVANCED_STORAGE_KEY } from "../../appearanceFonts";
 import { useLocalStorage } from "../../hooks/useLocalStorage";
-import { randomUUID } from "../../lib/utils";
+import { cn, randomUUID } from "../../lib/utils";
 import { readEnvironmentScope, useEnvironmentScope } from "../../state/session";
 import { terminalEnvironment } from "../../state/terminal";
 import { useAtomCommand } from "../../state/use-atom-command";
@@ -29,6 +29,7 @@ export function ProviderSetupTerminal({
   providerInstanceId,
   onClose,
   runImmediately = false,
+  layout = "inline",
 }: {
   readonly command: string;
   readonly cwd: string;
@@ -38,6 +39,7 @@ export function ProviderSetupTerminal({
   readonly providerInstanceId?: ProviderInstanceId;
   readonly onClose: () => void;
   readonly runImmediately?: boolean;
+  readonly layout?: "inline" | "dialog";
 }) {
   const canOperateTerminal = useEnvironmentScope(environmentId, AuthTerminalOperateScope);
   const [advancedTypography] = useLocalStorage(
@@ -51,13 +53,18 @@ export function ProviderSetupTerminal({
   const setupQueueRef = useRef(Promise.resolve());
   const setupGenerationRef = useRef(0);
   const activeSetupGenerationRef = useRef<number | null>(null);
+  const initialResizeRef = useRef<((success: boolean) => void) | null>(null);
   const [terminalId] = useState(() => `onboarding-${randomUUID()}`);
   const threadRef = scopeThreadRef(environmentId, AGENT_ONBOARDING_THREAD_ID);
   const [setupAttempt, setSetupAttempt] = useState(0);
   const [setupState, setSetupState] = useState<
-    "preparing" | "ready" | "openFailed" | "writeFailed"
+    "preparing" | "sizing" | "ready" | "openFailed" | "resizeFailed" | "writeFailed"
   >("preparing");
-  const terminalReady = setupState === "ready" || setupState === "writeFailed";
+  const showTerminal =
+    setupState === "sizing" ||
+    setupState === "ready" ||
+    setupState === "resizeFailed" ||
+    setupState === "writeFailed";
 
   // StrictMode can finish a cancelled open after replacement setup; it must not close or pre-type into that
   // session.
@@ -90,6 +97,18 @@ export function ProviderSetupTerminal({
       }
 
       if (activeSetupGenerationRef.current !== generation) return;
+      // The QR can wrap if it prints before the PTY knows the size of the popup.
+      const sized =
+        layout !== "dialog" ||
+        (await new Promise<boolean>((resolve) => {
+          initialResizeRef.current = resolve;
+          setSetupState("sizing");
+        }));
+      if (activeSetupGenerationRef.current !== generation) return;
+      if (!sized) {
+        setSetupState("resizeFailed");
+        return;
+      }
       if (!readEnvironmentScope(environmentId, AuthTerminalOperateScope)) {
         setSetupState("writeFailed");
         return;
@@ -111,6 +130,8 @@ export function ProviderSetupTerminal({
     return () => {
       if (activeSetupGenerationRef.current === generation) {
         activeSetupGenerationRef.current = null;
+        initialResizeRef.current?.(false);
+        initialResizeRef.current = null;
       }
       setupQueueRef.current = setupQueueRef.current.then(async () => {
         if (!readEnvironmentScope(environmentId, AuthTerminalOperateScope)) return;
@@ -125,6 +146,7 @@ export function ProviderSetupTerminal({
     command,
     cwd,
     environmentId,
+    layout,
     openTerminal,
     providerInstanceId,
     runImmediately,
@@ -137,7 +159,10 @@ export function ProviderSetupTerminal({
   return (
     <div
       data-thread-terminal-drawer
-      className="mt-4 overflow-hidden rounded-lg border border-border/70 bg-background text-foreground"
+      className={cn(
+        "overflow-hidden rounded-lg border border-border/70 bg-background text-foreground",
+        layout === "inline" && "mt-4",
+      )}
     >
       <div className="flex items-center justify-between border-b border-border/60 bg-background/60 px-3 py-1.5">
         <span className="text-2xs font-medium text-muted-foreground">
@@ -155,6 +180,8 @@ export function ProviderSetupTerminal({
             )
           ) : setupState === "openFailed" ? (
             "无法打开设置终端。"
+          ) : setupState === "resizeFailed" ? (
+            "无法准备扫码终端。请关闭弹窗后重试。"
           ) : (
             "正在准备命令…"
           )}
@@ -174,13 +201,15 @@ export function ProviderSetupTerminal({
               重试
             </Button>
           ) : null}
-          <Button size="xs" variant="ghost-muted" onClick={onClose}>
-            关闭
-          </Button>
+          {layout === "inline" ? (
+            <Button size="xs" variant="ghost-muted" onClick={onClose}>
+              关闭
+            </Button>
+          ) : null}
         </div>
       </div>
-      <div className="h-64">
-        {terminalReady ? (
+      <div className={layout === "dialog" ? "h-[clamp(17rem,60dvh,30rem)]" : "h-64"}>
+        {showTerminal ? (
           <TerminalViewport
             threadRef={threadRef}
             threadId={AGENT_ONBOARDING_THREAD_ID}
@@ -190,6 +219,15 @@ export function ProviderSetupTerminal({
             {...(providerInstanceId === undefined ? {} : { providerInstanceId })}
             advancedTypography={advancedTypography}
             onSessionExited={onClose}
+            {...(layout === "dialog"
+              ? {
+                  fontSize: 12,
+                  onResized: (success: boolean) => {
+                    initialResizeRef.current?.(success);
+                    initialResizeRef.current = null;
+                  },
+                }
+              : {})}
             autoFocus
             visible
             keybindings={keybindings}

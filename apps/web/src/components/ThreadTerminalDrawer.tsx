@@ -478,10 +478,12 @@ interface TerminalViewportProps {
   terminalId: string;
   terminalLabel: string;
   cwd: string;
+  fontSize?: number;
   worktreePath?: string | null;
   runtimeEnv?: Record<string, string>;
   providerInstanceId?: ProviderInstanceId;
   onSessionExited: () => void;
+  onResized?: (success: boolean) => void;
   onAddTerminalContext?: (selection: TerminalContextSelection) => void;
   /** Focuses the viewport when it mounts; otherwise focus arrives through `focusTerminal`. */
   autoFocus?: boolean;
@@ -514,10 +516,12 @@ function TerminalSessionViewport({
   terminalId,
   terminalLabel,
   cwd,
+  fontSize,
   worktreePath,
   runtimeEnv,
   providerInstanceId,
   onSessionExited,
+  onResized,
   onAddTerminalContext,
   autoFocus = false,
   visible,
@@ -606,12 +610,14 @@ function TerminalSessionViewport({
       terminal: settings.fontFamilyTerminal,
     }),
   );
-  const terminalFontSize = useClientSettings((settings) =>
-    resolveTerminalFontSizePreference({
-      advanced: advancedTypography,
-      code: settings.fontSizeCode,
-      terminal: settings.fontSizeTerminal,
-    }),
+  const terminalFontSize = useClientSettings(
+    (settings) =>
+      fontSize ??
+      resolveTerminalFontSizePreference({
+        advanced: advancedTypography,
+        code: settings.fontSizeCode,
+        terminal: settings.fontSizeTerminal,
+      }),
   );
   const terminalFontRef = useRef({ family: terminalFontFamily, size: terminalFontSize });
   // Keyed by the launch (see TerminalViewport), so the atom is fixed for this surface.
@@ -637,15 +643,20 @@ function TerminalSessionViewport({
       input: { threadId, terminalId, data },
     }),
   );
-  const resizeTerminal = useEffectEvent((cols: number, rows: number) => {
+  const resizeTerminal = useEffectEvent(async (cols: number, rows: number) => {
     if (writableSessionGeneration(readTerminalSession(), hasTerminalWriteAccess()) === null) {
       return;
     }
-    return runTerminalResize({
+    const surface = terminalRef.current;
+    const result = await runTerminalResize({
       environmentId,
       input: { threadId, terminalId, cols, rows },
     });
+    if (surface === terminalRef.current && !isAtomCommandInterrupted(result)) {
+      onResized?.(result._tag === "Success");
+    }
   });
+  const reportResizeFailure = useEffectEvent(() => onResized?.(false));
   const outputCursorRef = useRef<TerminalOutputCursor>(INITIAL_TERMINAL_OUTPUT_CURSOR);
   const synchronizedStatusRef = useRef<TerminalSessionState["status"]>("closed");
   const synchronizeTerminalStatus = useEffectEvent(
@@ -1177,6 +1188,7 @@ function TerminalSessionViewport({
         const message =
           error instanceof Error ? error.message : "Unable to initialize libghostty-vt";
         mount.textContent = `${message}. Close and reopen the terminal to retry.`;
+        reportResizeFailure();
       });
 
     return () => {

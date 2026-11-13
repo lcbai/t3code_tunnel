@@ -185,7 +185,11 @@ vi.mock(import("../ProviderUpdatesAction"), async (original) => ({
   ProviderUpdatesAction: (() => null) as never,
 }));
 vi.mock(import("../ThreadTerminalDrawer"), () => ({
-  TerminalViewport: () => <div aria-label="测试终端" />,
+  TerminalViewport: ({ onResized }: { onResized?: (success: boolean) => void }) => (
+    <button type="button" onClick={() => onResized?.(true)}>
+      同步测试终端尺寸
+    </button>
+  ),
 }));
 
 import { appAtomRegistry } from "~/rpc/atomRegistry";
@@ -296,6 +300,12 @@ describe("EnvironmentProviderSettings routing", () => {
     await using _screen = await render(panel({ targetInstanceId: instanceId }));
     await expect.element(page.getByText("火山方舟 Coding Plan 密钥")).toHaveLength(0);
     await userEvent.click(page.getByRole("button", { name: "扫码登录" }));
+    const loginDialog = page.getByRole("dialog", { name: "豆包扫码登录" });
+    await expect.element(loginDialog).toBeVisible();
+    const resize = loginDialog.getByRole("button", { name: "同步测试终端尺寸" });
+    await expect.element(resize).toBeVisible();
+    expect(state.writeTerminal).not.toHaveBeenCalled();
+    await userEvent.click(resize);
     await vi.waitFor(() => expect(state.writeTerminal).toHaveBeenCalledOnce());
     const input = state.openTerminal.mock.calls[0]?.[0]?.input;
     expect(state.openTerminal).toHaveBeenCalledWith({
@@ -304,9 +314,26 @@ describe("EnvironmentProviderSettings routing", () => {
     });
     expect(state.writeTerminal).toHaveBeenCalledWith({
       environmentId,
-      input: { threadId: input.threadId, terminalId: input.terminalId, data: "doubao login\r" },
+      input: {
+        threadId: input.threadId,
+        terminalId: input.terminalId,
+        data: "doubao login --qr=small\r",
+      },
     });
     expect(state.mutateProviderInstance).not.toHaveBeenCalled();
+    await userEvent.keyboard("{Escape}");
+    await expect.element(loginDialog).not.toBeInTheDocument();
+    await vi.waitFor(() =>
+      expect(state.closeTerminal).toHaveBeenCalledWith({
+        environmentId,
+        input: { threadId: input.threadId, terminalId: input.terminalId, deleteHistory: true },
+      }),
+    );
+    await userEvent.click(page.getByRole("button", { name: "扫码登录" }));
+    await expect.element(resize).toBeVisible();
+    await userEvent.keyboard("{Escape}");
+    await vi.waitFor(() => expect(state.closeTerminal).toHaveBeenCalledTimes(2));
+    expect(state.writeTerminal).toHaveBeenCalledOnce();
     await userEvent.click(page.getByRole("button", { name: "火山方舟配置" }));
     await expect.element(page.getByText("火山方舟 Coding Plan 密钥")).toBeVisible();
   });
