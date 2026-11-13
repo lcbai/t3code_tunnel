@@ -1,6 +1,7 @@
 import {
   officialAcpRegistryIconUrlForAgentId,
   ProviderDriverKind,
+  QODER_CN_ICON_URL,
   resolveOfficialAcpRegistryIconUrl,
   TextGenerationError,
   type AcpRegistryOperationError,
@@ -210,8 +211,9 @@ function baseSnapshot(
     readonly probeError?: AcpRegistryOperationError;
   },
 ): ServerProvider {
-  const iconUrl =
-    input.settings.source === "local"
+  const iconUrl = isQoderCnLocalSettings(input.settings)
+    ? QODER_CN_ICON_URL
+    : input.settings.source === "local"
       ? null
       : (resolveOfficialAcpRegistryIconUrl(input.probe?.probe.icon) ??
         officialAcpRegistryIconUrlForAgentId(input.settings.agentId));

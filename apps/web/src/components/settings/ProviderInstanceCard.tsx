@@ -39,7 +39,7 @@ import {
 import { cn } from "../../lib/utils";
 import { useCopyToClipboard } from "../../hooks/useCopyToClipboard";
 import { useStableCallback } from "../../hooks/useStableCallback";
-import { normalizeProviderAccentColor } from "../../providerInstances";
+import { localAcpProviderIconUrl, normalizeProviderAccentColor } from "../../providerInstances";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import { MorphIcon } from "~/components/MorphIcon";
@@ -908,19 +908,18 @@ export function ProviderInstanceCard({
     updateEnvironment(providerEnvironmentWithoutNames(instance.environment, new Set([field.name])));
   };
 
+  const isLocalAcp = readConfigString(instance.config, "source") === "local";
   const titleIconNode = (
     <ProviderInstanceIcon
       driverKind={driverKind ?? instance.driver}
       displayName={displayName}
       accentColor={accentColor}
       acpRegistryAgentId={
-        readConfigString(instance.config, "source") === "local"
-          ? undefined
-          : (readConfigString(instance.config, "agentId") ?? undefined)
+        isLocalAcp ? undefined : (readConfigString(instance.config, "agentId") ?? undefined)
       }
       acpRegistryIconUrl={
-        readConfigString(instance.config, "source") === "local"
-          ? undefined
+        isLocalAcp
+          ? localAcpProviderIconUrl(readConfigString(instance.config, "commandPath"))
           : (readConfigString(instance.config, "registryIconUrl") ?? undefined)
       }
       showBadge={Boolean(accentColor)}

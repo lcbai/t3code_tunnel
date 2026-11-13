@@ -319,6 +319,26 @@ describe("EnvironmentProviderSettings routing", () => {
     });
   });
 
+  it("shows the Qoder CN icon in the list and details of an existing local instance", async () => {
+    await setup();
+    const instanceId = ProviderInstanceId.make("acpRegistry_custom");
+    state.settings = {
+      ...DEFAULT_UNIFIED_SETTINGS,
+      providerInstances: {
+        [instanceId]: {
+          driver: ProviderDriverKind.make("acpRegistry"),
+          displayName: "Work agent",
+          enabled: true,
+          config: { source: "local", commandPath: "qoderclicn", commandArgs: ["--acp"] },
+        },
+      },
+    };
+    await using _screen = await render(panel({ targetInstanceId: instanceId }));
+    const icons = document.querySelectorAll<HTMLImageElement>('img[data-slot="qoder-cn-icon"]');
+    expect(icons).toHaveLength(2);
+    await expect.poll(() => Array.from(icons).every((icon) => icon.naturalWidth > 0)).toBe(true);
+  });
+
   it("lets a signed-out managed Codex account switch to the existing CLI", async () => {
     await setup();
     const codex = ProviderDriverKind.make("codex");

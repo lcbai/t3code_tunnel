@@ -2,6 +2,8 @@ import { pipe } from "effect/Function";
 import {
   DEFAULT_MODEL_BY_PROVIDER,
   defaultInstanceIdForDriver,
+  isQoderCnCommand,
+  QODER_CN_ICON_URL,
   resolveProjectProviderInstanceEnabled,
   type ModelSelection,
   type ProjectId,
@@ -19,6 +21,12 @@ import {
 } from "@t3tools/client-runtime/state/provider-instance-display";
 
 export { normalizeProviderAccentColor, shouldShowInstanceBadge };
+
+export function localAcpProviderIconUrl(commandPath: unknown): string | undefined {
+  return typeof commandPath === "string" && isQoderCnCommand(commandPath)
+    ? QODER_CN_ICON_URL
+    : undefined;
+}
 
 /** Placeholder for untargetable drafts. Never persist or dispatch it; disable send until replaced. */
 export const NO_PROVIDER_MODEL_SELECTION: ModelSelection = {
@@ -138,12 +146,17 @@ function applyProviderInstanceBranding(
       ? (explicitInstance.config as Readonly<Record<string, unknown>>)
       : null;
   if (config?.source === "local") {
-    return { ...entry, acpRegistryAgentId: undefined, acpRegistryIconUrl: undefined };
+    return {
+      ...entry,
+      acpRegistryAgentId: undefined,
+      acpRegistryIconUrl: localAcpProviderIconUrl(config.commandPath),
+    };
   }
   const agentId = config?.agentId;
   const iconUrl = config?.registryIconUrl;
   return {
     ...entry,
+    ...(entry.acpRegistryIconUrl === QODER_CN_ICON_URL ? { acpRegistryIconUrl: undefined } : {}),
     ...(typeof agentId === "string" && agentId.trim()
       ? { acpRegistryAgentId: agentId.trim() }
       : {}),

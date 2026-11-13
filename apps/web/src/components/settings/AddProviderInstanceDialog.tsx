@@ -67,7 +67,7 @@ import {
 } from "./ProviderInstanceCard";
 import { useSecretSources } from "./SecretSourceInput";
 import doubaoLogo from "./provider-logos/doubao.png";
-import qoderCnLogo from "./provider-logos/qoder-cn.png";
+import qoderCnLogo from "../../../../../assets/providers/qoder-cn.png";
 
 const INSTANCE_ID_PATTERN = /^[a-zA-Z][a-zA-Z0-9_-]*$/;
 const DEFAULT_DRIVER_KIND = ProviderDriverKind.make("codex");

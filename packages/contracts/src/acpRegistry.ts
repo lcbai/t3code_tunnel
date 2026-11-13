@@ -13,6 +13,8 @@ const AcpRegistryAgentId = TrimmedNonEmptyString.check(
 const ACP_REGISTRY_CDN_HOSTNAME = "cdn.agentclientprotocol.com";
 const ACP_REGISTRY_AGENT_ID_PATTERN = /^[a-z0-9][a-z0-9._-]*$/;
 
+export const QODER_CN_ICON_URL = "https://docs.qoder.cn/favicon.png";
+
 export function isQoderCnCommand(commandPath: string): boolean {
   return /(?:^|[/\\])(?:qoderclicn|qodercn)(?:\.exe|\.cmd)?$/i.test(commandPath.trim());
 }

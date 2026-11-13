@@ -7,7 +7,7 @@ import {
   providerInstanceInitials,
 } from "@t3tools/client-runtime/state/provider-instance-display";
 import { useId, useState } from "react";
-import { resolveOfficialAcpRegistryIconUrl } from "@t3tools/contracts";
+import { QODER_CN_ICON_URL, resolveOfficialAcpRegistryIconUrl } from "@t3tools/contracts";
 import { useAppearancePreferences } from "../features/settings/appearance/AppearancePreferencesProvider";
 import { AppText as Text } from "./ui/AppText";
 import { cn } from "../lib/cn";
@@ -85,6 +85,15 @@ export function ProviderIcon(props: ProviderIconProps) {
     );
   }
   if (props.provider === "acpRegistry") {
+    if (props.iconUrl === QODER_CN_ICON_URL) {
+      return (
+        <Image
+          source={require("../../../../assets/providers/qoder-cn.png")}
+          style={{ width: size, height: size }}
+          contentFit="contain"
+        />
+      );
+    }
     return <AcpRegistryProviderIcon color={mono} iconUrl={props.iconUrl} size={size} />;
   }
 
@@ -162,6 +171,7 @@ export function providerInstanceNameLabel(props: {
 }): string | null {
   return props.showBadge &&
     props.provider === "acpRegistry" &&
+    props.iconUrl !== QODER_CN_ICON_URL &&
     resolveOfficialAcpRegistryIconUrl(props.iconUrl) === null
     ? props.displayName
     : null;

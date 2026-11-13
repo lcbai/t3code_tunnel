@@ -43,6 +43,27 @@ function catalogWithInspection(
 }
 
 describe("acpRegistrySnapshotReadiness", () => {
+  it.each([
+    ["qoderclicn", "https://docs.qoder.cn/favicon.png"],
+    ["/opt/bin/qoderclicn", "https://docs.qoder.cn/favicon.png"],
+    ["C:\\Tools\\qodercn.cmd", "https://docs.qoder.cn/favicon.png"],
+    ["test-agent", undefined],
+  ] as const)("publishes the bundled icon for local command %s", (commandPath, iconUrl) => {
+    const snapshot = buildCheckedAcpRegistrySnapshot({
+      ...identity,
+      settings: decodeSettings({ source: "local", commandPath }),
+      checkedAt: "2026-08-13T10:00:00.000Z",
+      inspection: {
+        status: "ready",
+        agentId: commandPath,
+        version: null,
+        distribution: "local",
+      },
+    });
+
+    expect(snapshot.iconUrl).toBe(iconUrl);
+  });
+
   it("treats a live empty command advertisement as an authoritative replacement", () => {
     const provider = buildCheckedAcpRegistrySnapshot({
       ...identity,
