@@ -46,17 +46,19 @@ session.
 
 ## 豆包与火山方舟 Coding Plan
 
-在桌面或网页打开 **设置 → 代理提供方 → OpenCode**，留空服务器地址，在 OpenCode 的
-**设置**中填写**火山方舟 Coding Plan 密钥**。使用方舟 Coding Plan 套餐的专属密钥。
-刷新提供方状态，然后在新建会话时选用 OpenCode 下的豆包模型，例如
-`volcengine-coding-plan/doubao-seed-evolving`。配对到同一环境的手机也可以选择这些模型。
+先在运行 T3 Code 环境的电脑上安装 OpenCode。在桌面或网页打开 **设置 → 代理提供方 →
+添加代理提供方**，选择**豆包**。进入**配置**后填写方舟 Coding Plan 套餐的专属密钥，
+或引用已有密钥。也可以先添加，再到豆包或已有 OpenCode 实例的设置中填写**火山方舟 Coding Plan 密钥**。
+
+留空服务器地址，由 T3 Code 启动 OpenCode。刷新提供方状态，在会话中选择刚配置的实例和豆包模型，
+例如 `volcengine-coding-plan/doubao-seed-evolving`。配对到同一环境的手机也可以选择这些模型。
 
 OpenCode 2.0.28 可以自动发现方舟套餐模型。使用 OpenCode 1.14.19 时，先按下方指南
 在 OpenCode 中配置 `volcengine-coding-plan`，并用 `{env:ARK_CODING_PLAN_API_KEY}` 引用
 T3 Code 设置中的密钥。
 
 连接已有 OpenCode 服务器时，在该服务器上配置方舟套餐，再刷新 T3 Code 的模型列表。
-[火山方舟 OpenCode 配置指南](https://console.volcengine.com/ark/region%3Acn-beijing/docs/coding-plan-personal-ai-opencode)
+[火山方舟 OpenCode 配置指南](https://docs.volcengine.com/docs/ark/coding-plan-personal-ai-opencode?lang=zh)
 
 ## Approvals
 

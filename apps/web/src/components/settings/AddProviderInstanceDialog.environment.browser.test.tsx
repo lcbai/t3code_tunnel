@@ -295,7 +295,8 @@ describe("AddProviderInstanceDialog environment routing", () => {
       providerInstances: { acpRegistry_qoder_cn: { driver: "acpRegistry", enabled: true } },
     });
     await using _screen = await render(dialog());
-    await click("Qoder CN");
+    await userEvent.click(radio("Qoder CN")!);
+    await click("下一步");
     expect(input("#add-provider-label").value).toBe("Qoder CN");
     await click("添加实例");
 
@@ -308,6 +309,35 @@ describe("AddProviderInstanceDialog environment routing", () => {
         enabled: true,
         displayName: "Qoder CN",
         config: { source: "local", commandPath: "qoderclicn", commandArgs: ["--acp"] },
+      },
+    });
+  });
+
+  it("creates a Doubao OpenCode instance with the selected environment's sensitive key", async () => {
+    setup();
+    settingsHooks.read.mockReturnValue({
+      providerInstances: { opencode_doubao: { driver: "opencode", enabled: true } },
+    });
+    await using _screen = await render(dialog());
+    await userEvent.click(radio("豆包")!);
+    await click("下一步");
+    expect(input("#add-provider-label").value).toBe("豆包");
+    await click("下一步");
+    await userEvent.fill(
+      input("#add-provider-doubao-environment-ARK_CODING_PLAN_API_KEY"),
+      "fixture-key",
+    );
+    await userEvent.click(button("添加实例"));
+
+    expect(settingsHooks.useMutation).toHaveBeenCalledWith(remoteEnvironmentId);
+    expect(settingsHooks.mutate).toHaveBeenCalledWith({
+      operation: "create",
+      instanceId: "opencode_doubao_2",
+      instance: {
+        driver: "opencode",
+        enabled: true,
+        displayName: "豆包",
+        environment: [{ name: "ARK_CODING_PLAN_API_KEY", value: "fixture-key", sensitive: true }],
       },
     });
   });

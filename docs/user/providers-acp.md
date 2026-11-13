@@ -39,7 +39,8 @@ See [Qoder's ACP documentation](https://docs.qoder.com/zh/cli/acp).
 ### Qoder CN
 
 在运行 T3 Code 的环境上安装 [Qoder CN CLI](https://docs.qoder.cn/cli/installation)。
-打开 **设置 → 代理提供方 → 添加代理提供方 → Qoder CN**，确认名称后添加实例。
+打开 **设置 → 代理提供方 → 添加代理提供方**，选择 **Qoder CN** 并点击 **下一步**，
+确认名称后添加实例。
 T3 Code 会使用该环境上的 CLI。需要认证时，在提供方卡片上选择 **登录**。
 
 提供方卡片会显示已安装版本和可用更新。开启 **运行环境 → 自动升级 Qoder CN** 后，

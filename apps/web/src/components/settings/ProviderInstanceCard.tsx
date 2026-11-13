@@ -272,7 +272,7 @@ export function nextProviderEnvironmentWithFieldSecret(
     : [...others, { name: field.name, value: secret, sensitive: true }];
 }
 
-function ProviderEnvironmentFieldRow(props: {
+export function ProviderEnvironmentFieldRow(props: {
   readonly field: ProviderEnvironmentField;
   readonly variable: ProviderInstanceEnvironmentVariable | undefined;
   readonly idPrefix: string;
