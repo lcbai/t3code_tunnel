@@ -6,6 +6,7 @@ import {
   cancelCodexAuthCallback,
   CodexAuthCallbackError,
 } from "../../app/CodexAuthCallback.ts";
+import * as DesktopDoubaoLogin from "../../app/DesktopDoubaoLogin.ts";
 import * as ElectronShell from "../../electron/ElectronShell.ts";
 import * as ElectronWindow from "../../electron/ElectronWindow.ts";
 import * as DesktopIpc from "../DesktopIpc.ts";
@@ -45,4 +46,11 @@ export const cancelProviderAuthCallback = DesktopIpc.makeIpcMethod({
       try: () => cancelCodexAuthCallback(authorizationUrl),
       catch: () => new CodexAuthCallbackError({ detail: "ChatGPT 登录请求无效。" }),
     }),
+});
+
+export const openDoubaoLoginTerminal = DesktopIpc.makeIpcMethod({
+  channel: IpcChannels.OPEN_DOUBAO_LOGIN_TERMINAL_CHANNEL,
+  payload: Schema.Void,
+  result: Schema.Boolean,
+  handler: () => DesktopDoubaoLogin.openDoubaoLoginTerminal(),
 });

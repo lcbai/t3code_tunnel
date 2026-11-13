@@ -12,6 +12,7 @@ import * as Fiber from "effect/Fiber";
 import * as Option from "effect/Option";
 import * as Ref from "effect/Ref";
 import * as Stream from "effect/Stream";
+import * as ChildProcessSpawner from "effect/process/ChildProcessSpawner";
 import { vi } from "vite-plus/test";
 
 vi.mock("electron", () => ({}));
@@ -91,6 +92,10 @@ it.effect.each([false, true])(
       const runApp = DesktopApp.program
         .pipe(
           Effect.provide(NodeCrypto.layer),
+          Effect.provideService(
+            ChildProcessSpawner.ChildProcessSpawner,
+            ChildProcessSpawner.make(() => Effect.die("unexpected child process spawn")),
+          ),
           Effect.provideService(DesktopFrpTunnel.DesktopFrpTunnel, {
             restore: () => Effect.void,
             stop: Effect.void,

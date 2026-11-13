@@ -8,6 +8,8 @@ export const DOUBAO_CLI_PROJECT_SCRIPT = {
   runOnWorktreeCreate: false,
 } satisfies ProjectScript;
 
+export const DOUBAO_CLI_LOGIN_COMMAND = "doubao login --qr=small";
+
 type ProjectScriptSettings = Pick<
   ServerSettings,
   | "defaultProjectScripts"

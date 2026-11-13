@@ -17,7 +17,7 @@ import { describe, expect, it, vi } from "vite-plus/test";
 import { page, userEvent } from "vite-plus/test/browser";
 
 import "~/index.css";
-import { act, render } from "../../../test/render";
+import { act, render, stubGlobal } from "../../../test/render";
 
 const state = vi.hoisted(() => ({
   providers: null as unknown as Atom.Writable<ReadonlyArray<ServerProvider>>,
@@ -31,6 +31,7 @@ const state = vi.hoisted(() => ({
   canManageProviders: true,
   canWriteSettings: true,
   canOperateTerminal: false,
+  primaryEnvironmentId: null as EnvironmentId | null,
   searchTargetId: null as string | null,
   readEnvironmentIds: [] as string[],
   updateEnvironmentIds: [] as string[],
@@ -145,6 +146,10 @@ vi.mock(import("../../state/session"), async (original) => {
     readEnvironmentScope: scope as never,
   };
 });
+vi.mock(import("../../state/environments"), async (original) => ({
+  ...(await original()),
+  usePrimaryEnvironmentId: () => state.primaryEnvironmentId,
+}));
 vi.mock(import("../../state/entities"), async (original) => ({
   ...(await original()),
   useProjects: (() => []) as never,
@@ -255,6 +260,7 @@ async function setup() {
   state.canManageProviders = true;
   state.canWriteSettings = true;
   state.canOperateTerminal = false;
+  state.primaryEnvironmentId = null;
   appAtomRegistry.set(state.config, null);
   state.searchTargetId = null;
   state.providerAuth = null;
@@ -277,6 +283,47 @@ async function setup() {
 }
 
 describe("EnvironmentProviderSettings routing", () => {
+  it("opens macOS Terminal for the local desktop's Doubao login", async () => {
+    await setup();
+    state.canOperateTerminal = true;
+    state.primaryEnvironmentId = environmentId;
+    const openDoubaoLoginTerminal = vi.fn(async () => true);
+    using _bridge = stubGlobal("desktopBridge", {
+      getClientPlatform: () => "darwin",
+      getLocalEnvironmentEnabled: () => true,
+      getLocalEnvironmentBootstraps: () => [
+        {
+          id: "primary",
+          httpBaseUrl: "http://localhost:4000",
+          wsBaseUrl: "ws://localhost:4000",
+        },
+      ],
+      openDoubaoLoginTerminal,
+    });
+    appAtomRegistry.set(state.config, {
+      cwd: "/workspace",
+      keybindings: DEFAULT_RESOLVED_KEYBINDINGS,
+      environment: {
+        capabilities: {},
+        platform: { os: "darwin", arch: "arm64" },
+      } as ServerConfig["environment"],
+    });
+    const instanceId = ProviderInstanceId.make("opencode_doubao");
+    state.settings = {
+      ...DEFAULT_UNIFIED_SETTINGS,
+      providerInstances: {
+        [instanceId]: { driver: ProviderDriverKind.make("opencode"), enabled: true },
+      },
+    };
+    await using _screen = await render(panel({ targetInstanceId: instanceId }));
+    await userEvent.click(page.getByRole("button", { name: "扫码登录" }));
+    expect(openDoubaoLoginTerminal).toHaveBeenCalledOnce();
+    expect(state.openTerminal).not.toHaveBeenCalled();
+    await expect
+      .element(page.getByRole("dialog", { name: "豆包扫码登录" }))
+      .not.toBeInTheDocument();
+  });
+
   it("opens the Doubao login on the selected device without using the saved Ark instance", async () => {
     await setup();
     state.canOperateTerminal = true;

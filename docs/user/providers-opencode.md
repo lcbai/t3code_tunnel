@@ -65,6 +65,8 @@ T3 Code 设置中的密钥。
 在运行 T3 Code 环境的电脑上安装[官方豆包 CLI](https://www.npmjs.com/package/@bytedance/doubao-cli)，
 然后在桌面或网页打开 **设置 → 代理提供方 → 豆包**，选择 **扫码登录**。
 
+Mac 桌面端连接本机时会在系统「终端」中打开登录。若通过网页或远程连接登录时提示找不到钥匙串，请在运行豆包的 Mac 上打开系统终端，运行 `doubao login --qr=small`。
+
 ```sh
 npm install -g @bytedance/doubao-cli
 ```
