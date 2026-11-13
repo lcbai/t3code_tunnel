@@ -650,6 +650,7 @@ export const makeAcpRegistryCatalog = Effect.fn("AcpRegistryCatalog.make")(funct
   const { settings: hostSettings } = yield* ProviderHost.ProviderHost;
   const platform = yield* HostProcess.Platform;
   const architecture = yield* HostProcess.Architecture;
+  const homeDirectory = yield* HostProcess.HomeDirectory;
   const hostEnvironment = yield* HostProcess.Environment;
   const resolveExecutable = yield* SpawnExecutableResolution;
   const platformTarget = resolveAcpRegistryPlatformTarget(platform, architecture);
@@ -1710,12 +1711,27 @@ export const makeAcpRegistryCatalog = Effect.fn("AcpRegistryCatalog.make")(funct
         )
       : Effect.void;
 
+  const resolveLocalExecutable = (command: string, environment: NodeJS.ProcessEnv) => {
+    if (command !== "qoderclicn") return resolveExecutable(command, platform, environment);
+    if (platform === "win32") {
+      return (
+        resolveExecutable("qoderclicn.exe", platform, environment) ??
+        resolveExecutable("qodercn.exe", platform, environment)
+      );
+    }
+    return (
+      resolveExecutable(command, platform, environment) ??
+      resolveExecutable("qodercn", platform, environment) ??
+      resolveExecutable(path.join(homeDirectory, ".local", "bin", command), platform, environment)
+    );
+  };
+
   const inspect: AcpRegistryCatalog["Service"]["inspect"] = Effect.fn("AcpRegistryCatalog.inspect")(
     function* (settings, environment) {
       if (settings.source === "local") {
         const command = settings.commandPath.trim();
         if (!command) return { status: "unconfigured" } as const;
-        const executable = resolveExecutable(command, platform, environment ?? hostEnvironment);
+        const executable = resolveLocalExecutable(command, environment ?? hostEnvironment);
         if (executable !== undefined) yield* validateLocalExecutable(executable);
         return executable === undefined
           ? ({
@@ -1835,7 +1851,7 @@ export const makeAcpRegistryCatalog = Effect.fn("AcpRegistryCatalog.make")(funct
           });
         }
         const env = environment ?? hostEnvironment;
-        const command = resolveExecutable(executable, platform, env);
+        const command = resolveLocalExecutable(executable, env);
         if (command === undefined) {
           return yield* new AcpRegistryError({
             reason: "runner_unavailable",

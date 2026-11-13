@@ -72,6 +72,8 @@ const DRIVER_OPTIONS = providerClients.definitions.filter(
 const FEATURED_DRIVER_OPTIONS = DRIVER_OPTIONS.filter((option) => option.featured !== false);
 const MORE_DRIVER_OPTIONS = DRIVER_OPTIONS.filter((option) => option.featured === false);
 const EMPTY_CONFIG_DRAFT: Record<string, unknown> = {};
+const QODER_CN_LABEL = "Qoder CN";
+const QODER_CN_COMMAND = "qoderclicn";
 function validateInstanceId(id: string, existing: ReadonlySet<string>): string | null {
   if (id.length === 0) return "Instance ID is required.";
   if (id.length > 64) return "Instance ID must be 64 characters or fewer.";
@@ -232,6 +234,8 @@ export function AddProviderInstanceDialog({
 
   const configDraft = configByDriver[driver] ?? EMPTY_CONFIG_DRAFT;
   const isLocalAcp = isAcpRegistry && isManualAcpConfiguration && configDraft.source === "local";
+  const localAcpSummary =
+    configDraft.commandPath === QODER_CN_COMMAND ? QODER_CN_LABEL : "本地 ACP 命令";
   const localCommandPath =
     typeof configDraft.commandPath === "string" ? configDraft.commandPath.trim() : "";
   const manualAgentId = typeof configDraft.agentId === "string" ? configDraft.agentId.trim() : "";
@@ -244,7 +248,7 @@ export function AddProviderInstanceDialog({
       : "请选择一个 ACP 代理或手动配置。";
   const wizardStepSummaries = isAcpRegistry
     ? ([
-        isLocalAcp ? "本地 ACP 命令" : (selectedAcp?.name ?? (manualAgentId || null)),
+        isLocalAcp ? localAcpSummary : (selectedAcp?.name ?? (manualAgentId || null)),
         previewLabel,
         null,
       ] as const)
@@ -349,22 +353,28 @@ export function AddProviderInstanceDialog({
     setHasAttemptedSubmit(false);
   };
 
-  const handleLocalAcpConfiguration = () => {
+  const configureLocalAcp = (nextLabel: string, config: Record<string, unknown>) => {
     setDriver(ACP_REGISTRY_DRIVER_KIND);
     setSelectedAcp(null);
     setIsManualAcpConfiguration(true);
     setConfigByDriver((existing) => ({
       ...existing,
-      [ACP_REGISTRY_DRIVER_KIND]: { source: "local", commandArgs: [] },
+      [ACP_REGISTRY_DRIVER_KIND]: { ...config, source: "local" },
     }));
     setIdentityByDriver((existing) =>
       updateProviderIdentityDraft(existing, ACP_REGISTRY_DRIVER_KIND, {
-        label: "当地ACP",
+        label: nextLabel,
         instanceIdOverride: null,
       }),
     );
     setLocalEnvironment([]);
     setHasAttemptedSubmit(false);
+  };
+
+  const handleQoderCnConfiguration = () => {
+    configureLocalAcp(QODER_CN_LABEL, { commandPath: QODER_CN_COMMAND, commandArgs: ["--acp"] });
+    setShowMoreProviders(true);
+    setWizardStep(1);
   };
 
   // A policy that owns this driver's launch settings also rules out ChatGPT's own runtime.
@@ -418,7 +428,7 @@ export function AddProviderInstanceDialog({
     toastManager.add({
       type: "success",
       title: "添加了提供者实例",
-      description: `添加了${driverOption.label} example '${instanceId}'。`,
+      description: `已添加 ${label.trim() || driverOption.label}（${instanceId}）。`,
     });
     onOpenChange(false);
   };
@@ -483,6 +493,18 @@ export function AddProviderInstanceDialog({
                   onValueChange={selectDriver}
                   aria-labelledby="add-instance-driver-label"
                 />
+                {acpRegistryAllowed ? (
+                  <div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={isPreparingRegistryAgent || !canManageProviders}
+                      onClick={handleQoderCnConfiguration}
+                    >
+                      {QODER_CN_LABEL}
+                    </Button>
+                  </div>
+                ) : null}
                 <MultipleAccountsNote environmentId={environmentId} driver={driver} />
               </div>
 
@@ -567,7 +589,9 @@ export function AddProviderInstanceDialog({
                             providerInstances={settings.providerInstances}
                             onPrepared={handleAcpPrepared}
                             onManualConfiguration={handleManualAcpConfiguration}
-                            onLocalConfiguration={handleLocalAcpConfiguration}
+                            onLocalConfiguration={() =>
+                              configureLocalAcp("本地 ACP", { commandArgs: [] })
+                            }
                           />
                           {isAcpRegistry && hasAttemptedSubmit && acpSelectionError ? (
                             <p className="mt-2 text-2xs text-destructive">{acpSelectionError}</p>
@@ -614,6 +638,20 @@ export function AddProviderInstanceDialog({
                     ) : null}
                   </div>
                 </div>
+              ) : null}
+
+              {isLocalAcp && wizardStep === identityStep && localAcpSummary === QODER_CN_LABEL ? (
+                <p className="mb-4 text-sm text-muted-foreground">
+                  在 {environmentLabel} 上使用已安装的 Qoder CN CLI。
+                  <a
+                    className="ml-1 underline underline-offset-2"
+                    href="https://docs.qoder.cn/cli/installation"
+                    rel="noreferrer"
+                    target="_blank"
+                  >
+                    安装说明
+                  </a>
+                </p>
               ) : null}
 
               <SettingsGroup

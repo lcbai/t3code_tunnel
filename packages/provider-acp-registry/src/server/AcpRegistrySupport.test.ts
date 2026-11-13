@@ -283,6 +283,56 @@ describe("AcpRegistrySupport", () => {
     );
   });
 
+  it.effect("finds Qoder CN outside PATH and honors native PATH commands first", () =>
+    Effect.gen(function* () {
+      const fs = yield* FileSystem.FileSystem;
+      const path = yield* Path.Path;
+      const home = yield* fs.makeTempDirectoryScoped({ prefix: "t3-acp-qoder-cn-" });
+      const installBin = path.join(home, ".local", "bin");
+      const pathBin = path.join(home, "path-bin");
+      const installed = path.join(installBin, "qoderclicn");
+      const alias = path.join(pathBin, "qodercn");
+      const exact = path.join(pathBin, "qoderclicn");
+      yield* fs.makeDirectory(installBin, { recursive: true });
+      yield* fs.makeDirectory(pathBin);
+      yield* fs.writeFileString(installed, "#!/bin/sh\n");
+      yield* fs.chmod(installed, 0o755);
+      const resolver = yield* AcpRegistrySupport.makeAcpRegistryCatalog({
+        cacheDir: home,
+        toolsDir: path.join(home, "tools"),
+        registryUrl,
+      }).pipe(Effect.provideService(HostProcess.HomeDirectory, home));
+      const localSettings = decodeAcpRegistrySettings({
+        source: "local",
+        commandPath: "qoderclicn",
+        commandArgs: ["--acp"],
+      });
+
+      expect(yield* resolver.inspect(localSettings)).toMatchObject({ status: "ready" });
+      expect((yield* resolver.resolve(localSettings, "/workspace")).spawn).toMatchObject({
+        command: installed,
+        args: ["--acp"],
+        shell: false,
+      });
+
+      yield* fs.writeFileString(alias, "#!/bin/sh\n");
+      yield* fs.chmod(alias, 0o755);
+      const environment = { PATH: pathBin };
+      expect(
+        (yield* resolver.resolve(localSettings, "/workspace", environment)).spawn.command,
+      ).toBe(alias);
+
+      yield* fs.writeFileString(exact, "#!/bin/sh\n");
+      yield* fs.chmod(exact, 0o755);
+      expect(
+        (yield* resolver.resolve(localSettings, "/workspace", environment)).spawn.command,
+      ).toBe(exact);
+    }).pipe(
+      Effect.scoped,
+      Effect.provide(layerResolver(() => Effect.die("unexpected registry request"), { PATH: "" })),
+    ),
+  );
+
   it.effect("resolves a local executable path and inherits the host environment", () =>
     Effect.gen(function* () {
       const fileSystem = yield* FileSystem.FileSystem;

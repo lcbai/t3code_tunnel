@@ -36,6 +36,12 @@ environment if Qoder CLI is already installed there. To use a Qoder personal acc
 `QODER_PERSONAL_ACCESS_TOKEN` in the instance's environment settings using a secret source.
 See [Qoder's ACP documentation](https://docs.qoder.com/zh/cli/acp).
 
+### Qoder CN
+
+在运行 T3 Code 的环境上安装 [Qoder CN CLI](https://docs.qoder.cn/cli/installation)。
+打开 **设置 → 代理提供方 → 添加代理提供方 → Qoder CN**，确认名称后添加实例。
+T3 Code 会使用该环境上的 CLI。需要认证时，在提供方卡片上选择 **登录**。
+
 ## Add a local command
 
 In **Settings → Providers → Add provider**, select **Show more**, then **Local ACP command**. Enter the executable

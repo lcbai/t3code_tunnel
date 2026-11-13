@@ -289,6 +289,29 @@ describe("AddProviderInstanceDialog environment routing", () => {
     expect(signInStep()).toBeNull();
   });
 
+  it("adds Qoder CN directly to the selected environment with its local launch settings", async () => {
+    setup();
+    settingsHooks.read.mockReturnValue({
+      providerInstances: { acpRegistry_qoder_cn: { driver: "acpRegistry", enabled: true } },
+    });
+    await using _screen = await render(dialog());
+    await click("Qoder CN");
+    expect(input("#add-provider-label").value).toBe("Qoder CN");
+    await click("添加实例");
+
+    expect(settingsHooks.useMutation).toHaveBeenCalledWith(remoteEnvironmentId);
+    expect(settingsHooks.mutate).toHaveBeenCalledWith({
+      operation: "create",
+      instanceId: "acpRegistry_qoder_cn_2",
+      instance: {
+        driver: "acpRegistry",
+        enabled: true,
+        displayName: "Qoder CN",
+        config: { source: "local", commandPath: "qoderclicn", commandArgs: ["--acp"] },
+      },
+    });
+  });
+
   it("rejects a queued save after the provider grant is revoked", async () => {
     setup();
     await using screen = await prepareCodexInstance();
