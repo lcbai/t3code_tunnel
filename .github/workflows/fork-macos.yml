@@ -2,13 +2,21 @@ name: Build macOS DMG
 
 on:
   workflow_dispatch:
+    inputs:
+      runner:
+        description: GitHub-hosted machine to build the Apple Silicon installer
+        type: choice
+        default: macos-15
+        options:
+          - macos-15
+          - macos-15-intel
 
 permissions:
   contents: read
 
 jobs:
   macos:
-    runs-on: macos-15
+    runs-on: ${{ inputs.runner }}
     timeout-minutes: 60
     env:
       NODE_OPTIONS: --max-old-space-size=4096
@@ -32,7 +40,9 @@ jobs:
           install-args: --frozen-lockfile --filter=@t3tools/desktop... --filter=@t3tools/web... --filter=t3... --filter=@t3tools/scripts...
 
       - name: Set up Rust
-        run: rustup default stable
+        run: |
+          rustup default stable
+          rustup target add aarch64-apple-darwin
 
       - name: Build and verify Apple Silicon installer
         shell: bash
@@ -48,10 +58,13 @@ jobs:
           hdiutil attach -readonly -nobrowse -mountpoint "$mount" "$dmg"
           trap 'hdiutil detach "$mount"' EXIT
           apps=("$mount"/*.app)
-          codesign --verify --deep --strict "${apps[0]}"
-          frpc="${apps[0]}/Contents/Resources/frp/frpc"
+          app="${apps[0]}"
+          codesign --verify --deep --strict "$app"
+          executable=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$app/Contents/Info.plist")
+          lipo -verify_arch arm64 "$app/Contents/MacOS/$executable"
+          frpc="$app/Contents/Resources/frp/frpc"
           lipo -verify_arch arm64 "$frpc"
-          "$frpc" --version
+          if [[ "$(uname -m)" == arm64 ]]; then "$frpc" --version; fi
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:

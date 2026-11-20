@@ -4230,8 +4230,13 @@ const buildDesktopArtifactUnlocked = Effect.fn("buildDesktopArtifactUnlocked")(f
   ) {
     yield* validateLinuxPackagedPayload({ stageDistDir, verbose: options.verbose });
   }
-  // x64 builds on arm64 runners; the arm64 check covers the shared JS bundle.
-  if (options.platform === "mac" && options.arch === "arm64" && hostPlatform === "darwin") {
+  // The probe uses host Node to load the arm64 bundle and its native dependencies.
+  if (
+    options.platform === "mac" &&
+    options.arch === "arm64" &&
+    hostPlatform === "darwin" &&
+    (yield* HostProcess.Architecture) === "arm64"
+  ) {
     yield* validateMacPackagedPayload({ stageDistDir, verbose: options.verbose });
   }
 
