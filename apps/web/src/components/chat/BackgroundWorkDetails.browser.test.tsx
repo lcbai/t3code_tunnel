@@ -76,7 +76,7 @@ it("opens full command details for short labels and keeps pending tasks current"
     />
   );
   await using screen = await render(view("Audit"));
-  await screen.getByRole("button", { name: "细节", exact: true }).click();
+  await screen.getByRole("button", { name: "Details", exact: true }).click();
   await vi.waitFor(() => expect(page.getByRole("dialog").element().textContent).toContain(command));
   await expect.element(page.getByText("Command output stream")).not.toBeInTheDocument();
 
@@ -92,6 +92,38 @@ it("opens full command details for short labels and keeps pending tasks current"
   await expect.element(page.getByText("Command output stream")).toBeVisible();
   await screen.rerender(view("Native fallback", "completed", false));
   await expect.element(page.getByText("Command output stream")).toBeVisible();
-  await page.getByRole("button", { name: "关闭", exact: true }).click();
+  await page.getByRole("button", { name: "Close", exact: true }).click();
   await expect.element(page.getByRole("dialog")).not.toBeInTheDocument();
+});
+
+it("gives a subagent the same status as the background work line", async () => {
+  await using screen = await render(
+    <ThreadNow
+      attention={null}
+      syncPhase={null}
+      goal={null}
+      work={backgroundWorkNowItem({
+        environmentId: EnvironmentId.make("test"),
+        threadId: ThreadId.make("thread"),
+        tasks: [
+          {
+            taskId: "subagent-task",
+            kind: "subagent",
+            description: "Review refactor diffs",
+            childThreadId: ThreadId.make("child"),
+          },
+        ],
+        turnItems: [],
+        stopDisabled: false,
+        stopping: false,
+        onStop: async () => undefined,
+        onOpenThread: () => undefined,
+      })}
+    />,
+  );
+  await expect.element(page.getByText("Waiting · Review refactor diffs")).toBeVisible();
+  await screen.getByRole("button", { name: "Details", exact: true }).click();
+  await expect
+    .element(page.getByRole("dialog").getByText("Waiting", { exact: true }))
+    .toBeVisible();
 });

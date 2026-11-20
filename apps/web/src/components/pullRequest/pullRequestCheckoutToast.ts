@@ -1,9 +1,19 @@
 import type { ChangeRequestTerminology } from "@t3tools/client-runtime/source-control-clients";
+import { msg } from "gt-react";
+
+import { m } from "~/i18n/messages";
+
+import { changeRequestTermKind } from "./changeRequestTerm";
 
 export function offHeadPullRequestCheckoutToast(terminology: ChangeRequestTerminology) {
   return {
     type: "warning",
-    title: "已经检查过，但还没有证实最近的犯罪",
-    description: `无法在${terminology.singular} 最新承诺中确认退出，因此其代码可能有所不同。 本地承诺或未承诺的工作将保留退出所在位置。`,
+    title: m(msg("Checked out, but not confirmed on the latest commit")),
+    description: m(
+      msg(
+        "This checkout could not be confirmed at the {term, select, mr {merge request} cr {change request} other {pull request}}'s latest commit, so its code may differ. Local commits or uncommitted work keep a checkout where it is.",
+        { term: changeRequestTermKind(terminology) },
+      ),
+    ),
   } as const;
 }

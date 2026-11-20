@@ -4,11 +4,15 @@ import { resolveAutoFeatureBranchName } from "@t3tools/shared/git";
 import { assert, describe, it } from "vite-plus/test";
 import {
   buildMenuItems,
+  type DefaultBranchConfirmableAction,
+  hasUsableGitMenuContent,
   requiresDefaultBranchConfirmation,
   resolveChangesTotals,
   resolveDefaultBranchActionDialogCopy,
+  resolveFeatureBranchUnavailableReason,
   resolveLiveThreadBranchUpdate,
   resolveQuickAction,
+  getMenuActionDisabledReason,
 } from "./GitActionsControl.logic";
 
 function status(overrides: Partial<VcsStatusResult> = {}): VcsStatusResult {
@@ -31,6 +35,12 @@ function status(overrides: Partial<VcsStatusResult> = {}): VcsStatusResult {
   };
 }
 
+function pushDisabledReason(gitStatus: VcsStatusResult): string | null {
+  const item = buildMenuItems(gitStatus, false).find((menuItem) => menuItem.id === "push");
+  assert.isDefined(item);
+  return getMenuActionDisabledReason({ item, gitStatus, isBusy: false, hasPrimaryRemote: true });
+}
+
 describe("when: ref is clean, ahead, and has an open PR", () => {
   it("resolveQuickAction prefers push", () => {
     const quick = resolveQuickAction(
@@ -47,7 +57,7 @@ describe("when: ref is clean, ahead, and has an open PR", () => {
       }),
       false,
     );
-    assert.deepInclude(quick, { kind: "run_action", action: "push", label: "推送" });
+    assert.deepInclude(quick, { kind: "run_action", action: "push", label: "Push" });
   });
 });
 
@@ -62,7 +72,7 @@ describe("when: ref is clean, up to date, and has no open PR", () => {
 
     const quick = resolveQuickAction(syncedFeature, false);
     assert.deepInclude(quick, {
-      label: "创建 PR",
+      label: "Create PR",
       disabled: false,
       kind: "run_action",
       action: "create_pr",
@@ -76,6 +86,30 @@ describe("when: ref is clean, up to date, and has no open PR", () => {
       buildMenuItems(dirtyFeature, false).find((item) => item.id === "pr")?.disabled,
       false,
     );
+    assert.equal(pushDisabledReason(dirtyFeature), "No local commits to push.");
+  });
+
+  it("offers the actions menu only when something in it is usable", () => {
+    const hasContent = (
+      gitStatus: VcsStatusResult,
+      overrides: Partial<Parameters<typeof hasUsableGitMenuContent>[0]> = {},
+    ) =>
+      hasUsableGitMenuContent({
+        menuItems: buildMenuItems(gitStatus, false, gitStatus.hasPrimaryRemote),
+        canWriteSourceControl: true,
+        canPublishRepository: false,
+        hasNotice: false,
+        ...overrides,
+      });
+    const clean = status();
+    const dirty = status({ hasWorkingTreeChanges: true });
+
+    assert.isFalse(hasContent(clean));
+    assert.isTrue(hasContent(dirty));
+    assert.isTrue(hasContent(status({ aheadCount: 1 })));
+    assert.isFalse(hasContent(dirty, { canWriteSourceControl: false }));
+    assert.isTrue(hasContent(status({ hasPrimaryRemote: false }), { canPublishRepository: true }));
+    assert.isTrue(hasContent(clean, { hasNotice: true }));
   });
 });
 
@@ -89,9 +123,19 @@ describe("when: on default ref without open PR", () => {
     assert.deepInclude(quick, {
       kind: "run_action",
       action: "commit_push",
-      label: "提交并推送",
+      label: "Commit & push",
       disabled: false,
     });
+  });
+
+  it("offers a feature branch only to actions that commit the changes", () => {
+    const reason = (action: DefaultBranchConfirmableAction, hasWorkingTreeChanges: boolean) =>
+      resolveFeatureBranchUnavailableReason({ action, branchName: "main", hasWorkingTreeChanges });
+    assert.isNull(reason("commit_push", true));
+    assert.isNull(reason("commit_push_pr", true));
+    assert.isNotNull(reason("commit_push", false));
+    assert.isNotNull(reason("push", true));
+    assert.isNotNull(reason("create_pr", true));
   });
 });
 
@@ -99,12 +143,16 @@ describe("when: local changes are behind upstream", () => {
   it("keeps the commit action available without pushing, with or without an open PR", () => {
     const behind = status({ hasWorkingTreeChanges: true, behindCount: 2 });
     const commit = {
-      label: "提交",
+      label: "Commit",
       disabled: false,
       kind: "run_action",
       action: "commit",
     } as const;
     assert.deepEqual(resolveQuickAction(behind, false), commit);
+    assert.equal(
+      pushDisabledReason({ ...behind, aheadCount: 1 }),
+      "Branch is behind upstream. Pull/rebase before pushing.",
+    );
     assert.deepEqual(
       resolveQuickAction(
         {
@@ -138,7 +186,7 @@ describe("when: ref has no upstream configured", () => {
     assert.deepInclude(quick, {
       kind: "run_action",
       action: "create_pr",
-      label: "推送并创建 PR",
+      label: "Push & create PR",
       disabled: false,
     });
   });
@@ -156,7 +204,7 @@ describe("when: ref has no upstream configured", () => {
     );
     assert.deepEqual(quick, {
       kind: "open_publish",
-      label: "发布仓库",
+      label: "Publish repository",
       disabled: false,
     });
   });
@@ -173,12 +221,12 @@ describe("when: the ref is on GitLab", () => {
 
   it("names merge requests in actions and the default-ref dialog", () => {
     const ahead = status({ ...gitLab, hasUpstream: false, aheadCount: 2 });
-    assert.equal(resolveQuickAction(ahead, false).label, "推送并创建 MR");
+    assert.equal(resolveQuickAction(ahead, false).label, "Push & create MR");
     assert.equal(
       resolveQuickAction(status({ ...gitLab, hasWorkingTreeChanges: true }), false).label,
-      "提交、推送并创建 MR",
+      "Commit, push & MR",
     );
-    assert.equal(buildMenuItems(ahead, false).find((item) => item.id === "pr")?.label, "创建 MR");
+    assert.equal(buildMenuItems(ahead, false).find((item) => item.id === "pr")?.label, "Create MR");
 
     const copy = resolveDefaultBranchActionDialogCopy({
       action: "create_pr",
@@ -186,8 +234,8 @@ describe("when: the ref is on GitLab", () => {
       includesCommit: false,
       terminology: sourceControlClients.get("gitlab").changeRequest,
     });
-    assert.equal(copy.title, "要从默认分支推送并创建 MR 吗？");
-    assert.include(copy.description, "推送本地提交并创建 MR");
+    assert.equal(copy.title, "Push & create MR from default ref?");
+    assert.include(copy.description, "create a merge request on");
   });
 });
 
@@ -257,13 +305,26 @@ describe("resolveChangesTotals", () => {
           hasWorkingTreeChanges: true,
           branchChanges: { baseRef: "main", insertions: 0, deletions: 0 },
           workingTree: {
-            files: [{ path: "a.ts", insertions: 5, deletions: 1 }],
+            files: [
+              { path: "a.ts", insertions: 4, deletions: 1 },
+              { path: "README.md", insertions: 1, deletions: 0 },
+            ],
             insertions: 5,
             deletions: 1,
           },
         }),
       ),
-      { insertions: 5, deletions: 1 },
+      {
+        insertions: 5,
+        deletions: 1,
+        breakdown: {
+          code: { additions: 4, deletions: 1 },
+          tests: { additions: 0, deletions: 0 },
+          mocks: { additions: 0, deletions: 0 },
+          generated: { additions: 0, deletions: 0 },
+          docs: { additions: 1, deletions: 0 },
+        },
+      },
     );
   });
 
@@ -279,8 +340,51 @@ describe("resolveChangesTotals", () => {
           },
         }),
       ),
-      { insertions: 20, deletions: 3, baseRef: "origin/master" },
+      { insertions: 20, deletions: 3, baseRef: "origin/master", breakdown: null },
     );
+  });
+
+  it("uses the panel's branch comparison when it has file stats", () => {
+    const dirty = status({
+      branchChanges: { baseRef: "main", insertions: 20, deletions: 3 },
+    });
+    const source = {
+      id: "branch-range",
+      kind: "branch-range",
+      title: "Changes vs release",
+      baseRef: "release",
+      headRef: "feature/test",
+      diff: "",
+      diffHash: "hash",
+      truncated: false,
+    } as const;
+    assert.deepEqual(
+      resolveChangesTotals(dirty, {
+        ...source,
+        files: [
+          { path: "a.ts", previousPath: null, additions: 4, deletions: 1 },
+          { path: "a.test.ts", previousPath: null, additions: 2, deletions: 0 },
+        ],
+      }),
+      {
+        insertions: 6,
+        deletions: 1,
+        baseRef: "release",
+        breakdown: {
+          code: { additions: 4, deletions: 1 },
+          tests: { additions: 2, deletions: 0 },
+          mocks: { additions: 0, deletions: 0 },
+          generated: { additions: 0, deletions: 0 },
+          docs: { additions: 0, deletions: 0 },
+        },
+      },
+    );
+    assert.deepEqual(resolveChangesTotals(dirty, source), {
+      insertions: 20,
+      deletions: 3,
+      baseRef: "main",
+      breakdown: null,
+    });
   });
 
   it("falls back to the working tree when branchChanges is omitted", () => {

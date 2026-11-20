@@ -12,24 +12,56 @@ vi.mock(import("pdfjs-dist/build/pdf.worker.min.mjs?url"), async () => {
   };
 });
 
+// Holds one page's Find text until the test opens it, so a scan can be observed mid-flight.
+const findGate = vi.hoisted(() => ({ page: 0, open: () => {}, opened: Promise.resolve() }));
+function setup(page: number) {
+  findGate.page = page;
+  findGate.opened = new Promise((resolve) => (findGate.open = resolve));
+}
+vi.mock(import("./pdfDocument"), async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    openPdf: (bytes) => {
+      const task = actual.openPdf(bytes);
+      const promise = task.promise.then((document) => {
+        const getPage = document.getPage.bind(document);
+        document.getPage = async (number) => {
+          const page = await getPage(number);
+          const getTextContent = page.getTextContent.bind(page);
+          page.getTextContent = async (params) => {
+            if (number === findGate.page) await findGate.opened;
+            return getTextContent(params);
+          };
+          return page;
+        };
+        return document;
+      });
+      return Object.defineProperty(task, "promise", { value: promise });
+    },
+  };
+});
+
 import PdfViewer from "./PdfViewer";
 
 // Page 1 is a short banner whose title is drawn in two runs with a font change, so pdf.js
 // splits it into two text spans. Page 2 is a letter page rotated a quarter turn.
-function twoPagePdf() {
-  const pages = [
+function testPdf(
+  pages = [
     {
       box: "0 0 612 140",
       rotate: 0,
       text: "BT /F1 24 Tf 30 70 Td (Quarter) Tj /F2 24 Tf (ly outlook) Tj ET",
     },
     { box: "0 0 612 792", rotate: 90, text: "BT /F1 24 Tf 30 700 Td (Budget and risks) Tj ET" },
-  ];
+  ],
+) {
+  const fonts = 3 + pages.length * 2;
   const objects = [
     "<< /Type /Catalog /Pages 2 0 R >>",
-    "<< /Type /Pages /Count 2 /Kids [3 0 R 5 0 R] >>",
+    `<< /Type /Pages /Count ${pages.length} /Kids [${pages.map((_, index) => `${3 + index * 2} 0 R`).join(" ")}] >>`,
     ...pages.flatMap(({ box, rotate, text }, index) => [
-      `<< /Type /Page /Parent 2 0 R /MediaBox [${box}] /Rotate ${rotate} /Resources << /Font << /F1 7 0 R /F2 8 0 R >> >> /Contents ${4 + index * 2} 0 R >>`,
+      `<< /Type /Page /Parent 2 0 R /MediaBox [${box}] /Rotate ${rotate} /Resources << /Font << /F1 ${fonts} 0 R /F2 ${fonts + 1} 0 R >> >> /Contents ${4 + index * 2} 0 R >>`,
       `<< /Length ${text.length} >>\nstream\n${text}\nendstream`,
     ]),
     "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
@@ -49,7 +81,7 @@ function twoPagePdf() {
 }
 
 it("fits the width, then finds split and rotated text and jumps to its page", async () => {
-  const url = URL.createObjectURL(twoPagePdf());
+  const url = URL.createObjectURL(testPdf());
   try {
     const container = document.createElement("div");
     container.style.cssText = "display:flex;width:500px;height:600px";
@@ -57,16 +89,16 @@ it("fits the width, then finds split and rotated text and jumps to its page", as
       container,
     });
     // The milestone is pdf.js booting its worker and parsing the document, not a frame count.
-    await expect.element(screen.getByText("第 1 页，共 2 页"), { timeout: 10_000 }).toBeVisible();
+    await expect.element(screen.getByText("1 / 2 pages"), { timeout: 10_000 }).toBeVisible();
     const region = screen.container.querySelector<HTMLElement>('[role="region"]')!;
     // Fit width follows the measured viewport, which settles once the scrollbar appears.
     await vi.waitFor(() => {
-      const canvas = region.querySelector('canvas[aria-label="第 1 页"]')!;
+      const canvas = region.querySelector('canvas[aria-label="Page 1"]')!;
       expect(canvas.getBoundingClientRect().width).toBe(region.clientWidth - 32);
       expect(region.scrollWidth).toBe(region.clientWidth);
     });
 
-    const find = screen.getByRole("searchbox", { name: "在 PDF 中查找" });
+    const find = screen.getByRole("searchbox", { name: "Find in PDF" });
     await find.fill("quarterly outlook");
     await expect.element(screen.getByRole("status")).toHaveTextContent("1/1");
     await vi.waitFor(() =>
@@ -76,7 +108,7 @@ it("fits the width, then finds split and rotated text and jumps to its page", as
     );
 
     await find.fill("budget");
-    await expect.element(screen.getByText("第 2 页，共 2 页")).toBeVisible();
+    await expect.element(screen.getByText("2 / 2 pages")).toBeVisible();
     await expect.element(screen.getByRole("status")).toHaveTextContent("1/1");
     const rotated = await vi.waitFor(() => {
       const span = Array.from(region.querySelectorAll("[data-pdf-text-layer] span")).find(
@@ -110,8 +142,73 @@ it("fits the width, then finds split and rotated text and jumps to its page", as
   }
 });
 
+it("keeps the painted page while its width changes, then repaints it without a blank frame", async () => {
+  const url = URL.createObjectURL(testPdf());
+  try {
+    const container = document.createElement("div");
+    container.style.cssText = "display:flex;width:500px;height:600px";
+    await using screen = await render(<PdfViewer src={url} title="Resized PDF" />, { container });
+    await expect.element(screen.getByText("1 / 2 pages"), { timeout: 10_000 }).toBeVisible();
+    const region = screen.container.querySelector<HTMLElement>('[role="region"]')!;
+    const canvas = region.querySelector<HTMLCanvasElement>('canvas[aria-label="Page 1"]')!;
+    const bitmapWidth = () =>
+      Math.ceil((region.clientWidth - 32) * Math.min(2, window.devicePixelRatio));
+    await vi.waitFor(() => expect(canvas.width).toBe(bitmapWidth()));
+    const painted = canvas.width;
+
+    // A canvas loses its pixels when its bitmap is resized, so read them as soon as that happens.
+    const repainted = new Promise<number[]>((resolve) =>
+      new MutationObserver(() =>
+        resolve(Array.from(canvas.getContext("2d")!.getImageData(0, 0, 1, 1).data)),
+      ).observe(canvas, { attributeFilter: ["width"] }),
+    );
+    const resized = new Promise((resolve) => new ResizeObserver(resolve).observe(container));
+    container.style.width = "400px";
+    await resized;
+    expect(canvas.getBoundingClientRect().width).toBe(region.clientWidth - 32);
+    expect(canvas.width).toBe(painted);
+
+    expect(await repainted).toEqual([255, 255, 255, 255]);
+    expect(canvas.width).toBe(bitmapWidth());
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+});
+
+it("jumps to the first hit while still counting and keeps later manual navigation", async () => {
+  setup(4);
+  const page = (text: string) => ({
+    box: "0 0 612 792",
+    rotate: 0,
+    text: `BT /F1 24 Tf 30 700 Td (${text}) Tj ET`,
+  });
+  const url = URL.createObjectURL(
+    testPdf([page("Intro"), page("Needle one"), page("Needle two"), page("Closing")]),
+  );
+  try {
+    await using screen = await render(
+      <div className="flex h-[300px] w-[320px]">
+        <PdfViewer src={url} title="Searched PDF" />
+      </div>,
+    );
+    await expect.element(screen.getByText("1 / 4 pages")).toBeVisible();
+    await screen.getByRole("searchbox", { name: "Find in PDF" }).fill("needle");
+    await expect.element(screen.getByText("2 / 4 pages")).toBeVisible();
+    await expect.element(screen.getByRole("status")).toHaveTextContent("Searching…");
+
+    await screen.getByRole("button", { name: "Next page", exact: true }).click();
+    await expect.element(screen.getByText("3 / 4 pages")).toBeVisible();
+    findGate.open();
+    await expect.element(screen.getByRole("status")).toHaveTextContent("1/2");
+    await expect.element(screen.getByText("3 / 4 pages")).toBeVisible();
+  } finally {
+    findGate.open();
+    URL.revokeObjectURL(url);
+  }
+});
+
 it("restores page, within-page offset and zoom after a remount", async () => {
-  const url = URL.createObjectURL(twoPagePdf());
+  const url = URL.createObjectURL(testPdf());
   const viewer = (mount: number, positionKey: string) => (
     <div className="flex h-[300px] w-[320px]">
       <PdfViewer key={mount} src={url} title="Restored PDF" positionKey={positionKey} />
@@ -119,10 +216,10 @@ it("restores page, within-page offset and zoom after a remount", async () => {
   );
   try {
     await using screen = await render(viewer(1, "restore:a"));
-    await expect.element(screen.getByText("第 1 页，共 2 页")).toBeVisible();
-    await screen.getByRole("button", { name: "放大", exact: true }).click();
-    await screen.getByRole("button", { name: "下一页", exact: true }).click();
-    await expect.element(screen.getByText("第 2 页，共 2 页")).toBeVisible();
+    await expect.element(screen.getByText("1 / 2 pages")).toBeVisible();
+    await screen.getByRole("button", { name: "Zoom in", exact: true }).click();
+    await screen.getByRole("button", { name: "Next page", exact: true }).click();
+    await expect.element(screen.getByText("2 / 2 pages")).toBeVisible();
     const region = () => screen.getByRole("region", { name: "Restored PDF" }).element();
     const top = region().scrollTop + 40;
     const scrolled = new Promise((resolve) =>
@@ -134,18 +231,18 @@ it("restores page, within-page offset and zoom after a remount", async () => {
     const zoom = screen.container.textContent!.match(/\d+%/)![0];
 
     await screen.rerender(viewer(2, "restore:a"));
-    await expect.element(screen.getByText("第 2 页，共 2 页")).toBeVisible();
+    await expect.element(screen.getByText("2 / 2 pages")).toBeVisible();
     await vi.waitFor(() => expect(region().scrollTop).toBeCloseTo(top, 0));
     await vi.waitFor(() => expect(screen.container.textContent).toContain(zoom));
 
-    await screen.getByRole("button", { name: "适应宽度", exact: true }).click();
+    await screen.getByRole("button", { name: "Fit width", exact: true }).click();
     await vi.waitFor(() => {
       const canvas = region().querySelector("canvas")!;
       expect(canvas.getBoundingClientRect().width).toBe(region().clientWidth - 32);
     });
     const fitTop = region().scrollTop;
     await screen.rerender(viewer(3, "restore:a"));
-    await expect.element(screen.getByText("第 2 页，共 2 页")).toBeVisible();
+    await expect.element(screen.getByText("2 / 2 pages")).toBeVisible();
     await vi.waitFor(() => {
       expect(region().querySelector("canvas")!.getBoundingClientRect().width).toBe(
         region().clientWidth - 32,
@@ -154,8 +251,8 @@ it("restores page, within-page offset and zoom after a remount", async () => {
     });
 
     await screen.rerender(viewer(4, "restore:b"));
-    await expect.element(screen.getByText("第 1 页，共 2 页")).toBeVisible();
-    await expect.element(screen.getByText("适应宽度")).toBeVisible();
+    await expect.element(screen.getByText("1 / 2 pages")).toBeVisible();
+    await expect.element(screen.getByText("Fit width")).toBeVisible();
   } finally {
     URL.revokeObjectURL(url);
   }

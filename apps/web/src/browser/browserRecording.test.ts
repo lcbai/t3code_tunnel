@@ -69,6 +69,10 @@ vi.mock(import("~/components/preview/previewBridge"), async (original) => {
   }
 });
 
+vi.mock("./recordingCompositor", () => ({
+  createRecordingCompositor: async (stream: MediaStream) => ({ stream, dispose: () => {} }),
+}));
+
 vi.mock("~/rpc/atomRegistry", () => ({
   appAtomRegistry: { set: registrySet },
 }));
@@ -185,7 +189,7 @@ describe("browser recording", () => {
     await expect(stopBrowserRecording("recording-tab")).rejects.toMatchObject({
       operation: "cleanup",
       tabId: "recording-tab",
-      message: "浏览器记录操作cleanup 失败的标签recording-tab。",
+      message: "Browser recording operation cleanup failed for tab recording-tab.",
     });
     expect(stopTrack).toHaveBeenCalledOnce();
   });
@@ -199,7 +203,7 @@ describe("browser recording", () => {
       operation: "capture-media-stream",
       tabId: "recording-tab",
       cause,
-      message: "浏览器记录操作capture-media-stream 失败的标签recording-tab。",
+      message: "Browser recording operation capture-media-stream failed for tab recording-tab.",
     });
 
     expect(stopScreencast).toHaveBeenCalledWith("recording-tab");

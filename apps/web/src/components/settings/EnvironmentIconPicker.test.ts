@@ -9,7 +9,7 @@ describe("resolveEnvironmentIconPickerLock", () => {
   it("waits for a settings grant before allowing changes", () => {
     expect(
       resolveEnvironmentIconPickerLock({ serverConfig: config, operateAccess: "pending" }),
-    ).toMatch(/无权更改/);
+    ).toMatch(/cannot change/);
     expect(
       resolveEnvironmentIconPickerLock({ serverConfig: config, operateAccess: "granted" }),
     ).toBeNull();

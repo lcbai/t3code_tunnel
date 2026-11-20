@@ -1,6 +1,9 @@
 import type { AssetResource, ProjectReadFileError, ScopedThreadRef } from "@t3tools/contracts";
 import { mediaFileReference } from "@t3tools/client-runtime/media-reference";
 import { isHostPath, workspaceRelativeFilePath } from "@t3tools/shared/path";
+import { msg } from "gt-react";
+
+import { m, type MessageResolver } from "~/i18n/messages";
 
 export function resolveFilePreviewPath(path: string | null, cwd: string): string | null {
   if (path === null) return null;
@@ -10,20 +13,25 @@ export function resolveFilePreviewPath(path: string | null, cwd: string): string
 export const isMarkdownPreviewFile = (path: string): boolean =>
   /\.(?:md|mdx|markdown|mdown|mkd)$/i.test(path);
 
-export function filePreviewReadErrorMessage(error: ProjectReadFileError): string {
+export function filePreviewReadErrorMessage(
+  error: ProjectReadFileError,
+  resolve: MessageResolver = m,
+): string {
   switch (error.failure) {
     case "path_not_file":
-      return "路径是目录或特殊文件，而不是普通文件。";
+      return resolve(msg("The path is a directory or special file, not a regular file."));
     case "binary_file":
-      return "文件为二进制，不能显示为文本。";
+      return resolve(msg("The file is binary and cannot be displayed as text."));
     case "workspace_path_outside_root":
-      return "请求的路径位于工作空间之外。";
+      return resolve(msg("The requested path is outside the workspace."));
     case "resolved_path_outside_root":
-      return "路径解决到工作空间以外的位置。";
+      return resolve(msg("The path resolves to a location outside the workspace."));
     case "operation_failed":
       return error.operation === "realpath-workspace-root"
-        ? "无法访问工作空间文件夹。"
-        : "文件无法访问或读取。它可能缺失或无法访问。";
+        ? resolve(msg("The workspace folder could not be accessed."))
+        : resolve(
+            msg("The file could not be accessed or read. It may be missing or inaccessible."),
+          );
     default:
       return error.message;
   }

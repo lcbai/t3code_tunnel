@@ -50,7 +50,7 @@ jobs:
           git checkout --detach FETCH_HEAD
 
       - name: Setup Vite+
-        uses: voidzero-dev/setup-vp@250f29ce396baf5e8f24498e17c0dfdebabc26eb # v1
+        uses: voidzero-dev/setup-vp@250f29ce396baf5e8f24498e17c0dfdebabc26eb # v1.15.0
         with:
           node-version-file: package.json
           cache: true
@@ -61,7 +61,7 @@ jobs:
 
       # The publish workflow derives the same version from this run's number,
       # so the version baked into the bundle matches the packaged app.
-      - name: Set preview version
+      - name: Set preview version and public configuration
         shell: bash
         env:
           PR_NUMBER: ${{ github.event.pull_request.number }}
@@ -70,6 +70,8 @@ jobs:
 
           base_version="$(node -p "require('./apps/desktop/package.json').version")"
           node scripts/update-release-package-versions.ts "${base_version}-pr.${PR_NUMBER}.${GITHUB_RUN_NUMBER}"
+          # Public T3 Connect identifiers (Clerk publishable key, relay URL).
+          cp .env.example .env
 
       # PR heads from before build:desktop:bundle use the full build, which
       # compiles the Linux browser secret helper and needs libsecret.
@@ -96,7 +98,7 @@ jobs:
       # Same layout as release.yml's js-bundle so release-desktop.yml can
       # package it unchanged.
       - name: Upload JS bundle
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: js-bundle
           path: |

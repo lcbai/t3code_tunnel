@@ -16,6 +16,7 @@ const {
   copyFileSyncMock,
   execFileSyncMock,
   readFileSyncMock,
+  symlinkSyncMock,
 } = vi.hoisted(() => ({
   appendSwitchMock: vi.fn(),
   getSwitchValueMock: vi.fn(),
@@ -27,6 +28,7 @@ const {
   copyFileSyncMock: vi.fn(),
   execFileSyncMock: vi.fn(),
   readFileSyncMock: vi.fn(),
+  symlinkSyncMock: vi.fn(),
 }));
 
 vi.mock("electron", () => ({
@@ -51,6 +53,7 @@ vi.mock("node:fs", () => ({
   mkdirSync: mkdirSyncMock,
   writeFileSync: writeFileSyncMock,
   copyFileSync: copyFileSyncMock,
+  symlinkSync: symlinkSyncMock,
 }));
 
 vi.mock("node:child_process", () => ({
@@ -72,6 +75,7 @@ describe("DesktopPreReadyPlatform", () => {
     copyFileSyncMock.mockReset();
     execFileSyncMock.mockReset();
     readFileSyncMock.mockReset().mockReturnValue("{}");
+    symlinkSyncMock.mockReset();
   });
 
   it.effect("persists Linux scaling synchronously across relaunches and settings rewrites", () => {
@@ -129,14 +133,19 @@ describe("DesktopPreReadyPlatform", () => {
     let desktopName = "t3code.desktop";
     let desktopEntry = previousEntry;
     let iconInstalled = false;
-    copyFileSyncMock.mockImplementation((_source: string, destination: string) => {
-      iconInstalled = destination === "/xdg/icons/com.t3tools.T3Code.desktop.png";
+    const iconSource = "/tmp/.mount_T3/resources/app.asar/apps/desktop/prod-resources/icon.png";
+    const iconPath = "/xdg/icons/com.t3tools.T3Code.desktop.png";
+    const iconBytes = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
+    readFileSyncMock.mockImplementation((path: string) => {
+      if (path === iconSource) return iconBytes;
+      return "{}";
     });
     setDesktopNameMock.mockImplementation((name: string) => {
       desktopName = name;
     });
-    writeFileSyncMock.mockImplementation((path: string, contents: string) => {
-      if (path === "/xdg/applications/com.t3tools.T3Code.desktop") desktopEntry = contents;
+    writeFileSyncMock.mockImplementation((path: string, contents: string | Buffer) => {
+      if (path === "/xdg/applications/com.t3tools.T3Code.desktop") desktopEntry = String(contents);
+      if (path === iconPath) iconInstalled = Buffer.compare(Buffer.from(contents), iconBytes) === 0;
     });
 
     return Effect.scoped(
@@ -166,10 +175,56 @@ describe("DesktopPreReadyPlatform", () => {
           identity.desktopEntry ?? "",
           "Icon=/xdg/icons/com.t3tools.T3Code.desktop.png",
         );
-        assert.isTrue(identity.iconInstalled);
+        assert.equal(
+          copyFileSyncMock.mock.calls.length,
+          0,
+          "icon must not be copied out of the app bundle",
+        );
+        assert.isTrue(identity.iconInstalled, "icon must be written from the bundled bytes");
       }),
     ).pipe(Effect.ensuring(Effect.sync(() => vi.unstubAllEnvs())));
   });
+
+  it.effect.each([
+    { relaunchedByUpdater: "true", restored: true },
+    { relaunchedByUpdater: "", restored: false },
+  ])(
+    "restores the versioned AppImage path an update removed (updater relaunch: $relaunchedByUpdater)",
+    ({ relaunchedByUpdater, restored }) => {
+      vi.stubEnv("VITE_DEV_SERVER_URL", "");
+      getSwitchValueMock.mockReturnValue("");
+      const entryPath = "/xdg/applications/com.t3tools.T3Code.desktop";
+      const files = new Map([[entryPath, "Exec=/Applications/T3-Code-0.1.8-x86_64.AppImage %U\n"]]);
+      readFileSyncMock.mockImplementation((path: string) => files.get(path) ?? "{}");
+      writeFileSyncMock.mockImplementation((path: string, contents: string | Buffer) => {
+        files.set(path, String(contents));
+      });
+
+      return Effect.scoped(
+        Effect.gen(function* () {
+          yield* Layer.build(
+            DesktopPreReadyPlatform.layer.pipe(
+              Layer.provide(Layer.succeed(HostProcess.Platform, "linux")),
+              Layer.provide(
+                DesktopConfig.layerTest({
+                  XDG_DATA_HOME: "/xdg",
+                  APPIMAGE: "/Applications/T3-Code-x86_64.AppImage",
+                  APPIMAGE_SILENT_INSTALL: relaunchedByUpdater,
+                }),
+              ),
+            ),
+          );
+          assert.deepEqual(
+            symlinkSyncMock.mock.calls,
+            restored
+              ? [["T3-Code-x86_64.AppImage", "/Applications/T3-Code-0.1.8-x86_64.AppImage"]]
+              : [],
+          );
+          assert.include(files.get(entryPath), "Exec=/Applications/T3-Code-x86_64.AppImage %U");
+        }),
+      ).pipe(Effect.ensuring(Effect.sync(() => vi.unstubAllEnvs())));
+    },
+  );
 
   it.effect("points the early portal entry at a configured distribution launcher", () => {
     vi.stubEnv("VITE_DEV_SERVER_URL", "");
@@ -197,52 +252,54 @@ describe("DesktopPreReadyPlatform", () => {
     ).pipe(Effect.ensuring(Effect.sync(() => vi.unstubAllEnvs())));
   });
 
-  it.effect("acquires a synchronous pre-ready layer before an asynchronous runtime layer", () =>
-    Effect.gen(function* () {
-      class AppRuntime extends Context.Service<AppRuntime, { readonly ready: true }>()(
-        "@t3tools/desktop/app/DesktopPreReadyPlatform.test/AppRuntime",
-      ) {}
+  it.effect(
+    "acquires a synchronous pre-ready layer before an asynchronous Clerk-shaped layer",
+    () =>
+      Effect.gen(function* () {
+        class ClerkShaped extends Context.Service<ClerkShaped, { readonly ready: true }>()(
+          "@t3tools/desktop/app/DesktopPreReadyPlatform.test/ClerkShaped",
+        ) {}
 
-      const events: Array<string> = [];
-      registerSchemesMock.mockImplementation(() => {
-        events.push("pre-ready");
-      });
+        const events: Array<string> = [];
+        registerSchemesMock.mockImplementation(() => {
+          events.push("pre-ready");
+        });
 
-      const layerPreReady = DesktopPreReadyPlatform.layer.pipe(
-        Layer.provide(Layer.succeed(HostProcess.Platform, "darwin")),
-      );
+        const layerPreReady = DesktopPreReadyPlatform.layer.pipe(
+          Layer.provide(Layer.succeed(HostProcess.Platform, "darwin")),
+        );
 
-      const layerAppRuntime = Layer.effect(
-        AppRuntime,
-        Effect.promise(() => Promise.resolve()).pipe(
-          Effect.map(() => {
-            events.push("app");
-            return { ready: true as const };
-          }),
-        ),
-      );
+        const layerClerkShaped = Layer.effect(
+          ClerkShaped,
+          Effect.promise(() => Promise.resolve()).pipe(
+            Effect.map(() => {
+              events.push("clerk");
+              return { ready: true as const };
+            }),
+          ),
+        );
 
-      const layerRuntime = layerAppRuntime.pipe(
-        Layer.flatMap((appContext) => Layer.succeedContext(appContext)),
-        Layer.provideMerge(layerPreReady),
-      );
+        const layerRuntime = layerClerkShaped.pipe(
+          Layer.flatMap((clerkContext) => Layer.succeedContext(clerkContext)),
+          Layer.provideMerge(layerPreReady),
+        );
 
-      const result = yield* Effect.all({
-        app: AppRuntime,
-        preReady: DesktopPreReadyPlatform.DesktopPreReadyElectronOptions,
-      }).pipe(Effect.provide(layerRuntime));
+        const result = yield* Effect.all({
+          clerk: ClerkShaped,
+          preReady: DesktopPreReadyPlatform.DesktopPreReadyElectronOptions,
+        }).pipe(Effect.provide(layerRuntime));
 
-      assert.deepEqual(result, {
-        app: { ready: true },
-        preReady: {
-          linux: null,
-          linuxPasswordStoreCommandLine: null,
-        },
-      });
-      assert.deepEqual(events, ["pre-ready", "app"]);
-      assert.equal(registerSchemesMock.mock.calls.length, 1);
-      assert.equal(appendSwitchMock.mock.calls.length, 0);
-      assert.equal(setDesktopNameMock.mock.calls.length, 0);
-    }),
+        assert.deepEqual(result, {
+          clerk: { ready: true },
+          preReady: {
+            linux: null,
+            linuxPasswordStoreCommandLine: null,
+          },
+        });
+        assert.deepEqual(events, ["pre-ready", "clerk"]);
+        assert.equal(registerSchemesMock.mock.calls.length, 1);
+        assert.equal(appendSwitchMock.mock.calls.length, 0);
+        assert.equal(setDesktopNameMock.mock.calls.length, 0);
+      }),
   );
 });

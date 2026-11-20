@@ -77,11 +77,23 @@ describe("collectServerUpdateTargets", () => {
     ]);
     expect(skipped.map((entry) => [entry.label, entry.reason])).toEqual([
       ["nightly-service", "on the nightly channel"],
-      ["offline", "未连接"],
-      ["never-connected", "未连接"],
-      ["no-scope", "不允许"],
-      ["busy", "已经更新"],
+      ["offline", "not connected"],
+      ["never-connected", "not connected"],
+      ["no-scope", "no permission"],
+      ["busy", "already updating"],
       ["manual", "needs a manual update"],
+    ]);
+  });
+
+  it("does not offer a Nightly build to a Stable desktop app, whose own feed has nothing newer", () => {
+    const { targets, skipped } = collectServerUpdateTargets(
+      [machine("stable-desktop", "0.1.9", "desktop-managed")],
+      "0.1.10-nightly.20261116.4761",
+    );
+
+    expect(targets.map((target) => target.serverLabel)).toEqual([]);
+    expect(skipped.map((entry) => [entry.label, entry.reason])).toEqual([
+      ["stable-desktop", "on the stable channel"],
     ]);
   });
 
@@ -119,7 +131,10 @@ describe("collectServerUpdateTargets", () => {
           ...entry,
           serverConfig: {
             ...entry.serverConfig,
-            environment: { ...entry.serverConfig.environment, serverVersion: "0.0.49-nightly.1" },
+            environment: {
+              ...entry.serverConfig.environment,
+              serverVersion: "0.0.49-nightly.20261027.1",
+            },
           },
         })),
         "0.0.50-nightly.20261028.1",
@@ -186,8 +201,11 @@ describe("collectChannelSwitchTargets", () => {
     expect(targets.every((target) => target.targetDatabaseMigration === 69)).toBe(true);
     expect(skipped.map((entry) => [entry.label, entry.reason])).toEqual([
       ["newer-service", "run `t3 update --channel stable --allow-downgrade` there"],
-      ["new-service", "0.1.3 尚不支持当前数据库。请继续使用每日构建版，等待支持此数据库的稳定版。"],
-      ["old-server", "当前服务器版本无法检查数据库，请先更新到较新的每日构建版。"],
+      [
+        "new-service",
+        "its database has changes 0.1.3 does not support yet; stay on Nightly until Stable has them",
+      ],
+      ["old-server", "its server predates database checks; update it on Nightly first"],
       ["mac-desktop", "switch the Mac app on that Mac"],
       ["preview", "runs a preview build"],
     ]);
@@ -232,7 +250,10 @@ describe("collectChannelSwitchTargets", () => {
       ["service", NIGHTLY],
     ]);
     expect(skipped.map((entry) => [entry.label, entry.reason])).toEqual([
-      ["ahead", `${NIGHTLY} 尚不支持当前数据库。请继续使用稳定版，等待支持此数据库的每日构建版。`],
+      [
+        "ahead",
+        `its database has changes ${NIGHTLY} does not support yet; stay on Stable until Nightly has them`,
+      ],
       ["old-desktop", "needs a newer desktop app"],
       [
         "no-nightly",
@@ -248,7 +269,7 @@ describe("localSwitchBlockReason", () => {
     const nightly = "0.1.4-nightly.20261027.3796";
 
     const windows = { connected: true, databaseMigration: 69 };
-    expect(localSwitchBlockReason(nightly, stable, [windows], 1)).toBeNull();
+    expect(localSwitchBlockReason(nightly, stable, [windows], 1, true)).toBeNull();
     // A WSL server's newer migration blocks the reinstall that would restart it.
     expect(
       localSwitchBlockReason(
@@ -256,17 +277,31 @@ describe("localSwitchBlockReason", () => {
         stable,
         [windows, { connected: true, databaseMigration: 72 }],
         2,
+        true,
       ),
-    ).toContain("尚不支持");
+    ).toContain("does not support yet");
     // A WSL backend still starting has no client entry, so its database is unchecked.
-    expect(localSwitchBlockReason(nightly, stable, [windows], 2)).toBe(
-      "它的服务器没有连接，因此无法检查其数据库",
+    expect(localSwitchBlockReason(nightly, stable, [windows], 2, true)).toBe(
+      "This app cannot switch: its server is not connected, so its database cannot be checked.",
     );
     // A cached head from a disconnected server proves nothing.
     expect(
-      localSwitchBlockReason(nightly, stable, [{ connected: false, databaseMigration: 69 }], 1),
-    ).toBe("它的服务器没有连接，因此无法检查其数据库");
-    expect(localSwitchBlockReason("0.1.3", stable, [], 1)).toBeNull();
+      localSwitchBlockReason(
+        nightly,
+        stable,
+        [{ connected: false, databaseMigration: 69 }],
+        1,
+        true,
+      ),
+    ).toBe(
+      "This app cannot switch: its server is not connected, so its database cannot be checked.",
+    );
+    expect(localSwitchBlockReason("0.1.3", stable, [], 1, true)).toBeNull();
+    // A primary backend still starting has no entry or bootstrap yet, unless Local environment is off.
+    expect(localSwitchBlockReason(nightly, stable, [], 0, true)).toBe(
+      "This app cannot switch: its server is not connected, so its database cannot be checked.",
+    );
+    expect(localSwitchBlockReason(nightly, stable, [], 0, false)).toBeNull();
   });
 });
 
@@ -325,6 +360,50 @@ describe("runUpdateEverything", () => {
     expect(calls).toEqual(["providers", "servers"]);
     expect(result.localReady).toBe(false);
   });
+
+  it("stages servers while providers install and updates each once its own stage settles", async () => {
+    const calls: string[] = [];
+    const [slow, fast] = [EnvironmentId.make("slow"), EnvironmentId.make("fast")];
+    let finishProviders = () => {};
+    let failSlowStage = () => {};
+    const providers = new Promise<void>((resolve) => (finishProviders = resolve));
+    const run = runUpdateEverything({
+      updateProviders: () => {
+        calls.push("providers");
+        return providers.then(() => {
+          calls.push("providers done");
+        });
+      },
+      stageServers: () => {
+        calls.push("stage");
+        return new Map([
+          [slow, new Promise((_, reject) => (failSlowStage = () => reject(new Error("failed"))))],
+          [fast, Promise.resolve()],
+        ]);
+      },
+      updateServers: (staged) => {
+        calls.push("servers");
+        return Promise.all(
+          [slow, fast].map(async (id) => {
+            await staged.get(id);
+            calls.push(`server ${id}`);
+            if (id === fast) failSlowStage();
+          }),
+        );
+      },
+    });
+    finishProviders();
+    await run;
+
+    expect(calls).toEqual([
+      "stage",
+      "providers",
+      "providers done",
+      "servers",
+      "server fast",
+      "server slow",
+    ]);
+  });
 });
 
 describe("describeUpdateEverything", () => {
@@ -351,7 +430,7 @@ describe("describeUpdateEverything", () => {
       ],
       skipped: [
         { environmentId: id("manual"), label: "alvin", reason: "needs a manual update" },
-        { environmentId: id("offline"), label: "TheoRoom", reason: "未连接" },
+        { environmentId: id("offline"), label: "TheoRoom", reason: "not connected" },
       ],
     });
 
@@ -362,7 +441,7 @@ describe("describeUpdateEverything", () => {
       ["Mainbook WSL", "this-app", null, []],
       ["bb-1", "server", null, ["Codex", "Claude"]],
       ["alvin", null, "needs a manual update", ["Claude"]],
-      ["TheoRoom", null, "未连接", []],
+      ["TheoRoom", null, "not connected", []],
     ]);
   });
 });

@@ -193,7 +193,7 @@ describe("root reopen shortcut", () => {
       selectThreadRightPanelState(useRightPanelStore.getState().byThreadKey, ref).activeSurfaceId,
     ).toBe("browser:new-tab");
     expect(state.toast).toHaveBeenCalledWith(
-      expect.objectContaining({ title: "无法重新打开视图" }),
+      expect.objectContaining({ title: "Could not reopen view" }),
     );
     expect(useClosedViewStore.getState().entries.map((entry) => entry.id)).toEqual([older]);
     await act(() => {
@@ -265,11 +265,20 @@ describe("root reopen shortcut", () => {
       expect(useClosedViewStore.getState().entries).toEqual([]);
     },
   );
-  it("forwards address-bar focus from a focused desktop page", async () => {
+  it("forwards address-bar focus, zoom, and panel new and close from a focused desktop page", async () => {
     setup();
     await using _shortcut = await renderShortcut();
     expect(state.setShortcuts).toHaveBeenLastCalledWith(
-      expect.arrayContaining([expect.objectContaining({ command: "preview.focusUrl" })]),
+      expect.arrayContaining(
+        [
+          "preview.focusUrl",
+          "preview.zoomIn",
+          "preview.zoomOut",
+          "preview.resetZoom",
+          "rightPanel.new",
+          "rightPanel.close",
+        ].map((command) => expect.objectContaining({ command })),
+      ),
     );
   });
 });

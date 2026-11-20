@@ -1,62 +1,54 @@
-import { AuthStandardClientScopes, EnvironmentId } from "@t3tools/contracts";
-import * as DateTime from "effect/DateTime";
+import { type DesktopBridge, EnvironmentId } from "@t3tools/contracts";
 import { expect, it, vi } from "vite-plus/test";
-import { userEvent } from "vite-plus/test/browser";
+import { page } from "vite-plus/test/browser";
 
+import "~/index.css";
 import { render } from "../../../test/render";
+import { FrpTunnelSettings } from "./FrpTunnelSettings";
 
-const createPairingCredential = vi.hoisted(() => vi.fn());
-
-vi.mock(import("~/state/auth"), async (original) => {
-  const actual = await original();
-  return {
-    ...actual,
-    authEnvironment: {
-      ...actual.authEnvironment,
-      createPairingCredential: createPairingCredential as never,
-    },
-  };
-});
 vi.mock(import("~/state/session"), async (original) => ({
   ...(await original()),
   readEnvironmentScope: () => true,
 }));
-vi.mock(import("~/state/use-atom-command"), async (original) => ({
-  ...(await original()),
-  useAtomCommand: ((command: unknown) => command) as never,
-}));
-vi.mock(import("~/hooks/useNowSecond"), () => ({
-  useNowSecond: () => Date.parse("2026-11-11T00:00:00.000Z"),
-}));
 
-import { FrpTunnelSettings } from "./FrpTunnelSettings";
-
-it("requests a persistent grant when generating the phone pairing QR code", async () => {
-  const environmentId = EnvironmentId.make("frp-desktop");
-  createPairingCredential.mockReset();
-  createPairingCredential.mockResolvedValue({
-    _tag: "Success",
-    value: {
-      id: "phone-link",
-      credential: "one-use-only",
-      expiresAt: DateTime.makeUnsafe("2026-11-11T00:05:00.000Z"),
-    },
-  });
+it("configures a secure FRP origin, clears the token field, and confirms before disconnecting", async () => {
+  await page.viewport(1280, 900);
+  const url = "https://phone.example.test";
+  const setFrpTunnel = vi.fn<DesktopBridge["setFrpTunnel"]>(async () => ({
+    status: "connected",
+    url,
+    message: null,
+  }));
+  const props = {
+    bridge: { setFrpTunnel },
+    readError: null,
+    environmentId: EnvironmentId.make("frp-desktop"),
+  };
   await using screen = await render(
-    <FrpTunnelSettings
-      bridge={{ setFrpTunnel: vi.fn() }}
-      state={{ status: "connected", url: "https://desk.example.test", message: null }}
-      readError={null}
-      environmentId={environmentId}
-      delegatableScopes={AuthStandardClientScopes}
-    />,
+    <FrpTunnelSettings {...props} state={{ status: "disabled", url: null, message: null }} />,
   );
+  await screen.getByRole("button", { name: "Configure" }).click();
+  const configure = page.getByRole("dialog", { name: "FRP tunnel" });
+  const connect = configure.getByRole("button", { name: "Connect", exact: true });
+  await configure.getByLabelText("Server URL").fill("http://phone.example.test");
+  await configure.getByLabelText("Token").fill("test-token");
+  await expect.element(connect).toBeDisabled();
+  await configure.getByLabelText("Server URL").fill("phone.example.test");
+  await connect.click();
+  await expect.element(configure).not.toBeInTheDocument();
+  expect(setFrpTunnel).toHaveBeenCalledWith({ url, token: "test-token" });
 
-  await userEvent.click(screen.getByRole("button", { name: "手机扫码配对" }));
-  const dialog = screen.getByRole("dialog", { name: "手机扫码配对" });
-  await expect.element(dialog.getByRole("img", { name: "FRP 手机配对二维码" })).toBeVisible();
-  expect(createPairingCredential).toHaveBeenCalledWith({
-    environmentId,
-    input: { scopes: AuthStandardClientScopes, persistent: true },
-  });
+  await screen.rerender(
+    <FrpTunnelSettings {...props} state={{ status: "connected", url, message: null }} />,
+  );
+  await screen.getByRole("button", { name: "Edit" }).click();
+  await expect.element(configure.getByLabelText("Server URL")).toHaveValue(url);
+  await expect.element(configure.getByLabelText("Token")).toHaveValue("");
+  await configure.getByRole("button", { name: "Cancel" }).click();
+  await screen.getByRole("button", { name: "Disconnect", exact: true }).click();
+  const disconnect = page.getByRole("alertdialog", { name: "Disconnect the FRP tunnel?" });
+  expect(setFrpTunnel).toHaveBeenCalledTimes(1);
+  await disconnect.getByRole("button", { name: "Disconnect", exact: true }).click();
+  await expect.element(disconnect).not.toBeInTheDocument();
+  expect(setFrpTunnel).toHaveBeenLastCalledWith(null);
 });

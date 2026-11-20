@@ -7,21 +7,22 @@ until you send or dismiss it.
 ## Share a thread
 
 Guest links are a beta. Turn on **Settings → Labs → Guest links** for the machine that runs the
-thread. Set `T3CODE_GUEST_SHARE_ORIGIN` on the server to an HTTPS origin the guest
-can reach, such as your own reverse proxy. Restart the server after setting it.
-The machine must stay online while the guest uses the link.
+thread. They also need [T3 Connect](./remote-access.md): sign in and link that machine, because the
+link points at its T3 Connect address. The machine must stay online while the guest uses it.
 While the setting is off, every guest link on that machine stops working; links that have not
 expired work again when you turn it back on.
 
 1. Right-click the thread in the sidebar and choose **Share with guest**. It is also in the thread
-   menu and the command palette.
+   menu and the command palette. In the mobile app, long-press the thread in the list.
 2. Copy the link and send it to one person. It works in one browser and expires after 24 hours.
    Opening it again in that browser takes them back to the thread.
 3. When they send a message, it appears at the end of the thread and the sidebar shows **Request**.
    Choose **Send** to run it as a normal turn, or **Dismiss**. Files they attached show with the
    message, and **Send** includes them.
 
-Choose **Stop sharing** to end the link at once. Archiving the thread or creating a new link also ends it. You can send or dismiss guest messages from the mobile app.
+Choose **Stop sharing** to end the link at once. Archiving the thread, creating a new link, or
+unlinking the machine from T3 Connect also ends it. The mobile app can send, dismiss, and stop
+sharing too.
 
 ## What the guest sees
 

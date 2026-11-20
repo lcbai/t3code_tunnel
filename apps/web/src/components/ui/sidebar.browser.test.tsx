@@ -1,6 +1,8 @@
 import { page, userEvent } from "vite-plus/test/browser";
 import { describe, expect, it, vi } from "vite-plus/test";
 
+import "~/index.css";
+
 import { render } from "../../../test/render";
 import { Sidebar, SidebarProvider, SidebarRail, SidebarTrigger, useSidebar } from "./sidebar";
 
@@ -84,20 +86,20 @@ it("restores collapsed and expanded desktop state after remounting", async () =>
   );
   {
     await using screen = await render(layout(), { router: false /* no routes involved */ });
-    const trigger = screen.getByRole("button", { name: "切换侧边栏" });
+    const trigger = screen.getByRole("button", { name: "Toggle Sidebar" });
     await expect.element(trigger).toHaveAttribute("aria-pressed", "true");
     await userEvent.click(trigger);
     await expect.element(trigger).toHaveAttribute("aria-pressed", "false");
   }
   {
     await using screen = await render(layout(), { router: false /* no routes involved */ });
-    const trigger = screen.getByRole("button", { name: "切换侧边栏" });
+    const trigger = screen.getByRole("button", { name: "Toggle Sidebar" });
     await expect.element(trigger).toHaveAttribute("aria-pressed", "false");
     await userEvent.click(trigger);
   }
   await using screen = await render(layout(), { router: false /* no routes involved */ });
   await expect
-    .element(screen.getByRole("button", { name: "切换侧边栏" }))
+    .element(screen.getByRole("button", { name: "Toggle Sidebar" }))
     .toHaveAttribute("aria-pressed", "true");
   localStorage.removeItem(storageKey);
 });
@@ -113,7 +115,7 @@ it("keeps the mobile sheet closed and leaves the saved desktop state alone", asy
       </SidebarProvider>,
       { router: false /* no routes involved */ },
     );
-    const trigger = screen.getByRole("button", { name: "切换侧边栏" });
+    const trigger = screen.getByRole("button", { name: "Toggle Sidebar" });
     await expect.element(trigger).toHaveAttribute("aria-pressed", "false");
     await userEvent.click(trigger);
     await expect.element(trigger).toHaveAttribute("aria-pressed", "true");
@@ -126,7 +128,56 @@ it("keeps the mobile sheet closed and leaves the saved desktop state alone", asy
     { router: false /* no routes involved */ },
   );
   await expect
-    .element(screen.getByRole("button", { name: "切换侧边栏" }))
+    .element(screen.getByRole("button", { name: "Toggle Sidebar" }))
     .toHaveAttribute("aria-pressed", "false");
   localStorage.removeItem(storageKey);
+});
+
+function MobileSheetMountedProbe() {
+  const { mobileSheetMounted } = useSidebar();
+  return <output aria-label="Sheet mounted">{String(mobileSheetMounted)}</output>;
+}
+
+it("keeps closed mobile sheet contents mounted and reports the sheet only while it shows", async () => {
+  await page.viewport(390, 844);
+  await using screen = await render(
+    <SidebarProvider>
+      <Sidebar>
+        <span>Sheet contents</span>
+      </Sidebar>
+      <SidebarTrigger />
+      <MobileSheetMountedProbe />
+    </SidebarProvider>,
+    { router: false /* no routes involved */ },
+  );
+  const sheetMounted = screen.getByLabelText("Sheet mounted");
+  // Window shortcuts registered by sidebar children only work while they stay mounted.
+  expect(document.querySelector('[data-mobile="true"]')?.textContent).toContain("Sheet contents");
+  await expect.element(sheetMounted).toHaveTextContent("false");
+
+  await userEvent.click(screen.getByRole("button", { name: "Toggle Sidebar" }));
+  await expect.element(sheetMounted).toHaveTextContent("true");
+
+  await userEvent.keyboard("{Escape}");
+  await expect.element(sheetMounted).toHaveTextContent("false");
+  expect(document.querySelector('[data-mobile="true"]')?.textContent).toContain("Sheet contents");
+});
+
+it("opens the mobile sheet without a transition while panel animations are off", async () => {
+  await page.viewport(390, 844);
+  await using screen = await render(
+    <div data-panel-animations="false">
+      <SidebarProvider>
+        <Sidebar>
+          <span>Sheet contents</span>
+        </Sidebar>
+        <SidebarTrigger />
+      </SidebarProvider>
+    </div>,
+    { router: false /* no routes involved */ },
+  );
+  await userEvent.click(screen.getByRole("button", { name: "Toggle Sidebar" }));
+  const popup = document.querySelector<HTMLElement>('[data-mobile="true"][data-sidebar="sidebar"]');
+  expect(popup).not.toBeNull();
+  expect(getComputedStyle(popup!).transitionDuration).toBe("0s");
 });

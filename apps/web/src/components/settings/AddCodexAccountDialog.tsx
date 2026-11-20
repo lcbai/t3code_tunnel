@@ -7,6 +7,7 @@ import {
   type EnvironmentId,
   type ServerProvider,
 } from "@t3tools/contracts";
+import { T, useGT } from "gt-react";
 import { useState, type ReactNode } from "react";
 import { usesChatGptSharing } from "@t3tools/shared/usageLimits";
 
@@ -37,11 +38,14 @@ export function AddCodexAccountDialog({
     | undefined;
   readonly renderSetup: (instanceId: ProviderInstanceId, provider: ServerProvider) => ReactNode;
 }) {
+  const gt = useGT();
   const canManageProviders = useEnvironmentScope(environmentId, AuthProvidersManageScope);
   const settings = useEnvironmentSettings(environmentId);
   const providers = useAtomValue(serverEnvironment.providersValueAtom(environmentId));
   const update = useAtomCommand(serverEnvironment.updateSettings, "Add ChatGPT account");
-  const [name, setName] = useState("Personal");
+  const [name, setName] = useState(() =>
+    gt("Personal", { $context: "default name for a ChatGPT account" }),
+  );
   const displayName = `ChatGPT - ${name.trim()}`;
   const [instanceId, setInstanceId] = useState<ProviderInstanceId | null>(null);
   const [pending, setPending] = useState(false);
@@ -90,15 +94,20 @@ export function AddCodexAccountDialog({
     >
       <WizardPopup size="wide">
         <WizardHeader
-          title={instanceId ? displayName : "添加ChatGPT 账户"}
-          description="每个账户都有自己的Codex 实例和登录。 选择签名页面上的另一个账户。"
+          title={instanceId ? displayName : gt("Add ChatGPT account")}
+          description={gt(
+            "Each account has its own Codex instance and sign-in. Choose the other account on the sign-in page.",
+          )}
         />
         <WizardPanel>
           {instanceId ? (
             provider?.setup ? (
               renderSetup(instanceId, provider)
             ) : (
-              <SettingsRow title="Codex 运行环境" description="正在准备管理设置。" />
+              <SettingsRow
+                title={gt("Codex runtime")}
+                description={gt("Preparing managed setup.")}
+              />
             )
           ) : (
             <form
@@ -110,15 +119,15 @@ export function AddCodexAccountDialog({
               }}
             >
               <SettingsRow
-                title="账户名称"
-                description="在提供者列表和模型拾取器中显示。"
+                title={gt("Account name")}
+                description={gt("Shown in the provider list and model picker.")}
                 control={
                   <Input
-                    aria-label="账户名称"
+                    aria-label={gt("Account name")}
                     value={name}
                     disabled={pending}
                     onChange={(event) => setName(event.target.value)}
-                    placeholder="例如，个人或工作"
+                    placeholder={gt("e.g. Personal or Work")}
                   />
                 }
               />
@@ -129,19 +138,19 @@ export function AddCodexAccountDialog({
         <WizardFooter>
           {instanceId ? (
             <Button variant="outline" onClick={onClose}>
-              以后再写吧
+              <T>Finish later</T>
             </Button>
           ) : (
             <>
               <Button variant="outline" disabled={pending} onClick={onClose}>
-                取消
+                <T>Cancel</T>
               </Button>
               <Button
                 type="submit"
                 form="add-codex-account"
                 disabled={pending || !name.trim() || !canManageProviders}
               >
-                {pending ? "正在添加账户…" : "继续"}
+                {pending ? gt("Adding account…") : gt("Continue")}
               </Button>
             </>
           )}

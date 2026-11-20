@@ -1,3 +1,5 @@
+import { msg, useGT, useMessages } from "gt-react-native";
+
 import * as Dialog from "../../components/ui/Dialog";
 import { useOpenPullRequest } from "../../native/useOpenPullRequest";
 import type { AppBarMenu } from "../../components/ui/AppBar.types";
@@ -16,7 +18,9 @@ import {
 } from "@t3tools/client-runtime/state/vcs";
 import { useNavigation } from "@react-navigation/native";
 import { sourceControlClients } from "@t3tools/client-runtime/source-control-clients";
+import { changeRequestTermKind } from "../../lib/changeRequestTerm";
 
+import { m, type MessageResolver } from "../../i18n/messages";
 import { useEnvironmentScope } from "../../state/session";
 import { PullRequestGlyph } from "../pull-requests/pullRequestGlyphs";
 import {
@@ -25,7 +29,7 @@ import {
   projectScriptMenuIcon,
   type TerminalMenuSession,
 } from "../terminal/terminalMenu";
-import { DOUBAO_CLI_PROJECT_SCRIPT, projectScriptMenuLabel } from "@t3tools/shared/projectScripts";
+import { projectScriptMenuLabel } from "@t3tools/shared/projectScriptsCopy";
 
 function truncateMiddle(value: string, maxLength: number): string {
   if (value.length <= maxLength) {
@@ -41,25 +45,43 @@ function compactMenuBranchLabel(branch: string): string {
   return truncateMiddle(branch, 24);
 }
 
-function compactMenuStatus(gitStatus: VcsStatusResult | null): string {
+function compactMenuStatus(gitStatus: VcsStatusResult | null, resolve: MessageResolver): string {
   if (!gitStatus) {
-    return "Checking status";
+    return resolve(msg("Checking status"));
   }
   if (!gitStatus.isRepo) {
-    return "Not a repo";
+    return resolve(msg("Not a repo"));
   }
 
   const parts: string[] = [];
   if (gitStatus.hasWorkingTreeChanges) {
-    parts.push(`${gitStatus.workingTree.files.length} changed`);
+    parts.push(
+      resolve(
+        msg("{count, plural, one {{count} changed} other {{count} changed}}", {
+          count: gitStatus.workingTree.files.length,
+        }),
+      ),
+    );
   } else if (gitStatus.aheadCount === 0 && gitStatus.behindCount === 0) {
-    parts.push("Clean");
+    parts.push(resolve(msg("Clean", { $context: "git working tree has no changes" })));
   }
   if (gitStatus.aheadCount > 0) {
-    parts.push(`${gitStatus.aheadCount} ahead`);
+    parts.push(
+      resolve(
+        msg("{count, plural, one {{count} ahead} other {{count} ahead}}", {
+          count: gitStatus.aheadCount,
+        }),
+      ),
+    );
   }
   if (gitStatus.behindCount > 0) {
-    parts.push(`${gitStatus.behindCount} behind`);
+    parts.push(
+      resolve(
+        msg("{count, plural, one {{count} behind} other {{count} behind}}", {
+          count: gitStatus.behindCount,
+        }),
+      ),
+    );
   }
   if (gitStatus.pr?.state === "open") {
     const { shortLabel } = sourceControlClients.get(
@@ -99,14 +121,13 @@ export type ThreadGitControlsProps = ThreadGitMenuProps & {
   readonly terminalSessions: ReadonlyArray<TerminalMenuSession>;
   readonly onOpenTerminal: (terminalId?: string | null) => void;
   readonly onOpenNewTerminal: () => void;
-  readonly onRunProjectScript: (
-    script: ProjectScript,
-    options?: { readonly preferNewTerminal?: boolean },
-  ) => Promise<void>;
+  readonly onRunProjectScript: (script: ProjectScript) => Promise<void>;
 };
 
 function useThreadGitControlModel(props: ThreadGitMenuProps) {
   const navigation = useNavigation();
+  const gt = useGT();
+  const messages = useMessages();
   const openPullRequest = useOpenPullRequest();
   const environmentId = props.environmentId;
   const canWriteSourceControl = useEnvironmentScope(
@@ -116,7 +137,7 @@ function useThreadGitControlModel(props: ThreadGitMenuProps) {
   const threadId = props.threadId;
   const { gitStatus, gitOperationLabel, onPull, onRunAction } = props;
 
-  const currentBranchLabel = gitStatus?.refName ?? props.currentBranch ?? "Detached HEAD";
+  const currentBranchLabel = gitStatus?.refName ?? props.currentBranch ?? gt("Detached HEAD");
   const busy = gitOperationLabel !== null;
   const isRepo = gitStatus?.isRepo ?? true;
   const hasPrimaryRemote = gitStatus?.hasPrimaryRemote ?? false;
@@ -125,24 +146,24 @@ function useThreadGitControlModel(props: ThreadGitMenuProps) {
   const quickAction = (() => {
     if (!isRepo) {
       return {
-        label: "Git 不可用",
+        label: gt("Git unavailable"),
         disabled: true,
         kind: "show_hint" as const,
-        hint: "此工作区不是 Git 仓库。",
+        hint: gt("This workspace is not a git repository."),
       };
     }
-    const action = resolveQuickAction(gitStatus, busy, isDefaultRef, hasPrimaryRemote);
+    const action = resolveQuickAction(gitStatus, busy, isDefaultRef, hasPrimaryRemote, messages);
     return !canWriteSourceControl && (action.kind === "run_pull" || action.kind === "run_action")
       ? {
           ...action,
           disabled: true,
-          hint: "此连接无权修改版本控制设置。",
+          hint: gt("This connection cannot change source control."),
         }
       : action;
   })();
 
   const quickActionHint = quickAction.disabled
-    ? (quickAction.hint ?? "This action is unavailable.")
+    ? (quickAction.hint ?? gt("This action is unavailable."))
     : null;
 
   const quickActionIcon: QuickActionIcon = (() => {
@@ -157,16 +178,33 @@ function useThreadGitControlModel(props: ThreadGitMenuProps) {
   })();
 
   const openExistingPr = async () => {
-    const { shortLabel, singular } = sourceControlClients.get(
-      gitStatus?.sourceControlProvider?.kind,
-    ).changeRequest;
+    const term = changeRequestTermKind(
+      sourceControlClients.get(gitStatus?.sourceControlProvider?.kind).changeRequest,
+    );
     const prUrl = gitStatus?.pr?.state === "open" ? gitStatus.pr.url : null;
     if (!prUrl) {
-      Dialog.alert(`No open ${shortLabel}`, `This branch does not have an open ${singular}.`);
+      Dialog.alert(
+        gt("{term, select, mr {No open MR} cr {No open change request} other {No open PR}}", {
+          term,
+        }),
+        gt(
+          "{term, select, mr {This branch does not have an open merge request.} cr {This branch does not have an open change request.} other {This branch does not have an open pull request.}}",
+          { term },
+        ),
+      );
       return;
     }
     if (!(await openPullRequest(prUrl))) {
-      Dialog.alert(`无法打开 ${shortLabel}`, `The ${singular} could not be opened.`);
+      Dialog.alert(
+        gt(
+          "{term, select, mr {Unable to open MR} cr {Unable to open change request} other {Unable to open PR}}",
+          { term },
+        ),
+        gt(
+          "{term, select, mr {The merge request could not be opened.} cr {The change request could not be opened.} other {The pull request could not be opened.}}",
+          { term },
+        ),
+      );
     }
   };
 
@@ -187,7 +225,10 @@ function useThreadGitControlModel(props: ThreadGitMenuProps) {
       requiresDefaultBranchConfirmation(input.action, isDefaultRef)
     ) {
       if (props.hasThread === false) {
-        Dialog.alert("选择功能分支", "请先切换分支，再发布此草稿中的变更。");
+        Dialog.alert(
+          gt("Choose a feature branch"),
+          gt("Switch branches before publishing changes from this draft."),
+        );
         return;
       }
       navigation.navigate("GitConfirm", {
@@ -248,17 +289,20 @@ function useThreadGitControlModel(props: ThreadGitMenuProps) {
   };
 }
 
-export function threadTerminalMenu(props: ThreadGitControlsProps): AppBarMenu | null {
+export function threadTerminalMenu(
+  props: ThreadGitControlsProps,
+  resolve: MessageResolver = m,
+): AppBarMenu | null {
   if (!props.canOpenTerminal) return null;
   return {
-    title: "终端",
+    title: resolve(msg("Terminal")),
     icon: "terminal",
     separateBackground: false,
     items: [
       ...(props.projectScripts.length > 0
         ? props.projectScripts.map((script) => ({
             id: `script-${script.id}`,
-            title: projectScriptMenuLabel(script),
+            title: projectScriptMenuLabel(script, resolve),
             icon: projectScriptMenuIcon(script.icon),
             subtitle: script.command,
             disabled: !props.canOperateTerminal,
@@ -267,9 +311,9 @@ export function threadTerminalMenu(props: ThreadGitControlsProps): AppBarMenu | 
         : [
             {
               id: "script-none",
-              title: "没有项目脚本",
+              title: resolve(msg("No project scripts")),
               icon: "play",
-              subtitle: "此项目尚未保存脚本",
+              subtitle: resolve(msg("This project has no saved scripts yet")),
               disabled: true,
               onPress: () => {},
             },
@@ -279,10 +323,13 @@ export function threadTerminalMenu(props: ThreadGitControlsProps): AppBarMenu | 
         title: session.displayLabel,
         icon: "terminal",
         subtitle: [
-          getTerminalStatusLabel({
-            status: session.status,
-            hasRunningSubprocess: session.hasRunningSubprocess,
-          }),
+          getTerminalStatusLabel(
+            {
+              status: session.status,
+              hasRunningSubprocess: session.hasRunningSubprocess,
+            },
+            resolve,
+          ),
           basename(session.cwd),
         ]
           .filter(Boolean)
@@ -290,18 +337,10 @@ export function threadTerminalMenu(props: ThreadGitControlsProps): AppBarMenu | 
         onPress: () => props.onOpenTerminal(session.terminalId),
       })),
       {
-        id: "terminal-doubao-cli",
-        title: "打开豆包 CLI（企业）",
-        icon: "terminal",
-        disabled: !props.canOperateTerminal,
-        onPress: () =>
-          void props.onRunProjectScript(DOUBAO_CLI_PROJECT_SCRIPT, { preferNewTerminal: true }),
-      },
-      {
         id: "terminal-new",
-        title: "打开新终端",
+        title: resolve(msg("Open new terminal")),
         icon: "plus",
-        subtitle: "为此会话打开另一个 Shell",
+        subtitle: resolve(msg("Start another shell for this thread")),
         disabled: !props.canOperateTerminal,
         onPress: props.onOpenNewTerminal,
       },
@@ -312,8 +351,10 @@ export function threadTerminalMenu(props: ThreadGitControlsProps): AppBarMenu | 
 /** The thread's git menu, shared by the thread bar and Review. */
 export function useThreadGitMenuDefinition(props: ThreadGitMenuProps): AppBarMenu | null {
   const model = useThreadGitControlModel(props);
+  const gt = useGT();
+  const messages = useMessages();
   return {
-    title: "Git 控制",
+    title: gt("Git controls"),
     icon: "point.topleft.down.curvedto.point.bottomright.up",
     separateBackground: false,
     items: [
@@ -322,7 +363,7 @@ export function useThreadGitMenuDefinition(props: ThreadGitMenuProps): AppBarMen
         title: compactMenuBranchLabel(model.currentBranchLabel),
         icon: "point.topleft.down.curvedto.point.bottomright.up",
         disabled: true,
-        subtitle: compactMenuStatus(props.gitStatus),
+        subtitle: compactMenuStatus(props.gitStatus, messages),
         onPress: () => {},
       },
       {
@@ -337,29 +378,35 @@ export function useThreadGitMenuDefinition(props: ThreadGitMenuProps): AppBarMen
       },
       {
         id: "git-review",
-        title: "审查变更",
+        title: gt("Review changes"),
         icon: "text.bubble",
         disabled: !model.isRepo || props.hasThread === false,
-        subtitle: props.hasThread === false ? "发送第一条消息后可用" : "轮次差异与工作树变更",
+        subtitle:
+          props.hasThread === false
+            ? gt("Available after the first message")
+            : gt("Turn diffs and worktree changes"),
         onPress: model.openReview,
       },
       ...(props.onMergeBack
         ? [
             {
               id: "git-merge-back",
-              title: "合并回源分支",
+              title: gt("Merge back to source"),
               icon: PullRequestGlyph.merged,
-              subtitle: "将此会话的最新一轮合并回来源会话",
+              subtitle: gt("Bring this thread's latest turn into its source"),
               onPress: props.onMergeBack,
             },
           ]
         : []),
       {
         id: "git-more",
-        title: "更多",
+        title: gt("More", { $context: "menu item that opens more git actions" }),
         icon: "ellipsis",
         disabled: props.hasThread === false,
-        subtitle: props.hasThread === false ? "发送第一条消息后可用" : "提交、文件、分支",
+        subtitle:
+          props.hasThread === false
+            ? gt("Available after the first message")
+            : gt("Commit, files, branches"),
         onPress: model.openGitInspector,
       },
     ],

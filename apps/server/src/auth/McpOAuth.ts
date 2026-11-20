@@ -18,6 +18,7 @@ import {
   parseMcpApprovalCode,
   type RuntimeMode,
 } from "@t3tools/contracts";
+import { DEFAULT_HOSTED_APP_URL } from "@t3tools/shared/connectAuth";
 import { encodeOAuthScope } from "@t3tools/shared/oauthScope";
 import * as Clock from "effect/Clock";
 import * as Context from "effect/Context";
@@ -31,6 +32,7 @@ import * as Ref from "effect/Ref";
 import * as Schema from "effect/Schema";
 import { HttpServerRequest } from "effect/http";
 
+import { hostedAppUrlConfig } from "../cloud/publicConfig.ts";
 import * as ServerEnvironment from "../environment/ServerEnvironment.ts";
 import * as ServerSettings from "../serverSettings.ts";
 import * as McpHttpServer from "../mcp/McpHttpServer.ts";
@@ -52,8 +54,12 @@ import { requestUrl } from "../requestUrl.ts";
 const SIGNING_SECRET_NAME = "mcp-oauth-signing-key";
 const AUTHORIZATION_CODE_TTL_MS = 60_000;
 const MAX_CLIENT_NAME_LENGTH = 100;
-const MAX_REDIRECT_URIS = 5;
+const MAX_REDIRECT_URIS = 10;
 const MAX_REDIRECT_URI_LENGTH = 512;
+// The client_id rides in the authorize URL. Past the original five-URI limit, cap it to leave room
+// under Node's 16 KB header cap for an encoded redirect_uri and state.
+const MAX_UNBOUNDED_CLIENT_ID_REDIRECT_URIS = 5;
+const MAX_CLIENT_ID_LENGTH = 10_240;
 const DEFAULT_CLIENT_NAME = "MCP client";
 const LOOPBACK_HOSTNAMES = new Set(["localhost", "127.0.0.1", "[::1]"]);
 const CODE_CHALLENGE_PATTERN = /^[A-Za-z0-9_-]{43}$/;
@@ -128,9 +134,11 @@ export const redirectMatches = (registered: string, presented: string): boolean 
 
 const sameResource = (urls: McpOAuthUrls, presented: string | undefined): boolean => {
   if (presented === undefined) return true;
+  // URL.hash misses empty fragments, which RFC 8707 §2 also forbids.
+  if (presented.includes("#")) return false;
   try {
     const url = new URL(presented);
-    return url.hash === "" && `${url.origin}${url.pathname.replace(/\/+$/u, "")}` === urls.resource;
+    return `${url.origin}${url.pathname.replace(/\/+$/u, "")}` === urls.resource;
   } catch {
     return false;
   }
@@ -204,7 +212,7 @@ export class McpOAuth extends Context.Service<
       readonly urls: McpOAuthUrls;
       readonly request: AuthMcpAuthorizationRequest;
     }) => Effect.Effect<AuthorizationRequest, McpOAuthPageError | McpOAuthRedirectError>;
-    /** A session that may approve the request. */
+    /** A browser cookie session, or a T3 Connect session from the hosted app, that may approve. */
     readonly approvingSession: (
       request: HttpServerRequest.HttpServerRequest,
       authorization: AuthorizationRequest,
@@ -346,8 +354,18 @@ const make = Effect.gen(function* () {
             "Linked environments is off on that machine. Turn it on in its Settings → Labs.",
         });
       }
+      const clientId = yield* signClientId(name, redirectUris, peerLink);
+      if (
+        redirectUris.length > MAX_UNBOUNDED_CLIENT_ID_REDIRECT_URIS &&
+        clientId.length > MAX_CLIENT_ID_LENGTH
+      ) {
+        return yield* new AuthMcpRegistrationError({
+          error: "invalid_redirect_uri",
+          error_description: "Redirect URIs are too long to fit in an authorization request.",
+        });
+      }
       return {
-        clientId: yield* signClientId(name, redirectUris, peerLink),
+        clientId,
         name,
         redirectUris,
         peerLink,
@@ -411,7 +429,8 @@ const make = Effect.gen(function* () {
         // Approving manages access, and a session may only hand out scopes it holds.
         session.scopes.includes(AuthAccessWriteScope) &&
         session.scopes.includes(AuthOrchestrationReadScope)
-          ? csrfToken(
+          ? // The hosted app may get a fresh credential per call, all bound to one browser key.
+            csrfToken(
               session.proofKeyThumbprint === undefined
                 ? session.sessionId
                 : `dpop:${session.proofKeyThumbprint}`,
@@ -455,19 +474,21 @@ const make = Effect.gen(function* () {
           description: "Linking needs a plain pairing code, not an app approval code.",
         });
       }
-      access = yield* environmentAuth.consumeMcpApprovalCode(decision.code, decision.access).pipe(
-        Effect.catchIf(EnvironmentAuth.isServerAuthInternalError, (cause) =>
-          Effect.logError("MCP approval code check failed.", { cause }).pipe(
-            Effect.andThen(
-              Effect.fail(
-                new McpOAuthPageError({
-                  description: "The code could not be checked. Try again.",
-                }),
+      access = yield* environmentAuth
+        .consumeMcpApprovalCode(decision.code, decision.access, input.authorization.client.peerLink)
+        .pipe(
+          Effect.catchIf(EnvironmentAuth.isServerAuthInternalError, (cause) =>
+            Effect.logError("MCP approval code check failed.", { cause }).pipe(
+              Effect.andThen(
+                Effect.fail(
+                  new McpOAuthPageError({
+                    description: "The code could not be checked. Try again.",
+                  }),
+                ),
               ),
             ),
           ),
-        ),
-      );
+        );
     } else {
       const session = yield* approvingSession(input.request, input.authorization);
       if (
@@ -588,6 +609,13 @@ export const layerMcpClientAuthenticator = Layer.effect(
     const environmentAuth = yield* EnvironmentAuth.EnvironmentAuth;
     const environment = yield* ServerEnvironment.ServerEnvironment;
     const environmentId = yield* environment.getEnvironmentId;
+    const hostedAppUrl = yield* hostedAppUrlConfig.pipe(
+      Effect.catch((cause) =>
+        Effect.logWarning("Outside MCP clients get app.t3.codes thread links", { cause }).pipe(
+          Effect.as(DEFAULT_HOSTED_APP_URL),
+        ),
+      ),
+    );
     return McpHttpServer.McpClientAuthenticator.of({
       authenticate: Effect.fn("McpHttpServer.McpClientAuthenticator.authenticate")(
         function (request) {
@@ -603,6 +631,8 @@ export const layerMcpClientAuthenticator = Layer.effect(
                     label: client.label,
                     access: client.access,
                     linked: client.peerLink,
+                    linkExpiresAt: client.linkExpiresAt,
+                    ...(client.peerLink ? {} : { hostedAppUrl }),
                   },
                   capabilities: new Set<McpInvocationContext.McpCapability>([
                     "orchestration",

@@ -52,6 +52,24 @@ describe("ProviderSettingsForm helpers", () => {
     expect(next).toEqual({ forkOwned: 1 });
   });
 
+  it("does not store a text value its field's schema rejects", () => {
+    const claude = providerClients.get(ProviderDriverKind.make("claudeAgent"));
+    expect(claude).toBeDefined();
+    const autoCompactWindow = deriveProviderSettingsFields(claude!).find(
+      (field) => field.key === "autoCompactWindow",
+    );
+    expect(autoCompactWindow).toBeDefined();
+
+    for (const invalid of ["300k", "50000"]) {
+      expect(
+        nextProviderConfigWithFieldValue({ launchArgs: "--x" }, autoCompactWindow!, invalid),
+      ).toEqual({ launchArgs: "--x" });
+    }
+    expect(
+      nextProviderConfigWithFieldValue({ launchArgs: "--x" }, autoCompactWindow!, "300000"),
+    ).toEqual({ launchArgs: "--x", autoCompactWindow: "300000" });
+  });
+
   it("stores false boolean fields when true is the default", () => {
     const next = nextProviderConfigWithFieldValue(
       undefined,
@@ -67,38 +85,6 @@ describe("ProviderSettingsForm helpers", () => {
 
     expect(next).toEqual({ experimental: false });
   });
-
-  it.each([
-    ["local", "qoderclicn", true],
-    ["local", "/opt/tools/qoderclicn", true],
-    ["local", "C:\\tools\\qodercn.EXE", true],
-    ["local", "qodercn.cmd", true],
-    ["local", "qoder", false],
-    ["registry", "qoderclicn", false],
-  ] as const)(
-    "offers automatic updates for %s Qoder CN commands (%s)",
-    (source, commandPath, shown) => {
-      const acpRegistry = providerClients.get(ProviderDriverKind.make("acpRegistry"))!;
-      const config = { source, commandPath, commandArgs: ["--acp"] };
-      const autoUpdate = deriveProviderSettingsFields(acpRegistry, config).find(
-        (field) => field.key === "autoUpdate",
-      );
-
-      if (shown) {
-        expect(autoUpdate).toMatchObject({
-          label: "自动升级 Qoder CN",
-          control: "switch",
-          defaultBooleanValue: false,
-        });
-        expect(nextProviderConfigWithFieldValue(config, autoUpdate!, true)).toEqual({
-          ...config,
-          autoUpdate: true,
-        });
-      } else {
-        expect(autoUpdate).toBeUndefined();
-      }
-    },
-  );
 });
 
 describe("reconcileRowsDraft", () => {

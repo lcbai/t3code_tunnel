@@ -1,9 +1,11 @@
+import { T, useGT } from "gt-react";
 import { useState } from "react";
 
 import { MermaidDiagram } from "../chat/MermaidDiagram";
 import { ExpandedImageDialog } from "../chat/ExpandedImageDialog";
 
 export default function MermaidViewer(props: { readonly text: string }) {
+  const gt = useGT();
   const [expanded, setExpanded] = useState<string | null>(null);
   // Mermaid lays out DOM before sanitizing its SVG. Refuse resource and config
   // syntax before that pass so standalone files cannot initiate requests. Node
@@ -15,7 +17,10 @@ export default function MermaidViewer(props: { readonly text: string }) {
   )
     return (
       <div role="alert" className="p-6 text-xs text-muted-foreground">
-        此图表包含资源网址、标记、节点元数据或自定义配置。请查看 Mermaid 源码以安全检查。
+        <T>
+          This diagram contains resource URLs, markup, node metadata, or custom configuration. Show
+          Mermaid source to inspect it safely.
+        </T>
       </div>
     );
   return (
@@ -23,7 +28,7 @@ export default function MermaidViewer(props: { readonly text: string }) {
       <MermaidDiagram source={props.text} onExpand={setExpanded} />
       {expanded ? (
         <ExpandedImageDialog
-          preview={{ images: [{ src: expanded, name: "Mermaid diagram" }], index: 0 }}
+          preview={{ images: [{ src: expanded, name: gt("Mermaid diagram") }], index: 0 }}
           onClose={() => setExpanded(null)}
         />
       ) : null}

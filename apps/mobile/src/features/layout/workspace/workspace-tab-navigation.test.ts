@@ -1,10 +1,12 @@
+import * as NodeModule from "node:module";
 import { describe, expect, it } from "vite-plus/test";
 
-import { restoreSettingsLinkState } from "../../settings/settings-navigation";
+import { restoreSettingsLinkState, settingsLinkAction } from "../../settings/settings-navigation";
 import {
   workspaceSelectionsIn,
   workspaceTabColumns,
   workspaceTabNavigationState,
+  workspaceTabPage,
 } from "./workspace-tab-navigation";
 
 const home = { key: "home", name: "Home" };
@@ -19,7 +21,18 @@ const pullRequest = {
   params: { environmentId: "env", projectId: "project", repository: "o/r", number: 7 },
 };
 const settings = { key: "settings", name: "Settings" };
-const available = { thread: () => true, pullRequest: () => true };
+const requireFromNative = NodeModule.createRequire(
+  NodeModule.createRequire(import.meta.url).resolve("@react-navigation/native/package.json"),
+);
+const { getStateFromPath } = requireFromNative("@react-navigation/core") as {
+  readonly getStateFromPath: typeof import("@react-navigation/native").getStateFromPath;
+};
+const { StackRouter } = NodeModule.createRequire(
+  requireFromNative.resolve("@react-navigation/core/package.json"),
+)("@react-navigation/routers") as {
+  readonly StackRouter: typeof import("@react-navigation/native").StackRouter;
+};
+const available = { thread: () => true, pullRequest: () => true, issue: () => true };
 const names = (state: { routes: readonly { name: string }[] }) =>
   state.routes.map((route) => route.name);
 
@@ -40,7 +53,7 @@ describe("workspace tab selections", () => {
   });
 
   it("doesn't remember pages a Settings row doesn't open", () => {
-    for (const name of ["SettingsEnvironmentNew", "SettingsProjectOverview", "SettingsLegal"]) {
+    for (const name of ["SettingsEnvironmentNew", "SettingsProjectOverview", "SettingsAuth"]) {
       expect(workspaceSelectionsIn([home, settings, { key: name, name }], {}).settings).toBe(
         undefined,
       );
@@ -106,6 +119,12 @@ describe("opening a workspace tab", () => {
         workspaceTabNavigationState(state, "settings", { settings: "SettingsMicrophone" }, columns),
       ),
     ).toEqual(["Home", "Settings", "SettingsVoice"]);
+    // A hidden tab renders its page under the key that opening the tab later uses.
+    for (const tab of ["pullRequests", "settings"] as const) {
+      expect(workspaceTabNavigationState(state, tab, selections, columns).routes.at(-1)?.key).toBe(
+        workspaceTabPage(state, tab, selections, columns)?.key,
+      );
+    }
   });
 
   it("keeps the route that is already open, so re-selecting a tab doesn't rebuild it", () => {
@@ -160,7 +179,7 @@ describe("opening a workspace tab", () => {
   });
 
   it("falls back to the list for a chat that no longer exists, or an unknown Settings page", () => {
-    const missing = { thread: () => false, pullRequest: () => true };
+    const missing = { thread: () => false, pullRequest: () => true, issue: () => true };
     expect(
       names(
         workspaceTabNavigationState(
@@ -187,7 +206,7 @@ describe("opening a workspace tab", () => {
   });
 
   it("keeps an open sheet on top", () => {
-    const sheet = { key: "sheet", name: "SettingsLegal" };
+    const sheet = { key: "sheet", name: "ConnectOnboarding" };
     const next = workspaceTabNavigationState(
       { routes: [home] },
       "threads",
@@ -197,7 +216,7 @@ describe("opening a workspace tab", () => {
         overlays: [sheet],
       },
     );
-    expect(names(next)).toEqual(["Home", "Thread", "SettingsLegal"]);
+    expect(names(next)).toEqual(["Home", "Thread", "ConnectOnboarding"]);
     expect(next.index).toBe(2);
   });
 });
@@ -218,8 +237,33 @@ describe("Settings links", () => {
     expect(restoreSettingsLinkState(bare, undefined)).toBe(bare);
   });
 
-  it("opens the legal link as a modal over the workspace", () => {
-    const state = { routes: [{ name: "Home" }, { name: "SettingsLegal" }] };
+  it("opens a link sent to the running app on the Settings tab, as its button does", () => {
+    const screens = {
+      Home: "",
+      Settings: "settings",
+      SettingsAbout: "settings/about",
+      SettingsAppearance: "settings/appearance",
+    };
+    const router = StackRouter({});
+    const options = { routeNames: Object.keys(screens), routeParamList: {}, routeGetIdList: {} };
+    const open = router.getRehydratedState(
+      { index: 2, routes: [{ name: "Home" }, { name: "Settings" }, { name: "SettingsAbout" }] },
+      options,
+    );
+    const follow = (path: string) => {
+      const link = getStateFromPath(path, { initialRouteName: "Home", screens })!;
+      const action = settingsLinkAction(link, open)!;
+      return router.getStateForAction(open, action, options)!;
+    };
+
+    expect(names(follow("settings"))).toEqual(["Home", "Settings"]);
+    const appearance = follow("settings/appearance");
+    expect(names(appearance)).toEqual(["Home", "Settings", "SettingsAppearance"]);
+    expect(appearance.routes[1]!.key).toBe(open.routes[1]!.key);
+  });
+
+  it("opens the sign-in link as a modal over the workspace", () => {
+    const state = { routes: [{ name: "Home" }, { name: "SettingsAuth" }] };
     expect(restoreSettingsLinkState(state, "SettingsAppearance")).toBe(state);
   });
 });

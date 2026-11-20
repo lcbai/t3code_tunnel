@@ -64,10 +64,10 @@ function threadInput(threadId: string, branch: string) {
 type ThreadInput = ReturnType<typeof threadInput>;
 
 it.each([
-  { remote: false, approval: false, link: "查看问题" },
-  { remote: true, approval: false, link: "查看问题" },
+  { remote: false, approval: false, link: "Open question" },
+  { remote: true, approval: false, link: "Open question" },
   { remote: true, approval: false, link: "Child" },
-  { remote: true, approval: true, link: "查看审批" },
+  { remote: true, approval: true, link: "Open approval" },
 ])("opens the child in its environment ($remote, $link)", async ({ remote, approval, link }) => {
   setup();
   const parent = threadInput("parent", "main");
@@ -117,6 +117,7 @@ function RestoreBranchHarness(props: {
     serverConfig: null,
     runtimeMode: "full-access" as never,
     isWorking: false,
+    runIsLive: false,
     pendingBackgroundTasks: [{ taskId: "background-command", kind: "command" }] as never,
     turnItems: [],
     activePendingApproval: null as never,
@@ -245,24 +246,24 @@ it.each(["Success", "Failure"] as const)(
       />
     );
     await using screen = await render(harness(threadA));
-    await page.getByRole("button", { name: "停止", exact: true }).click();
-    await expect.element(page.getByRole("button", { name: "正在停止中…" })).toBeDisabled();
+    await page.getByRole("button", { name: "Stop", exact: true }).click();
+    await expect.element(page.getByRole("button", { name: "Stopping..." })).toBeDisabled();
     await screen.rerender(harness(threadB));
-    await page.getByRole("button", { name: "停止", exact: true }).click();
+    await page.getByRole("button", { name: "Stop", exact: true }).click();
     await screen.rerender(harness(threadA));
-    await expect.element(page.getByRole("button", { name: "正在停止中…" })).toBeDisabled();
+    await expect.element(page.getByRole("button", { name: "Stopping..." })).toBeDisabled();
     completions[0]!(
       outcome === "Success"
         ? { _tag: "Success", value: undefined }
         : { _tag: "Failure", cause: Cause.fail(new Error("stop failed")) },
     );
     if (outcome === "Success") {
-      await expect.element(page.getByRole("button", { name: "正在停止中…" })).toBeDisabled();
+      await expect.element(page.getByRole("button", { name: "Stopping..." })).toBeDisabled();
     } else {
-      await expect.element(page.getByRole("button", { name: "停止", exact: true })).toBeEnabled();
+      await expect.element(page.getByRole("button", { name: "Stop", exact: true })).toBeEnabled();
     }
     await screen.rerender(harness(threadB));
-    await expect.element(page.getByRole("button", { name: "正在停止中…" })).toBeDisabled();
+    await expect.element(page.getByRole("button", { name: "Stopping..." })).toBeDisabled();
     expect(state.switchRef).toHaveBeenCalledTimes(2);
     completions[1]!({ _tag: "Success", value: undefined });
   },

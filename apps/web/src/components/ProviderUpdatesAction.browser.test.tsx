@@ -173,7 +173,9 @@ it("provider updates and checks exclude connections without a confirmed manageme
   await act(async () => {
     await check();
   });
-  expect(toast).toHaveBeenCalledWith(expect.objectContaining({ title: "无法检查提供者更新" }));
+  expect(toast).toHaveBeenCalledWith(
+    expect.objectContaining({ title: "Could not check provider updates" }),
+  );
 
   await act(() => {
     appAtomRegistry.set(fixture.sessions.get(writableId)!, session(["orchestration:read"]));

@@ -1,4 +1,5 @@
 import type { EnvironmentId } from "@t3tools/contracts";
+import { useGT } from "gt-react-native";
 import { View } from "react-native";
 
 import { EmptyState } from "../../components/ui/EmptyState";
@@ -39,32 +40,33 @@ export function AttachmentDocumentBody(props: {
   readonly onOpenNative: () => void;
 }) {
   const { document } = props;
+  const gt = useGT();
   if (document.error) {
     return (
       <View className="flex-1 items-center justify-center bg-sheet px-6">
         <EmptyState
-          title="文件不可用"
+          title={gt("File unavailable")}
           detail={document.error}
-          actionLabel="Try again"
+          actionLabel={gt("Try again")}
           onAction={document.retry}
         />
       </View>
     );
   }
   if (props.nativeViewer !== null && props.nativeViewer !== "unavailable") {
-    return <FilePreviewLoading message="正在文件查看器中打开…" />;
+    return <FilePreviewLoading message={gt("Opening in file viewer...")} />;
   }
   // ZIP text entries are read into memory and have no file URI.
   if (document.needsText ? !document.content : !document.uri) {
-    return <FilePreviewLoading message="正在加载文件…" />;
+    return <FilePreviewLoading message={gt("Loading file...")} />;
   }
   if (document.needsText && document.content) {
     const { content, table } = document;
     return (
       <View className="flex-1 bg-sheet">
         {content.truncated ? (
-          <FilePreviewNotice title="部分文件">
-            预览仅显示前 1 MB。保存或分享文件后可查看完整内容。
+          <FilePreviewNotice title={gt("Partial file")}>
+            {gt("Preview limited to the first 1 MB. Save or share the file to read it in full.")}
           </FilePreviewNotice>
         ) : null}
         {table && document.activeMode === "table" ? (
@@ -98,12 +100,12 @@ export function AttachmentDocumentBody(props: {
   return (
     <View className="flex-1 items-center justify-center bg-sheet px-6">
       <EmptyState
-        title="此文件无法预览"
+        title={gt("No preview for this file")}
         detail={
           props.nativeError ??
-          "此设备没有可显示此格式的应用。请保存或分享文件，然后在其他应用中打开。"
+          gt("No app on this device can show this format. Save or share it to open it elsewhere.")
         }
-        actionLabel="Try again"
+        actionLabel={gt("Try again")}
         onAction={props.onOpenNative}
       />
     </View>

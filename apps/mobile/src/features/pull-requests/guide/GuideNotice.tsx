@@ -1,4 +1,5 @@
 import { Button } from "../../../components/ui/Button";
+import { T, useGT, useMessages, Var } from "gt-react-native";
 import { View } from "react-native";
 import Animated, { FadeIn, ReduceMotion } from "react-native-reanimated";
 import { AppText as Text } from "../../../components/ui/AppText";
@@ -10,7 +11,9 @@ import type { useReviewGuide } from "./useReviewGuide";
 const NOTICE_ENTER = FadeIn.delay(180).duration(120).reduceMotion(ReduceMotion.System);
 
 export function GuideNotice({ state }: { readonly state: ReturnType<typeof useReviewGuide> }) {
-  const notice = guideNoticeState(state);
+  const gt = useGT();
+  const messages = useMessages();
+  const notice = guideNoticeState(state, messages);
   if (notice.kind === "ready") return null;
   const compact = state.data?.guide != null;
   const failed = notice.kind === "failed" || notice.kind === "unavailable";
@@ -32,7 +35,9 @@ export function GuideNotice({ state }: { readonly state: ReturnType<typeof useRe
           size={19}
           tintColorClassName={failed ? "accent-danger-foreground" : "accent-icon-muted"}
         />
-        <Text className="text-base font-t3-semibold">{compact ? notice.title : "审查指南"}</Text>
+        <Text className="text-base font-t3-semibold">
+          {compact ? notice.title : gt("Review guide")}
+        </Text>
       </View>
       <View style={compact ? undefined : { minHeight: 100 }} className="pt-3 pb-4">
         <Text className="text-sm leading-6 text-foreground-muted">{notice.description}</Text>
@@ -49,17 +54,21 @@ export function GuideNotice({ state }: { readonly state: ReturnType<typeof useRe
         ) : (
           <Text className="text-xs text-foreground-muted">
             {notice.kind === "failed"
-              ? "请重新连接，或请有写入权限的用户重试。"
-              : "编写指南需要建立连接并获得写入权限。"}
+              ? gt("Reconnect or ask someone with write access to retry.")
+              : gt("Writing a guide requires a connection and write access.")}
           </Text>
         )}
         {notice.kind === "writing" && state.data?.run?._tag === "Running" ? (
           <Text className="shrink text-xs text-foreground-muted">
-            已开始{" "}
-            {new Date(state.data.run.startedAt).toLocaleTimeString("zh-CN", {
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
+            <T>
+              Started{" "}
+              <Var>
+                {new Date(state.data.run.startedAt).toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </Var>
+            </T>
           </Text>
         ) : null}
       </View>

@@ -114,7 +114,12 @@ export class GnomeCaptureSetup {
         this.disconnected,
         new Promise<never>((_, reject) => {
           timer = setTimeout(
-            () => reject(new Error("GNOME 未响应。请登录 GNOME Wayland 会话后再试。")),
+            () =>
+              reject(
+                new Error(
+                  "GNOME did not respond. Sign in to a GNOME Wayland session and try again.",
+                ),
+              ),
             5_000,
           );
         }),
@@ -164,48 +169,53 @@ export class GnomeCaptureSetup {
       if (!bundled["shell-version"].includes(major))
         return {
           status: "unsupported",
-          message: `内置扩展支持 GNOME ${bundled["shell-version"].join("、")}，当前会话使用 GNOME ${major}。`,
+          message: `The bundled extension supports GNOME ${bundled["shell-version"].join(", ")}. This session runs GNOME ${major}.`,
         };
       if (!info.state && !installed)
         return {
           status: "not-installed",
-          message: "安装内置扩展后即可直接捕获活动窗口。无需下载或输入管理员密码。",
+          message:
+            "Install the bundled extension to capture the active window without a picker. No download or administrator password is needed.",
         };
       if (installed && (!info.state || (info.version && installed.version > info.version.value)))
         return {
           status: "restart-required",
-          message: "已安装。请保存工作，退出并重新登录 GNOME，再回到这里启用扩展。",
+          message:
+            "Installed. Save your work, sign out of GNOME and sign back in, then return here to enable the extension. Restarting T3 Code alone is not enough.",
         };
       if ((installed?.version ?? info.version?.value ?? 0) < bundled.version)
         return {
           status: "update-required",
-          message: "应用内置了较新的扩展。安装后请退出并重新登录 GNOME，以加载更新。",
+          message:
+            "A newer extension is bundled with this app. Install it, then sign out and back in to load the update.",
         };
       if (!properties.UserExtensionsEnabled.value)
         return {
           status: "extensions-disabled",
-          message: "GNOME 已禁用用户扩展。请在 GNOME 扩展应用中启用扩展，再重新检查。",
+          message:
+            "GNOME has disabled user extensions. Turn on Extensions in the GNOME Extensions app, then check again. T3 Code will not enable your other extensions for you.",
         };
       if (info.state?.value === 1)
         return {
           status: "enabled",
-          message: "T3 Code 扩展正在运行，可以捕获活动窗口。",
+          message: "The T3 Code extension is running. Active-window snapshots are available.",
         };
       if (info.state?.value === 3 || info.state?.value === 4)
         return {
           status: "error",
           message:
             info.error?.value ||
-            "GNOME 无法加载扩展。请在 GNOME 扩展中查看详情，或退出后重新登录。",
+            "GNOME could not load the extension. Check GNOME Extensions for details, or sign out and back in.",
         };
       return {
         status: "disabled",
-        message: "启用 T3 Code 扩展后即可捕获活动窗口。你可以随时在此关闭扩展。",
+        message:
+          "Enable the T3 Code extension to allow active-window snapshots. You can disable it here at any time.",
       };
     } catch (error) {
       return {
         status: "error",
-        message: error instanceof Error ? error.message : "无法检查 GNOME 扩展的配置。",
+        message: error instanceof Error ? error.message : "Could not check GNOME extension setup.",
       };
     }
   }
@@ -227,6 +237,7 @@ export class GnomeCaptureSetup {
       signature: "s",
       body: [GNOME_CAPTURE_UUID],
     });
-    if (result !== true) throw new Error("GNOME 尚未加载扩展，请退出并重新登录后再试。");
+    if (result !== true)
+      throw new Error("GNOME has not loaded the extension. Sign out and back in, then try again.");
   }
 }

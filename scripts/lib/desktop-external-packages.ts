@@ -2,6 +2,7 @@
 const DESKTOP_RUNTIME_EXTERNAL_PREFIXES = [
   "@napi-rs/keyring",
   "@crowecawcaw/xa11y",
+  "@clerk/electron-passkeys",
   "electron-webauthn",
   "ffi-rs",
   "@yuuang/",

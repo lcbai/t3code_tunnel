@@ -4,6 +4,7 @@
 // (as the markdown worker's queue does), transferable payloads, and a worker that fails every pending call when it dies.
 
 import * as Schema from "effect/Schema";
+import { isPreviewError, PreviewError, type PreviewFailure } from "../previewFailure";
 
 /** What one method takes and returns. */
 export type Method<Input, Output> = { readonly input: Input; readonly output: Output };
@@ -29,12 +30,11 @@ type Response =
       readonly value: unknown;
       readonly transferred: readonly Transferable[];
     }
-  | {
+  | ({
       readonly id: number;
       readonly ok: false;
       readonly superseded: boolean;
-      readonly message: string;
-    };
+    } & PreviewFailure);
 
 /** A value a method returns with the buffers to move to the caller rather than copy. */
 export class Transfer<T> {
@@ -99,10 +99,14 @@ export function createWorkerClient<M extends Methods>(worker: Worker) {
   });
 
   worker.addEventListener("error", (event) =>
-    fail(new WorkerClosedError({ message: event.message || "办公室引擎停了" })),
+    fail(
+      event.message
+        ? new WorkerClosedError({ message: event.message })
+        : new PreviewError({ code: "office-engine-stopped" }),
+    ),
   );
   worker.addEventListener("messageerror", () =>
-    fail(new WorkerClosedError({ message: "办公室引擎发送了无法读取的答复" })),
+    fail(new PreviewError({ code: "office-engine-unreadable" })),
   );
 
   return {
@@ -114,24 +118,19 @@ export function createWorkerClient<M extends Methods>(worker: Worker) {
       if (state.failure) return Promise.reject(state.failure);
 
       if (options.signal?.aborted)
-        return Promise.reject(new WorkerClosedError({ message: "电话中断了" }));
+        return Promise.reject(new WorkerClosedError({ message: "The call was aborted" }));
 
       const id = ++state.next;
 
       return new Promise<M[K]["output"]>((resolve, reject) => {
         const timeout = setTimeout(
-          () =>
-            fail(
-              new WorkerClosedError({
-                message: "此文档预览时间太长。在另一个应用程序中打开。",
-              }),
-            ),
+          () => fail(new PreviewError({ code: "office-timeout" })),
           30_000,
         );
         const abort = () => {
           clearTimeout(timeout);
           pending.delete(id);
-          reject(new WorkerClosedError({ message: "电话中断了" }));
+          reject(new WorkerClosedError({ message: "The call was aborted" }));
           worker.postMessage({ cancel: id } satisfies Cancel, []);
         };
 
@@ -145,7 +144,9 @@ export function createWorkerClient<M extends Methods>(worker: Worker) {
               return reject(
                 response.superseded
                   ? new SupersededError({ message: response.message })
-                  : new Error(response.message),
+                  : response.code
+                    ? new PreviewError({ code: response.code })
+                    : new Error(response.message),
               );
 
             // SAFETY: the worker answers each id with the output of the method that id called (see `serveWorker`).
@@ -164,7 +165,7 @@ export function createWorkerClient<M extends Methods>(worker: Worker) {
     },
     /** Stops the worker, which frees its engine's memory, and fails every pending call. */
     close() {
-      fail(new WorkerClosedError({ message: "办公室引擎关闭" }));
+      fail(new WorkerClosedError({ message: "The Office engine was closed" }));
     },
   };
 }
@@ -218,7 +219,8 @@ export function serveWorker<M extends Methods>(handlers: {
           id: request.id,
           ok: false,
           superseded: false,
-          message: `未知的方法${request.method}`,
+          // oxlint-disable-next-line t3code/no-untranslated-copy -- internal worker RPC error, never shown
+          message: `Unknown method ${request.method}`,
         });
         continue;
       }
@@ -252,7 +254,9 @@ export function serveWorker<M extends Methods>(handlers: {
               id: request.id,
               ok: false,
               superseded: false,
-              message: cause instanceof Error ? cause.message : String(cause),
+              ...(isPreviewError(cause)
+                ? { code: cause.code, message: cause.code }
+                : { message: cause instanceof Error ? cause.message : String(cause) }),
             });
           },
         );
@@ -281,7 +285,9 @@ export function serveWorker<M extends Methods>(handlers: {
     if (replaced !== -1) {
       const [old] = queue.splice(replaced, 1);
 
-      if (old) reply({ id: old.id, ok: false, superseded: true, message: "替换为新电话" });
+      if (old)
+        // oxlint-disable-next-line t3code/no-untranslated-copy -- superseded calls are dropped, never shown
+        reply({ id: old.id, ok: false, superseded: true, message: "Replaced by a newer call" });
     }
 
     queue.push(event.data);

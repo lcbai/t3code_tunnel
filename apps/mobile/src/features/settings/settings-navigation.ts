@@ -10,12 +10,12 @@ import {
 type RootParams = ReactNavigation.RootParamList;
 
 /** Settings routes that open as modals over whatever is on screen, not as Settings pages. */
-const SETTINGS_MODAL_ROUTES = new Set(["SettingsLegal"]);
+const SETTINGS_MODAL_ROUTES = new Set(["SettingsLegal", "SettingsAuth", "SettingsWaitlist"]);
 
 /** Root routes that make up the Settings tab: its list and the pages it opens. */
 export type SettingsRouteName = Exclude<
   Extract<keyof RootParams, `Settings${string}`>,
-  "SettingsLegal"
+  "SettingsLegal" | "SettingsAuth" | "SettingsWaitlist"
 >;
 
 /** A page in the Settings tab's detail column. */
@@ -89,6 +89,24 @@ export function settingsNavigationState<State extends { readonly routes: readonl
     ...(page ? [current ?? (key ? { key, name: page, params } : { name: page, params })] : []),
   ];
   return { ...state, index: routes.length - 1, routes };
+}
+
+/**
+ * A Settings link opened while the app runs resets the root stack the way the Settings tab
+ * does. React Navigation's default action pushes the linked route over whatever is open.
+ */
+export function settingsLinkAction(
+  link: PartialState<NavigationState>,
+  current: NavigationState | undefined,
+) {
+  const top = link.routes.at(-1);
+  if (!current || !top || top.state || !isSettingsRoute(top.name)) return undefined;
+  const page = top.name === "Settings" ? undefined : (top.name as SettingsPageName);
+  return {
+    type: "RESET" as const,
+    payload: settingsNavigationState(current, page, top.params),
+    target: current.key,
+  };
 }
 
 /** Opens one Settings page in the Settings tab, from anywhere outside it. */

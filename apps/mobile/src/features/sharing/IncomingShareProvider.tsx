@@ -1,4 +1,6 @@
+import { errorDisplayMessage } from "@t3tools/client-runtime/errors";
 import * as Dialog from "../../components/ui/Dialog";
+import { m } from "../../i18n/messages";
 import Constants from "expo-constants";
 import * as Crypto from "expo-crypto";
 import { EnvironmentId, PROVIDER_SEND_TURN_MAX_FILE_BYTES } from "@t3tools/contracts";
@@ -9,6 +11,7 @@ import {
   type ResolvedSharePayload,
   type SharePayload,
 } from "expo-sharing";
+import { msg } from "gt-react-native";
 import { useSyncExternalStore } from "react";
 import { Platform } from "react-native";
 import { CommonActions } from "@react-navigation/native";
@@ -234,10 +237,11 @@ function reportRefreshFailure(cause: unknown) {
     cause,
     cause instanceof Error ? cause.cause : null,
   );
-  const error = cause instanceof Error ? cause : new Error("Could not import shared content.");
-  Dialog.alert("无法导入共享内容", error.message, [
-    { text: "关闭", style: "cancel" },
-    { text: "重试", onPress: () => void refreshIncomingShares() },
+  const error =
+    cause instanceof Error ? cause : new Error(m(msg("Could not import shared content.")));
+  Dialog.alert(m(msg("Could not import shared content")), error.message, [
+    { text: m(msg("Dismiss")), style: "cancel" },
+    { text: m(msg("Retry")), onPress: () => void refreshIncomingShares() },
   ]);
 }
 
@@ -318,30 +322,34 @@ export const incomingShareImports = makeIncomingShareImports({
     }),
   releaseUnusedAttachments: scheduleUnusedComposerAttachmentCleanup,
   onWarnings: (warnings) => {
-    Dialog.alert("已跳过部分共享内容", warnings.join("\n"));
+    Dialog.alert(m(msg("Some shared content was skipped")), warnings.join("\n"));
   },
   onImportFailure: (target, error) => {
     Dialog.alert(
-      "无法导入共享内容",
-      error instanceof Error ? error.message : "无法保存共享内容。",
+      m(msg("Could not import shared content")),
+      error instanceof Error
+        ? (errorDisplayMessage(error, m) ?? error.message)
+        : m(msg("The shared content could not be saved.")),
       [
         {
-          text: "取消导入",
+          text: m(msg("Cancel import")),
           style: "cancel",
           onPress: () => void incomingShareImports.cancel(target),
         },
-        { text: "重试", onPress: () => incomingShareImports.retry(target) },
+        { text: m(msg("Retry")), onPress: () => incomingShareImports.retry(target) },
       ],
       { cancelable: false },
     );
   },
   onCancelFailure: (target, error) => {
     Dialog.alert(
-      "Could not cancel import",
-      error instanceof Error ? error.message : "无法安全恢复共享内容。",
+      m(msg("Could not cancel import")),
+      error instanceof Error
+        ? (errorDisplayMessage(error, m) ?? error.message)
+        : m(msg("The shared content could not be restored safely.")),
       [
-        { text: "重试导入", onPress: () => incomingShareImports.retry(target) },
-        { text: "重试取消", onPress: () => void incomingShareImports.cancel(target) },
+        { text: m(msg("Retry import")), onPress: () => incomingShareImports.retry(target) },
+        { text: m(msg("Retry cancel")), onPress: () => void incomingShareImports.cancel(target) },
       ],
       { cancelable: false },
     );

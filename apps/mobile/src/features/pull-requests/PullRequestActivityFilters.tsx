@@ -1,3 +1,4 @@
+import { useGT } from "gt-react-native";
 import { Pressable, View } from "react-native";
 import { AppText as Text } from "../../components/ui/AppText";
 import { SymbolView } from "../../components/ui/AppSymbol";
@@ -13,15 +14,16 @@ export function PullRequestActivityFilters({
   readonly onChange: (value: ActivityFilter) => void;
   readonly hiddenCount: number;
 }) {
+  const gt = useGT();
   const kinds = [
-    { id: "all", title: "全部活动" },
-    { id: "comments", title: "评论" },
-    { id: "commits", title: "提交记录" },
+    { id: "all", title: gt("All activity") },
+    { id: "comments", title: gt("Comments", { $context: "activity filter" }) },
+    { id: "commits", title: gt("Commits", { $context: "activity filter" }) },
   ] as const;
   return (
     <View className="mb-4 flex-row items-center justify-between gap-3">
       <Menu
-        title="活动"
+        title={gt("Activity")}
         actions={kinds.map((kind) => ({ ...kind, state: value.kind === kind.id ? "on" : "off" }))}
         onPressAction={({ nativeEvent }) => {
           const kind = kinds.find((item) => item.id === nativeEvent.event);
@@ -30,7 +32,9 @@ export function PullRequestActivityFilters({
       >
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={`活动类型：${kinds.find((kind) => kind.id === value.kind)?.title}`}
+          accessibilityLabel={gt("Activity type, {kind}", {
+            kind: kinds.find((kind) => kind.id === value.kind)?.title ?? "",
+          })}
           className="min-h-11 flex-row items-center gap-2 active:opacity-60"
         >
           <Text className="text-sm font-t3-semibold">
@@ -41,12 +45,12 @@ export function PullRequestActivityFilters({
       </Menu>
       <View className="flex-row items-center gap-3">
         <Menu
-          title="在活动中显示"
+          title={gt("Show in activity")}
           actions={[
-            { id: "bots", title: "机器人评论", state: value.bots ? "on" : "off" },
+            { id: "bots", title: gt("Bot comments"), state: value.bots ? "on" : "off" },
             {
               id: "resolved",
-              title: "已解决或忽略",
+              title: gt("Resolved or dismissed"),
               state: value.resolved ? "on" : "off",
             },
           ]}
@@ -57,11 +61,18 @@ export function PullRequestActivityFilters({
         >
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={`Filter activity, ${hiddenCount} hidden`}
+            accessibilityLabel={gt(
+              "{count, plural, one {Filter activity, {count} hidden} other {Filter activity, {count} hidden}}",
+              { count: hiddenCount },
+            )}
             className="min-h-11 flex-row items-center gap-1.5 active:opacity-60"
           >
             {hiddenCount > 0 ? (
-              <Text className="text-xs text-foreground-muted">{hiddenCount} hidden</Text>
+              <Text className="text-xs text-foreground-muted">
+                {gt("{count, plural, one {{count} hidden} other {{count} hidden}}", {
+                  count: hiddenCount,
+                })}
+              </Text>
             ) : null}
             <SymbolView
               name="line.3.horizontal.decrease"
@@ -72,7 +83,7 @@ export function PullRequestActivityFilters({
         </Menu>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={value.newestFirst ? "最新优先" : "最早优先"}
+          accessibilityLabel={value.newestFirst ? gt("Newest first") : gt("Oldest first")}
           onPress={() => onChange({ ...value, newestFirst: !value.newestFirst })}
           className="h-11 flex-row items-center gap-1 active:opacity-60"
         >
@@ -82,7 +93,9 @@ export function PullRequestActivityFilters({
             tintColorClassName="accent-icon-muted"
           />
           <Text className="text-xs text-foreground-muted">
-            {value.newestFirst ? "最新" : "最早"}
+            {value.newestFirst
+              ? gt("Newest", { $context: "sort order" })
+              : gt("Oldest", { $context: "sort order" })}
           </Text>
         </Pressable>
       </View>

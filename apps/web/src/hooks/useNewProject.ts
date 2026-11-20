@@ -8,8 +8,10 @@ import {
   squashAtomCommandFailure,
 } from "@t3tools/client-runtime/state/runtime";
 import type { EnvironmentId } from "@t3tools/contracts";
+import { msg } from "gt-react";
 
 import { stackedThreadToast, toastManager } from "~/components/ui/toast";
+import { m } from "~/i18n/messages";
 import { waitForProject } from "~/state/entities";
 import { projectEnvironment } from "~/state/projects";
 import { sourceControlEnvironment } from "~/state/sourceControl";
@@ -18,7 +20,9 @@ import { useNewThreadHandler } from "./useHandleNewThread";
 import { suggestAppAccessForRemote } from "../components/sourceControlAppAccessToast";
 
 function errorMessage(error: unknown): string {
-  return error instanceof Error && error.message.trim().length > 0 ? error.message : "发生了错误。";
+  return error instanceof Error && error.message.trim().length > 0
+    ? error.message
+    : m(msg("An error occurred."));
 }
 
 export function useNewProject() {
@@ -48,8 +52,12 @@ export function useNewProject() {
         toastManager.add(
           stackedThreadToast({
             type: "error",
-            title: `无法创建${label} transaction`,
-            description: `${errorMessage(squashAtomCommandFailure(result))}在Git 菜单中使用 Publish Repository 来再次尝试。`,
+            title: m(msg("Could not create the {label} repository", { label })),
+            description: m(
+              msg("{error} Use Publish Repository in the Git menu to try again.", {
+                error: errorMessage(squashAtomCommandFailure(result)),
+              }),
+            ),
           }),
         );
       }
@@ -58,7 +66,7 @@ export function useNewProject() {
     toastManager.add(
       stackedThreadToast({
         type: "success",
-        title: `发布到${label}`,
+        title: m(msg("Published to {label}", { label })),
         description: result.value.repository.nameWithOwner,
       }),
     );
@@ -79,7 +87,7 @@ export function useNewProject() {
         toastManager.add(
           stackedThreadToast({
             type: "error",
-            title: "无法创建工程",
+            title: m(msg("Could not create the project")),
             description: errorMessage(squashAtomCommandFailure(result)),
           }),
         );
@@ -91,11 +99,20 @@ export function useNewProject() {
     toastManager.add(
       stackedThreadToast(
         commitError === undefined
-          ? { type: "success", title: `创建了${input.name}`, description: workspaceRoot }
+          ? {
+              type: "success",
+              title: m(msg("Created {name}", { name: input.name })),
+              description: workspaceRoot,
+            }
           : {
               type: "warning",
-              title: `创建了${input.name}没有第一次承诺`,
-              description: `${commitError}项目在${workspaceRoot} 。`,
+              title: m(msg("Created {name} without a first commit", { name: input.name })),
+              description: m(
+                msg("{error} The project is in {path}.", {
+                  error: commitError,
+                  path: workspaceRoot,
+                }),
+              ),
             },
       ),
     );
@@ -113,8 +130,12 @@ export function useNewProject() {
       toastManager.add(
         stackedThreadToast({
           type: "error",
-          title: "打开工程失败",
-          description: `${errorMessage(error)}一旦客户端赶上，它将会出现在侧边栏。`,
+          title: m(msg("Failed to open project")),
+          description: m(
+            msg("{error} It will appear in the sidebar once this client catches up.", {
+              error: errorMessage(error),
+            }),
+          ),
         }),
       );
       return null;
@@ -124,7 +145,7 @@ export function useNewProject() {
       toastManager.add(
         stackedThreadToast({
           type: "error",
-          title: "打开工程失败",
+          title: m(msg("Failed to open project")),
           description: errorMessage(error),
         }),
       );

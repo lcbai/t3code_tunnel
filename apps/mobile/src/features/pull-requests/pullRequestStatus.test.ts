@@ -37,7 +37,7 @@ describe("mobile overview review status", () => {
         review("APPROVED", "2026-10-10T09:00:00Z"),
       ]),
     );
-    expect(result.title).toBe("已请求修改");
+    expect(result.title).toBe("Changes requested");
     expect(result.reviews).toHaveLength(1);
   });
 
@@ -58,7 +58,7 @@ describe("mobile overview review status", () => {
         ],
       },
     );
-    expect(result.title).toBe("等待审查");
+    expect(result.title).toBe("Awaiting review");
   });
 
   it("keeps an approval when a later review only comments, and normalizes provider spelling", () => {
@@ -76,7 +76,7 @@ describe("mobile overview review status", () => {
         { reviewers: [] },
         activity([review("changes-requested", "2026-10-10T11:00:00Z")]),
       ).title,
-    ).toBe("已请求修改");
+    ).toBe("Changes requested");
   });
 });
 
@@ -97,5 +97,8 @@ describe("mobile overview check status", () => {
     expect(
       pullRequestChecksSummary({ checks: [check("success"), check("pending"), check("failure")] }),
     ).toMatchObject({ title: "1 check failing", count: "1 of 3" });
+    expect(
+      pullRequestChecksSummary({ checks: [check("success"), check("cancelled")] }),
+    ).toMatchObject({ title: "1 check failing", tint: "accent-danger-foreground" });
   });
 });

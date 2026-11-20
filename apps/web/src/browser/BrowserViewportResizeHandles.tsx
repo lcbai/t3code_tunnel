@@ -3,6 +3,7 @@ import type {
   KeyboardEvent as ReactKeyboardEvent,
   PointerEvent as ReactPointerEvent,
 } from "react";
+import { useGT } from "gt-react";
 
 import { cn } from "~/lib/utils";
 
@@ -54,10 +55,11 @@ function ResizeHandle(props: {
     onPointerDown,
     onKeyDown,
   } = props;
+  const gt = useGT();
   return (
     <button
       type="button"
-      aria-label={`${label}. 使用箭头键调整大小。`}
+      aria-label={gt("{label}. Use arrow keys to resize.", { label })}
       className={cn(EDGE_BUTTON_CLASS, kind === "corner" && "z-30", cursorClassName)}
       style={style}
       onPointerDown={(event) => onPointerDown(direction, event)}
@@ -108,12 +110,13 @@ export function BrowserViewportResizeHandles({
   const bottom = top + layout.viewportHeight;
   const railSize = BROWSER_VIEWPORT_RESIZE_RAIL_SIZE;
 
+  const gt = useGT();
   const shared = { activeDirection, onPointerDown, onKeyDown };
   return (
     <>
       <ResizeHandle
         direction="west"
-        label="从左边缘调整浏览器的视图端口大小"
+        label={gt("Resize browser viewport from left edge")}
         kind="vertical"
         cursorClassName="cursor-ew-resize"
         style={{ left: left - railSize, top, width: railSize, height: layout.viewportHeight }}
@@ -123,7 +126,7 @@ export function BrowserViewportResizeHandles({
       />
       <ResizeHandle
         direction="east"
-        label="从右边缘调整浏览器的视图端口大小"
+        label={gt("Resize browser viewport from right edge")}
         kind="vertical"
         cursorClassName="cursor-ew-resize"
         style={{ left: right, top, width: railSize, height: layout.viewportHeight }}
@@ -133,7 +136,7 @@ export function BrowserViewportResizeHandles({
       />
       <ResizeHandle
         direction="south"
-        label="从底边调整浏览器的视图端口大小"
+        label={gt("Resize browser viewport from bottom edge")}
         kind="horizontal"
         cursorClassName="cursor-ns-resize"
         style={{ left, top: bottom, width: layout.viewportWidth, height: railSize }}
@@ -143,7 +146,7 @@ export function BrowserViewportResizeHandles({
       />
       <ResizeHandle
         direction="southwest"
-        label="从左下角调整浏览器视图端口大小"
+        label={gt("Resize browser viewport from bottom-left corner")}
         kind="corner"
         cursorClassName="cursor-nesw-resize"
         style={{ left: left - railSize, top: bottom, width: railSize, height: railSize }}
@@ -154,7 +157,7 @@ export function BrowserViewportResizeHandles({
       />
       <ResizeHandle
         direction="southeast"
-        label="从右下角调整浏览器视图端口大小"
+        label={gt("Resize browser viewport from bottom-right corner")}
         kind="corner"
         cursorClassName="cursor-nwse-resize"
         style={{ left: right, top: bottom, width: railSize, height: railSize }}

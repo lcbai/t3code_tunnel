@@ -1,5 +1,10 @@
+import { ProjectMonogramText } from "@t3tools/contracts";
+import * as Schema from "effect/Schema";
+import { msg } from "gt-react";
 import { lucideIconNames } from "./lib/lucideIconByName";
 export { PROJECT_ICON_COLORS, projectIconColorClassName } from "./projectIconColors";
+
+const isProjectMonogramText = Schema.is(ProjectMonogramText);
 
 const POPULAR_PROJECT_ICONS: ReadonlyArray<string> = [
   "folder-code",
@@ -29,42 +34,49 @@ const POPULAR_PROJECT_ICONS: ReadonlyArray<string> = [
 ];
 
 export const PROJECT_EMOJIS: ReadonlyArray<{ readonly emoji: string; readonly label: string }> = [
-  { emoji: "💻", label: "计算机" },
-  { emoji: "🛠️", label: "工具" },
-  { emoji: "🚀", label: "火箭" },
-  { emoji: "🤖", label: "机器人" },
-  { emoji: "✨", label: "闪光灯" },
-  { emoji: "⚡", label: "闪电" },
-  { emoji: "🌐", label: "网页端" },
-  { emoji: "📱", label: "移动端" },
-  { emoji: "🖥️", label: "桌面端" },
-  { emoji: "⌨️", label: "键盘" },
-  { emoji: "⚙️", label: "齿轮" },
-  { emoji: "🗄️", label: "数据库" },
-  { emoji: "☁️", label: "云头" },
-  { emoji: "📦", label: "软件包" },
-  { emoji: "📚", label: "书籍" },
-  { emoji: "🧪", label: "试管" },
-  { emoji: "🔒", label: "锁定" },
-  { emoji: "🎮", label: "游戏" },
-  { emoji: "🎵", label: "音乐" },
-  { emoji: "🎬", label: "电影" },
-  { emoji: "🖼️", label: "图片" },
-  { emoji: "🛍️", label: "购物" },
-  { emoji: "🔥", label: "开火" },
-  { emoji: "💡", label: "思想" },
-  { emoji: "🧩", label: "谜题" },
-  { emoji: "📊", label: "图表" },
-  { emoji: "🧠", label: "大脑" },
-  { emoji: "🦄", label: "独角兽" },
-  { emoji: "🐙", label: "八面体" },
-  { emoji: "🌱", label: "种子" },
+  { emoji: "💻", label: msg("Computer", { $context: "emoji name, project icon" }) },
+  { emoji: "🛠️", label: msg("Tools", { $context: "emoji name, project icon" }) },
+  { emoji: "🚀", label: msg("Rocket", { $context: "emoji name, project icon" }) },
+  { emoji: "🤖", label: msg("Robot", { $context: "emoji name, project icon" }) },
+  { emoji: "✨", label: msg("Sparkles", { $context: "emoji name, project icon" }) },
+  { emoji: "⚡", label: msg("Lightning", { $context: "emoji name, project icon" }) },
+  { emoji: "🌐", label: msg("Web", { $context: "emoji name, project icon" }) },
+  { emoji: "📱", label: msg("Mobile", { $context: "emoji name, project icon" }) },
+  { emoji: "🖥️", label: msg("Desktop", { $context: "emoji name, project icon" }) },
+  { emoji: "⌨️", label: msg("Keyboard", { $context: "emoji name, project icon" }) },
+  { emoji: "⚙️", label: msg("Gear", { $context: "emoji name, project icon" }) },
+  { emoji: "🗄️", label: msg("Database", { $context: "emoji name, project icon" }) },
+  { emoji: "☁️", label: msg("Cloud", { $context: "emoji name, project icon" }) },
+  { emoji: "📦", label: msg("Package", { $context: "emoji name, project icon" }) },
+  { emoji: "📚", label: msg("Books", { $context: "emoji name, project icon" }) },
+  { emoji: "🧪", label: msg("Test tube", { $context: "emoji name, project icon" }) },
+  { emoji: "🔒", label: msg("Lock", { $context: "emoji name, project icon" }) },
+  { emoji: "🎮", label: msg("Game", { $context: "emoji name, project icon" }) },
+  { emoji: "🎵", label: msg("Music", { $context: "emoji name, project icon" }) },
+  { emoji: "🎬", label: msg("Movie", { $context: "emoji name, project icon" }) },
+  { emoji: "🖼️", label: msg("Picture", { $context: "emoji name, project icon" }) },
+  { emoji: "🛍️", label: msg("Shopping", { $context: "emoji name, project icon" }) },
+  { emoji: "🔥", label: msg("Fire", { $context: "emoji name, project icon" }) },
+  { emoji: "💡", label: msg("Idea", { $context: "emoji name, project icon" }) },
+  { emoji: "🧩", label: msg("Puzzle", { $context: "emoji name, project icon" }) },
+  { emoji: "📊", label: msg("Chart", { $context: "emoji name, project icon" }) },
+  { emoji: "🧠", label: msg("Brain", { $context: "emoji name, project icon" }) },
+  { emoji: "🦄", label: msg("Unicorn", { $context: "emoji name, project icon" }) },
+  { emoji: "🐙", label: msg("Octopus", { $context: "emoji name, project icon" }) },
+  { emoji: "🌱", label: msg("Seedling", { $context: "emoji name, project icon" }) },
 ];
 
 export function filterProjectIconNames(query: string): ReadonlyArray<string> {
   const normalized = query.trim().toLowerCase().replaceAll(/\s+/g, "-");
   if (!normalized) return POPULAR_PROJECT_ICONS;
   return lucideIconNames.filter((name) => name.includes(normalized)).slice(0, 60);
+}
+
+// The server also rejects monograms longer than two graphemes (ProjectCommands.ts).
+export function isValidProjectMonogram(text: string): boolean {
+  if (!isProjectMonogramText(text)) return false;
+  const segments = new Intl.Segmenter(undefined, { granularity: "grapheme" }).segment(text);
+  return Array.from(segments).length <= 2;
 }
 
 export function firstEmoji(value: string): string | null {

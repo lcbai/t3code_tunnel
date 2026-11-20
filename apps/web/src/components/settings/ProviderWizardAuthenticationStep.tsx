@@ -1,5 +1,6 @@
 import { useAtomValue } from "@effect/atom-react";
 import type { EnvironmentId, ProviderInstanceId } from "@t3tools/contracts";
+import { T, useGT, useMessages } from "gt-react";
 
 import { useEnvironmentQuery } from "../../state/query";
 import { EMPTY_SERVER_PROVIDERS, serverEnvironment } from "../../state/server";
@@ -20,11 +21,13 @@ export function ProviderWizardAuthenticationStep({
   readonly instanceId: ProviderInstanceId;
   readonly onFinish: () => void;
 }) {
+  const gt = useGT();
   const providers =
     useAtomValue(serverEnvironment.providersValueAtom(environmentId)) ?? EMPTY_SERVER_PROVIDERS;
   const provider = providers.find((candidate) => candidate.instanceId === instanceId);
   const query = useEnvironmentQuery(
     serverEnvironment.providerAuthState({ environmentId, input: { instanceId } }),
+    useMessages(),
   );
   const auth = query.data;
   const active =
@@ -56,18 +59,18 @@ export function ProviderWizardAuthenticationStep({
             />
           ) : (
             <SettingsRow
-              title="账户"
+              title={gt("Account")}
               description={
                 isDiscovering
-                  ? "发现登录方法…"
+                  ? gt("Discovering sign-in methods…")
                   : (query.error ??
                     auth?.message ??
-                    "没有在应用中登入的广告。 跟着代理提供方的文档完成设置。")
+                    gt("No in-app sign-in advertised. Follow the provider's docs to finish setup."))
               }
               control={
                 isDiscovering ? (
                   <Button disabled size="sm" variant="outline">
-                    登录
+                    <T>Sign in</T>
                   </Button>
                 ) : provider?.setup?.documentationUrl ? (
                   <Button
@@ -77,7 +80,7 @@ export function ProviderWizardAuthenticationStep({
                       <a href={provider.setup.documentationUrl} target="_blank" rel="noreferrer" />
                     }
                   >
-                    打开文档
+                    <T>Open docs</T>
                   </Button>
                 ) : undefined
               }
@@ -92,7 +95,7 @@ export function ProviderWizardAuthenticationStep({
           disabled={active}
           onClick={onFinish}
         >
-          {signedIn ? "完成" : "暂时跳过"}
+          {signedIn ? gt("Done") : gt("Skip for now")}
         </Button>
       </WizardFooter>
     </>

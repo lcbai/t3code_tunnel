@@ -1,9 +1,12 @@
+import { msg } from "gt-i18n";
+import { translatableMessage } from "../errors/translatable.ts";
 import {
   ORCHESTRATION_V2_WS_METHODS,
   type EnvironmentId,
   type ThreadId,
   type OrchestrationV2ThreadLinkMetadata,
   type OrchestrationGetTurnDiffResult,
+  type OrchestrationV2GetTurnItemInput,
 } from "@t3tools/contracts";
 import * as Effect from "effect/Effect";
 import * as Option from "effect/Option";
@@ -12,7 +15,11 @@ import * as SubscriptionRef from "effect/SubscriptionRef";
 import type { HttpClient } from "effect/http";
 import { Atom } from "effect/reactivity";
 
-import { applyCommandOutputFrame, EMPTY_COMMAND_OUTPUT } from "./commandOutput.ts";
+import {
+  applyCommandOutputFrame,
+  EMPTY_COMMAND_OUTPUT,
+  type CommandOutputView,
+} from "./commandOutput.ts";
 
 import {
   createEnvironmentQueryAtomFamily,
@@ -24,6 +31,8 @@ import {
 } from "./runtime.ts";
 import type { EnvironmentRegistry } from "../connection/registry.ts";
 import * as EnvironmentSupervisor from "../connection/supervisor.ts";
+import * as RemoteEnvironmentAuthorization from "../authorization/service.ts";
+import * as ManagedRelayDpopSigner from "../relay/managedRelay.ts";
 import { EnvironmentRpcUnavailableError, request } from "../rpc/client.ts";
 import type { EnvironmentShellState } from "./shell.ts";
 import { fetchEnvironmentThreadTranscript } from "./threadTranscriptHttp.ts";
@@ -31,7 +40,7 @@ import { fetchEnvironmentThreadTranscript } from "./threadTranscriptHttp.ts";
 export function createOrchestrationEnvironmentAtoms<R, E>(
   runtime: Atom.AtomRuntime<EnvironmentRegistry | HttpClient.HttpClient | R, E>,
   options: {
-    /** Re-checks `threadTitles` when one of their threads leaves the shell. */
+    /** Re-checks `threadTitles` when one of their threads leaves the shell, and the archive on any removal. */
     readonly shellState?: (
       environmentId: EnvironmentId,
     ) => Atom.Atom<Pick<EnvironmentShellState, "removedAt">>;
@@ -47,6 +56,19 @@ export function createOrchestrationEnvironmentAtoms<R, E>(
       ? {}
       : { onAnswer: options.onCheckpointDiffAnswer };
   const shellState = options.shellState;
+  const liveTurnItem = createEnvironmentRpcQueryAtomFamily(runtime, {
+    label: "environment-data:orchestration:turn-item",
+    tag: ORCHESTRATION_V2_WS_METHODS.getTurnItem,
+    staleTimeMs: 60_000,
+    idleTtlMs: 60_000,
+  });
+  // A settled item's revision is its updatedAt, so the answer for it never goes stale.
+  const settledTurnItem = createEnvironmentRpcQueryAtomFamily(runtime, {
+    label: "environment-data:orchestration:turn-item",
+    tag: ORCHESTRATION_V2_WS_METHODS.getTurnItem,
+    staleTimeMs: Number.POSITIVE_INFINITY,
+    idleTtlMs: 5 * 60_000,
+  });
   const refreshThreadLookup = ({
     environmentId,
     input,
@@ -84,7 +106,7 @@ export function createOrchestrationEnvironmentAtoms<R, E>(
         if (Option.isNone(session)) {
           return yield* new EnvironmentRpcUnavailableError({
             environmentId: supervisor.target.environmentId,
-            message: "The environment has no session.",
+            ...translatableMessage(msg("The environment has no session.")),
           });
         }
         const config = yield* session.value.initialConfig;
@@ -110,12 +132,16 @@ export function createOrchestrationEnvironmentAtoms<R, E>(
         if (Option.isNone(prepared)) {
           return yield* new EnvironmentRpcUnavailableError({
             environmentId: supervisor.target.environmentId,
-            message: "The source environment is not connected.",
+            ...translatableMessage(msg("The source environment is not connected.")),
           });
         }
         return yield* fetchEnvironmentThreadTranscript({
           prepared: prepared.value,
           threadId: input.threadId,
+          signer: yield* Effect.serviceOption(ManagedRelayDpopSigner.ManagedRelayDpopSigner),
+          remoteAuthorization: yield* Effect.serviceOption(
+            RemoteEnvironmentAuthorization.RemoteEnvironmentAuthorization,
+          ),
         });
       }),
     }),
@@ -133,12 +159,15 @@ export function createOrchestrationEnvironmentAtoms<R, E>(
         tag: ORCHESTRATION_V2_WS_METHODS.subscribeThread,
         idleTtlMs: 0,
       }),
-      // One expanded command row's output. Mounted only while the row is open,
-      // and released as soon as it closes, so hidden rows receive nothing.
+      // One expanded command row's output. A running command's subscription ends
+      // as soon as its row closes, so hidden rows receive nothing; a finished
+      // command's final output stays cached so reopening it does not refetch.
       commandOutput: createEnvironmentRpcSubscriptionAtomFamily(runtime, {
         label: "environment-data:orchestration-v2:command-output",
         tag: ORCHESTRATION_V2_WS_METHODS.subscribeCommandOutput,
         idleTtlMs: 0,
+        completeWhen: (view: CommandOutputView) => !view.running,
+        completedTtlMs: 5 * 60_000,
         // `scan` emits its seed first; skipping it keeps the row "loading" until the first frame.
         transform: (frames) =>
           frames.pipe(
@@ -179,12 +208,13 @@ export function createOrchestrationEnvironmentAtoms<R, E>(
       label: "environment-data:orchestration:force-stop-thread",
       tag: ORCHESTRATION_V2_WS_METHODS.forceStopThread,
     }),
-    turnItem: createEnvironmentRpcQueryAtomFamily(runtime, {
-      label: "environment-data:orchestration:turn-item",
-      tag: ORCHESTRATION_V2_WS_METHODS.getTurnItem,
-      staleTimeMs: 60_000,
-      idleTtlMs: 60_000,
-    }),
+    turnItem: (target: {
+      readonly environmentId: EnvironmentId;
+      readonly input: OrchestrationV2GetTurnItemInput;
+    }) =>
+      target.input.revision === undefined || target.input.revision === "live"
+        ? liveTurnItem(target)
+        : settledTurnItem(target),
     fullThreadDiff: createEnvironmentRpcQueryAtomFamily(runtime, {
       label: "environment-data:orchestration:full-thread-diff",
       tag: ORCHESTRATION_V2_WS_METHODS.getFullThreadDiff,
@@ -205,12 +235,19 @@ export function createOrchestrationEnvironmentAtoms<R, E>(
     threadSearch: createEnvironmentRpcQueryAtomFamily(runtime, {
       label: "environment-data:orchestration:thread-search",
       tag: ORCHESTRATION_V2_WS_METHODS.searchThreads,
-      staleTimeMs: 30_000,
-      idleTtlMs: 60_000,
+      staleTimeMs: 0,
+      idleTtlMs: 0,
     }),
     archivedShellSnapshot: createEnvironmentRpcQueryAtomFamily(runtime, {
       label: "environment-data:orchestration:archived-shell-snapshot",
       tag: ORCHESTRATION_V2_WS_METHODS.getArchivedShellSnapshot,
+      // The shell reports archiving a thread, and deleting or changing an archived one, as a removal,
+      // and replaces `removedAt` on each one.
+      refreshTrigger: ({ environmentId }) => {
+        if (shellState === undefined) return undefined;
+        const state = shellState(environmentId);
+        return Atom.make((get) => get(state).removedAt);
+      },
     }),
     threadFamily: createEnvironmentRpcQueryAtomFamily(runtime, {
       label: "environment-data:orchestration:thread-family-for-delete",

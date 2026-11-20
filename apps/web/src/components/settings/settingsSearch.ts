@@ -10,8 +10,10 @@ import {
 } from "@t3tools/client-runtime/source-control-clients";
 import { DEFAULT_KEYBINDINGS } from "@t3tools/shared/keybindings";
 import * as Schema from "effect/Schema";
+import { decodeMsg, msg, useMessages } from "gt-react";
 import { TYPOGRAPHY_ADVANCED_STORAGE_KEY } from "../../appearanceFonts";
 import { writeLocalStorageValue } from "../../hooks/useLocalStorage";
+import type { MessageResolver } from "../../i18n/messages";
 import { commandLabel } from "./KeybindingsSettings.logic";
 import type { ResolvedSettingsScope } from "./settingsScope";
 
@@ -60,12 +62,14 @@ export interface SettingsSearchItem {
   readonly windowsOnly?: boolean;
   readonly releaseChannelOnly?: boolean;
   readonly secretsFeatureOnly?: boolean;
+  readonly cloudOnly?: boolean;
   readonly environmentOnly?: boolean;
   readonly providerSettingsOnly?: boolean;
   readonly localBackendManagementOnly?: boolean;
   readonly localEnvironmentOnly?: boolean;
   readonly primaryEnvironmentOnly?: boolean;
   readonly wslAvailableOnly?: boolean;
+  readonly managedTunnelOnly?: boolean;
   readonly peerLinksOnly?: boolean;
   readonly fastWorktreeCheckoutOnly?: boolean;
   readonly textGeneratorsOnly?: boolean;
@@ -75,11 +79,13 @@ export interface SettingsSearchItem {
 
 export interface SettingsSearchAvailability {
   readonly localEnvironmentDisabled?: boolean;
+  readonly hasCloudPublicConfig: boolean;
   readonly hasEnvironment: boolean;
   readonly hasProviderSettingsEnvironment: boolean;
   readonly canManageLocalBackend: boolean;
   readonly isWslSettingsRowVisible: boolean;
   readonly hasThreadAutoSettlement: boolean;
+  readonly managedTunnelActive?: boolean;
   readonly hasPeerLinkHost?: boolean;
   readonly hasFastWorktreeCheckoutEnvironment?: boolean;
   /** An environment without a provider allow-list, which hides text generators. */
@@ -88,38 +94,49 @@ export interface SettingsSearchAvailability {
 }
 
 export const SETTINGS_SECTION_LABELS: Readonly<Record<SettingsPath, string>> = {
-  "/settings/diagnostics": "诊断",
-  "/settings/projects": "项目",
-  "/settings/general": "通用",
-  "/settings/appearance": "外观",
-  "/settings/chat": "聊天",
-  "/settings/diffs": "差异与拉取请求",
-  "/settings/keybindings": "快捷键",
-  "/settings/snap-shot": "快照",
-  "/settings/providers": "代理提供方",
-  "/settings/threads": "会话",
-  "/settings/browser": "浏览器",
-  "/settings/devices": "设备",
-  "/settings/scheduled-tasks": "定时任务",
-  "/settings/source-control": "源代码管理",
-  "/settings/worktrees": "工作树",
-  "/settings/connections": "环境",
-  "/settings/access": "共享与访问",
-  "/settings/secrets": "密钥",
-  "/settings/maintenance": "维护",
-  "/settings/labs": "实验功能",
-  "/settings/about": "关于",
-  "/settings/voice": "语音",
-  "/settings/archived": "归档",
+  "/settings/diagnostics": msg("Diagnostics"),
+  "/settings/projects": msg("Projects"),
+  "/settings/general": msg("General"),
+  "/settings/appearance": msg("Appearance"),
+  "/settings/chat": msg("Chat"),
+  "/settings/diffs": msg("Diffs & pull requests"),
+  "/settings/keybindings": msg("Keybindings"),
+  "/settings/snap-shot": msg("SnapShots"),
+  "/settings/providers": msg("Providers"),
+  "/settings/threads": msg("Threads"),
+  "/settings/browser": msg("Browser"),
+  "/settings/devices": msg("Devices"),
+  "/settings/scheduled-tasks": msg("Scheduled tasks"),
+  "/settings/source-control": msg("Source control & issues"),
+  "/settings/worktrees": msg("Worktrees"),
+  "/settings/connections": msg("Environments"),
+  "/settings/access": msg("Sharing & access"),
+  "/settings/secrets": msg("Secrets"),
+  "/settings/maintenance": msg("Maintenance"),
+  "/settings/labs": msg("Labs"),
+  "/settings/about": msg("About"),
+  "/settings/voice": msg("Voice"),
+  "/settings/archived": msg("Archive"),
 };
 
-/** Sidebar order. A group without a heading is set apart by space alone. */
+/** Sidebar labels; an entry of its own lets a translator shorten one below its page title. */
+export const SETTINGS_NAV_LABELS: Readonly<Record<SettingsPath, string>> = {
+  ...SETTINGS_SECTION_LABELS,
+  "/settings/source-control": msg("Source control & issues", {
+    $context: "settings navigation item",
+  }),
+  "/settings/access": msg("Sharing & access", { $context: "settings navigation item" }),
+};
+
+/** Sidebar order. A group with a hidden heading is set apart on screen by space alone. */
 export const SETTINGS_NAV_GROUPS: ReadonlyArray<{
-  readonly heading: string | null;
+  readonly heading: string;
+  readonly headingHidden?: true;
   readonly paths: ReadonlyArray<SettingsPath>;
 }> = [
   {
-    heading: null,
+    heading: msg("Preferences"),
+    headingHidden: true,
     paths: [
       "/settings/general",
       "/settings/appearance",
@@ -131,7 +148,7 @@ export const SETTINGS_NAV_GROUPS: ReadonlyArray<{
     ],
   },
   {
-    heading: "代理",
+    heading: msg("Agents"),
     paths: [
       "/settings/providers",
       "/settings/threads",
@@ -141,11 +158,11 @@ export const SETTINGS_NAV_GROUPS: ReadonlyArray<{
     ],
   },
   {
-    heading: "代码",
+    heading: msg("Code"),
     paths: ["/settings/projects", "/settings/source-control", "/settings/worktrees"],
   },
   {
-    heading: "连接",
+    heading: msg("Connections"),
     paths: [
       "/settings/connections",
       "/settings/access",
@@ -153,7 +170,8 @@ export const SETTINGS_NAV_GROUPS: ReadonlyArray<{
     ],
   },
   {
-    heading: null,
+    heading: msg("More"),
+    headingHidden: true,
     paths: ["/settings/maintenance", "/settings/labs", "/settings/about", "/settings/archived"],
   },
 ];
@@ -161,6 +179,8 @@ export const SETTINGS_NAV_GROUPS: ReadonlyArray<{
 export function keybindingSearchAnchorId<Command extends KeybindingCommand>(command: Command) {
   return `keybinding-${command}` as const;
 }
+
+const untranslated = ((message) => message) as MessageResolver;
 
 const KEYBINDING_SEARCH_ITEMS = STATIC_KEYBINDING_COMMANDS.toSorted((left, right) =>
   commandLabel(left).localeCompare(commandLabel(right)),
@@ -170,7 +190,7 @@ const KEYBINDING_SEARCH_ITEMS = STATIC_KEYBINDING_COMMANDS.toSorted((left, right
   );
   return {
     id: keybindingSearchAnchorId(command),
-    title: commandLabel(command),
+    title: commandLabel(command, untranslated),
     to: "/settings/keybindings" as const,
     searchTerms: [command, ...defaultKeys],
     secondary: true,
@@ -195,7 +215,9 @@ export function sourceControlHostSearchItems(
     return [
       {
         id: sourceControlHostSettingsSearchId(definition.kind),
-        title: credentials ? `${definition.label} 账户和令牌` : `${definition.label} 凭据`,
+        title: credentials
+          ? msg("{label} accounts and token", { label: definition.label })
+          : msg("{label} credentials", { label: definition.label }),
         to: "/settings/source-control" as const,
         searchTerms: [
           credentials
@@ -221,847 +243,937 @@ export const SETTINGS_SEARCH_ITEMS = [
   {
     id: "storage-worktree-keep-when",
     targetId: "storage-worktrees",
-    title: "保留有本地更改的工作树",
+    title: msg("Keep worktrees with local changes"),
     to: "/settings/worktrees",
     scope: "project-defaults",
     searchTerms: [
-      "any local files uncommitted changes edited tracked files ignored env build output cleanup",
+      msg(
+        "any local files uncommitted changes edited tracked files ignored env build output cleanup",
+      ),
     ],
   },
   {
     id: "storage-delete-now",
-    title: "现在删除",
+    title: msg("Delete now"),
     to: "/settings/maintenance",
     scope: "environment-defaults",
-    searchTerms: ["storage cleanup run now results report removed kept failed"],
+    searchTerms: [msg("storage cleanup run now results report removed kept failed")],
   },
   {
     id: "storage-worktrees",
-    title: "自动清理工作树",
+    title: msg("Worktree cleanup"),
     to: "/settings/worktrees",
     scope: "project-defaults",
     searchTerms: [
-      "disk storage automatic delete deleted archived threads old inactive merged settled unchanged worktrees retention days project inherit off custom 删除已结束会话的工作树",
+      msg(
+        "disk storage automatic delete deleted archived threads old inactive merged settled unchanged worktrees retention days project inherit off custom",
+      ),
     ],
   },
   {
     id: "storage-worktrees-location",
-    title: "工作树地点",
+    title: msg("Worktree location"),
     to: "/settings/worktrees",
     scope: "environment-defaults",
-    searchTerms: ["worktree location folder directory path drive external disk"],
+    searchTerms: [msg("worktree location folder directory path drive external disk")],
   },
   {
     id: "storage-artifacts",
-    title: "手工和木头",
+    title: msg("Artifacts and logs"),
     to: "/settings/maintenance",
     scope: "environment-defaults",
     searchTerms: [
-      "删除旧浏览器文件 删除旧轮转日志 disk storage delete old browser artifacts screenshots captures rotated logs cleanup retention",
+      msg(
+        "disk storage delete old browser artifacts screenshots captures rotated logs cleanup retention",
+      ),
     ],
   },
   {
     id: "project-defaults",
-    title: "工程默认和超过",
+    title: msg("Project defaults and overrides"),
     to: "/settings/threads",
     scope: "project-defaults",
-    searchTerms: ["model workspace environments projects inheritance checkout"],
+    searchTerms: [msg("model workspace environments projects inheritance checkout")],
   },
   {
     id: "project-overview",
-    title: "项目概览",
+    title: msg("Project overview"),
     to: "/settings/projects",
-    searchTerms: ["name icon emoji image checkout remove delete"],
+    searchTerms: [msg("name icon emoji image checkout remove delete")],
   },
   {
     id: "default-model",
-    title: "默认模型",
+    title: msg("Default model"),
     to: "/settings/threads",
     scope: "project-defaults",
-    searchTerms: ["new thread project provider reasoning effort"],
+    searchTerms: [msg("new thread project provider reasoning effort")],
   },
   {
     id: "fallback-model",
-    title: "备用模型",
+    title: msg("Fallback model"),
     to: "/settings/threads",
     scope: "environment-defaults",
-    searchTerms: ["fallback model agent provider out of usage new threads"],
+    searchTerms: [msg("fallback agent provider out of usage new threads")],
     environmentOnly: true,
   },
   {
     id: "default-permissions",
-    title: "权限",
+    title: msg("Permissions"),
     to: "/settings/threads",
     scope: "project-defaults",
     searchTerms: [
-      "new thread default runtime mode supervised approvals auto accept edits full access",
+      msg("new thread default runtime mode supervised approvals auto accept edits full access"),
     ],
   },
   {
     id: "color-scheme",
-    title: "颜色方案",
+    title: msg("Color scheme"),
     to: "/settings/appearance",
-    searchTerms: ["appearance light dark system mode"],
+    searchTerms: [msg("appearance light dark system mode")],
     targetId: "appearance",
   },
   {
     id: "theme",
-    title: "主题",
+    title: msg("Themes"),
     to: "/settings/appearance",
-    searchTerms: ["themes appearance colors palette custom import"],
+    searchTerms: [msg("appearance colors palette custom import")],
     targetId: "appearance",
   },
   {
     // Prefixed because the slider control already owns the `appearance-contrast` id.
     id: "setting-appearance-contrast",
-    title: "对比度",
+    title: msg("Contrast"),
     to: "/settings/appearance",
-    searchTerms: ["colors borders interface"],
+    searchTerms: [msg("colors borders interface")],
   },
   {
     // Prefixed because the slider control already owns the `glass-opacity` id.
     id: "setting-glass-opacity",
-    title: "磨砂背景不透明度",
+    title: msg("Glass opacity"),
     to: "/settings/appearance",
-    searchTerms: ["transparent transparency solid menus dialogs composer"],
+    searchTerms: [msg("transparent transparency solid menus dialogs composer")],
   },
   {
     id: "diff-color-scheme",
-    title: "diff 颜色",
+    title: msg("Diff colors"),
     to: "/settings/diffs",
-    searchTerms: ["red green blue orange additions deletions changes counts palette colorblind"],
+    searchTerms: [
+      msg("red green blue orange additions deletions changes counts palette colorblind"),
+    ],
   },
   {
     id: "chat-width",
-    title: "聊天宽度",
+    title: msg("Chat width"),
     to: "/settings/appearance",
-    searchTerms: ["wide full width column layout messages composer monitor"],
+    searchTerms: [msg("wide full width column layout messages composer monitor")],
   },
   {
     id: "thread-details-items",
-    title: "会话详情",
+    title: msg("Thread details"),
     to: "/settings/appearance",
     searchTerms: [
-      "customize show hide panel card environment editor scripts branch pull request git changes servers automations lineage usage limits 5 hour weekly quota tokens context window",
+      msg(
+        "customize show hide panel card environment editor scripts branch pull request git changes servers automations lineage usage limits 5 hour weekly quota tokens context window",
+      ),
     ],
   },
   {
     id: "effort-display",
-    title: "努力显示",
+    title: msg("Effort display"),
     to: "/settings/appearance",
-    searchTerms: ["reasoning effort thinking bars graph word label level composer"],
+    searchTerms: [msg("reasoning effort thinking bars graph word label level composer")],
   },
   {
     id: "math-rendering",
-    title: "渲染数学",
+    title: msg("Render math"),
     to: "/settings/appearance",
-    searchTerms: ["latex tex katex equations formulas markdown"],
+    searchTerms: [msg("latex tex katex equations formulas markdown")],
   },
   {
     id: "panel-animations",
-    title: "面板动画",
+    title: msg("Panel animations"),
     to: "/settings/appearance",
   },
   {
     id: "environment-identification",
-    title: "环境识别",
+    title: msg("Environment identification"),
     to: "/settings/appearance",
-    searchTerms: ["dev nightly latest channel artwork pill label hide none"],
+    searchTerms: [msg("dev nightly latest channel artwork pill label hide none")],
     targetId: "appearance-interface",
   },
   {
     id: "interface-font",
-    title: "界面字体",
+    title: msg("Interface font"),
     to: "/settings/appearance",
-    searchTerms: ["typography family size system sans"],
+    searchTerms: [msg("typography family size system sans")],
   },
   {
     id: "prompt-font",
-    title: "提示字体",
+    title: msg("Prompt font"),
     to: "/settings/appearance",
-    searchTerms: ["typography family size composer input"],
+    searchTerms: [msg("typography family size composer input")],
   },
   {
     id: "code-font",
-    title: "代码字体",
+    title: msg("Code font"),
     to: "/settings/appearance",
-    searchTerms: ["typography family size monospace code blocks diffs file previews"],
+    searchTerms: [msg("typography family size monospace code blocks diffs file previews")],
   },
   {
     id: "terminal-font",
-    title: "终端字体",
+    title: msg("Terminal font"),
     to: "/settings/appearance",
-    searchTerms: ["typography family size monospace output"],
+    searchTerms: [msg("typography family size monospace output")],
   },
   {
     id: "separate-fonts",
-    title: "单独的字体",
+    title: msg("Separate fonts"),
     to: "/settings/appearance",
-    searchTerms: ["typography advanced prompt code terminal font family size individually"],
+    searchTerms: [msg("typography advanced prompt code terminal font family size individually")],
   },
   {
     id: "font-smoothing",
-    title: "字体平滑",
+    title: msg("Font smoothing"),
     to: "/settings/appearance",
-    searchTerms: ["typography text grayscale anti aliasing macos thin"],
+    searchTerms: [msg("typography text grayscale anti aliasing macos thin")],
     macOnly: true,
   },
   {
     id: "word-wrap",
-    title: "文字包装",
+    title: msg("Word wrap"),
     to: "/settings/appearance",
-    searchTerms: ["long lines code blocks diffs file previews"],
+    searchTerms: [msg("long lines code blocks diffs file previews")],
   },
   {
     id: "composer-context",
-    title: "消息输入框上下文",
+    title: msg("Composer context"),
     to: "/settings/appearance",
   },
   {
     id: "project-grouping",
-    title: "项目分组",
+    title: msg("Project grouping"),
     to: "/settings/general",
-    searchTerms: ["combine matching repositories environments sidebar"],
+    searchTerms: [msg("combine matching repositories environments sidebar")],
   },
   {
     id: "project-order",
-    title: "项目订单",
+    title: msg("Project order"),
     to: "/settings/general",
-    searchTerms: ["sort projects sidebar manual created recent"],
+    searchTerms: [msg("sort projects sidebar manual created recent")],
   },
   {
     id: "snooze-options",
-    title: "Snooze 选项",
+    title: msg("Snooze options"),
     to: "/settings/threads",
-    searchTerms: ["snooze presets times later tonight tomorrow next week remind"],
+    searchTerms: [msg("snooze presets times later tonight tomorrow next week remind")],
     environmentOnly: true,
     scope: "environment-defaults",
   },
   {
     id: "snooze-limited-threads",
-    title: "Snooze直到限制重设",
+    title: msg("Snooze until limits reset"),
     to: "/settings/threads",
-    searchTerms: ["usage quota rate limit reset wake recover continue"],
+    searchTerms: [msg("usage quota rate limit reset wake recover continue")],
   },
   {
     id: "auto-resume-limited-threads",
-    title: "在使用限制后继续使用",
+    title: msg("Resume after usage limits"),
     to: "/settings/threads",
-    searchTerms: ["usage quota rate limit reset recover continue"],
+    searchTerms: [msg("usage quota rate limit reset recover continue")],
   },
   {
     id: "working-shelf",
-    title: "工作部分",
+    title: msg("Working section"),
     to: "/settings/general",
-    searchTerms: ["hide fold running monitoring threads inbox sidebar shelf"],
+    searchTerms: [msg("hide fold running monitoring threads inbox sidebar shelf")],
   },
   {
     id: "boring-sidebar",
-    title: "无聊的侧边栏(按项目分组)",
+    title: msg("Boring sidebar (group by project)"),
     to: "/settings/labs",
-    searchTerms: ["beta folders project tree classic sidebar"],
+    searchTerms: [msg("beta folders project tree classic sidebar")],
   },
   {
     id: "boring-sidebar-multiline",
-    title: "双行文件夹行",
+    title: msg("Two-line folder rows"),
     to: "/settings/labs",
     // Shown inside the boring sidebar row only while it is on, so search lands on the parent.
     targetId: "boring-sidebar",
-    searchTerms: ["beta boring sidebar folder rows multiline branch pull request details"],
+    searchTerms: [msg("beta boring sidebar folder rows multiline branch pull request details")],
   },
   {
     id: "tool-call-visibility",
-    title: "聊天中的工具调用",
+    title: msg("Tool calls in chat"),
     to: "/settings/chat",
     searchTerms: [
-      "hide tool calls commands edits searches work log activity quiet chat zen final answers only",
+      msg(
+        "hide tool calls commands edits searches work log activity quiet chat zen final answers only",
+      ),
+    ],
+  },
+  {
+    id: "screen-reader-announcements",
+    title: msg("Screen reader announcements"),
+    to: "/settings/chat",
+    searchTerms: [
+      msg(
+        "accessibility a11y screen reader nvda jaws voiceover orca narrator speech announce read aloud messages activity steps",
+      ),
+    ],
+  },
+  {
+    id: "screen-reader-window-title",
+    title: msg("Screen reader window title"),
+    to: "/settings/chat",
+    searchTerms: [
+      msg(
+        "accessibility a11y screen reader nvda jaws voiceover orca narrator window title tab title alt tab taskbar thread status order working approval",
+      ),
     ],
   },
   {
     id: "guest-links",
-    title: "来宾链接",
+    title: msg("Guest links"),
     to: "/settings/labs",
     scope: "environment",
-    searchTerms: ["beta share guest invite link teammate watch https"],
+    searchTerms: [msg("beta share guest invite link teammate watch t3 connect tunnel")],
   },
   {
     id: "linked-environments-beta",
-    title: "关联环境",
+    title: msg("Linked environments"),
     to: "/settings/labs",
     scope: "environment",
-    searchTerms: ["beta link another machine vps peer agents work there delegate"],
+    searchTerms: [msg("beta link another machine vps peer agents work there delegate")],
   },
   {
     id: "prompt-suggestions-beta",
-    title: "提议下一条提示",
+    title: msg("Suggest next prompt"),
     to: "/settings/labs",
     scope: "environment",
-    searchTerms: ["beta tab autocomplete predict next message claude codex ghost text"],
+    searchTerms: [msg("beta tab autocomplete predict next message claude codex ghost text")],
   },
   {
     id: "simlock-hosts",
-    title: "Simlock 设备主机( alpha)",
+    title: msg("Simlock device hosts (alpha)"),
     to: "/settings/labs",
     scope: "environment",
-    searchTerms: ["beta alpha simlock callstack simulator emulator ios android pool lease gateway"],
+    searchTerms: [
+      msg("beta alpha simlock callstack simulator emulator ios android pool lease gateway"),
+    ],
   },
   {
     id: "worktree-fast-checkout",
-    title: "快速工作树检查",
+    title: msg("Fast worktree checkout"),
     to: "/settings/labs",
     scope: "environment",
     fastWorktreeCheckoutOnly: true,
-    searchTerms: ["beta fast worktree checkout clone apfs copy-on-write cache macos speed"],
+    searchTerms: [msg("beta fast worktree checkout clone apfs copy-on-write cache macos speed")],
   },
   {
     id: "voice-transcription-destination",
-    title: "转写为",
+    title: msg("Transcribe with"),
     to: "/settings/voice",
     searchTerms: [
-      "send microphone audio dictation destination speech voice stt transcription environment machine consent privacy cloud OpenAI Grok OpenRouter",
+      msg(
+        "send microphone audio dictation destination speech voice stt transcription environment machine consent privacy cloud OpenAI Grok OpenRouter",
+      ),
     ],
   },
   {
     id: "voice-microphone",
-    title: "麦克风",
+    title: msg("Microphone"),
     to: "/settings/voice",
-    searchTerms: ["mic input audio device"],
+    searchTerms: [msg("mic input audio device order priority preferred")],
   },
   {
     id: "dictation-shortcut-mode",
-    title: "拼写快捷键",
+    title: msg("Dictation shortcut"),
     to: "/settings/voice",
-    searchTerms: ["speech voice keyboard hotkey hold toggle auto"],
+    searchTerms: [msg("speech voice keyboard hotkey hold toggle auto")],
   },
   {
     id: "speech-language",
-    title: "译名语言",
+    title: msg("Transcription language"),
     to: "/settings/voice",
-    searchTerms: ["speech voice translate english auto detect"],
+    searchTerms: [msg("speech voice translate english auto detect")],
   },
   {
     id: "speech-dictionary",
-    title: "词典",
+    title: msg("Dictionary"),
     to: "/settings/voice",
-    searchTerms: ["speech voice transcription vocabulary names glossary alias"],
+    searchTerms: [msg("speech voice transcription vocabulary names glossary alias")],
   },
   {
     id: "speech-project-dictionary",
-    title: "项目词典",
+    title: msg("Project dictionary"),
     to: "/settings/voice",
     scope: "project-defaults",
     searchTerms: [
-      "speech voice transcription vocabulary shared dictionary team environment glossary",
+      msg("speech voice transcription vocabulary shared dictionary team environment glossary"),
     ],
   },
   {
     id: "speech-post-processing-model",
-    title: "清理模型",
+    title: msg("Cleanup model"),
     to: "/settings/voice",
     scope: "environment",
-    searchTerms: ["speech voice transcript cleanup provider model post-processing"],
+    searchTerms: [msg("speech voice transcript cleanup provider model post-processing")],
   },
   {
     id: "speech-correction-word",
-    title: "更正提示",
+    title: msg("Correction cue"),
     to: "/settings/voice",
-    searchTerms: ["speech voice cleanup sorry scratch that fix mistake"],
+    searchTerms: [msg("speech voice cleanup sorry scratch that fix mistake")],
   },
   {
     id: "speech-silence-filtering",
-    title: "静音过滤",
+    title: msg("Silence filtering"),
     to: "/settings/voice",
-    searchTerms: ["voice speech vad silero pauses noise"],
+    searchTerms: [msg("voice speech vad silero pauses noise")],
   },
   {
     id: "remove-filler-words",
-    title: "删除填充词",
+    title: msg("Remove filler words"),
     to: "/settings/voice",
-    searchTerms: ["voice speech transcription hesitation um uh cleanup"],
+    searchTerms: [msg("voice speech transcription hesitation um uh cleanup")],
   },
   {
     id: "speech-post-processing",
-    title: "清理笔录",
+    title: msg("Clean up transcripts"),
     to: "/settings/voice",
-    searchTerms: ["speech transcription polish clean provider prompt post-processing"],
+    searchTerms: [msg("speech transcription polish clean provider prompt post-processing")],
   },
   {
     id: "speech-models",
-    title: "译名模型",
+    title: msg("Transcription models"),
     to: "/settings/voice",
     searchTerms: [
-      "speech voice stt download whisper parakeet canary moonshine accuracy speed benchmark languages",
+      msg(
+        "speech voice stt download whisper parakeet canary moonshine accuracy speed benchmark languages",
+      ),
     ],
   },
   {
     id: "speech-hardware",
-    title: "转录硬件和卸货模型",
+    title: msg("Transcription hardware and model unloading"),
     to: "/settings/voice",
-    searchTerms: ["speech voice stt advanced gpu cpu acceleration memory unload idle"],
+    searchTerms: [msg("speech voice stt advanced gpu cpu acceleration memory unload idle")],
+  },
+  {
+    id: "speech-streaming",
+    title: msg("Streaming transcription"),
+    to: "/settings/voice",
+    searchTerms: [
+      msg("speech voice stt advanced native live preview batch after stopping slow lag"),
+    ],
   },
   {
     id: "microphone-test",
-    title: "测试麦克风",
+    title: msg("Test microphone"),
     to: "/settings/voice",
-    searchTerms: ["test mic audio playback loopback record input level"],
+    searchTerms: [msg("test mic audio playback loopback record input level")],
   },
   {
     id: "transcription-test",
-    title: "测试模型",
+    title: msg("Test model"),
     to: "/settings/voice",
-    searchTerms: ["test voice speech model transcription recognition"],
+    searchTerms: [msg("test voice speech model transcription recognition")],
   },
   {
     id: "auto-settle-inactive-threads",
-    title: "自动结束不活跃会话",
+    title: msg("Auto-settle inactive threads"),
     to: "/settings/threads",
-    searchTerms: ["自动结束 sidebar inactivity days no activity automatically"],
+    searchTerms: [msg("sidebar inactivity days no activity automatically")],
     requiresThreadAutoSettlement: true,
     scope: "project-defaults",
   },
   {
     id: "compact-idle-threads",
-    title: "压缩闲会话",
+    title: msg("Compact idle threads"),
     to: "/settings/providers",
     scope: "environment-defaults",
-    searchTerms: ["claude context compaction idle cache tokens usage summary resume"],
+    searchTerms: [msg("claude context compaction idle cache tokens usage summary resume")],
   },
   {
     id: "auto-settle-merged-threads",
-    title: "合并后自动结束会话",
+    title: msg("Auto-settle merged threads"),
     to: "/settings/threads",
-    searchTerms: ["自动结束 pull request merge closed automatically sidebar"],
+    searchTerms: [msg("pull request merge closed automatically sidebar")],
     requiresThreadAutoSettlement: true,
     scope: "project-defaults",
   },
   {
     id: "keep-threads-with-pull-requests",
-    title: "保留有关联拉取请求的会话",
+    title: msg("Keep threads with a PR"),
     to: "/settings/threads",
     targetId: "auto-settle-inactive-threads",
-    searchTerms: ["自动结束 pull request inactivity auto-settle merge close sidebar"],
+    searchTerms: [msg("pull request inactivity auto-settle merge close sidebar")],
     requiresThreadAutoSettlement: true,
     scope: "project-defaults",
   },
   {
     id: "days-before-auto-settle",
-    title: "自动结束前的不活跃天数",
+    title: msg("Days of inactivity before auto-settle"),
     to: "/settings/threads",
     targetId: "auto-settle-inactive-threads",
-    searchTerms: ["自动结束 thread timeout activity sidebar"],
+    searchTerms: [msg("thread timeout activity sidebar")],
     requiresThreadAutoSettlement: true,
     scope: "project-defaults",
   },
   {
     id: "thread-notifications",
-    title: "会话通知",
+    title: msg("Thread notifications"),
     to: "/settings/general",
-    searchTerms: ["notification sound alert completion input approval desktop"],
+    searchTerms: [msg("notification sound alert completion input approval desktop")],
   },
   {
     id: "in-app-notifications",
-    title: "申请通知",
+    title: msg("In-app notifications"),
     to: "/settings/general",
-    searchTerms: ["notification toast popup completion input approval failure"],
+    searchTerms: [msg("notification toast popup completion input approval failure")],
+  },
+  {
+    id: "language",
+    title: msg("Language"),
+    to: "/settings/general",
+    searchTerms: [
+      msg(
+        "locale translation english deutsch german español spanish français french português portuguese brasil brazilian chinese 中文 japanese 日本語 korean 한국어 russian русский swedish svenska sprache idioma langue 语言 言語 언어 язык",
+      ),
+    ],
   },
   {
     id: "time-format",
-    title: "时间格式",
+    title: msg("Time format"),
     to: "/settings/general",
-    searchTerms: ["timestamp clock locale system browser os 12 hour 24 hour"],
+    searchTerms: [msg("timestamp clock locale system browser os 12 hour 24 hour")],
   },
   {
     id: "response-streaming",
-    title: "反应流",
+    title: msg("Response streaming"),
     to: "/settings/threads",
     scope: "project-defaults",
-    searchTerms: ["output token paragraph buffered wait turn legacy"],
+    searchTerms: [msg("output token paragraph buffered wait turn legacy")],
   },
   {
     id: "hide-whitespace-changes",
-    title: "隐藏空格变化",
+    title: msg("Hide whitespace changes"),
     to: "/settings/diffs",
-    searchTerms: ["diff ignore spaces edits default"],
+    searchTerms: [msg("diff ignore spaces edits default")],
   },
   {
     id: "default-diff-file-state",
-    title: "默认 diff文件状态",
+    title: msg("Default diff file state"),
     to: "/settings/diffs",
-    searchTerms: ["collapsed expanded collapse expand files pull request pr code tab"],
+    searchTerms: [msg("collapsed expanded collapse expand files pull request pr code tab")],
   },
   {
     id: "diff-layout",
-    title: "diff 版式",
+    title: msg("Diff layout"),
     to: "/settings/diffs",
-    searchTerms: ["stacked split side by side unified inline view"],
+    searchTerms: [msg("stacked split side by side unified inline view")],
   },
   {
     id: "proactive-panels",
-    title: "主动打开拉取请求和更改面板",
+    title: msg("Open pull requests and changes panels proactively"),
     to: "/settings/diffs",
-    searchTerms: ["proactive automatically open diff pull request pr right panel agent completion"],
+    searchTerms: [
+      msg("proactive automatically open diff pull request pr right panel agent completion"),
+    ],
   },
   {
     id: "skills-in-slash-menu",
-    title: "在斜线菜单中显示技能",
+    title: msg("Show skills in slash menu"),
     to: "/settings/chat",
-    searchTerms: ["command menu dollar $ slash /"],
+    searchTerms: [msg("command menu dollar $ slash /")],
   },
   {
     id: "composer-rich-text",
-    title: "富文本输入",
+    title: msg("Rich text composer"),
     to: "/settings/chat",
-    searchTerms: ["composer rich text tiptap bold italic markdown styled wysiwyg"],
+    searchTerms: [msg("composer rich text tiptap bold italic markdown styled wysiwyg")],
   },
   {
     id: "send-shortcut",
-    title: "发送快捷键",
+    title: msg("Send shortcut"),
     to: "/settings/chat",
-    searchTerms: ["enter return command ctrl multiline prompt new line composer"],
+    searchTerms: [msg("enter return command ctrl multiline prompt new line composer")],
   },
   {
     id: "follow-up-behavior",
-    title: "后续行为",
+    title: msg("Follow-up behavior"),
     to: "/settings/chat",
-    searchTerms: ["queue steer running turn send default behavior composer"],
+    searchTerms: [msg("queue steer running turn send default behavior composer")],
   },
   {
     id: "provider-update-checks",
-    title: "提供者更新检查",
+    title: msg("Provider update checks"),
     to: "/settings/maintenance",
     searchTerms: [
-      "installed cli versions newer available codex claude cursor grok fx kiro opencode",
+      msg("installed cli versions newer available codex claude cursor grok fx kiro opencode"),
     ],
     scope: "environment-defaults",
   },
   {
     id: "continue-threads-after-server-update",
-    title: "重新启动后继续会话",
+    title: msg("Continue threads after restarts"),
     to: "/settings/maintenance",
     scope: "project-defaults",
     searchTerms: [
-      "resume running active interrupted work restart reboot machine crash desktop update automatically",
+      msg(
+        "resume running active interrupted work restart reboot machine crash desktop update automatically",
+      ),
     ],
   },
   {
+    id: "keep-awake-while-agents-work",
+    title: msg("Keep awake while agents work"),
+    to: "/settings/maintenance",
+    scope: "environment-defaults",
+    searchTerms: [msg("caffeinate sleep prevent stay awake power laptop lid inhibit")],
+  },
+  {
     id: "background-activity",
-    title: "背景活动",
+    title: msg("Background activity"),
     to: "/settings/maintenance",
     scope: "environment-defaults",
     searchTerms: [
-      "balanced performance battery saver advanced git fetch provider health refresh host power monitor idle policy",
+      msg(
+        "balanced performance battery saver advanced git fetch provider health refresh host power monitor idle policy",
+      ),
     ],
   },
   {
     id: "new-threads",
-    title: "新会话",
+    title: msg("New threads"),
     to: "/settings/threads",
     scope: "project-defaults",
-    searchTerms: ["default workspace mode draft local worktree"],
+    searchTerms: [msg("default workspace mode draft local worktree")],
   },
   {
     id: "worktree-submodules",
-    title: "子模块",
+    title: msg("Submodules"),
     to: "/settings/worktrees",
     scope: "project-defaults",
-    searchTerms: ["git submodule init recursive top-level none worktree t3.json"],
+    searchTerms: [msg("git submodule init recursive top-level none worktree t3.json")],
   },
   {
     id: "start-from-origin",
-    title: "从远程开始",
+    title: msg("Start from remote"),
     to: "/settings/worktrees",
     scope: "project-defaults",
-    searchTerms: ["new worktrees start remote origin latest fetched branch local"],
+    searchTerms: [msg("new worktrees start remote origin latest fetched branch local")],
   },
   {
     id: "add-project-starts-in",
-    title: "添加工程开始于",
+    title: msg("Add project starts in"),
     to: "/settings/threads",
     scope: "environment-defaults",
-    searchTerms: ["base directory folder browser path home"],
+    searchTerms: [msg("base directory folder browser path home")],
   },
   {
     id: "ghq-clone-layout",
-    title: "克隆进入主文件夹",
+    title: msg("Clone into host folders"),
     to: "/settings/threads",
     scope: "environment-defaults",
-    searchTerms: ["ghq clone destination host owner repository root layout"],
+    searchTerms: [msg("ghq clone destination host owner repository root layout")],
   },
   {
     id: "unpin-confirmation",
-    title: "取消确认",
+    title: msg("Unpin confirmation"),
     to: "/settings/general",
-    searchTerms: ["ask before thread pinned section"],
+    searchTerms: [msg("ask before thread pinned section")],
   },
   {
     id: "archive-confirmation",
-    title: "归档确认",
+    title: msg("Archive confirmation"),
     to: "/settings/general",
-    searchTerms: ["ask before thread second click inline action"],
+    searchTerms: [msg("ask before thread second click inline action")],
   },
   {
     id: "delete-confirmation",
-    title: "删除确认",
+    title: msg("Delete confirmation"),
     to: "/settings/general",
-    searchTerms: ["ask before thread chat history"],
+    searchTerms: [msg("ask before thread chat history")],
+  },
+  {
+    id: "terminal-close-confirmation",
+    title: msg("Terminal close confirmation"),
+    to: "/settings/general",
+    searchTerms: ["ask before delete stop process shell console history"],
   },
   {
     id: "quit-confirmation",
-    title: "退出快捷键",
+    title: msg("Quit shortcut"),
     to: "/settings/general",
-    searchTerms: ["confirmation desktop app exit direct hold double click press twice"],
+    searchTerms: [msg("confirmation desktop app exit direct hold double click press twice")],
     desktopOnly: true,
   },
   {
     id: "text-generation-model",
-    title: "文本生成模型",
+    title: msg("Text generation model"),
     to: "/settings/threads",
     scope: "project-defaults",
-    searchTerms: ["generated thread titles source control content default provider"],
+    searchTerms: [msg("generated thread titles source control content default provider")],
   },
   {
     id: "thread-title-instructions",
-    title: "会话标题指令",
+    title: msg("Thread title instructions"),
     to: "/settings/threads",
     scope: "project-defaults",
-    searchTerms: ["generated thread titles prompt custom style naming rename regenerate"],
+    searchTerms: [msg("generated thread titles prompt custom style naming rename regenerate")],
   },
   {
     id: "app-version",
-    title: "版本",
+    title: msg("Version"),
     to: "/settings/about",
-    searchTerms: ["about check for updates download install upgrade release"],
+    searchTerms: [msg("about check for updates download install upgrade release")],
   },
   {
     id: "update-track",
-    title: "更新音轨",
+    title: msg("Update track"),
     to: "/settings/about",
-    searchTerms: ["release channel stable latest nightly prerelease"],
+    searchTerms: [msg("release channel stable latest nightly prerelease")],
     releaseChannelOnly: true,
   },
   {
     id: "cli-command",
-    title: "t3 command",
+    title: msg("t3 command"),
     to: "/settings/about",
-    searchTerms: ["cli terminal shell path install command line"],
+    searchTerms: [msg("cli terminal shell path install command line")],
     desktopOnly: true,
   },
   {
     id: "mobile-app",
-    title: "移动应用程序",
+    title: msg("Mobile app"),
     to: "/settings/about",
-    searchTerms: ["phone tablet iPhone iPad iOS Android App Store Google Play QR"],
+    searchTerms: [msg("phone tablet iPhone iPad iOS Android App Store Google Play QR")],
   },
   {
     id: "welcome-page",
-    title: "欢迎页",
+    title: msg("Welcome page"),
     to: "/settings/about",
     primaryEnvironmentOnly: true,
-    searchTerms: ["onboarding setup first run getting started agents import projects"],
+    searchTerms: [msg("onboarding setup first run getting started agents import projects")],
   },
   {
     id: "privacy-policy",
-    title: "隐私政策",
+    title: msg("Privacy policy"),
     to: "/settings/about",
-    searchTerms: ["telemetry analytics usage data tracking legal opt out"],
+    searchTerms: [msg("telemetry analytics usage data tracking legal opt out")],
   },
   {
     id: "telemetry-export",
-    title: "OpenTelemetry 导出",
+    title: msg("OpenTelemetry export"),
     to: "/settings/diagnostics",
     targetId: "telemetry-export",
     scope: "environment",
-    searchTerms: ["OTel OTLP telemetry export endpoints logs traces metrics Grafana"],
+    searchTerms: [msg("OTel OTLP telemetry export endpoints logs traces metrics Grafana")],
   },
   {
     id: "diagnostics",
-    title: "诊断",
+    title: msg("Diagnostics"),
     to: "/settings/maintenance",
-    searchTerms: ["logs traces processes resource history failures spans cpu memory"],
+    searchTerms: [msg("logs traces processes resource history failures spans cpu memory")],
   },
   {
     id: "open-source-licenses",
-    title: "开源许可证",
+    title: msg("Open source licenses"),
     to: "/settings/about",
   },
   {
     id: "keybindings",
-    title: "快捷键",
+    title: msg("Keybindings"),
     to: "/settings/keybindings",
-    searchTerms: ["keyboard shortcuts hotkeys commands bindings json"],
+    searchTerms: [msg("keyboard shortcuts hotkeys commands bindings json")],
   },
   ...KEYBINDING_SEARCH_ITEMS,
   {
     id: "snap-shot-enabled",
-    title: "SnapShots",
-    searchTerms: ["window capture screenshot"],
+    title: msg("SnapShots"),
+    searchTerms: [msg("window capture screenshot")],
     to: "/settings/snap-shot",
   },
   {
     id: "snap-shot-accessibility",
-    title: "包含应用程序文本",
+    title: msg("Include app text"),
     to: "/settings/snap-shot",
     targetId: "snap-shot-enabled",
     searchTerms: [
-      "capture accessibility data text UI structure elements privacy omit agent context",
+      msg("capture accessibility data text UI structure elements privacy omit agent context"),
     ],
   },
   {
     id: "snap-shot-shortcut",
-    title: "抓取快捷键",
+    title: msg("Capture shortcut"),
     to: "/settings/snap-shot",
     targetId: "snap-shot-enabled",
   },
   {
     id: "snap-shot-sound",
-    title: "抓取声音",
+    title: msg("Capture sound"),
     to: "/settings/snap-shot",
     targetId: "snap-shot-enabled",
   },
   {
     id: "snap-shot-flash",
-    title: "抓取闪光",
+    title: msg("Capture flash"),
     to: "/settings/snap-shot",
     targetId: "snap-shot-enabled",
   },
   {
     id: "snap-shot-animations",
-    title: "抓取动画",
+    title: msg("Capture animations"),
     to: "/settings/snap-shot",
     targetId: "snap-shot-enabled",
   },
   {
     id: "providers",
-    title: "代理提供方",
+    title: msg("Providers"),
     to: "/settings/providers",
     searchTerms: [
-      "原生会话 CODEX_HOME 路径 隔离目录路径 agents cli codex claude cursor grok fx kiro opencode antigravity google sign in sign out install subscription instances authentication api key models configuration binary path config directory codex_home shadow home endpoint arguments environment variables display name accent color custom favorite hidden auto compact native sessions import resume",
+      msg(
+        "agents cli codex claude cursor grok fx kiro opencode antigravity google sign in sign out install subscription instances authentication api key models configuration binary path config directory codex_home shadow home endpoint arguments environment variables display name accent color custom favorite hidden auto compact native sessions import resume",
+      ),
     ],
   },
   {
     id: "usage-providers",
-    title: "用法提供者",
+    title: msg("Usage providers"),
     to: "/settings/providers",
     searchTerms: [
-      "usage sources CLIProxyAPI CLI proxy hub quota subscription limits management key add remove",
+      msg(
+        "usage sources CLIProxyAPI CLI proxy hub quota subscription limits management key add remove",
+      ),
     ],
     providerSettingsOnly: true,
   },
   {
     id: "text-generators",
-    title: "文本生成器",
+    title: msg("Text generators"),
     to: "/settings/providers",
     searchTerms: [
-      "model api api key openai openrouter anthropic ollama lm studio custom endpoint base url thread titles commit messages",
+      msg(
+        "model api api key openai openrouter anthropic ollama lm studio custom endpoint base url thread titles commit messages",
+      ),
     ],
     providerSettingsOnly: true,
     textGeneratorsOnly: true,
   },
   {
     id: "provider-health-check-interval",
-    title: "健康检查间隔",
+    title: msg("Health check interval"),
     to: "/settings/providers",
-    searchTerms: ["refresh availability versions auth state models background probes seconds off"],
+    searchTerms: [
+      msg("refresh availability versions auth state models background probes seconds off"),
+    ],
     providerSettingsOnly: true,
   },
   {
+    id: "scheduled-tasks",
+    title: msg("Scheduled tasks"),
+    to: "/settings/scheduled-tasks",
+  },
+  {
     id: "agent-browser-access",
-    title: "代理浏览器访问",
+    title: msg("Agent browser access"),
     to: "/settings/browser",
     scope: "project-defaults",
-    searchTerms: ["allow disable enable open drive preview tools sessions project override"],
+    searchTerms: [msg("allow disable enable open drive preview tools sessions project override")],
   },
   {
     id: "device-sources",
-    title: "设备来源",
+    title: msg("Device sources"),
     to: "/settings/devices",
     searchTerms: [
-      "device hosts ssh remote mac mini identity key connection eas expo cloud simlock pool gateway local simulators",
+      msg(
+        "device hosts ssh remote mac mini identity key connection eas expo cloud simlock pool gateway local simulators",
+      ),
     ],
   },
   {
     id: "agent-device-access",
-    title: "特工可以使用设备",
+    title: msg("Agents can use devices"),
     to: "/settings/devices",
     targetId: "devices",
-    searchTerms: ["allow simulator emulator ios android drive tools sessions"],
+    searchTerms: [msg("allow simulator emulator ios android drive tools sessions")],
   },
   {
     id: "device-hub",
-    title: "使用设备",
+    title: msg("Use devices"),
     to: "/settings/devices",
     targetId: "devices",
-    searchTerms: ["device hub simulator emulator ios android install start version"],
+    searchTerms: [msg("device hub simulator emulator ios android install start version")],
   },
   {
     id: "device-platform-support",
-    title: "本地模拟器",
+    title: msg("Local simulators"),
     to: "/settings/devices",
     targetId: "device-sources",
-    searchTerms: ["simulator support xcode android studio sdk avd runtime"],
+    searchTerms: [msg("simulator support xcode android studio sdk avd runtime")],
   },
   {
     id: "browser-profiles",
-    title: "浏览器配置文件",
+    title: msg("Browser profiles"),
     to: "/settings/browser",
     targetId: "browser",
   },
   {
     id: "browser-default-profile",
-    title: "默认浏览器配置文件",
+    title: msg("Default browser profile"),
     to: "/settings/browser",
     targetId: "browser-profiles",
   },
   {
     id: "browser-default-viewport",
-    title: "默认浏览器视图端口",
+    title: msg("Default browser viewport"),
     to: "/settings/browser",
-    searchTerms: ["preview size width height device desktop mobile rotate"],
+    searchTerms: [msg("preview size width height device desktop mobile rotate")],
   },
   {
     id: "browser-default-zoom",
-    title: "默认浏览器缩放",
+    title: msg("Default browser zoom"),
     to: "/settings/browser",
-    searchTerms: ["preview page scale tabs percent"],
+    searchTerms: [msg("preview page scale tabs percent")],
   },
   {
     id: "browser-default-appearance",
-    title: "默认浏览器外观",
+    title: msg("Default browser appearance"),
     to: "/settings/browser",
-    searchTerms: ["preview color scheme light dark system os"],
+    searchTerms: [msg("preview color scheme light dark system os")],
   },
   {
     id: "browser-recording-frame-rate",
-    title: "浏览器记录帧率",
+    title: msg("Browser recording frame rate"),
     to: "/settings/browser",
   },
   {
     id: "browser-recording-key-presses",
-    title: "在录音中显示按键",
+    title: msg("Show key presses in recordings"),
     to: "/settings/browser",
-    searchTerms: ["browser preview keyboard shortcuts keystrokes overlay capture"],
+    searchTerms: [msg("browser preview keyboard shortcuts keystrokes overlay capture")],
   },
   {
     id: "browser-recording-mouse-presses",
-    title: "在录音中显示鼠标按键",
+    title: msg("Show mouse presses in recordings"),
     to: "/settings/browser",
-    searchTerms: ["browser preview clicks buttons drag overlay capture"],
+    searchTerms: [msg("browser preview clicks buttons drag overlay capture")],
   },
   {
     id: "browser-link-target",
-    title: "打开链接于",
+    title: msg("Open links in"),
     to: "/settings/browser",
-    searchTerms: ["links default browser in-app browser external open"],
+    searchTerms: [msg("links default browser in-app browser external open")],
   },
   {
     id: "browser-search-engine",
-    title: "搜索引擎",
+    title: msg("Search engine"),
     to: "/settings/browser",
-    searchTerms: ["自定义搜索地址 address bar duckduckgo google bing brave kagi ecosia custom url"],
+    searchTerms: [msg("address bar duckduckgo google bing brave kagi ecosia custom url")],
   },
   {
     id: "pull-request-links-open-in-app",
-    title: "在 T3 Code 中打开拉取请求",
+    title: msg("Open pull requests in T3 Code"),
     to: "/settings/diffs",
     searchTerms: [
       `pr commit links ${SOURCE_CONTROL_HOST_LABELS} browser external click default pull request view panel`,
@@ -1069,20 +1181,20 @@ export const SETTINGS_SEARCH_ITEMS = [
   },
   {
     id: "browser-auto-show-floating-preview",
-    title: "自动显示浮动预览",
+    title: msg("Auto-show floating preview"),
     to: "/settings/browser",
-    searchTerms: ["agent opens browser device simulator pop into view hide"],
+    searchTerms: [msg("agent opens browser device simulator pop into view hide")],
   },
   {
     id: "automatic-pull",
-    title: "自动拉动",
+    title: msg("Automatically pull"),
     to: "/settings/source-control",
     scope: "project-defaults",
-    searchTerms: ["auto pull default branch current checkout fast forward upstream"],
+    searchTerms: [msg("auto pull default branch current checkout fast forward upstream")],
   },
   {
     id: "remove-agent-credits-on-merge",
-    title: "合并时删除代理信用",
+    title: msg("Remove agent credits when merging"),
     to: "/settings/source-control",
     scope: "project-defaults",
     searchTerms: [
@@ -1091,14 +1203,21 @@ export const SETTINGS_SEARCH_ITEMS = [
   },
   {
     id: "pull-request-merge-method",
-    title: "默认合并方法",
+    title: msg("Default merge method"),
     to: "/settings/source-control",
     scope: "project-defaults",
-    searchTerms: ["pull request merge squash rebase last selected"],
+    searchTerms: [msg("pull request merge squash rebase last selected")],
+  },
+  {
+    id: "issue-trackers",
+    title: msg("Issue trackers"),
+    to: "/settings/source-control",
+    scope: "environment-defaults",
+    searchTerms: [msg("linear jira issues tracker team api key connect bind project")],
   },
   {
     id: "source-control",
-    title: "源代码管理",
+    title: msg("Source control"),
     to: "/settings/source-control",
     scope: "environment-defaults",
     searchTerms: [
@@ -1107,127 +1226,133 @@ export const SETTINGS_SEARCH_ITEMS = [
   },
   {
     id: "git-fetch-interval",
-    title: "Git 获取间隔",
+    title: msg("Git fetch interval"),
     to: "/settings/maintenance",
     targetId: "background-activity",
     searchTerms: [
-      "automatic remote branch refresh background credentials security keys seconds off",
+      msg("automatic remote branch refresh background credentials security keys seconds off"),
     ],
     environmentOnly: true,
     scope: "environment-defaults",
   },
   {
     id: "worktree-branch-naming",
-    title: "工作树分支命名",
+    title: msg("Worktree branch naming"),
     to: "/settings/worktrees",
-    searchTerms: ["static semantic prefix custom prompt instructions feat fix refactor chore"],
+    searchTerms: [msg("static semantic prefix custom prompt instructions feat fix refactor chore")],
     environmentOnly: true,
     scope: "project-defaults",
   },
   ...sourceControlHostSearchItems(sourceControlClients.definitions),
   {
     id: "source-control-writing-style",
-    title: "提交和拉取请求写入",
+    title: msg("Commit and pull request writing"),
     to: "/settings/source-control",
     searchTerms: [
-      "repository conventions conventional commits custom instructions commit messages change pr pull request merge request titles descriptions body style prompt write my own",
+      msg(
+        "repository conventions conventional commits custom instructions commit messages change pr pull request merge request titles descriptions body style prompt write my own",
+      ),
     ],
     environmentOnly: true,
   },
   {
     id: "follow-change-request-templates",
-    title: "遵循拉取请求模板",
+    title: msg("Follow pull request templates"),
     to: "/settings/source-control",
-    searchTerms: ["repository pr pull request merge request change request description structure"],
+    searchTerms: [
+      msg("repository pr pull request merge request change request description structure"),
+    ],
     environmentOnly: true,
   },
   {
     id: "source-control-writer-model",
-    title: "源代码管理写入器模型",
+    title: msg("Source control writer model"),
     to: "/settings/source-control",
     searchTerms: [
-      "override generated commit change request pr titles descriptions branch bookmark",
+      msg("override generated commit change request pr titles descriptions branch bookmark"),
     ],
     environmentOnly: true,
     scope: "project-defaults",
   },
   {
     id: "review-guides",
-    title: "审查指南(β)",
+    title: msg("Review guides (beta)"),
     to: "/settings/source-control",
-    searchTerms: ["pull request pr guided review guide tour beta experimental"],
+    searchTerms: [msg("pull request pr guided review guide tour beta experimental")],
     environmentOnly: true,
   },
   {
     id: "review-guide-model",
-    title: "审查指南模型",
+    title: msg("Review guide model"),
     to: "/settings/source-control",
     // Hidden until review guides are on, so a search lands on the switch that shows it.
     targetId: "review-guides",
-    searchTerms: ["pull request pr guided review guide brief maintainer"],
+    searchTerms: [msg("pull request pr guided review guide brief maintainer")],
     environmentOnly: true,
     scope: "project-defaults",
   },
   {
     id: "review-guide-instructions",
-    title: "审查指南指南",
+    title: msg("Review guide instructions"),
     to: "/settings/source-control",
     targetId: "review-guides",
-    searchTerms: ["pull request pr guided review guide preferences taste prompt custom"],
+    searchTerms: [msg("pull request pr guided review guide preferences taste prompt custom")],
     environmentOnly: true,
     scope: "project-defaults",
   },
   {
     id: "project-actions",
-    title: "行动",
+    title: msg("Actions"),
     to: "/settings/projects",
-    searchTerms: ["commands scripts setup run dev server checkout worktree t3.json import"],
+    searchTerms: [msg("commands scripts setup run dev server checkout worktree t3.json import")],
   },
   {
     id: "environment-icon",
-    title: "环境图标",
+    title: msg("Environment icon"),
     to: "/settings/access",
     targetId: "connections-environment",
-    searchTerms: ["machine glyph sidebar mac mini studio laptop desktop server cloud vm"],
+    searchTerms: [msg("machine glyph sidebar mac mini studio laptop desktop server cloud vm")],
   },
   {
     id: "local-environment",
-    title: "本地环境",
+    title: msg("Local environment"),
     to: "/settings/connections",
-    searchTerms: ["turn off on disable enable local server agents remote only restart"],
+    searchTerms: [msg("turn off on disable enable local server agents remote only restart")],
     desktopOnly: true,
   },
   {
     id: "network-access",
-    title: "网络访问",
+    title: msg("Network access"),
     to: "/settings/access",
     targetId: "connections-environment",
-    searchTerms: ["expose backend remote pairing local machine interfaces host restart"],
+    searchTerms: [msg("expose backend remote pairing local machine interfaces host restart")],
     localBackendManagementOnly: true,
   },
   {
     id: "tailscale-https",
-    title: "Tailscale HTTPS",
+    title: msg("Tailscale HTTPS"),
     to: "/settings/access",
     targetId: "connections-environment",
-    searchTerms: ["serve magicdns endpoint remote secure network"],
+    searchTerms: [msg("serve magicdns endpoint remote secure network")],
     desktopOnly: true,
     localBackendManagementOnly: true,
   },
   {
     id: "frp-tunnel",
-    title: "FRP 穿透",
+    title: msg("FRP tunnel"),
     to: "/settings/access",
-    searchTerms: ["内网穿透 公网 手机配对 frpc frps reverse proxy tunnel"],
+    searchTerms: ["FRP", "frpc", "frps"],
     desktopOnly: true,
     localBackendManagementOnly: true,
   },
   {
     id: "wsl-backend",
-    title: "WSL 后端",
+    title: msg("WSL backend"),
     to: "/settings/access",
     searchTerms: [
-      "windows subsystem linux distro second server projects stop windows backend restart wsl only",
+      msg(
+        "windows subsystem linux distro second server projects stop windows backend restart wsl only",
+      ),
     ],
     desktopOnly: true,
     windowsOnly: true,
@@ -1235,38 +1360,91 @@ export const SETTINGS_SEARCH_ITEMS = [
     wslAvailableOnly: true,
   },
   {
+    id: "t3-connect",
+    localEnvironmentOnly: true,
+    title: msg("T3 Connect"),
+    to: "/settings/access",
+    targetId: "connections-environment",
+    searchTerms: [msg("managed tunnel cloud other devices remote tunnels limit t3 chat")],
+    desktopOnly: true,
+    cloudOnly: true,
+  },
+  {
+    id: "connect-device-approval",
+    title: msg("Require approval for new devices"),
+    to: "/settings/access",
+    targetId: "connections-environment",
+    searchTerms: [
+      msg("t3 connect devices approve deny trust revoke pairing code security account"),
+    ],
+    cloudOnly: true,
+    managedTunnelOnly: true,
+  },
+  {
+    id: "hold-webhooks-while-offline",
+    localEnvironmentOnly: true,
+    title: msg("Hold webhooks while offline"),
+    to: "/settings/access",
+    targetId: "connections-environment",
+    searchTerms: [msg("webhook automations offline queue mailbox t3 connect")],
+    cloudOnly: true,
+    managedTunnelOnly: true,
+  },
+  {
+    id: "publish-agent-activity",
+    localEnvironmentOnly: true,
+    title: msg("Publish agent activity"),
+    to: "/settings/access",
+    targetId: "connections-environment",
+    searchTerms: [msg("mobile push notifications live activities cloud tunnel")],
+    cloudOnly: true,
+  },
+  {
+    id: "preview-tunnel",
+    title: msg("Preview tunnel"),
+    to: "/settings/access",
+    targetId: "connections-environment",
+    searchTerms: [
+      msg("localhost loopback port forwarding open on this device browser tabs stream security"),
+    ],
+  },
+  {
     id: "connections-environment",
-    title: "本机",
+    title: msg("This machine"),
     to: "/settings/access",
     searchTerms: [
-      "connections server backend local remote access administrative permissions scope pairing links qr code authorized clients sessions revoke endpoint",
+      msg(
+        "connections server backend local remote access administrative permissions scope pairing links qr code authorized clients sessions revoke endpoint",
+      ),
     ],
   },
   {
     id: "linked-environments",
     peerLinksOnly: true,
-    title: "关联环境",
+    title: msg("Linked environments"),
     to: "/settings/connections",
     targetId: "linked-environments",
-    searchTerms: ["link peer another machine vps agents work there handoff pairing code"],
+    searchTerms: [msg("link peer another machine vps agents work there handoff pairing code")],
   },
   {
     id: "remote-environments",
-    title: "环境",
+    title: msg("Environments"),
     to: "/settings/connections",
-    searchTerms: ["add pair backend host code ssh config agent tunnel saved"],
+    searchTerms: [msg("add pair backend host code ssh config agent tunnel saved t3 connect")],
   },
   {
     id: "load-balancing",
-    title: "装入平衡",
+    title: msg("Load balancing"),
     to: "/settings/connections",
     searchTerms: [
-      "automatic machine environment resources cpu memory capacity preference weight shared projects",
+      msg(
+        "automatic machine environment resources cpu memory capacity preference weight shared projects",
+      ),
     ],
   },
   {
     id: "pull-request-routing",
-    title: "拖动请求共享",
+    title: msg("Pull request sharing"),
     to: "/settings/connections",
     searchTerms: [
       `pull request routing trusted environments shared credentials permissions read actions source control ${SOURCE_CONTROL_HOST_LABELS}`,
@@ -1274,24 +1452,24 @@ export const SETTINGS_SEARCH_ITEMS = [
   },
   {
     id: "secret-providers",
-    title: "秘密提供者",
+    title: msg("Secret providers"),
     to: "/settings/secrets",
-    searchTerms: ["1password vault credentials api key"],
+    searchTerms: [msg("1password vault credentials api key")],
     secretsFeatureOnly: true,
   },
   {
     id: "secret-providers-add",
-    title: "添加秘密提供者",
+    title: msg("Add secret provider"),
     to: "/settings/secrets",
     targetId: "secret-providers",
-    searchTerms: ["new 1password vault op cli account"],
+    searchTerms: [msg("new 1password vault op cli account")],
     secretsFeatureOnly: true,
   },
   {
     id: "archive",
-    title: "已归档会话",
+    title: msg("Archived threads"),
     to: "/settings/archived",
-    searchTerms: ["restore reopen deleted history projects"],
+    searchTerms: [msg("restore reopen deleted history projects")],
   },
 ] as const satisfies ReadonlyArray<SettingsSearchItem>;
 
@@ -1423,12 +1601,21 @@ export function isSettingsSearchScopeAvailable(
   }
 }
 
-export function searchableSetting(id: SettingsSearchItemId): {
+function searchableSetting(id: SettingsSearchItemId): {
   readonly id: string;
   readonly title: string;
 } {
   const { id: anchorId, title } = SEARCH_ITEMS_BY_ID.get(id)!;
   return { id: anchorId, title };
+}
+
+/** `searchableSetting` with its title in the active language, for spreading onto a row. */
+export function useSearchableSetting() {
+  const m = useMessages();
+  return (id: SettingsSearchItemId) => {
+    const setting = searchableSetting(id);
+    return { ...setting, title: m(setting.title) };
+  };
 }
 
 export function filterAvailableSettingsSearchItems(
@@ -1437,6 +1624,7 @@ export function filterAvailableSettingsSearchItems(
   const items: ReadonlyArray<SettingsSearchItem> = SETTINGS_SEARCH_ITEMS;
   return items.filter(
     (item) =>
+      (!item.cloudOnly || availability.hasCloudPublicConfig) &&
       (!item.environmentOnly || availability.hasEnvironment) &&
       (!item.providerSettingsOnly || availability.hasProviderSettingsEnvironment) &&
       (!item.localBackendManagementOnly || availability.canManageLocalBackend) &&
@@ -1444,6 +1632,7 @@ export function filterAvailableSettingsSearchItems(
       (!item.primaryEnvironmentOnly || availability.hasPrimaryEnvironment === true) &&
       (!item.wslAvailableOnly || availability.isWslSettingsRowVisible) &&
       (!item.requiresThreadAutoSettlement || availability.hasThreadAutoSettlement) &&
+      (!item.managedTunnelOnly || availability.managedTunnelActive === true) &&
       (!item.peerLinksOnly || availability.hasPeerLinkHost === true) &&
       (!item.fastWorktreeCheckoutOnly ||
         availability.hasFastWorktreeCheckoutEnvironment === true) &&
@@ -1469,6 +1658,7 @@ export function settingsForThisPlatform(
 export function searchSettings(
   query: string,
   items: ReadonlyArray<SettingsSearchItem> = SETTINGS_SEARCH_ITEMS,
+  translate: (message: string) => string = (message) => message,
 ): ReadonlyArray<SettingsSearchItem> {
   const normalizedQuery = normalizeSearchText(query);
   if (normalizedQuery.length === 0) return [];
@@ -1476,11 +1666,15 @@ export function searchSettings(
 
   return settingsForThisPlatform(items)
     .flatMap((item, index) => {
-      const title = normalizeSearchText(item.title);
+      const title = normalizeSearchText(decodeMsg(item.title));
       const fields = [
         title,
         normalizeSearchText(SETTINGS_SECTION_LABELS[item.to]),
+        // The labels as displayed, so search also works in the active language.
+        normalizeSearchText(translate(item.title)),
+        normalizeSearchText(translate(SETTINGS_SECTION_LABELS[item.to])),
         ...(item.searchTerms ?? []).map(normalizeSearchText),
+        ...(item.searchTerms ?? []).map((term) => normalizeSearchText(translate(term))),
       ];
       if (!queryTokens.every((token) => fields.some((field) => field.includes(token)))) return [];
 

@@ -6,12 +6,14 @@ describe("desktop-approved window capture shortcut labels", () => {
   it.each([
     ["Press <Shift><Control>2", ["Ctrl", "⇧", "2"]],
     ["Ctrl+Shift+8", ["Ctrl", "⇧", "8"]],
-    ["Meta+F12", ["超级", "F12"]],
+    ["Meta+F12", ["Super", "F12"]],
     ["<Primary><Alt>Return", ["Ctrl", "Alt", "Enter"]],
-    ["<Super>Left", ["超级", "左箭头"]],
+    ["<Super>Left", ["Super", "Left"]],
     ["<Control>space", ["Ctrl", "Space"]],
     ["<Control>plus", ["Ctrl", "+"]],
     ["Ctrl++", ["Ctrl", "+"]],
+    ["<Control>Page_Up", ["Ctrl", "PageUp"]],
+    ["<Shift>Page_Down", ["⇧", "PageDown"]],
   ])("formats %s using the shared keycap labels", (label, expected) => {
     const shortcut = parseDesktopSnapShotShortcut(label);
     expect(shortcut).not.toBeNull();

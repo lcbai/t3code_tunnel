@@ -1,4 +1,5 @@
 import { squashAtomCommandFailure } from "@t3tools/client-runtime/state/runtime";
+import { errorDisplayMessage } from "@t3tools/client-runtime/errors";
 import { AsyncResult } from "effect/reactivity";
 import type { EnvironmentThreadShell } from "@t3tools/client-runtime/state/shell";
 import { limitRecoveryOwnsSnooze } from "@t3tools/client-runtime/state/thread-execution";
@@ -10,8 +11,11 @@ import {
   CHATGPT_WORKSPACE_USAGE_LIMIT_CODE,
 } from "@t3tools/shared/usageLimits";
 import * as Clipboard from "expo-clipboard";
+import { T, useGT } from "gt-react-native";
+import { m } from "../../i18n/messages";
 import { useState } from "react";
-import { Linking, Pressable, View } from "react-native";
+import { Pressable, View } from "react-native";
+import { tryOpenExternalUrl } from "../../lib/openExternalUrl";
 import { ProviderIcon } from "../../components/ProviderIcon";
 import { AppText as Text } from "../../components/ui/AppText";
 import { useDeadlinePassed } from "../../lib/clock";
@@ -25,6 +29,7 @@ export function UsageLimitRecoveryCard({
   thread: EnvironmentThreadShell;
   environmentId: EnvironmentId;
 }) {
+  const gt = useGT();
   const updateMetadata = useAtomCommand(threadEnvironment.updateMetadata);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -59,16 +64,21 @@ export function UsageLimitRecoveryCard({
     !runId
   )
     return null;
-  const resetText = displayAt
-    ? `${canSchedule && scheduled ? "恢复时间：" : "重置时间："} ${new Date(
-        displayAt,
-      ).toLocaleString("zh-CN", {
+  const resetDate = displayAt
+    ? new Date(displayAt).toLocaleString(undefined, {
         month: "short",
         day: "numeric",
         hour: "numeric",
         minute: "2-digit",
-      })}.`
+      })
     : null;
+  const resumes = canSchedule && scheduled;
+  const resetText =
+    resetDate === null
+      ? null
+      : resumes
+        ? gt("Resumes {date}.", { date: resetDate })
+        : gt("Resets {date}.", { date: resetDate });
   const snoozed =
     limitRecoveryOwnsSnooze({
       runId,
@@ -79,7 +89,7 @@ export function UsageLimitRecoveryCard({
   async function toggle(action: "resume" | "snooze") {
     if (!resetAt || !runId || !canSchedule) return;
     if (action === "snooze" && !snoozed && Date.parse(resetAt) <= Date.now()) {
-      setError("The reset time has passed. Retry the thread manually.");
+      setError(gt("The reset time has passed. Retry the thread manually."));
       return;
     }
     setPending(true);
@@ -98,12 +108,12 @@ export function UsageLimitRecoveryCard({
     setPending(false);
     if (AsyncResult.isFailure(result)) {
       const cause = squashAtomCommandFailure(result);
-      setError(cause instanceof Error ? cause.message : "Could not change limit recovery.");
+      setError(errorDisplayMessage(cause, m) ?? gt("Could not change limit recovery."));
     }
   }
   const action = workspaceLimit
     ? {
-        label: "复制请求以发给管理员",
+        label: gt("Copy request for admin"),
         role: "button" as const,
         run: () => {
           setError(null);
@@ -112,19 +122,22 @@ export function UsageLimitRecoveryCard({
           void Clipboard.setStringAsync(CHATGPT_WORKSPACE_ADMIN_REQUEST)
             .then(
               () => setCopied(true),
-              () => setError("Could not copy the request. Try again."),
+              () => setError(gt("Could not copy the request. Try again.")),
             )
             .finally(() => setActionPending(false));
         },
       }
     : {
-        label: "管理用量",
+        label: gt("Manage usage"),
         role: "link" as const,
         run: () => {
           setError(null);
           setActionPending(true);
-          void Linking.openURL(CHATGPT_USAGE_URL)
-            .catch(() => setError("Could not open ChatGPT. Go to chatgpt.com → Settings → Usage."))
+          void tryOpenExternalUrl(CHATGPT_USAGE_URL)
+            .then((opened) => {
+              if (!opened)
+                setError(gt("Could not open ChatGPT. Go to chatgpt.com → Settings → Usage."));
+            })
             .finally(() => setActionPending(false));
         },
       };
@@ -140,7 +153,9 @@ export function UsageLimitRecoveryCard({
       ) : null}
       <View className="min-w-0 flex-1 gap-1">
         {chatGptLimit ? (
-          <Text className="text-sm font-t3-medium text-foreground">已达到 ChatGPT 用量上限</Text>
+          <Text className="text-sm font-t3-medium text-foreground">
+            <T>ChatGPT usage limit reached</T>
+          </Text>
         ) : null}
         <Text
           className={
@@ -149,13 +164,19 @@ export function UsageLimitRecoveryCard({
         >
           {workspaceLimit
             ? copied
-              ? "请求已复制。请发送给你的工作区管理员。"
-              : "你已达到工作区中其他应用共享 ChatGPT 套餐的用量上限。请复制请求并发送给工作区管理员，以申请提高限额。"
+              ? gt("Request copied. Send it to your workspace admin.")
+              : gt(
+                  "You've reached your workspace's limit for using your ChatGPT plan in other apps. Copy a request to ask your workspace admin for increased usage limits.",
+                )
             : chatGptLimit
-              ? (resetText ?? "请在 ChatGPT 中查看用量设置。")
-              : resetText
-                ? `已达到用量上限。${resetText}`
-                : "已达到用量上限。提供方未报告重置时间，请在额度恢复后手动重试。"}
+              ? (resetText ?? gt("Review your usage settings in ChatGPT."))
+              : resetDate !== null
+                ? resumes
+                  ? gt("Usage limit reached. Resumes {date}.", { date: resetDate })
+                  : gt("Usage limit reached. Resets {date}.", { date: resetDate })
+                : gt(
+                    "Usage limit reached. The provider did not report a reset time. Retry manually when your limit is available.",
+                  )}
         </Text>
         {chatGptLimit || canSchedule ? (
           // The margins cancel the 44pt touch height so the links sit 8pt under the text.
@@ -171,12 +192,12 @@ export function UsageLimitRecoveryCard({
             {canSchedule ? (
               <>
                 <RecoveryAction
-                  label={scheduled ? "取消自动恢复" : "额度重置时恢复"}
+                  label={scheduled ? gt("Cancel auto-resume") : gt("Resume at reset")}
                   disabled={pending}
                   onPress={() => void toggle("resume")}
                 />
                 <RecoveryAction
-                  label={snoozed ? "立即唤醒" : "推迟至重置"}
+                  label={snoozed ? gt("Wake now") : gt("Snooze until reset")}
                   disabled={pending || (!snoozed && resetPassed)}
                   onPress={() => void toggle("snooze")}
                 />

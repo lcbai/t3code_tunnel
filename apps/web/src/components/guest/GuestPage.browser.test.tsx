@@ -243,10 +243,10 @@ describe("GuestPage", () => {
         expect.stringContaining(`${GUEST_RENDER_ROUTE}?share=${SHARE_ID}&item=visual`),
       );
     // Guests cannot act on the thread, so no control offers to.
-    expect(screen.container.querySelector('[aria-label="从这个响应中叉出"]')).toBeNull();
+    expect(screen.container.querySelector('[aria-label="Fork from this response"]')).toBeNull();
     expect(socket).not.toHaveBeenCalled();
     // The composer names the thread's model, as the owner's does, with nothing to pick.
-    await expect.element(screen.getByLabelText("型号:GPT-5.4")).toBeVisible();
+    await expect.element(screen.getByLabelText("Model: GPT-5.4")).toBeVisible();
   });
 
   it("sends attached files with the message, as form data", async () => {
@@ -259,11 +259,11 @@ describe("GuestPage", () => {
       .mockImplementation(fakeEventSource(opening([run("run-1", 1, "completed")], items)) as never);
     await using screen = await render(<GuestPage />);
 
-    await expect.element(screen.getByLabelText("附加文件")).toBeVisible();
+    await expect.element(screen.getByLabelText("Attach files")).toBeVisible();
     const notes = new File(["hello"], "notes.txt", { type: "text/plain" });
-    await userEvent.upload(screen.getByLabelText("要附加的文件"), notes);
+    await userEvent.upload(screen.getByLabelText("Files to attach"), notes);
     await expect.element(screen.getByText("notes.txt")).toBeVisible();
-    await userEvent.click(screen.getByRole("button", { name: "发送" }));
+    await userEvent.click(screen.getByRole("button", { name: "Send" }));
     await vi.waitFor(() =>
       expect(fetchSpy).toHaveBeenCalledWith(
         `/api/guest/messages?share=${SHARE_ID}`,
@@ -339,7 +339,7 @@ describe("GuestPage", () => {
     node.dispatchEvent(new WheelEvent("wheel", { deltaY: -400, bubbles: true }));
     node.scrollTop = node.scrollTop - 400;
     node.dispatchEvent(new Event("scroll"));
-    await expect.element(screen.getByRole("button", { name: "滚动到结束" })).toBeVisible();
+    await expect.element(screen.getByRole("button", { name: /scroll to/i })).toBeVisible();
 
     // The guest sends; their message waits at the end for the owner.
     const waiting = {
@@ -348,8 +348,8 @@ describe("GuestPage", () => {
       status: "pending" as const,
       submittedAt: "2026-10-23T10:01:00.000Z",
     };
-    await userEvent.type(screen.getByRole("textbox", { name: "消息" }), waiting.text);
-    await userEvent.click(screen.getByRole("button", { name: "发送" }));
+    await userEvent.type(screen.getByRole("textbox", { name: "Message" }), waiting.text);
+    await userEvent.click(screen.getByRole("button", { name: "Send" }));
     send({ type: "view", view: { ...view, messages: [waiting] } });
     await expect.element(screen.getByText(waiting.text)).toBeInTheDocument();
     await expectAtEnd();

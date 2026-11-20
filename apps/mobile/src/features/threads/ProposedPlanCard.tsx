@@ -1,10 +1,13 @@
 import { useAtomValue } from "@effect/atom-react";
+import { errorDisplayMessage } from "@t3tools/client-runtime/errors";
 import {
   isAtomCommandInterrupted,
   squashAtomCommandFailure,
 } from "@t3tools/client-runtime/state/runtime";
 import type { EnvironmentId } from "@t3tools/contracts";
 import { proposedPlanTitle, stripDisplayedPlanMarkdown } from "@t3tools/shared/proposedPlanText";
+import { useGT } from "gt-react-native";
+import { m } from "../../i18n/messages";
 import { useRef, useState, type ReactNode } from "react";
 import { View } from "react-native";
 
@@ -21,6 +24,7 @@ export function ProposedPlanCard(props: {
   readonly markdown: string;
   readonly renderMarkdown: (text: string) => ReactNode;
 }) {
+  const gt = useGT();
   const canWrite = useAtomValue(projectEnvironment.writeFile.permissionAtom(props.environmentId));
   const writeFile = useAtomCommand(projectEnvironment.writeFile, { reportFailure: false });
   const inFlight = useRef(false);
@@ -32,7 +36,7 @@ export function ProposedPlanCard(props: {
     const relativePath = path.trim();
     if (!canWrite || !props.workspaceRoot || inFlight.current) return;
     if (!relativePath) {
-      Dialog.alert("输入工作区路径");
+      Dialog.alert(gt("Enter a workspace path"));
       return;
     }
     inFlight.current = true;
@@ -46,10 +50,10 @@ export function ProposedPlanCard(props: {
       setSaving(false);
     });
     if (result._tag === "Success") {
-      Dialog.alert("计划已保存到工作区", result.value.relativePath);
+      Dialog.alert(gt("Plan saved to workspace"), result.value.relativePath);
     } else if (!isAtomCommandInterrupted(result)) {
       const error = squashAtomCommandFailure(result);
-      Dialog.alert("Could not save plan", error instanceof Error ? error.message : String(error));
+      Dialog.alert(gt("Could not save plan"), errorDisplayMessage(error, m) ?? String(error));
     }
   };
 
@@ -57,23 +61,25 @@ export function ProposedPlanCard(props: {
     <View className="mb-3 gap-3 rounded-[20px] border border-border bg-card-alt p-4">
       <View className="flex-row items-center gap-2">
         <Text accessibilityRole="header" className="flex-1 font-t3-bold text-base text-foreground">
-          {proposedPlanTitle(props.markdown) ?? "建议计划"}
+          {proposedPlanTitle(props.markdown) ?? gt("Proposed plan")}
         </Text>
-        <CopyTextButton accessibilityLabel="复制计划" text={contents} />
+        <CopyTextButton accessibilityLabel={gt("Copy plan")} text={contents} />
       </View>
       {props.renderMarkdown(stripDisplayedPlanMarkdown(props.markdown))}
       <View className="flex-row">
         <Button
-          label={saving ? "正在保存…" : "保存到工作区"}
+          label={saving ? gt("Saving...") : gt("Save to workspace")}
           tone="secondary"
           disabled={!canWrite || !props.workspaceRoot || saving}
           onPress={() =>
             Dialog.prompt({
-              title: "将计划保存到工作区",
+              title: gt("Save plan to workspace"),
               // The write replaces an existing file, and the RPC has no create-only mode.
-              message: "输入相对于会话工作区的路径。此路径下已有的文件将被替换。",
+              message: gt(
+                "Enter a path relative to the thread's workspace. A file already at that path is replaced.",
+              ),
               initialValue: lastPath,
-              confirmText: "保存",
+              confirmText: gt("Save", { $context: "verb, confirm button" }),
               onConfirm: (path) => void save(path),
             })
           }

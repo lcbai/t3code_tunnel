@@ -4,9 +4,10 @@ import {
   getProviderOptionCurrentLabel,
   getProviderOptionCurrentValue,
   isClaudeUltrathinkPrompt,
-  localizeProviderOptionLabel,
 } from "@t3tools/shared/model";
 import { REASONING_EFFORT_OPTION_IDS } from "./state/threadExecution.ts";
+import { mFallback, msg } from "gt-i18n";
+import type { MFunctionType } from "gt-i18n/types";
 
 const REASONING_DESCRIPTOR_IDS: ReadonlySet<string> = new Set([
   ...REASONING_EFFORT_OPTION_IDS,
@@ -106,13 +107,16 @@ export function getTraitSelectChange(
   };
 }
 
-export function buildTraitsTriggerDisplay(input: {
-  descriptors: ReadonlyArray<ProviderOptionDescriptor>;
-  primarySelectDescriptorId: string | null;
-  ultrathinkPromptControlled: boolean;
-  modelSelection?: ModelSelection | null;
-  reportedModelSelection?: ModelSelection | null | undefined;
-}): {
+export function buildTraitsTriggerDisplay(
+  input: {
+    descriptors: ReadonlyArray<ProviderOptionDescriptor>;
+    primarySelectDescriptorId: string | null;
+    ultrathinkPromptControlled: boolean;
+    modelSelection?: ModelSelection | null;
+    reportedModelSelection?: ModelSelection | null | undefined;
+  },
+  resolve: MFunctionType = mFallback,
+): {
   label: string;
   /** "Fast" or "Ultrafast" when a speed option is on. */
   speedLabel: string | null;
@@ -126,13 +130,14 @@ export function buildTraitsTriggerDisplay(input: {
   for (const descriptor of input.descriptors) {
     if (descriptor.id === "fastMode" && descriptor.type === "boolean") {
       speedLabel = descriptor.currentValue === true ? "Fast" : null;
-      fastModeFallbackLabel = speedLabel ?? "Normal";
+      fastModeFallbackLabel =
+        speedLabel ?? resolve(msg("Normal", { $context: "model speed tier" }));
       continue;
     }
     if (descriptor.id === "ultracode" && descriptor.type === "boolean") {
       if (descriptor.currentValue === true) {
         ultracodeLabelIndex = labels.length;
-        labels.push(localizeProviderOptionLabel(descriptor.label));
+        labels.push(descriptor.label);
       }
       continue;
     }
@@ -152,7 +157,8 @@ export function buildTraitsTriggerDisplay(input: {
               ? "Fast"
               : null;
         fastModeFallbackLabel =
-          descriptor.options.find(({ id }) => id === currentValue)?.label ?? "Normal";
+          descriptor.options.find(({ id }) => id === currentValue)?.label ??
+          resolve(msg("Normal", { $context: "model speed tier" }));
         continue;
       }
     }
@@ -160,7 +166,9 @@ export function buildTraitsTriggerDisplay(input: {
       input.ultrathinkPromptControlled && descriptor.id === input.primarySelectDescriptorId
         ? "Ultrathink"
         : descriptor.type === "boolean"
-          ? `${localizeProviderOptionLabel(descriptor.label)}${descriptor.currentValue === true ? "已开启" : "已关闭"}`
+          ? descriptor.currentValue === true
+            ? resolve(msg("{label} On", { label: descriptor.label }))
+            : resolve(msg("{label} Off", { label: descriptor.label }))
           : (getProviderOptionCurrentLabel(
               descriptor,
               input.modelSelection,
@@ -170,20 +178,19 @@ export function buildTraitsTriggerDisplay(input: {
       if (reasoningLabelIndex === -1 && isReasoningSelect(descriptor)) {
         reasoningLabelIndex = labels.length;
       }
-      labels.push(localizeProviderOptionLabel(label));
+      labels.push(label);
     }
   }
 
   const ultracode = ultracodeLabelIndex >= 0;
   if (labels.length === 0 && fastModeFallbackLabel !== null) {
-    return { label: localizeProviderOptionLabel(fastModeFallbackLabel), speedLabel, ultracode };
+    return { label: fastModeFallbackLabel, speedLabel, ultracode };
   }
   if (speedLabel) {
-    const displaySpeed = localizeProviderOptionLabel(speedLabel);
     if (reasoningLabelIndex >= 0) {
-      labels[reasoningLabelIndex] = `${labels[reasoningLabelIndex]} ${displaySpeed}`;
+      labels[reasoningLabelIndex] = `${labels[reasoningLabelIndex]} ${speedLabel}`;
     } else {
-      labels.push(displaySpeed);
+      labels.push(speedLabel);
     }
   }
   return { label: labels.join(" · "), speedLabel, ultracode };

@@ -33,6 +33,7 @@ vi.mock("@react-navigation/native", () => ({
   useRoute: () => ({ name: "ConnectionsNew" }),
 }));
 vi.mock("@effect/atom-react", () => ({ useAtomValue: () => null }));
+vi.mock("@clerk/expo", () => ({ useAuth: () => ({ isLoaded: false, isSignedIn: false }) }));
 vi.mock("expo-camera", () => ({
   CameraView: () => null,
   useCameraPermissions: () => [null, vi.fn()],
@@ -41,11 +42,26 @@ vi.mock("expo-haptics", () => ({
   notificationAsync: vi.fn(async () => {}),
   NotificationFeedbackType: { Success: "success", Error: "error" },
 }));
+vi.mock("../../components/ui/ListRow", () => ({ ListRow: () => null }));
 vi.mock("../../components/ui/Dialog", () => ({ alert: vi.fn() }));
 vi.mock("../../components/ui/ScreenScrollView", () => ({ ScreenScrollView: Children }));
 vi.mock("../../components/ui/AppText", () => ({
   AppText: ({ children }: { children?: ReactNode }) => <span>{children}</span>,
-  AppTextInput: () => null,
+  AppTextInput: ({
+    accessibilityLabel,
+    value,
+    onChangeText,
+  }: {
+    accessibilityLabel: string;
+    value: string;
+    onChangeText: (value: string) => void;
+  }) => (
+    <input
+      aria-label={accessibilityLabel}
+      value={value}
+      onChange={(event) => onChangeText(event.currentTarget.value)}
+    />
+  ),
 }));
 vi.mock("../../components/ui/FrostedCutout", () => ({ FrostedCutout: () => null }));
 vi.mock("../../components/ui/AppSymbol", () => ({ SymbolView: () => null }));
@@ -60,6 +76,11 @@ vi.mock("../settings/settings-navigation", () => ({
 }));
 vi.mock("../layout/workspace/workspace-selection-store", () => ({
   workspaceHasColumns: () => false,
+}));
+vi.mock("../cloud/publicConfig", () => ({ hasCloudPublicConfig: () => false }));
+vi.mock("./CloudEnvironmentRows", () => ({ CloudEnvironmentRows: () => null }));
+vi.mock("./environmentSections", () => ({
+  splitEnvironmentSections: () => ({ connectedCloudEnvironments: [] }),
 }));
 vi.mock("./devAutoConnect", () => ({
   autoConnectReport: () => ({ connecting: false, error: null }),
@@ -91,9 +112,46 @@ it("does not show another feature's error as a pairing failure", () => {
   act(() => root.render(<ConnectionsNewRouteScreen route={{ params: undefined }} />));
 
   expect(container.textContent).not.toContain("Could not send the message.");
-  expect(container.textContent).toContain("连接局域网或 Tailscale 网络中的设备。");
+  expect(container.textContent).toContain("For machines on your local network or tailnet.");
 
   act(() => root.unmount());
   // Leaving the form must not wipe an error that belongs to another screen.
   expect(harness.pendingConnectionError).toBe("Could not send the message.");
+});
+
+it("splits a pasted pairing link and preserves the code during address edits", () => {
+  (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+  vi.stubGlobal("__DEV__", false);
+  harness.pendingConnectionError = null;
+  const container = document.createElement("div");
+  const root = createRoot(container);
+
+  try {
+    act(() => root.render(<ConnectionsNewRouteScreen route={{ params: undefined }} />));
+    const address = container.querySelector<HTMLInputElement>('input[aria-label="Address"]')!;
+    const code = container.querySelector<HTMLInputElement>('input[aria-label="Code"]')!;
+    const enter = (input: HTMLInputElement, value: string) => {
+      act(() => {
+        Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(
+          input,
+          value,
+        );
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+      });
+    };
+
+    enter(code, "manual-code");
+    enter(address, "  http://100.82.53.91:3773/pair#token=test-pairing-code\n");
+    expect(address.value).toBe("http://100.82.53.91:3773");
+    expect(code.value).toBe("test-pairing-code");
+
+    enter(code, "replacement-code");
+    for (const value of ["", "100.82.53.92:3773", "http://100.82.53.92:3773/"]) {
+      enter(address, value);
+      expect(address.value).toBe(value);
+      expect(code.value).toBe("replacement-code");
+    }
+  } finally {
+    act(() => root.unmount());
+  }
 });

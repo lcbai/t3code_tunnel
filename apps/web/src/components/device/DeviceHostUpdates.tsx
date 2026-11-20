@@ -1,4 +1,5 @@
 import type { DeviceServiceState, EnvironmentId } from "@t3tools/contracts";
+import { T, useGT } from "gt-react";
 import { useState } from "react";
 import { Button } from "~/components/ui/button";
 import { deviceEnvironment } from "~/state/device";
@@ -11,6 +12,7 @@ export function DeviceHostUpdates({
   state: DeviceServiceState;
   environmentId: EnvironmentId;
 }) {
+  const gt = useGT();
   const retry = useAtomCommand(deviceEnvironment.list);
   const [pending, setPending] = useState<string | null>(null);
   if (state.hostStatus === "disabled") return null;
@@ -31,14 +33,17 @@ export function DeviceHostUpdates({
               <p className="whitespace-pre-wrap break-words text-muted-foreground">
                 {status.detail ??
                   (failed
-                    ? "设备支持无法启动。"
+                    ? gt("Device support could not start.")
                     : status.status === "installing"
-                      ? "正在安装设备工具…"
-                      : "启动设备工具…")}
+                      ? gt("Installing device tools…")
+                      : gt("Starting device tools…"))}
               </p>
               {failed ? (
                 <p className="mt-1 text-muted-foreground">
-                  检查主机连接和网络访问，然后重试。您的设备设置已被保存。
+                  <T>
+                    Check the host connection and network access, then retry. Your device settings
+                    are saved.
+                  </T>
                 </p>
               ) : null}
             </div>
@@ -54,7 +59,7 @@ export function DeviceHostUpdates({
                   );
                 }}
               >
-                {pending === host.id ? "正在重试…" : "重试"}
+                {pending === host.id ? gt("Retrying…") : gt("Retry")}
               </Button>
             ) : null}
           </div>

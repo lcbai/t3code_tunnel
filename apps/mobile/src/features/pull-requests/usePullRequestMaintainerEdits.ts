@@ -1,3 +1,4 @@
+import { errorDisplayMessage } from "@t3tools/client-runtime/errors";
 import { useAtomRefresh } from "@effect/atom-react";
 import {
   maintainerEditsChoiceInForce,
@@ -6,11 +7,13 @@ import {
 import { squashAtomCommandFailure } from "@t3tools/client-runtime/state/runtime";
 import type { PullRequestDetail } from "@t3tools/contracts";
 import { AsyncResult } from "effect/reactivity";
+import { useGT } from "gt-react-native";
 import { useRef, useState } from "react";
 import * as Dialog from "../../components/ui/Dialog";
 import { composerPullRequests } from "../../state/pull-requests";
 import { useAtomCommand } from "../../state/use-atom-command";
 import { pullRequestTarget, type PullRequestParams } from "./usePullRequestDiff";
+import { m } from "../../i18n/messages";
 
 export function usePullRequestMaintainerEdits(
   params: PullRequestParams,
@@ -18,6 +21,7 @@ export function usePullRequestMaintainerEdits(
   canEdit: boolean,
 ) {
   const target = pullRequestTarget(params);
+  const gt = useGT();
   const update = useAtomCommand(composerPullRequests.update, { reportFailure: false });
   const refreshDetail = useAtomRefresh(composerPullRequests.detail(target));
   const pending = useRef(false);
@@ -43,7 +47,12 @@ export function usePullRequestMaintainerEdits(
     if (AsyncResult.isFailure(response)) {
       setChoice(previousChoice);
       const cause = squashAtomCommandFailure(response);
-      Dialog.alert("无法保存维护者权限", cause instanceof Error ? cause.message : "请重试。");
+      Dialog.alert(
+        gt("Could not save maintainer access"),
+        cause instanceof Error
+          ? (errorDisplayMessage(cause, m) ?? cause.message)
+          : gt("Try again."),
+      );
       return;
     }
     refreshDetail();
@@ -53,8 +62,10 @@ export function usePullRequestMaintainerEdits(
     value,
     saving,
     subtitle: saving
-      ? "正在保存…"
-      : "维护者可以推送到此分支。如果你的分叉仓库包含工作流，此权限也可能允许访问其密钥。",
+      ? gt("Saving…")
+      : gt(
+          "Maintainers can push to this branch. If your fork has workflows, this can also give access to its secrets.",
+        ),
     toggle: () => void save(!value),
   };
 }

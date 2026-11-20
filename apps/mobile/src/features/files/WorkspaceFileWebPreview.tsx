@@ -1,3 +1,4 @@
+import { T, useGT } from "gt-react-native";
 import { useState } from "react";
 import { View } from "react-native";
 import { WebView } from "react-native-webview";
@@ -11,17 +12,20 @@ import { PdfPreview } from "../../components/PdfPreview";
 import { ControlPill } from "../../components/ui/ControlPill";
 import { useHardwareBack } from "../../lib/backHandler";
 import { isPdfPreviewUri } from "../../lib/pdfPreview";
+import { webViewDecelerationRate } from "../../lib/webViewDecelerationRate";
 import { useContentTopInset } from "../../components/ui/useBarInset";
 
 export function WorkspaceFileWebPreview(props: { readonly uri: string | null }) {
+  const gt = useGT();
   if (props.uri === null) {
-    return <FilePreviewLoading message="正在准备预览…" background="card" />;
+    return <FilePreviewLoading message={gt("Preparing preview...")} background="card" />;
   }
   return <DocumentWebPreview key={props.uri} uri={props.uri} />;
 }
 
 function DocumentWebPreview(props: { readonly uri: string }) {
   const headerInset = useContentTopInset();
+  const gt = useGT();
   const [loadProgress, setLoadProgress] = useState(0);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [linkedPdf, setLinkedPdf] = useState<string | null>(null);
@@ -45,7 +49,11 @@ function DocumentWebPreview(props: { readonly uri: string }) {
         <View className="flex-1" style={{ paddingTop: headerInset }}>
           <PdfPreview key={linkedPdf} uri={linkedPdf} />
           <SafeAreaView edges={["bottom"]} className="border-t border-border px-4 py-2">
-            <ControlPill label="返回文档" variant="pill" onPress={() => setLinkedPdf(null)} />
+            <ControlPill
+              label={gt("Back to document")}
+              variant="pill"
+              onPress={() => setLinkedPdf(null)}
+            />
           </SafeAreaView>
         </View>
       ) : null}
@@ -54,9 +62,11 @@ function DocumentWebPreview(props: { readonly uri: string }) {
           source={{ uri: props.uri }}
           // react-native-webview defaults to "never", which starts the page under the header.
           contentInsetAdjustmentBehavior="automatic"
+          decelerationRate={webViewDecelerationRate}
           originWhitelist={["*"]}
           allowsBackForwardNavigationGestures
           allowsFullscreenVideo
+          allowsInlineMediaPlayback
           setSupportMultipleWindows={false}
           onShouldStartLoadWithRequest={(request) => {
             if (request.isTopFrame !== false && isPdfPreviewUri(request.url)) {
@@ -78,7 +88,7 @@ function DocumentWebPreview(props: { readonly uri: string }) {
           }}
           onError={(event) => {
             setLoadProgress(0);
-            setLoadError(event.nativeEvent.description || "The file could not be rendered.");
+            setLoadError(event.nativeEvent.description || gt("The file could not be rendered."));
           }}
           renderLoading={() => (
             <View className="absolute inset-0 items-center justify-center bg-card">
@@ -91,7 +101,9 @@ function DocumentWebPreview(props: { readonly uri: string }) {
           {loadProgress > 0 && loadProgress < 1 ? <LoadingStrip progress={loadProgress} /> : null}
           {loadError ? (
             <View className="border-b border-border bg-card px-4 py-2">
-              <Text className="text-xs font-t3-bold text-foreground">预览失败</Text>
+              <Text className="text-xs font-t3-bold text-foreground">
+                <T>Preview failed</T>
+              </Text>
               <Text className="mt-0.5 text-xs leading-snug text-foreground-muted">{loadError}</Text>
             </View>
           ) : null}

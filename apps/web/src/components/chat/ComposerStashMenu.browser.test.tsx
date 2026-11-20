@@ -63,7 +63,7 @@ function Composer({ dialog = false }: { dialog?: boolean }) {
 }
 
 const editor = () => page.getByRole("textbox", { name: "Message" });
-const stash = () => page.getByRole("list", { name: "粘贴的提示" });
+const stash = () => page.getByRole("list", { name: "Stashed prompts" });
 const press = (keys: string) => userEvent.keyboard(keys);
 const focus = (element: Element) => act(async () => (element as HTMLElement).focus());
 

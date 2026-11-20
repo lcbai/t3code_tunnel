@@ -13,7 +13,10 @@ import * as Ref from "effect/Ref";
 import * as Schema from "effect/Schema";
 
 import * as ElectronWindow from "../electron/ElectronWindow.ts";
-import { SSH_PASSWORD_PROMPT_CHANNEL } from "../ipc/channels.ts";
+import {
+  SSH_PASSWORD_PROMPT_CHANNEL,
+  SSH_PASSWORD_PROMPT_SETTLED_CHANNEL,
+} from "../ipc/channels.ts";
 
 const DEFAULT_SSH_PASSWORD_PROMPT_TIMEOUT_MS = 3 * 60 * 1000;
 
@@ -38,6 +41,7 @@ const DesktopSshPromptPresentationOperation = Schema.Literals([
   "check-window-after-restore",
   "focus-window",
   "remove-window-close-listener",
+  "send-prompt-settled",
 ]);
 type DesktopSshPromptPresentationOperation = typeof DesktopSshPromptPresentationOperation.Type;
 
@@ -49,7 +53,7 @@ export class DesktopSshPromptRequestIdGenerationError extends Schema.TaggedError
   },
 ) {
   override get message(): string {
-    return "无法生成安全随机数。";
+    return "Secure randomness is unavailable.";
   }
 }
 
@@ -113,7 +117,7 @@ export class DesktopSshPromptWindowClosedError extends Schema.TaggedError<Deskto
   },
 ) {
   override get message(): string {
-    return "应用窗口已关闭，SSH 验证已取消。";
+    return "SSH authentication was cancelled because the app window closed.";
   }
 }
 
@@ -125,7 +129,7 @@ export class DesktopSshPromptServiceStoppedError extends Schema.TaggedError<Desk
   },
 ) {
   override get message(): string {
-    return "SSH 密码输入服务已停止。";
+    return "SSH password prompt service stopped.";
   }
 }
 
@@ -136,7 +140,7 @@ export class DesktopSshPromptInvalidRequestIdError extends Schema.TaggedError<De
   },
 ) {
   override get message(): string {
-    return "SSH 密码请求 ID 无效。";
+    return "Invalid SSH password prompt id.";
   }
 }
 
@@ -147,7 +151,7 @@ export class DesktopSshPromptExpiredError extends Schema.TaggedError<DesktopSshP
   },
 ) {
   override get message(): string {
-    return "SSH 密码请求已过期，请重新连接。";
+    return "SSH password prompt expired. Try connecting again.";
   }
 }
 
@@ -371,11 +375,22 @@ export const make = Effect.fn("desktop.sshPasswordPrompts.make")(function* (
             cause,
           }),
       });
+    // However the request ends, the window drops its prompt, so no ended prompt stays on screen.
+    const notifySettled = runPresentationOperation("send-prompt-settled", () => {
+      if (!window.value.isDestroyed()) {
+        window.value.webContents.send(SSH_PASSWORD_PROMPT_SETTLED_CHANNEL, requestId);
+      }
+    }).pipe(Effect.ignore);
     const cleanup = runPresentationOperation("remove-window-close-listener", () => {
       if (!window.value.isDestroyed()) {
         window.value.removeListener("closed", cancelOnWindowClosed);
       }
-    }).pipe(Effect.orDie, Effect.ensuring(removePending(pendingRef, requestId)), Effect.asVoid);
+    }).pipe(
+      Effect.orDie,
+      Effect.ensuring(removePending(pendingRef, requestId)),
+      Effect.ensuring(notifySettled),
+      Effect.asVoid,
+    );
     const waitForPassword = Deferred.await(deferred).pipe(
       Effect.timeoutOption(Duration.millis(passwordPromptTimeoutMs)),
       Effect.flatMap(

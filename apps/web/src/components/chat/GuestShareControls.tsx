@@ -10,6 +10,7 @@ import {
   type ScopedThreadRef,
   type ThreadGuestShare,
 } from "@t3tools/contracts";
+import { msg, T, useGT } from "gt-react";
 import { CheckIcon, CopyIcon, UserIcon } from "lucide-react";
 import { useState } from "react";
 
@@ -70,6 +71,7 @@ function GuestShareDialog({
   readonly threadRef: ScopedThreadRef;
   readonly onClose: () => void;
 }) {
+  const gt = useGT();
   const activeShare = useThreadGuestShare(threadRef);
   const canCreate = useAtomValue(
     serverEnvironment.createGuestShare.permissionAtom(threadRef.environmentId),
@@ -77,7 +79,13 @@ function GuestShareDialog({
   const createGuestShare = useAtomCommand(serverEnvironment.createGuestShare, {
     reportFailure: false,
   });
-  const { copyToClipboard, isCopied } = useCopyToClipboard({ target: "guest link" });
+  const { copyToClipboard, isCopied } = useCopyToClipboard({
+    target: {
+      target: "guest link",
+      unavailableMessage: msg("Clipboard API is unavailable while copying guest link."),
+      failureMessage: msg("Failed to copy guest link to the clipboard."),
+    },
+  });
   const [state, setState] = useState<CreateState>({ status: "idle" });
 
   const create = async () => {
@@ -97,7 +105,7 @@ function GuestShareDialog({
     const error = squashAtomCommandFailure(result);
     setState({
       status: "failed",
-      message: error instanceof Error ? error.message : "无法创建访客链接。",
+      message: error instanceof Error ? error.message : gt("Could not create a guest link."),
     });
   };
 
@@ -110,9 +118,14 @@ function GuestShareDialog({
     >
       <DialogPopup className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>与嘉宾分享</DialogTitle>
+          <DialogTitle>
+            <T>Share with guest</T>
+          </DialogTitle>
           <DialogDescription>
-            嘉宾会像您一样看到会话，包括命令输出和代理商的推理。他们发送的每个消息都会等待您。
+            <T>
+              The guest sees the thread as you do, including command output and the agent&apos;s
+              reasoning. Each message they send waits for you.
+            </T>
           </DialogDescription>
         </DialogHeader>
         <DialogPanel>
@@ -120,20 +133,20 @@ function GuestShareDialog({
             <div className="flex items-center gap-2">
               <Input
                 readOnly
-                aria-label="来宾链接"
+                aria-label={gt("Guest link")}
                 value={state.url}
                 onFocus={(event) => event.currentTarget.select()}
               />
               <Button size="sm" variant="outline" onClick={() => copyToClipboard(state.url)}>
                 {isCopied ? <CheckIcon /> : <CopyIcon />}
-                {isCopied ? "已复制" : "复制"}
+                {isCopied ? gt("Copied") : gt("Copy", { $context: "verb, copy the link" })}
               </Button>
             </div>
           ) : (
             <p className="text-muted-foreground text-sm">
               {activeShare !== null
-                ? "一个新的链接结束当前的链接。"
-                : "连线工作一次,24小时后失效。"}
+                ? gt("A new link ends the current one.")
+                : gt("The link works once and expires in 24 hours.")}
             </p>
           )}
           {state.status === "failed" ? (
@@ -145,7 +158,7 @@ function GuestShareDialog({
         <DialogFooter>
           {state.status === "created" ? (
             <Button size="sm" onClick={onClose}>
-              完成
+              <T context="button that closes the dialog">Done</T>
             </Button>
           ) : (
             <>
@@ -155,14 +168,14 @@ function GuestShareDialog({
                 onClick={onClose}
                 disabled={state.status === "creating"}
               >
-                取消
+                <T>Cancel</T>
               </Button>
               <Button
                 size="sm"
                 onClick={() => void create()}
                 disabled={!canCreate || state.status === "creating"}
               >
-                {state.status === "creating" ? "正在创建…" : "创建链接"}
+                {state.status === "creating" ? gt("Creating...") : gt("Create link")}
               </Button>
             </>
           )}
@@ -176,7 +189,7 @@ function GuestShareDialog({
 export function GuestShareIndicator({ threadRef }: { readonly threadRef: ScopedThreadRef }) {
   const share = useThreadGuestShare(threadRef);
   const closeGuestShare = useOrchestrationCommand(threadEnvironment.closeGuestShare, {
-    label: "停止宾客共享",
+    label: "stop guest share",
   });
   const [closing, setClosing] = useState(false);
   if (share === null) return null;
@@ -197,17 +210,30 @@ export function GuestShareIndicator({ threadRef }: { readonly threadRef: ScopedT
           setClosing(false);
         }}
       >
-        停止共享
+        <T>Stop sharing</T>
       </Button>
     </div>
   );
 }
 
 function GuestShareStatus({ share }: { readonly share: ThreadGuestShare }) {
+  const gt = useGT();
   const nowMinute = useNowMinute();
   // The share stays on the thread after it expires, until the owner clears it.
-  if (share.expiresAt.slice(0, 16) <= nowMinute) return <span>客机链接已过期</span>;
-  return <span>{share.guestName !== null ? `${share.guestName} 是访客` : "已激活的来宾链接"}</span>;
+  if (share.expiresAt.slice(0, 16) <= nowMinute) {
+    return (
+      <span>
+        <T>Guest link expired</T>
+      </span>
+    );
+  }
+  return (
+    <span>
+      {share.guestName !== null
+        ? gt("{guestName} is a guest", { guestName: share.guestName })
+        : gt("Guest link active")}
+    </span>
+  );
 }
 
 /**
@@ -223,10 +249,11 @@ export function GuestPendingMessages({
   readonly onImageExpand: (preview: ExpandedImagePreview) => void;
   readonly onFileOpen: (attachment: ChatFileAttachment) => void;
 }) {
+  const gt = useGT();
   const share = useThreadGuestShare(threadRef);
   const canOperate = useEnvironmentScope(threadRef.environmentId, AuthOrchestrationOperateScope);
   const resolveGuestMessage = useOrchestrationCommand(threadEnvironment.resolveGuestMessage, {
-    label: "解析来宾信件",
+    label: "resolve guest message",
   });
   const [busyIds, setBusyIds] = useState<ReadonlySet<GuestMessageId>>(new Set());
   const pending = share?.messages.filter((message) => message.status === "pending") ?? [];
@@ -243,7 +270,7 @@ export function GuestPendingMessages({
     }),
   );
   if (share === null || pending.length === 0) return null;
-  const guestName = share.guestName ?? "Guest";
+  const guestName = share.guestName ?? gt("Guest");
   const openImage = (attachment: ChatAttachment) => {
     const preview = buildExpandedImagePreview(
       images.map((image) => ({ ...image, previewUrl: imageUrlById.get(image.id) ?? "" })),
@@ -268,7 +295,10 @@ export function GuestPendingMessages({
   return (
     <ol
       className="chat-content-lane flex flex-col gap-4 pb-4"
-      aria-label={`${pending.length} 条访客消息等待处理`}
+      aria-label={gt(
+        "{count, plural, one {{count} guest message waiting} other {{count} guest messages waiting}}",
+        { count: pending.length },
+      )}
       aria-live="polite"
     >
       {pending.map((message) => {
@@ -300,18 +330,18 @@ export function GuestPendingMessages({
                   size="xs"
                   variant="ghost-muted"
                   disabled={busy}
-                  aria-label={`忽略 ${guestName} 的消息`}
+                  aria-label={gt("Dismiss message from {guestName}", { guestName })}
                   onClick={() => void resolve(message.id, "dismiss")}
                 >
-                  开除
+                  <T>Dismiss</T>
                 </Button>
                 <Button
                   size="xs"
                   disabled={busy}
-                  aria-label={`发送 ${guestName} 的消息`}
+                  aria-label={gt("Send message from {guestName}", { guestName })}
                   onClick={() => void resolve(message.id, "send")}
                 >
-                  发送
+                  <T>Send</T>
                 </Button>
               </div>
             ) : null}

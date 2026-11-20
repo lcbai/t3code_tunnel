@@ -6,7 +6,7 @@ import { APP_VERSION } from "../../branding";
 import { AnchoredToastProvider } from "../ui/toast";
 import { AboutVersionTitle } from "./AboutVersionTitle";
 
-it("shows copy confirmation when the version is clicked without waiting for a hover tooltip", async () => {
+it("copies the version without a notification", async () => {
   await using screen = await render(
     <AnchoredToastProvider>
       <AboutVersionTitle />
@@ -14,8 +14,8 @@ it("shows copy confirmation when the version is clicked without waiting for a ho
   );
   using write = vi.spyOn(navigator.clipboard, "writeText").mockResolvedValue(undefined);
 
-  await screen.getByRole("button", { name: `复制版本${APP_VERSION}` }).click();
+  await screen.getByRole("button", { name: `Copy version ${APP_VERSION}` }).click();
 
   expect(write).toHaveBeenCalledWith(APP_VERSION);
-  await expect.element(page.getByText(/^已复制[！!]?$/)).toBeVisible();
+  await expect.element(page.getByText(/^Copied!?$/)).not.toBeInTheDocument();
 });

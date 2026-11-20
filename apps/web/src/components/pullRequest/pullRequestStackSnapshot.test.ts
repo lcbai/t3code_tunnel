@@ -73,15 +73,11 @@ describe("saved stack navigation", () => {
     expect(pullRequestStackView(query, saved)).toMatchObject({
       data: saved,
       isFresh: false,
-      notice: expect.stringContaining("刷新堆栈"),
+      notice: expect.stringContaining("Refreshing"),
     });
     expect(
       pullRequestStackView({ ...query, isPending: false, error: "Rate limited" }, saved),
-    ).toMatchObject({
-      data: saved,
-      isFresh: false,
-      notice: expect.stringContaining("堆栈数据可能已经过时。我们不能刷新它。"),
-    });
+    ).toMatchObject({ data: saved, isFresh: false, notice: expect.stringContaining("stale") });
   });
   it("prefers refreshed data and honors a successful absence", () => {
     const saved = savedPullRequestStack([link], reference);
@@ -92,10 +88,11 @@ describe("saved stack navigation", () => {
       isFresh: true,
       notice: null,
     });
-    expect(pullRequestStackView({ ...query, isPending: true }, saved).isFresh).toBe(true);
+    // A shown answer being read again may be one restored from the device, so it cannot clear a merge.
+    expect(pullRequestStackView({ ...query, isPending: true }, saved).isFresh).toBe(false);
     expect(pullRequestStackView({ ...query, data: null, isPending: true }, saved)).toMatchObject({
       data: null,
-      isFresh: true,
+      isFresh: false,
     });
   });
 });

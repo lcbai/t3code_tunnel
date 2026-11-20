@@ -386,7 +386,24 @@ describe("OtelEnvironment", () => {
   });
 });
 
-describe("configured tracing", () => {
+describe("isRelayTracingEnabled", () => {
+  it("defaults on and respects the T3CODE SDK override of the standard kill switch", () => {
+    assert.isTrue(OtelEnvironment.isRelayTracingEnabled({}));
+    assert.isFalse(OtelEnvironment.isRelayTracingEnabled({ OTEL_SDK_DISABLED: "true" }));
+    assert.isTrue(
+      OtelEnvironment.isRelayTracingEnabled({
+        OTEL_SDK_DISABLED: "true",
+        T3CODE_OTEL_SDK_DISABLED: "false",
+      }),
+    );
+    assert.isFalse(
+      OtelEnvironment.isRelayTracingEnabled({
+        OTEL_SDK_DISABLED: "false",
+        T3CODE_OTEL_SDK_DISABLED: "true",
+      }),
+    );
+  });
+
   it.effect("product opt-out beats SDK enable without disabling user-configured tracing", () =>
     Effect.gen(function* () {
       const env = {
@@ -395,6 +412,7 @@ describe("configured tracing", () => {
         OTEL_SDK_DISABLED: "true",
         OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: "https://user.example.test/v1/traces",
       };
+      assert.isFalse(OtelEnvironment.isRelayTracingEnabled(env));
 
       const otel = yield* load(env);
       assert.isFalse(otel.disabled);

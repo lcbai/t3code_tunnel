@@ -1,3 +1,5 @@
+import { errorDisplayMessage } from "@t3tools/client-runtime/errors";
+import { T, useGT } from "gt-react-native";
 import { ScreenScrollView as ScrollView } from "../../components/ui/ScreenScrollView";
 import { AppText as Text, AppTextInput } from "../../components/ui/AppText";
 import { Button } from "../../components/ui/Button";
@@ -44,8 +46,10 @@ import { leaveSettingsPage } from "./settings-navigation";
 import { workspaceHasColumns } from "../layout/workspace/workspace-selection-store";
 import { DEFAULT_SETTINGS_PAGE } from "../layout/workspace/workspace-tab-navigation";
 import { readUnloadedThreadCount } from "../../state/olderSettledShelf";
+import { m } from "../../i18n/messages";
 
 export function SettingsProjectOverviewRouteScreen() {
+  const gt = useGT();
   const environmentMenu = useSettingsEnvironmentMenu();
   const insets = useSafeAreaInsets();
   const [isRemoving, setIsRemoving] = useState(false);
@@ -84,7 +88,7 @@ export function SettingsProjectOverviewRouteScreen() {
       .filter((project) => selectedEnvironmentIds.has(project.environmentId)) ?? [];
 
   return (
-    <SettingsScreen title="项目" menus={[environmentMenu]}>
+    <SettingsScreen title={gt("Projects")} menus={[environmentMenu]}>
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         showsVerticalScrollIndicator={false}
@@ -94,11 +98,14 @@ export function SettingsProjectOverviewRouteScreen() {
       >
         {selectedProjectKey === null ? (
           <Text className="px-2 text-base text-foreground-muted">
-            用上方的筛选条件选择项目，即可管理项目名称、检出目录，或移除项目。
+            <T>Choose a project with the filter above to manage its name, checkouts and removal.</T>
           </Text>
         ) : !group || members.length === 0 ? (
           <Text className="px-2 text-base text-foreground-muted">
-            此项目在所选的已连接环境中没有检出目录。请调整上方筛选条件。
+            <T>
+              This project has no checkout on the selected connected environments. Change the filter
+              above.
+            </T>
           </Text>
         ) : (
           <ProjectOverviewContent
@@ -135,9 +142,14 @@ function ProjectOverviewContent(props: {
   readonly projectKey: string | null;
   readonly onProjectRemoved: (projectKey: string | null) => void;
 }) {
+  const gt = useGT();
   const { isRemoving, setIsRemoving, startRemoval, finishRemoval } = props;
   const representative = props.members[0]!;
-  const displayName = deriveProjectGroupLabel({ representative, members: props.members });
+  const displayName = deriveProjectGroupLabel({
+    groupKey: props.group.key,
+    representative,
+    members: props.members,
+  });
   const [draftName, setDraftName] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const threads = useThreadShells();
@@ -177,7 +189,10 @@ function ProjectOverviewContent(props: {
     setIsOrganizing(true);
     for (const member of allMembers) {
       if (!readEnvironmentScope(member.environmentId, AuthOrchestrationOperateScope)) {
-        Dialog.alert("更新项目失败", "此连接已无法修改此项。");
+        Dialog.alert(
+          gt("Failed to update project"),
+          gt("This connection can no longer change it."),
+        );
         break;
       }
       const result = await organizeProject({
@@ -188,8 +203,10 @@ function ProjectOverviewContent(props: {
         if (!isAtomCommandInterrupted(result)) {
           const error = squashAtomCommandFailure(result);
           Dialog.alert(
-            `更新失败：「${member.title}"`,
-            error instanceof Error ? error.message : "发生错误。",
+            gt('Failed to update "{project}"', { project: member.title }),
+            error instanceof Error
+              ? (errorDisplayMessage(error, m) ?? error.message)
+              : gt("An error occurred."),
           );
         }
         break;
@@ -209,8 +226,12 @@ function ProjectOverviewContent(props: {
       (entry) => entry.environmentId === denied.environmentId,
     );
     Dialog.alert(
-      "移除项目失败",
-      `This connection cannot change projects in ${environment?.label ?? "this environment"}.`,
+      gt("Failed to remove project"),
+      environment
+        ? gt("This connection cannot change projects in {environment}.", {
+            environment: environment.label,
+          })
+        : gt("This connection cannot change projects in this environment."),
     );
     return false;
   };
@@ -218,23 +239,26 @@ function ProjectOverviewContent(props: {
   const removeMembers = (members: readonly EnvironmentProject[]) => {
     if (!checkRemovalAccess(members) || !startRemoval()) return;
     const projectKey = props.projectKey;
-    const plan = planProjectRemoval({
-      members: members.map((member) => ({
-        ...member,
-        environmentLabel: props.environments.find(
-          (entry) => entry.environmentId === member.environmentId,
-        )?.label,
-      })),
-      groupMemberCount: props.members.length,
-      hasOtherMembers: props.hasOtherMembers,
-      displayName,
-      threads,
-      unloadedThreadCount: readUnloadedThreadCount(members, threads),
-    });
+    const plan = planProjectRemoval(
+      {
+        members: members.map((member) => ({
+          ...member,
+          environmentLabel: props.environments.find(
+            (entry) => entry.environmentId === member.environmentId,
+          )?.label,
+        })),
+        groupMemberCount: props.members.length,
+        hasOtherMembers: props.hasOtherMembers,
+        displayName,
+        threads,
+        unloadedThreadCount: readUnloadedThreadCount(members, threads),
+      },
+      m,
+    );
     Dialog.confirm({
-      title: plan.targetKind === "checkout" ? "移除检出目录" : "移除项目",
+      title: plan.targetKind === "checkout" ? gt("Remove checkout") : gt("Remove project"),
       message: plan.confirmationMessage,
-      confirmText: plan.targetKind === "checkout" ? "移除检出目录" : "移除项目",
+      confirmText: plan.targetKind === "checkout" ? gt("Remove checkout") : gt("Remove project"),
       destructive: true,
       onCancel: finishRemoval,
       onConfirm: () => {
@@ -251,8 +275,10 @@ function ProjectOverviewContent(props: {
               if (!isAtomCommandInterrupted(result)) {
                 const error = squashAtomCommandFailure(result);
                 Dialog.alert(
-                  `移除失败：「${member.title}"`,
-                  error instanceof Error ? error.message : "发生错误。",
+                  gt('Failed to remove "{project}"', { project: member.title }),
+                  error instanceof Error
+                    ? (errorDisplayMessage(error, m) ?? error.message)
+                    : gt("An error occurred."),
                 );
               }
               return;
@@ -313,17 +339,21 @@ function ProjectOverviewContent(props: {
             {displayName}
           </Text>
           <Text className="text-sm text-foreground-muted">
-            {props.members.length === 1 ? "1 checkout" : `${props.members.length} checkouts`}
+            {gt("{count, plural, one {{count} checkout} other {{count} checkouts}}", {
+              count: props.members.length,
+            })}
           </Text>
         </View>
       </View>
 
-      <SettingsSection title="项目">
+      <SettingsSection title={gt("Project")}>
         <View className="gap-3 p-4">
-          <Text className="text-sm font-t3-medium text-foreground-muted">名称</Text>
+          <Text className="text-sm font-t3-medium text-foreground-muted">
+            <T>Name</T>
+          </Text>
           <View className="flex-row items-center gap-3">
             <AppTextInput
-              accessibilityLabel="项目名称"
+              accessibilityLabel={gt("Project name")}
               className="min-h-11 min-w-0 flex-1 rounded-xl border-continuous bg-card px-3 text-base text-foreground"
               value={draftName ?? displayName}
               onChangeText={setDraftName}
@@ -333,8 +363,8 @@ function ProjectOverviewContent(props: {
             />
             {canSave ? (
               <Button
-                label="保存"
-                accessibilityHint="保存项目名称"
+                label={gt("Save")}
+                accessibilityHint={gt("Save project name")}
                 tone="secondary"
                 onPress={saveName}
               />
@@ -344,14 +374,14 @@ function ProjectOverviewContent(props: {
       </SettingsSection>
 
       {canOrganize ? (
-        <SettingsSection title="整理">
+        <SettingsSection title={gt("Organize")}>
           <SettingsSwitchRow
             icon="pin"
-            label="置顶"
+            label={gt("Pin", { $context: "verb, keep the project at the top" })}
             subtitle={
               offline
-                ? "要修改此设置，请连接包含该项目的所有设备。"
-                : "置顶项目显示在项目选择器顶部。"
+                ? gt("Connect every machine with this project to change this.")
+                : gt("Pinned projects come first in project pickers.")
             }
             value={props.group.pinned}
             disabled={isOrganizing || offline}
@@ -359,11 +389,11 @@ function ProjectOverviewContent(props: {
           />
           <SettingsActionRow
             icon="archivebox"
-            label={props.group.archived ? "取消归档项目" : "归档项目"}
+            label={props.group.archived ? gt("Unarchive project") : gt("Archive project")}
             description={
               props.group.archived
-                ? "在项目选择器中隐藏，保留会话和文件。"
-                : "从项目选择器中隐藏此项目，保留会话和文件。"
+                ? gt("Hidden from project pickers. Threads and files are kept.")
+                : gt("Hides the project from project pickers. Threads and files are kept.")
             }
             disabled={isOrganizing || offline}
             onPress={() => void organize({ archived: !props.group.archived })}
@@ -371,7 +401,7 @@ function ProjectOverviewContent(props: {
         </SettingsSection>
       ) : null}
 
-      <SettingsSection title="检出目录">
+      <SettingsSection title={gt("Checkouts")}>
         {props.members.map((member, index) => {
           const environment = props.environments.find(
             (entry) => entry.environmentId === member.environmentId,
@@ -388,7 +418,7 @@ function ProjectOverviewContent(props: {
                     : "text-lg text-foreground"
                 }
               >
-                {environment?.label ?? "环境"}
+                {environment?.label ?? gt("Environment")}
               </Text>
               {environment?.displayUrl ? (
                 <Text className="text-sm leading-normal text-foreground-muted">
@@ -409,22 +439,29 @@ function ProjectOverviewContent(props: {
           );
         })}
       </SettingsSection>
-      <SettingsSection title="危险">
+      <SettingsSection
+        title={gt("Danger", { $context: "section heading for destructive actions" })}
+      >
         <SettingsActionRow
           icon="trash"
           label={
             props.hasOtherMembers
-              ? "移除检出目录"
+              ? gt("Remove checkout")
               : props.members.length > 1
-                ? "从所有设备移除此项目"
-                : "移除项目"
+                ? gt("Remove this project everywhere")
+                : gt("Remove project")
           }
           description={
             props.hasOtherMembers
-              ? "删除所选设备的检出条目和相关会话，保留其他设备上的条目及磁盘文件。"
+              ? gt(
+                  "Deletes the selected machine's checkout entries and their threads. Other machines and files on disk are not touched.",
+                )
               : props.members.length > 1
-                ? `Deletes all ${props.members.length} checkout entries and their threads on every machine. Files on disk are not touched.`
-                : "删除项目条目及其会话，保留磁盘上的文件。"
+                ? gt(
+                    "{count, plural, other {Deletes all {count} checkout entries and their threads on every machine. Files on disk are not touched.}}",
+                    { count: props.members.length },
+                  )
+                : gt("Deletes the project entry and its threads. Files on disk are not touched.")
           }
           tone="danger"
           disabled={!canRemoveGroup || isRemoving}
@@ -441,16 +478,19 @@ function RemoveCheckoutAction(props: {
   readonly disabled: boolean;
   readonly onPress: () => void;
 }) {
+  const gt = useGT();
   const canRemove = useEnvironmentScope(props.member.environmentId, AuthOrchestrationOperateScope);
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`移除检出目录 ${props.member.workspaceRoot}`}
+      accessibilityLabel={gt("Remove checkout {path}", { path: props.member.workspaceRoot })}
       disabled={props.disabled || !canRemove}
       onPress={props.onPress}
       className="self-start rounded-full border border-border bg-card px-3 py-1.5 disabled:opacity-40"
     >
-      <Text className="font-t3-medium text-xs text-danger-foreground">移除检出目录</Text>
+      <Text className="font-t3-medium text-xs text-danger-foreground">
+        <T>Remove checkout</T>
+      </Text>
     </Pressable>
   );
 }

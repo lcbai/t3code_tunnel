@@ -8,7 +8,6 @@ import {
   type AuthCreatePairingCredentialInput,
   type AuthMcpClientAccess,
   type AuthPairingCredentialResult,
-  mcpClientScopes,
 } from "@t3tools/contracts";
 import * as Schema from "effect/Schema";
 import * as Effect from "effect/Effect";
@@ -17,9 +16,11 @@ import * as Option from "effect/Option";
 import type { Atom } from "effect/reactivity";
 import * as SubscriptionRef from "effect/SubscriptionRef";
 
+import * as RemoteEnvironmentAuthorization from "../authorization/service.ts";
 import type { PreparedConnection } from "../connection/model.ts";
 import type { EnvironmentRegistry } from "../connection/registry.ts";
 import * as EnvironmentSupervisor from "../connection/supervisor.ts";
+import * as ManagedRelay from "../relay/managedRelay.ts";
 import { executeAuthenticatedEnvironmentHttpRequest } from "./environmentHttpAuth.ts";
 import { createEnvironmentCommand } from "./runtime.ts";
 
@@ -46,8 +47,14 @@ const mintPairingCredential = Effect.fn("clientRuntime.state.mintPairingCredenti
   prepared: PreparedConnection,
   payload: AuthCreatePairingCredentialInput,
 ): Effect.fn.Return<AuthPairingCredentialResult, PeerPairingCodeError, HttpClient.HttpClient> {
+  const signer = yield* Effect.serviceOption(ManagedRelay.ManagedRelayDpopSigner);
+  const remoteAuthorization = yield* Effect.serviceOption(
+    RemoteEnvironmentAuthorization.RemoteEnvironmentAuthorization,
+  );
   const minted = yield* executeAuthenticatedEnvironmentHttpRequest({
     prepared,
+    signer,
+    remoteAuthorization,
     group: "auth",
     method: "POST",
     url: (urls) => urls.pairingCredential(),
@@ -79,6 +86,15 @@ const mintOnEnvironment = Effect.fnUntraced(function* (payload: AuthCreatePairin
       cause: "The environment is not connected.",
     });
   }
+  if (
+    payload.purpose === "peer-link" &&
+    prepared.value.descriptor?.capabilities.peerLinkPairingCodes !== true
+  ) {
+    return yield* new PeerPairingCodeError({
+      reason: "unavailable",
+      cause: "The environment does not support peer-link pairing codes.",
+    });
+  }
   return yield* mintPairingCredential(prepared.value, payload);
 });
 
@@ -92,7 +108,19 @@ export function createPeerPairingCodeCommand<R, E>(
   return createEnvironmentCommand(runtime, {
     label: "environment-data:peer-pairing-code:mint",
     execute: (access: AuthMcpClientAccess) =>
-      mintOnEnvironment({ label: PEER_PAIRING_CODE_LABEL, scopes: mcpClientScopes(access) }).pipe(
+      mintOnEnvironment({
+        label: PEER_PAIRING_CODE_LABEL,
+        access,
+        purpose: "peer-link",
+      }).pipe(
+        Effect.filterOrFail(
+          (minted) => minted.purpose === "peer-link" && minted.access === access,
+          () =>
+            new PeerPairingCodeError({
+              reason: "unavailable",
+              cause: "The environment did not issue a peer-link code.",
+            }),
+        ),
         Effect.map((minted) => minted.credential),
       ),
   });

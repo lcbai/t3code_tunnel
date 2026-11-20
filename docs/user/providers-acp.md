@@ -28,26 +28,6 @@ provider instance's environment overrides to use ACP v1.
 Search only shows agents that can run on the connected server. Registry agents are third-party
 code; review an agent's source and license before adding it.
 
-### Qoder CLI
-
-Search for **Qoder CLI** in the ACP Registry and add it. The environment needs Node.js and npm
-for the managed installation. Use **Sign in** on the provider card, or run `qoder login` on the
-environment if Qoder CLI is already installed there. To use a Qoder personal access token, set
-`QODER_PERSONAL_ACCESS_TOKEN` in the instance's environment settings using a secret source.
-See [Qoder's ACP documentation](https://docs.qoder.com/zh/cli/acp).
-
-### Qoder CN
-
-在运行 T3 Code 的环境上安装 [Qoder CN CLI](https://docs.qoder.cn/cli/installation)。
-打开 **设置 → 代理提供方 → 添加代理提供方**，选择 **Qoder CN** 并点击 **下一步**，
-确认名称后添加实例。
-T3 Code 会使用该环境上的 CLI。需要认证时，在提供方卡片上选择 **登录**。
-
-提供方卡片会显示已安装版本和可用更新。开启 **运行环境 → 自动升级 Qoder CN** 后，
-运行中的 T3 Code 服务会在后台检查并升级受支持的 CLI 安装。每个安装的同一版本在服务
-运行期间只自动尝试一次。升级失败时可以从提供方卡片手动重试。运行中的会话可继续使用
-原版本，新启动的会话使用更新后的 CLI。
-
 ## Add a local command
 
 In **Settings → Providers → Add provider**, select **Show more**, then **Local ACP command**. Enter the executable
@@ -62,7 +42,7 @@ without expanding shell expressions.
 ## Where agents run
 
 Registry agents always run on the machine that hosts your T3 Code server. That stays true when you
-connect through a remote client, including the hosted web app.
+connect through `app.t3.codes`, T3 Connect, or a relay.
 
 Agents install under `tools/<agent-id>/<version>/` inside T3 home. T3 Code verifies SHA-256 when the Registry entry
 provides one; entries without a checksum retain the Registry's HTTPS distribution guarantee.
@@ -148,8 +128,8 @@ remain agent-specific.
 ## Checkpoints
 
 Checkpoint rollback restores your files as usual. ACP agents cannot rewind their own conversation,
-so the next turn after a rollback starts a fresh agent session that no longer remembers the
-conversation from before the checkpoint.
+so the next turn after a rollback starts a fresh agent session and T3 Code sends it the kept
+conversation, without the turns you rolled back.
 
 Registry instances are not used for T3's app-owned text generation, such as thread titles, commit
 messages, branch names, or pull request descriptions. Configure a text-generation-capable provider

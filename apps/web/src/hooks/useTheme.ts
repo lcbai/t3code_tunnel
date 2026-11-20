@@ -103,7 +103,7 @@ export class ThemeStorageError extends Schema.TaggedError<ThemeStorageError>()(
   },
 ) {
   override get message(): string {
-    return `失败到${this.operation} 主题偏好${this.storageKey}。`;
+    return `Failed to ${this.operation} theme preference for ${this.storageKey}.`;
   }
 }
 

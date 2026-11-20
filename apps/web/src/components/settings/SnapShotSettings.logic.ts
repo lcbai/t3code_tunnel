@@ -1,4 +1,7 @@
 import type { ClientSettingsPatch, DesktopSnapShotState, SnapShotSound } from "@t3tools/contracts";
+import { msg } from "gt-react";
+
+import { m, type MessageResolver } from "../../i18n/messages";
 import {
   captureSetupBackend,
   captureSetupDesktopName,
@@ -6,46 +9,74 @@ import {
   captureSetupMacPermissionsReady,
 } from "./SnapShotSetupDialog.logic";
 
-export function snapShotStatus(state: DesktopSnapShotState | null, enabled: boolean): string {
-  if (!state) return "Checking snapshots…";
-  if (state.mode === "unavailable") return state.message ?? "Not supported on this platform.";
-  if (!enabled) return "Turn this on to set up snapshots.";
-  return snapShotSetupSummary(state, enabled);
+export function snapShotStatus(
+  state: DesktopSnapShotState | null,
+  enabled: boolean,
+  resolve: MessageResolver = m,
+): string {
+  if (!state) return resolve(msg("Checking snapshots…"));
+  if (state.mode === "unavailable")
+    return state.message ?? resolve(msg("Not supported on this platform."));
+  if (!enabled) return resolve(msg("Turn this on to set up snapshots."));
+  return snapShotSetupSummary(state, enabled, resolve);
 }
 
-export function snapShotSetupSummary(state: DesktopSnapShotState, enabled: boolean): string {
-  if (state.message) return "需要注意抓获";
+export function snapShotSetupSummary(
+  state: DesktopSnapShotState,
+  enabled: boolean,
+  resolve: MessageResolver = m,
+): string {
+  if (state.message) return resolve(msg("Capture needs attention"));
   if (state.linuxBackend === "hyprland" && state.hyprlandHelper?.status !== "ready")
-    return state.hyprlandHelper?.status === "error" ? "检查设置中的抓取访问" : "安装抓取帮助以继续";
+    return state.hyprlandHelper?.status === "error"
+      ? resolve(msg("Check capture access in setup"))
+      : resolve(msg("Install the capture helper to continue"));
   if (captureSetupBackend(state) === "gnome" && state.gnomeExtension?.status !== "enabled")
-    return "设置活动窗口快照";
+    return resolve(msg("Set up active-window snapshots"));
   if (captureSetupBackend(state) === "kde" && state.kdeHelper?.status !== "ready")
-    return state.kdeHelper?.status === "error" ? "检查设置中的抓取访问" : "安装抓取帮助以继续";
-  if (captureSetupBackend(state) === "picker") return "仅手动抓取。每次您会选择窗口。";
-  if (!enabled) return "允许继续抓取";
+    return state.kdeHelper?.status === "error"
+      ? resolve(msg("Check capture access in setup"))
+      : resolve(msg("Install the capture helper to continue"));
+  if (captureSetupBackend(state) === "picker")
+    return resolve(msg("Manual capture only. You'll choose a window each time"));
+  if (!enabled) return resolve(msg("Enable capture to continue"));
   if (state.shortcutPending)
-    return state.linuxBackend === "hyprland" ? "正在连接您的快捷键…" : "等待快捷键权限";
-  if (state.shortcutVerified) return "准备捕捉";
-  if (state.linuxBackend === "niri" && state.shortcutBinding) return "使用另一个应用程序的快捷键";
+    return state.linuxBackend === "hyprland"
+      ? resolve(msg("Connecting your shortcut…"))
+      : resolve(msg("Waiting for shortcut permission"));
+  if (state.shortcutVerified) return resolve(msg("Ready to capture"));
+  if (state.linuxBackend === "niri" && state.shortcutBinding)
+    return resolve(msg("Use your shortcut from another app"));
   if (state.linuxBackend === "hyprland" && state.shortcutActionRegistered)
-    return "使用另一个应用程序的快捷键";
-  if (state.shortcutRegistered) return state.shortcutLabel ? "准备捕捉" : "快捷键已保存";
-  return "完成快捷键设置";
+    return resolve(msg("Use your shortcut from another app"));
+  if (state.shortcutRegistered)
+    return state.shortcutLabel ? resolve(msg("Ready to capture")) : resolve(msg("Shortcut saved"));
+  return resolve(msg("Finish shortcut setup"));
 }
 
-export function snapShotShortcutStatus(state: DesktopSnapShotState | null): string | null {
+export function snapShotShortcutStatus(
+  state: DesktopSnapShotState | null,
+  resolve: MessageResolver = m,
+): string | null {
   if (!state) return null;
   if (state.linuxBackend === "hyprland") return state.shortcutMessage;
-  if (state.shortcutPending) return "Approve the shortcut permission prompt to continue.";
-  if (state.shortcutRegistered) return state.mode === "portal" ? null : "Shortcut saved.";
+  if (state.shortcutPending)
+    return resolve(msg("Approve the shortcut permission prompt to continue."));
+  if (state.shortcutRegistered)
+    return state.mode === "portal" ? null : resolve(msg("Shortcut saved."));
   return state.shortcutMessage;
 }
 
-export function snapShotSetupButtonLabel(state: DesktopSnapShotState | null): string {
-  if (!state) return "继续设置";
-  if (captureSetupAccessReady(state)) return "管理抓取";
+export function snapShotSetupButtonLabel(
+  state: DesktopSnapShotState | null,
+  resolve: MessageResolver = m,
+): string {
+  if (!state) return resolve(msg("Continue setup"));
+  if (captureSetupAccessReady(state)) return resolve(msg("Manage capture"));
   const desktop = captureSetupDesktopName(state);
-  return desktop ? `设置${desktop} 抓取` : "继续设置";
+  return desktop
+    ? resolve(msg("Set up {desktop} capture", { desktop }))
+    : resolve(msg("Continue setup"));
 }
 
 export function snapShotSetupComplete(
@@ -65,44 +96,53 @@ export type SnapShotSoundSelection = SnapShotSound | "off";
 
 export function snapShotFeedbackUnavailableMessage(
   state: DesktopSnapShotState | null,
+  resolve: MessageResolver = m,
 ): string | undefined {
   if (state?.mode !== "portal" || state.linuxFeedbackAvailable) return undefined;
   if (state.linuxBackend === "hyprland")
     return state.hyprlandHelper?.status === "ready"
-      ? "此桌面上没有抓取效果。"
-      : "安装或更新抓取帮助以启用效果。";
-  if (state.linuxBackend === "niri") return "尼里没有捕捉效果";
+      ? resolve(msg("Capture effects aren't available on this desktop."))
+      : resolve(msg("Install or update the capture helper to enable effects."));
+  if (state.linuxBackend === "niri")
+    return resolve(msg("Capture effects aren't available on Niri."));
   if (state.linuxBackend === "kde")
     return state.kdeHelper?.status === "ready"
-      ? "此桌面上没有抓取效果。"
-      : "安装或更新抓取帮助以启用效果。";
+      ? resolve(msg("Capture effects aren't available on this desktop."))
+      : resolve(msg("Install or update the capture helper to enable effects."));
   return state.linuxBackend === "gnome-extension"
-    ? "更新 GNOME 扩展名，然后签出并返回以启用效果。"
+    ? resolve(msg("Update the GNOME extension, then sign out and back in to enable effects."))
     : captureSetupBackend(state) === "gnome"
-      ? "完成扩展设置以启用效果。"
-      : "此桌面上没有抓取效果。";
+      ? resolve(msg("Finish extension setup to enable effects."))
+      : resolve(msg("Capture effects aren't available on this desktop."));
 }
 
-export function snapShotDescription(state: DesktopSnapShotState | null): string {
+export function snapShotDescription(
+  state: DesktopSnapShotState | null,
+  resolve: MessageResolver = m,
+): string {
   return state?.mode === "portal" && captureSetupBackend(state) === "picker"
-    ? "这里没有自动抓取。请选择一个窗口。"
-    : "抓取一个窗口并附在您当前草稿上。";
+    ? resolve(msg("Automatic capture isn't available here. Choose a window instead."))
+    : resolve(msg("Capture a window and attach it to your current draft."));
 }
 
 export function snapShotAccessibilityUnavailableMessage(
   state: DesktopSnapShotState | null,
+  resolve: MessageResolver = m,
 ): string | undefined {
   if (state?.mode !== "portal") return undefined;
   if (state.linuxBackend === "picker" || state.linuxBackend === "screenshot-portal")
-    return "此桌面只提供截图。";
+    return resolve(msg("This desktop only provides a screenshot."));
   return undefined;
 }
 
-export function snapShotUnavailableMessage(hasBridge: boolean): string | undefined {
+export function snapShotUnavailableMessage(
+  hasBridge: boolean,
+  resolve: MessageResolver = m,
+): string | undefined {
   if (hasBridge) return undefined;
   return typeof window !== "undefined" && window.desktopBridge
-    ? "更新桌面应用程序以使用快照。"
-    : "仅在桌面应用程序中可用。";
+    ? resolve(msg("Update the desktop app to use snapshots."))
+    : resolve(msg("Only available in the desktop app."));
 }
 
 export function snapShotSoundPatch(sound: SnapShotSoundSelection): ClientSettingsPatch {

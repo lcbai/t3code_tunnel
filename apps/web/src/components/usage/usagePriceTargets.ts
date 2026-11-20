@@ -3,6 +3,9 @@ import type {
   ServerSettingsPatch,
   UsageModelPriceOverride,
 } from "@t3tools/contracts";
+import { msg } from "gt-react";
+
+import { m } from "~/i18n/messages";
 
 export interface UsagePriceTarget {
   readonly environmentId: EnvironmentId;
@@ -44,7 +47,7 @@ export async function writeUsagePrices(input: {
       if (target.unavailable !== null) {
         result = { status: "failed", error: target.unavailable };
       } else if (aliases.length > 0 && target.aliases === null) {
-        result = { status: "failed", error: "更新服务器以映射模型" };
+        result = { status: "failed", error: m(msg("Update server to map models")) };
       } else {
         try {
           const saved =
@@ -66,9 +69,9 @@ export async function writeUsagePrices(input: {
           result =
             saved._tag === "Success"
               ? { status: "saved" }
-              : { status: "failed", error: "无法保存。再试一次。" };
+              : { status: "failed", error: m(msg("Could not save. Try again.")) };
         } catch {
-          result = { status: "failed", error: "无法保存。再试一次。" };
+          result = { status: "failed", error: m(msg("Could not save. Try again.")) };
         }
       }
       input.onResult(target.environmentId, result);

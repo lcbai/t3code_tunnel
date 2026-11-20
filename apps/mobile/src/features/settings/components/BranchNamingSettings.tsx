@@ -1,3 +1,4 @@
+import { msg, T, useGT, useMessages } from "gt-react-native";
 import { BranchNamingMode, type ServerSettingsPatch } from "@t3tools/contracts";
 import { useEffect, useEffectEvent, useRef } from "react";
 import { View } from "react-native";
@@ -7,14 +8,19 @@ import { ListChoiceRow as SettingsChoiceRow } from "../../../components/ui/ListC
 import { SettingsSection } from "./SettingsSection";
 
 const MODES = {
-  static: { label: "固定前缀", description: "给生成的分支名称添加前缀。" },
+  static: {
+    label: msg("Static prefix"),
+    description: msg("Add your prefix to the generated branch name."),
+  },
   semantic: {
-    label: "语义前缀",
-    description: "让模型选择 feat/、fix/、refactor/ 或其他前缀。",
+    label: msg("Semantic prefix"),
+    description: msg("Let the model choose {examples}, or another prefix.", {
+      examples: "feat/, fix/, refactor/",
+    }),
   },
   custom: {
-    label: "自定义指令",
-    description: "生成完整名称，无需添加前缀或后缀。",
+    label: msg("Custom instructions"),
+    description: msg("Generate the complete name with no added prefix or suffix."),
   },
 } satisfies Record<BranchNamingMode, { label: string; description: string }>;
 
@@ -26,6 +32,8 @@ export function BranchNamingSettings(props: {
   disabled: Readonly<Record<"mode" | "prefix" | "instructions", boolean>>;
   onChange: (patch: ServerSettingsPatch) => void;
 }) {
+  const gt = useGT();
+  const m = useMessages();
   // Save on exit too: Android Back hides the keyboard without ending editing.
   type Field = "branchNamePrefix" | "branchNameInstructions";
   const drafts = useRef<Partial<Record<Field, { text: string; over: string | null }>>>({});
@@ -55,16 +63,20 @@ export function BranchNamingSettings(props: {
   useEffect(() => () => saveDrafts(), []);
   return (
     <SettingsSection
-      title="工作树分支命名"
+      title={gt("Worktree branch naming")}
       trailing={
-        props.mode === null ? <Text className="text-xs text-foreground-muted">混合</Text> : null
+        props.mode === null ? (
+          <Text className="text-xs text-foreground-muted">
+            <T>Mixed</T>
+          </Text>
+        ) : null
       }
     >
       {BranchNamingMode.literals.map((mode, index) => (
         <SettingsChoiceRow
           key={mode}
-          label={MODES[mode].label}
-          description={MODES[mode].description}
+          label={m(MODES[mode].label)}
+          description={m(MODES[mode].description)}
           selected={props.mode === mode}
           separated={index > 0}
           disabled={props.disabled.mode}
@@ -74,14 +86,18 @@ export function BranchNamingSettings(props: {
       {props.mode === "static" ? (
         <View className="gap-2 px-4 py-3">
           <Text className="text-sm text-foreground-muted">
-            如果需要 t3/add-search 这样的分支名，可填写 t3 或 t3/。留空表示不添加前缀。
+            {gt("Use {short} or {slash} for {example}. Leave empty for no prefix.", {
+              short: "t3",
+              slash: "t3/",
+              example: "t3/add-search",
+            })}
           </Text>
           <AppTextInput
             key={props.prefix}
-            accessibilityLabel="分支前缀"
+            accessibilityLabel={gt("Branch prefix")}
             onChangeText={(text) => edit("branchNamePrefix", text)}
             defaultValue={props.prefix ?? ""}
-            placeholder={props.prefix === null ? "混合" : "无前缀"}
+            placeholder={props.prefix === null ? gt("Mixed") : gt("No prefix")}
             editable={!props.disabled.prefix}
             autoCapitalize="none"
             autoCorrect={false}
@@ -92,16 +108,20 @@ export function BranchNamingSettings(props: {
       ) : null}
       {props.mode === "custom" ? (
         <View className="gap-2 px-4 py-3">
-          <Text className="text-sm text-foreground-muted">将指令添加到命名提示词。</Text>
+          <Text className="text-sm text-foreground-muted">
+            <T>Append instructions to the naming prompt.</T>
+          </Text>
           <AppTextInput
             key={props.instructions}
-            accessibilityLabel="分支命名说明"
+            accessibilityLabel={gt("Branch naming instructions")}
             onChangeText={(text) => edit("branchNameInstructions", text)}
             defaultValue={props.instructions ?? ""}
             placeholder={
               props.instructions === null
-                ? "设置不同。请输入适用于所有选中目标的指令。"
-                : "使用 julius/，后接问题 ID 和简短描述。"
+                ? gt("Mixed. Enter instructions for all selected targets.")
+                : gt("Use {prefix} followed by the issue ID and a short description.", {
+                    prefix: "julius/",
+                  })
             }
             editable={!props.disabled.instructions}
             multiline

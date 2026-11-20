@@ -1,5 +1,6 @@
 import type { EnvironmentId, SecretReference, UnifiedSettings } from "@t3tools/contracts";
-import { useState } from "react";
+import { T, useGT, Var } from "gt-react";
+import { useId, useState } from "react";
 
 import { useUpdateEnvironmentSettings } from "../../hooks/useSettings";
 import { Button } from "../ui/button";
@@ -31,6 +32,8 @@ export function AddUsageLimitSourceDialog({
   readonly environmentLabel: string;
   readonly sources: UnifiedSettings["usageLimitSources"];
 }) {
+  const gt = useGT();
+  const formId = useId();
   const updateSettings = useUpdateEnvironmentSettings(environmentId);
   const [label, setLabel] = useState("");
   const [url, setUrl] = useState("");
@@ -76,13 +79,19 @@ export function AddUsageLimitSourceDialog({
     >
       <DialogPopup className="max-w-md">
         <DialogHeader>
-          <DialogTitle>添加 CLIProxyAPI 中枢</DialogTitle>
+          <DialogTitle>
+            <T>Add a CLIProxyAPI hub</T>
+          </DialogTitle>
           <DialogDescription>
-            显示每个账户的配额，中心池，在提供者旁边。 {environmentLabel}钥匙留在服务器上。
+            <T>
+              Show the quota of every account the hub pools, next to the providers on{" "}
+              <Var>{environmentLabel}</Var>. The key stays on that server.
+            </T>
           </DialogDescription>
         </DialogHeader>
         <DialogPanel>
           <form
+            id={formId}
             className="grid gap-4"
             onSubmit={(event) => {
               event.preventDefault();
@@ -90,7 +99,9 @@ export function AddUsageLimitSourceDialog({
             }}
           >
             <div className="grid gap-1.5">
-              <Label htmlFor="usage-source-url">枢机URL</Label>
+              <Label htmlFor="usage-source-url">
+                <T>Hub URL</T>
+              </Label>
               <Input
                 id="usage-source-url"
                 placeholder="https://hub.example.ts.net:8318"
@@ -100,22 +111,27 @@ export function AddUsageLimitSourceDialog({
               />
             </div>
             <div className="grid gap-1.5">
-              <Label htmlFor="usage-source-key">管理密钥</Label>
+              <Label htmlFor="usage-source-key">
+                <T>Management key</T>
+              </Label>
               <SecretSourceInput
                 id="usage-source-key"
-                aria-label="管理密钥"
+                aria-label={gt("Management key")}
                 value={keyDraft}
                 sources={secretSources}
+                environmentId={environmentId}
                 onChange={(event) => setKeyDraft(event.target.value)}
                 onSecretChange={(secret) => setKeyDraft(secret ?? "")}
                 onValidityChange={setKeyValid}
               />
             </div>
             <div className="grid gap-1.5">
-              <Label htmlFor="usage-source-label">标签(可选的)</Label>
+              <Label htmlFor="usage-source-label">
+                <T>Label (optional)</T>
+              </Label>
               <Input
                 id="usage-source-label"
-                placeholder="中枢主机名的默认值"
+                placeholder={gt("Defaults to the hub's host name")}
                 value={label}
                 onChange={(event) => setLabel(event.target.value)}
               />
@@ -130,10 +146,10 @@ export function AddUsageLimitSourceDialog({
               onOpenChange(false);
             }}
           >
-            取消
+            <T>Cancel</T>
           </Button>
-          <Button onClick={save} disabled={!canSave}>
-            添加中枢
+          <Button type="submit" form={formId} disabled={!canSave}>
+            <T>Add hub</T>
           </Button>
         </DialogFooter>
       </DialogPopup>

@@ -39,7 +39,7 @@ const state = vi.hoisted(() => ({
       (request: {
         environmentId: EnvironmentId;
         input: UpdateProjectInput;
-      }) => Promise<AsyncResult.Success<void>>
+      }) => Promise<AsyncResult.Success<void> | AsyncResult.Failure<void, Error>>
     >(),
   delete:
     vi.fn<
@@ -132,8 +132,10 @@ vi.mock(import("../files/projectFilesQueryState"), async (original) => ({
   getProjectFileQueryAtom: () => missingProjectFile,
 }));
 
-import { useComposerDraftStore } from "../../composerDraftStore";
+import { scopeProjectRef } from "@t3tools/client-runtime/environment";
+import { DraftId, useComposerDraftStore } from "../../composerDraftStore";
 import { appAtomRegistry } from "../../rpc/atomRegistry";
+import { assetEnvironment } from "../../state/assets";
 import { buildSidebarProjectSnapshots } from "../../sidebarProjectGrouping";
 import { ProjectSettingsPanel } from "./ProjectSettingsPanel";
 import { ProjectsSettings } from "./ProjectsSettings";
@@ -302,12 +304,12 @@ async function mountSettings(search: SettingsScopeSearch) {
 }
 
 const nameInput = (screen: Screen) =>
-  screen.container.querySelector<HTMLInputElement>('[aria-label="项目名称"]')!;
+  screen.container.querySelector<HTMLInputElement>('[aria-label="Project name"]')!;
 const removeCheckout = (screen: Screen, root: string) =>
-  screen.container.querySelector<HTMLButtonElement>(`[aria-label="删除检出${root}"]`)!;
+  screen.container.querySelector<HTMLButtonElement>(`[aria-label="Remove checkout ${root}"]`)!;
 const removeAll = (screen: Screen) =>
   [...screen.container.querySelectorAll("button")].find((button) =>
-    button.textContent?.includes("删除所有条目"),
+    button.textContent?.includes("Remove all entries"),
   )!;
 
 async function grant(id: EnvironmentId, result: SessionResult) {
@@ -337,7 +339,7 @@ describe("project organization", () => {
   it("archives the checkout on every machine while one machine is picked", async () => {
     setup();
     await using _screen = await mountPanel({ machine: primaryId });
-    await userEvent.click(page.getByRole("button", { name: "归档" }));
+    await userEvent.click(page.getByRole("button", { name: "Archive" }));
     await vi.waitFor(() => expect(state.update).toHaveBeenCalledTimes(2));
     expect(
       state.update.mock.calls.map(([request]) => [request.environmentId, request.input.archived]),
@@ -356,7 +358,9 @@ describe("project settings permissions", () => {
 
     expect(nameInput(screen).disabled).toBe(true);
     expect(removeAll(screen).disabled).toBe(true);
-    expect(screen.container.textContent).toContain("共享设置需要权限来更改此组中的每次检出。");
+    expect(screen.container.textContent).toContain(
+      "Shared settings require permission to change every checkout in this group.",
+    );
     expect(state.update).not.toHaveBeenCalled();
   });
 
@@ -413,6 +417,37 @@ describe("project settings permissions", () => {
     await vi.waitFor(() => expect(state.releaseUploads).toHaveBeenCalledOnce());
     expect(state.clearDraft).toHaveBeenCalledOnce();
     expect(screen.router.state.location.href).toBe(initialHref);
+  });
+
+  it("moves a draft on the removed checkout to a remaining checkout of the group", async () => {
+    setup();
+    const draftId = DraftId.make("draft-handed-off");
+    const [primaryProject, remoteProject] = state.projects;
+    const drafts = useComposerDraftStore.getState();
+    drafts.setLogicalProjectDraftThreadId(
+      "github.com/example/shared-repo",
+      scopeProjectRef(primaryId, primaryProject!.id),
+      draftId,
+    );
+    // "Add to another machine" hands the open draft to the new checkout this way.
+    drafts.setDraftThreadContext(draftId, {
+      projectRef: scopeProjectRef(remoteId, remoteProject!.id),
+      environmentSelection: "manual",
+      loadBalancedEnvironmentId: null,
+    });
+    drafts.setPrompt(draftId, "keep this prompt");
+    await using screen = await mountPanel();
+
+    await userEvent.click(removeCheckout(screen, "/work/remote"));
+    await vi.waitFor(() => expect(state.releaseUploads).toHaveBeenCalledOnce());
+
+    expect(useComposerDraftStore.getState().getDraftSession(draftId)).toMatchObject({
+      environmentId: primaryId,
+      projectId: primaryProject!.id,
+    });
+    expect(useComposerDraftStore.getState().getComposerDraft(draftId)?.prompt).toBe(
+      "keep this prompt",
+    );
   });
 
   it("rechecks every removal target after confirmation before deleting or clearing drafts", async () => {
@@ -480,7 +515,7 @@ describe("project settings permissions", () => {
 describe("project identity reset", () => {
   const scratchIcon = { kind: "lucide", name: "message-square-dashed", color: "gray" } as const;
   const resetButton = (screen: Screen, label: string) =>
-    screen.container.querySelector<HTMLButtonElement>(`[aria-label="重置${label} 默认值"]`);
+    screen.container.querySelector<HTMLButtonElement>(`[aria-label="Reset ${label} to default"]`);
   const asScratch = (project: Project): Project => ({
     ...project,
     isScratch: true,
@@ -494,14 +529,14 @@ describe("project identity reset", () => {
     state.projects = [{ ...asScratch(state.projects[0]!), faviconPath: null, projectIcon: null }];
     await using screen = await mountPanel();
 
-    await userEvent.click(resetButton(screen, "项目名称")!);
+    await userEvent.click(resetButton(screen, "project name")!);
     await vi.waitFor(() =>
       expect(state.update).toHaveBeenCalledWith({
         environmentId: primaryId,
-        input: { projectId: state.projects[0]!.id, title: "无项目" },
+        input: { projectId: state.projects[0]!.id, title: "No project" },
       }),
     );
-    await userEvent.click(resetButton(screen, "工程图标")!);
+    await userEvent.click(resetButton(screen, "project icon")!);
     await vi.waitFor(() =>
       expect(state.update).toHaveBeenLastCalledWith({
         environmentId: primaryId,
@@ -516,8 +551,8 @@ describe("project identity reset", () => {
     state.projects = [asScratch(primary!), { ...remote!, faviconPath: "logo.png" }];
     await using screen = await mountPanel();
 
-    expect(resetButton(screen, "项目名称")).toBeNull();
-    await userEvent.click(resetButton(screen, "工程图标")!);
+    expect(resetButton(screen, "project name")).toBeNull();
+    await userEvent.click(resetButton(screen, "project icon")!);
     await vi.waitFor(() => expect(state.update).toHaveBeenCalledTimes(2));
     expect(state.update.mock.calls.map(([request]) => request)).toEqual([
       {
@@ -529,6 +564,40 @@ describe("project identity reset", () => {
         input: { projectId: remote!.id, faviconPath: null, projectIcon: null },
       },
     ]);
+  });
+
+  it("refreshes a saved checkout's icon when a later checkout update fails", async () => {
+    setup();
+    state.projects = state.projects.map((project) => ({ ...project, faviconPath: "logo.png" }));
+    let iconExists = false;
+    const iconUrl = Atom.make(() =>
+      AsyncResult.success({
+        expiresAt: 4_000_000_000_000,
+        relativeUrl: iconExists ? "/restored-icon.svg" : "/project-favicon-missing",
+      }),
+    );
+    using _mount = { [Symbol.dispose]: appAtomRegistry.mount(iconUrl) };
+    const createUrl = assetEnvironment.createUrl;
+    using _createUrl = vi
+      .spyOn(assetEnvironment, "createUrl")
+      .mockImplementation((target) =>
+        target.environmentId === primaryId ? iconUrl : createUrl(target),
+      );
+    state.update
+      .mockResolvedValueOnce(AsyncResult.success(undefined))
+      .mockResolvedValueOnce(AsyncResult.failure(Cause.fail(new Error("Save failed"))));
+    await using screen = await mountPanel();
+    expect(appAtomRegistry.get(iconUrl).value.relativeUrl).toBe("/project-favicon-missing");
+
+    iconExists = true;
+    await userEvent.click(resetButton(screen, "project icon")!);
+
+    await vi.waitFor(() =>
+      expect(appAtomRegistry.get(iconUrl).value.relativeUrl).toBe("/restored-icon.svg"),
+    );
+    expect(state.toast).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Failed to update project icon on remote" }),
+    );
   });
 });
 
@@ -569,13 +638,13 @@ it("opens the fallback search target across all environments from a checkout", a
     </RegistryContext.Provider>,
     { router: false },
   );
-  await userEvent.click(page.getByRole("button", { name: "打开所有环境" }));
+  await userEvent.click(page.getByRole("button", { name: "Open all environments" }));
   await vi.waitFor(() => expect(router.state.location.search).toEqual({}));
   expect(router.state.location.hash).toBe("fallback-model");
 });
 
 describe("project settings scope", () => {
-  const environmentMenu = () => page.getByRole("button", { name: /^环境范围:/ });
+  const environmentMenu = () => page.getByRole("button", { name: /^Environment scope:/ });
   const primaryOption = () => page.getByRole("menuitemradio", { name: /^primary/ });
   const remoteOption = () => page.getByRole("menuitemradio", { name: /^remote/ });
 
@@ -589,15 +658,72 @@ describe("project settings scope", () => {
     await expect.element(remoteOption()).toBeVisible();
   });
 
+  it("lists only the selected environment's projects and keeps it when one is opened", async () => {
+    setup();
+    const [primaryProject, remoteProject] = state.projects;
+    state.projects = [
+      primaryProject!,
+      {
+        ...remoteProject!,
+        title: "Remote only",
+        repositoryIdentity: null,
+      },
+    ];
+    await using screen = await mountSettings({ machine: primaryId });
+
+    await expect.element(page.getByRole("button", { name: /^Shared repo/ })).toBeVisible();
+    await expect
+      .element(page.getByRole("button", { name: /^Remote only/ }))
+      .not.toBeInTheDocument();
+
+    await userEvent.click(page.getByRole("button", { name: /^Shared repo/ }));
+    await vi.waitFor(() =>
+      expect(screen.router.state.location.search).toEqual({
+        project: projectKey(),
+        machine: primaryId,
+      }),
+    );
+  });
+
   it("offers only the selected project's checkout environments", async () => {
     setup();
     state.projects = state.projects.filter((project) => project.environmentId === primaryId);
     await using _screen = await mountSettings({ project: projectKey() });
 
-    await expect.element(page.getByRole("textbox", { name: "项目名称" })).toBeVisible();
+    await expect.element(page.getByRole("textbox", { name: "Project name" })).toBeVisible();
     await userEvent.click(environmentMenu());
     await expect.element(primaryOption()).toBeVisible();
     await expect.element(remoteOption()).not.toBeInTheDocument();
+  });
+
+  it("reaches each checkout on one environment and returns to all of them", async () => {
+    setup();
+    const [first] = state.projects;
+    state.projects = [
+      { ...first!, id: ProjectId.make("clone-a"), workspaceRoot: "/work/clone-a" },
+      { ...first!, id: ProjectId.make("clone-b"), workspaceRoot: "/work/clone-b" },
+    ];
+    const key = projectKey();
+    await using screen = await mountSettings({ project: key, machine: primaryId });
+
+    await userEvent.click(page.getByRole("button", { name: "Checkout scope: All checkouts" }));
+    await userEvent.click(page.getByRole("menuitemradio", { name: /clone-b/ }));
+
+    await expect
+      .element(page.getByRole("button", { name: "Checkout scope: clone-b" }))
+      .toBeVisible();
+    expect(screen.router.state.location.search).toMatchObject({
+      project: key,
+      machine: primaryId,
+      checkout: expect.stringContaining("clone-b"),
+    });
+
+    await userEvent.click(page.getByRole("button", { name: "Checkout scope: clone-b" }));
+    await userEvent.click(page.getByRole("menuitemradio", { name: "All checkouts" }));
+
+    await vi.waitFor(() =>
+      expect(screen.router.state.location.search).toEqual({ project: key, machine: primaryId }),
+    );
   });
 
   it("keeps an unknown project recoverable from any environment", async () => {
@@ -634,17 +760,23 @@ describe("project settings scope", () => {
     });
 
     await expect.element(page.getByText(message, { exact: true })).toBeVisible();
-    await expect.element(page.getByRole("button", { name: /^项目范围:/ })).toBeVisible();
-    await expect.element(page.getByRole("button", { name: "环境范围: remote" })).toBeVisible();
-    await userEvent.click(page.getByRole("button", { name: "显示所有环境" }));
+    await expect.element(page.getByRole("button", { name: /^Project scope:/ })).toBeVisible();
+    await expect
+      .element(page.getByRole("button", { name: "Environment scope: remote" }))
+      .toBeVisible();
+    await userEvent.click(page.getByRole("button", { name: "Show all environments" }));
 
     await expect
-      .element(page.getByRole("textbox", { name: "项目名称" }))
+      .element(page.getByRole("textbox", { name: "Project name" }))
       .toHaveValue("Shared repo");
     expect(screen.router.state.location.search).toEqual({ project: key });
-    await expect.element(page.getByRole("button", { name: "环境范围: 所有环境" })).toBeVisible();
+    await expect
+      .element(page.getByRole("button", { name: "Environment scope: All environments" }))
+      .toBeVisible();
     await expect.element(page.getByText(message, { exact: true })).not.toBeInTheDocument();
-    await expect.element(page.getByRole("button", { name: "删除工程", exact: true })).toBeEnabled();
+    await expect
+      .element(page.getByRole("button", { name: "Remove project", exact: true }))
+      .toBeEnabled();
   });
 });
 
@@ -653,7 +785,7 @@ it("returns to the project overview after removal, clearing the selection but ke
   state.projects = [state.projects[1]!];
   await using screen = await mountPanel({ machine: remoteId, checkout: "remote:/work/remote" });
   const removeProject = [...screen.container.querySelectorAll("button")].find(
-    (button) => button.textContent === "删除工程",
+    (button) => button.textContent === "Remove project",
   )!;
 
   await userEvent.click(removeProject);

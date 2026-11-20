@@ -7,8 +7,6 @@ import * as NodeV8 from "node:v8";
 import * as NodeZlib from "node:zlib";
 import * as NodeURL from "node:url";
 
-export const PREPARED_SERVER_CACHE_DIRECTORY = "server-compile-cache";
-
 export const runtimeIdentity = () =>
   [
     process.versions.electron,
@@ -74,7 +72,7 @@ export function enablePreparedServerCache(entry: string, cacheRoot: string): boo
     if (!archive) return false;
     const resources = NodeFS.realpathSync(NodePath.dirname(archive));
     // Keep different installations and builds separate without reading or copying their source files.
-    const prepared = NodePath.join(resources, PREPARED_SERVER_CACHE_DIRECTORY);
+    const prepared = NodePath.join(resources, "server-compile-cache");
     if (process.env.APPIMAGE && !NodeFS.existsSync(NodePath.join(prepared, "manifest.json")))
       return false;
     const identity = NodeZlib.crc32(resources).toString(16);
@@ -103,7 +101,7 @@ export function enablePreparedServerCache(entry: string, cacheRoot: string): boo
                 if (
                   !mount ||
                   !NodePath.isAbsolute(target) ||
-                  NodePath.basename(NodePath.dirname(target)) !== PREPARED_SERVER_CACHE_DIRECTORY ||
+                  NodePath.basename(NodePath.dirname(target)) !== "server-compile-cache" ||
                   !/^[a-f0-9]{8}$/.test(NodePath.basename(target))
                 )
                   return false;
@@ -145,7 +143,7 @@ export function enablePreparedServerCache(entry: string, cacheRoot: string): boo
 
 export async function generatePreparedServerCache(resourcesInput: string): Promise<void> {
   const resources = NodeFS.realpathSync(resourcesInput);
-  const prepared = NodePath.join(resources, PREPARED_SERVER_CACHE_DIRECTORY);
+  const prepared = NodePath.join(resources, "server-compile-cache");
   const archive = NodeFS.existsSync(NodePath.join(resources, "server.asar"))
     ? "server.asar"
     : "app.asar";

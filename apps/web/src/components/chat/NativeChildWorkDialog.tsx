@@ -5,6 +5,7 @@ import type {
   OrchestrationV2NativeChildWork,
   ThreadId,
 } from "@t3tools/contracts";
+import { T, useGT } from "gt-react";
 import { ListTreeIcon } from "lucide-react";
 import { useState } from "react";
 
@@ -36,12 +37,18 @@ export function NativeChildWorkDialog(props: {
     <Dialog open={open} onOpenChange={setOpen}>
       <Button size="sm" variant="ghost" onClick={() => setOpen(true)}>
         <ListTreeIcon />
-        <span className="@max-[420px]/composer-surface:sr-only">辅助性工作</span>
+        <span className="@max-[420px]/composer-surface:sr-only">
+          <T>Subagent work</T>
+        </span>
       </Button>
       <DialogPopup className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>辅助性工作</DialogTitle>
-          <DialogDescription>只读这些子代理无法接收消息。</DialogDescription>
+          <DialogTitle>
+            <T>Subagent work</T>
+          </DialogTitle>
+          <DialogDescription>
+            <T>Read only. These subagents cannot take messages.</T>
+          </DialogDescription>
         </DialogHeader>
         {open ? <NativeChildWorkContent {...props} /> : null}
       </DialogPopup>
@@ -66,10 +73,12 @@ function NativeChildWorkContent(props: {
         {query.error !== null ? (
           <p className="text-sm text-destructive-foreground">{query.error}</p>
         ) : children === undefined ? (
-          <p className="text-sm text-muted-foreground">正在加载…</p>
+          <p className="text-sm text-muted-foreground">
+            <T>Loading…</T>
+          </p>
         ) : children.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            代理提供方没有记录哪个子代理开始这个呼叫。
+            <T>The provider has no record of which subagents this call started.</T>
           </p>
         ) : (
           children.map((child) => <NativeChild key={child.conversationId} child={child} />)
@@ -77,7 +86,7 @@ function NativeChildWorkContent(props: {
       </DialogPanel>
       <DialogFooter variant="bare">
         <Button size="sm" variant="outline" disabled={query.isPending} onClick={query.refresh}>
-          刷新
+          <T>Refresh</T>
         </Button>
       </DialogFooter>
     </>
@@ -86,15 +95,23 @@ function NativeChildWorkContent(props: {
 
 function NativeChild(props: { readonly child: OrchestrationV2NativeChildWork }) {
   const { child } = props;
+  const gt = useGT();
+  const role = child.role || gt("Subagent");
   return (
-    <section aria-label={child.role || "子代理"} className="flex min-w-0 flex-col gap-2">
-      <h3 className="text-sm font-medium text-foreground">{child.role || "子代理"}</h3>
+    <section aria-label={role} className="flex min-w-0 flex-col gap-2">
+      <h3 className="text-sm font-medium text-foreground">{role}</h3>
       <p className="whitespace-pre-wrap break-words text-sm text-muted-foreground">
         {child.prompt}
       </p>
-      {child.truncated ? <p className="text-xs text-muted-foreground">未显示较早的步骤。</p> : null}
+      {child.truncated ? (
+        <p className="text-xs text-muted-foreground">
+          <T>Earlier steps are not shown.</T>
+        </p>
+      ) : null}
       {child.steps === null ? (
-        <p className="text-xs text-muted-foreground">还没有笔录</p>
+        <p className="text-xs text-muted-foreground">
+          <T>No transcript yet.</T>
+        </p>
       ) : (
         <ol className="m-0 flex list-none flex-col gap-2 border-s ps-3">
           {child.steps.map((step) => (

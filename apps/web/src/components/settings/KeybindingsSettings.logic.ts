@@ -12,7 +12,9 @@ import {
   parseKeybindingWhenExpression,
   US_SHIFTED_TO_UNSHIFTED_KEYS,
 } from "@t3tools/shared/keybindings";
+import { msg } from "gt-react";
 
+import { m, type MessageResolver } from "../../i18n/messages";
 import { shortcutConflictKey, shortcutKeyFromEvent } from "../../keybindings";
 import { isMacPlatform } from "../../lib/utils";
 import { METRIC_OPTIONS, WINDOW_OPTIONS } from "../usage/usageShortcuts";
@@ -48,6 +50,7 @@ export interface KeybindingRow {
   readonly key: string;
   readonly when: string;
   readonly source: KeybindingSource;
+  readonly isUnassigned: boolean;
   readonly defaultKey: string | null;
   readonly defaultWhen: string;
   readonly binding: ResolvedKeybindingRule;
@@ -103,12 +106,16 @@ export function whenAstToExpression(node: KeybindingWhenNode | undefined): strin
   }
 }
 
-export function whenNodeRemoveLabel(node: KeybindingWhenNode, depth: number): string {
-  if (depth === 0) return "清除所有条件";
+export function whenNodeRemoveLabel(
+  node: KeybindingWhenNode,
+  depth: number,
+  resolve: MessageResolver = m,
+): string {
+  if (depth === 0) return resolve(msg("Clear all conditions"));
   if (node.type === "identifier" || (node.type === "not" && node.node.type === "identifier")) {
-    return "删除条件";
+    return resolve(msg("Remove condition"));
   }
-  return "删除组及其条件";
+  return resolve(msg("Remove group and its conditions"));
 }
 
 function wrapWhenExpression(node: KeybindingWhenNode): string {
@@ -118,6 +125,7 @@ function wrapWhenExpression(node: KeybindingWhenNode): string {
 
 export function parseWhenExpressionDraft(
   expression: string,
+  resolve: MessageResolver = m,
 ): { ok: true; value: KeybindingWhenNode | undefined } | { ok: false; message: string } {
   const trimmed = expression.trim();
   if (trimmed.length === 0) return { ok: true, value: undefined };
@@ -126,7 +134,7 @@ export function parseWhenExpressionDraft(
   if (!ast) {
     return {
       ok: false,
-      message: "使用变量与 !, QQ, QQ，和括号。",
+      message: resolve(msg("Use variables with !, &&, ||, and parentheses.")),
     };
   }
 
@@ -135,7 +143,8 @@ export function parseWhenExpressionDraft(
 
 function sourceForBinding(binding: ResolvedKeybindingRule): KeybindingSource {
   if (String(binding.command).startsWith("script.")) {
-    return "Project";
+    const source: KeybindingSource = "Project";
+    return source;
   }
 
   const bindingKey = shortcutToKeybindingInput(binding.shortcut);
@@ -147,7 +156,8 @@ function sourceForBinding(binding: ResolvedKeybindingRule): KeybindingSource {
       whenAstToExpression(entry.whenAst) === bindingWhen,
   );
 
-  return isDefault ? "Default" : "Custom";
+  const source: KeybindingSource = isDefault ? "Default" : "Custom";
+  return source;
 }
 
 function defaultBindingForBinding(
@@ -163,6 +173,13 @@ function defaultBindingForBinding(
         shortcutToKeybindingInput(entry.shortcut) === bindingKey &&
         whenAstToExpression(entry.whenAst) === bindingWhen,
     ) ??
+    (bindingWhen === "false"
+      ? DEFAULT_RESOLVED_KEYBINDINGS.find(
+          (entry) =>
+            entry.command === binding.command &&
+            shortcutToKeybindingInput(entry.shortcut) === bindingKey,
+        )
+      : undefined) ??
     DEFAULT_RESOLVED_KEYBINDINGS.find(
       (entry) =>
         entry.command === binding.command && whenAstToExpression(entry.whenAst) === bindingWhen,
@@ -176,6 +193,7 @@ function keybindingRowId(command: KeybindingCommand, key: string, when: string):
 }
 
 function conflictsWithWhen(leftWhen: string, rightWhen: string): boolean {
+  if (leftWhen === "false" || rightWhen === "false") return false;
   return leftWhen.length === 0 || rightWhen.length === 0 || leftWhen === rightWhen;
 }
 
@@ -183,6 +201,7 @@ export function keybindingConflictLabels(
   rows: ReadonlyArray<KeybindingRow>,
   input: { readonly rowId: string; readonly key: string; readonly when: string },
   platform = navigator.platform,
+  resolve: MessageResolver = m,
 ): ReadonlyArray<string> {
   if (input.key.trim().length === 0) return [];
   const shortcut = parseKeybindingShortcut(input.key);
@@ -196,7 +215,7 @@ export function keybindingConflictLabels(
       shortcutConflictKey(candidate.binding.shortcut, platform) === conflictKey &&
       conflictsWithWhen(candidate.when, input.when)
     ) {
-      conflicts.push(commandLabel(candidate.command));
+      conflicts.push(commandLabel(candidate.command, resolve));
     }
   }
   return [...new Set(conflicts)].toSorted();
@@ -211,17 +230,24 @@ export interface KeybindingGroup {
 const KEYBINDING_GROUPS = [
   {
     id: "navigation",
-    title: "导航",
+    title: msg("Navigation"),
     prefixes: ["sidebar", "rightPanel", "commandPalette", "filePicker", "projectSearch", "editor"],
   },
-  { id: "threads", title: "会话", prefixes: ["thread", "chat", "pullRequest"] },
-  { id: "composer", title: "消息输入框", prefixes: ["composer", "modelPicker"] },
-  { id: "terminal", title: "终端", prefixes: ["terminal"] },
-  { id: "preview", title: "预览 diff( D)", prefixes: ["preview", "diff"] },
-  { id: "appearance", title: "外观", prefixes: ["theme", "appearance", "themeEditor"] },
-  { id: "scripts", title: "项目脚本", prefixes: ["script"] },
+  { id: "threads", title: msg("Threads"), prefixes: ["thread", "chat", "pullRequest"] },
+  { id: "composer", title: msg("Composer"), prefixes: ["composer", "modelPicker"] },
+  { id: "terminal", title: msg("Terminal"), prefixes: ["terminal"] },
+  { id: "preview", title: msg("Preview & diff"), prefixes: ["preview", "diff"] },
+  {
+    id: "appearance",
+    title: msg("Appearance"),
+    prefixes: ["theme", "appearance", "themeEditor"],
+  },
+  { id: "scripts", title: msg("Project scripts"), prefixes: ["script"] },
 ] as const;
-const OTHER_KEYBINDING_GROUP = { id: "other", title: "其他" } as const;
+const OTHER_KEYBINDING_GROUP = {
+  id: "other",
+  title: msg("Other", { $context: "keybinding group" }),
+} as const;
 
 function keybindingGroupFor(command: KeybindingCommand): { id: string; title: string } {
   const prefix = String(command).split(".")[0] ?? "";
@@ -250,6 +276,7 @@ export function groupKeybindingRows(
 export function buildKeybindingRows(
   keybindings: ResolvedKeybindingsConfig,
   platform = navigator.platform,
+  resolve: MessageResolver = m,
 ): ReadonlyArray<KeybindingRow> {
   const rowsById = new Map<string, KeybindingRow>();
   for (const binding of keybindings) {
@@ -263,6 +290,10 @@ export function buildKeybindingRows(
       key,
       when,
       source: sourceForBinding(binding),
+      isUnassigned:
+        when === "false" &&
+        defaultBinding !== undefined &&
+        key === shortcutToKeybindingInput(defaultBinding.shortcut),
       defaultKey: defaultBinding ? shortcutToKeybindingInput(defaultBinding.shortcut) : null,
       defaultWhen: whenAstToExpression(defaultBinding?.whenAst),
       binding,
@@ -280,6 +311,7 @@ export function buildKeybindingRows(
         when: row.when,
       },
       platform,
+      resolve,
     );
     return conflicts.length > 0
       ? Object.assign({}, row, { conflicts: [...new Set(conflicts)].toSorted() })
@@ -298,13 +330,14 @@ export function buildKeybindingRows(
 export function filterKeybindingRows(
   rows: ReadonlyArray<KeybindingRow>,
   query: string,
+  resolve: MessageResolver = m,
 ): ReadonlyArray<KeybindingRow> {
   const normalizedQuery = query.trim().toLowerCase();
   if (normalizedQuery.length === 0) return rows;
   return rows.filter((row) => {
     return (
       row.command.toLowerCase().includes(normalizedQuery) ||
-      commandLabel(row.command).toLowerCase().includes(normalizedQuery) ||
+      commandLabel(row.command, resolve).toLowerCase().includes(normalizedQuery) ||
       row.key.toLowerCase().includes(normalizedQuery) ||
       row.when.toLowerCase().includes(normalizedQuery) ||
       row.source.toLowerCase().includes(normalizedQuery)
@@ -360,98 +393,133 @@ export function buildWhenVariableOptions(): ReadonlyArray<WhenVariableOption> {
 
 export function buildKeybindingCommandOptions(
   keybindings: ResolvedKeybindingsConfig,
+  resolve: MessageResolver = m,
 ): ReadonlyArray<KeybindingCommandOption> {
   const commands = new Set<KeybindingCommand>(STATIC_KEYBINDING_COMMANDS);
   for (const binding of keybindings) {
     commands.add(binding.command);
   }
-  return [...commands].toSorted((left, right) => compareCommands(left, right, commandLabel));
+  return [...commands].toSorted((left, right) =>
+    compareCommands(left, right, (command) => commandLabel(command, resolve)),
+  );
 }
 
-type LabeledKeybindingCommand = Exclude<
-  (typeof STATIC_KEYBINDING_COMMANDS)[number],
-  | `thread.jump.${number}`
-  | `modelPicker.jump.${number}`
-  | (typeof METRIC_OPTIONS)[number]["command"]
-  | (typeof WINDOW_OPTIONS)[number]["command"]
->;
-
-const KEYBINDING_COMMAND_LABELS: Record<LabeledKeybindingCommand, string> = {
-  "workspace.focusNext": "聚焦下一个工作空间区域",
-  "workspace.focusPrevious": "聚焦上一个工作空间区域",
-  "sidebar.toggle": "切换侧边栏",
-  "navigation.back": "后退",
-  "navigation.forward": "前进",
-  "terminal.toggle": "切换终端",
-  "terminal.split": "横向拆分终端",
-  "terminal.splitVertical": "纵向拆分终端",
-  "terminal.new": "新建终端",
-  "terminal.close": "关闭终端",
-  "rightPanel.toggle": "切换右侧面板",
-  "rightPanel.new": "在右侧面板新建标签页",
-  "threadPanel.toggle": "切换会话详情面板",
-  "rightPanel.toggleMaximized": "切换右侧面板最大化",
-  "rightPanel.close": "关闭右侧面板",
-  "view.reopenClosed": "重新打开已关闭的标签页",
-  "pullRequest.copyNumber": "复制拉取请求编号",
-  "diff.toggle": "切换差异视图",
-  "preview.toggle": "切换预览",
-  "preview.refresh": "刷新预览",
-  "preview.focusUrl": "聚焦预览地址栏",
-  "preview.zoomIn": "放大预览",
-  "preview.zoomOut": "缩小预览",
-  "preview.resetZoom": "重置预览缩放",
-  "commandPalette.toggle": "切换命令面板",
-  "filePicker.toggle": "切换文件选择器",
-  "projectSearch.toggle": "切换项目搜索",
-  "usage.open": "打开用量统计",
-  "theme.select": "选择主题",
-  "appearance.cycle": "切换外观模式",
-  "themeEditor.toggle": "切换主题编辑器",
-  "composer.stash": "暂存输入内容",
-  "composer.sendAlternate": "以另一种模式发送",
-  "composer.sendBackground": "在后台发送",
-  "composer.sendAndNewThread": "发送并新建会话",
-  "composer.dictation": "开始或结束语音输入",
-  "composer.host": "选择主机",
-  "composer.cycleHost": "切换主机",
-  "composer.effort": "选择推理强度",
-  "composer.increaseEffort": "提高推理强度",
-  "composer.decreaseEffort": "降低推理强度",
-  "composer.mode": "选择权限模式",
-  "composer.workspace": "选择工作空间",
-  "composer.previousWorktree": "选择上一个工作树",
-  "composer.branch": "选择分支",
-  "chat.new": "新建会话",
-  "chat.newLocal": "新建本地会话",
-  "chat.newWithoutProject": "新建独立会话",
-  "chat.find": "搜索会话",
-  "editor.openFavorite": "在首选编辑器中打开",
-  "modelPicker.toggle": "切换模型选择器",
-  "modelPicker.previousProvider": "切换到上一个提供方",
-  "modelPicker.nextProvider": "切换到下一个提供方",
-  "thread.stop": "停止会话",
-  "thread.steerQueuedMessage": "立即发送首条排队消息",
-  "thread.editQueuedMessage": "编辑最后一条排队消息",
-  "thread.previous": "切换到上一条会话",
-  "thread.next": "切换到下一条会话",
-  "thread.copyReference": "复制拉取请求或会话链接",
-  "thread.settle": "标记会话为已完成",
-  "thread.pin": "置顶会话",
-  "thread.undo": "撤销上一步会话操作",
+const COMMAND_LABELS: Partial<Record<KeybindingCommand, string>> = {
+  "workspace.focusNext": msg("Focus Next Workspace Area"),
+  "workspace.focusPrevious": msg("Focus Previous Workspace Area"),
+  "composer.sendAlternate": msg("Composer: Opposite Queue or Steer Action"),
+  "composer.sendBackground": msg("Composer: Start in Background"),
+  "composer.sendAndNewThread": msg("Composer: Send and Start New Thread"),
+  "composer.dictation": msg("Composer: Start or Finish Dictation"),
+  "thread.steerQueuedMessage": msg("Queue: Send First Queued Message"),
+  "thread.editQueuedMessage": msg("Queue: Edit Last Queued Message"),
+  "thread.copyReference": msg("Pull Request: Copy Link or Thread"),
+  "sidebar.toggle": msg("Sidebar: Toggle"),
+  "navigation.back": msg("Navigation: Back"),
+  "navigation.forward": msg("Navigation: Forward"),
+  "terminal.toggle": msg("Terminal: Toggle"),
+  "terminal.split": msg("Terminal: Split"),
+  "terminal.splitVertical": msg("Terminal: Split Vertical"),
+  "terminal.new": msg("Terminal: New"),
+  "terminal.close": msg("Terminal: Close"),
+  "rightPanel.toggle": msg("Right Panel: Toggle"),
+  "rightPanel.new": msg("Right Panel: New"),
+  "threadPanel.toggle": msg("Thread Panel: Toggle"),
+  "rightPanel.toggleMaximized": msg("Right Panel: Toggle Maximized"),
+  "rightPanel.close": msg("Right Panel: Close"),
+  "pullRequest.copyNumber": msg("Pull Request: Copy Number"),
+  "diff.toggle": msg("Diff: Toggle"),
+  "preview.toggle": msg("Preview: Toggle"),
+  "preview.refresh": msg("Preview: Refresh"),
+  "preview.zoomIn": msg("Preview: Zoom In"),
+  "preview.zoomOut": msg("Preview: Zoom Out"),
+  "preview.resetZoom": msg("Preview: Reset Zoom"),
+  "commandPalette.toggle": msg("Command Palette: Toggle"),
+  "filePicker.toggle": msg("File Picker: Toggle"),
+  "projectSearch.toggle": msg("Project Search: Toggle"),
+  "usage.open": msg("Usage: Open"),
+  "theme.select": msg("Theme: Select"),
+  "appearance.cycle": msg("Appearance: Cycle"),
+  "themeEditor.toggle": msg("Theme Editor: Toggle"),
+  "composer.stash": msg("Composer: Stash"),
+  "composer.host": msg("Composer: Host"),
+  "composer.cycleHost": msg("Composer: Cycle Host"),
+  "composer.effort": msg("Composer: Effort"),
+  "composer.increaseEffort": msg("Composer: Increase Effort"),
+  "composer.decreaseEffort": msg("Composer: Decrease Effort"),
+  "composer.mode": msg("Composer: Mode"),
+  "composer.workspace": msg("Composer: Workspace"),
+  "composer.previousWorktree": msg("Composer: Previous Worktree"),
+  "composer.branch": msg("Composer: Branch"),
+  "chat.new": msg("Chat: New"),
+  "chat.newLocal": msg("Chat: New Local"),
+  "chat.newWithoutProject": msg("Chat: New Without Project"),
+  "chat.find": msg("Chat: Find"),
+  "editor.openFavorite": msg("Editor: Open Favorite"),
+  "modelPicker.toggle": msg("Model Picker: Toggle"),
+  "modelPicker.previousProvider": msg("Model Picker: Previous Provider"),
+  "modelPicker.nextProvider": msg("Model Picker: Next Provider"),
+  "thread.stop": msg("Thread: Stop"),
+  "thread.previous": msg("Thread: Previous"),
+  "thread.next": msg("Thread: Next"),
+  "thread.settle": msg("Thread: Settle"),
+  "thread.pin": msg("Thread: Pin"),
+  "thread.regenerateTitle": msg("Thread: Regenerate Title"),
+  "thread.undo": msg("Thread: Undo"),
 };
 
-export function commandLabel(command: KeybindingCommand): string {
-  const usageMetric = METRIC_OPTIONS.find((option) => option.command === command);
-  if (usageMetric) return `用量统计（${usageMetric.label}）`;
-  const usagePeriod = WINDOW_OPTIONS.find((option) => option.command === command);
-  if (usagePeriod) return `用量统计（${usagePeriod.label}）`;
-  const jump = /^(thread|modelPicker)\.jump\.([1-9])$/.exec(command);
-  if (jump) return `切换到第 ${jump[2]} 个${jump[1] === "thread" ? "会话" : "模型"}`;
-  if (command.startsWith("script.") && command.endsWith(".run")) {
-    return `运行脚本 ${command.slice("script.".length, -".run".length)}`;
+// Whole labels: search titles keep the encoded message, which cannot nest another one.
+const USAGE_COMMAND_LABELS: Record<
+  (typeof METRIC_OPTIONS)[number]["command"] | (typeof WINDOW_OPTIONS)[number]["command"],
+  string
+> = {
+  "usage.cost": msg("Usage: Cost"),
+  "usage.tokens": msg("Usage: Tokens"),
+  "usage.limits": msg("Usage: Limits"),
+  "usage.period.day": msg("Usage: Period: Past 24h"),
+  "usage.period.week": msg("Usage: Period: 7 days"),
+  "usage.period.month": msg("Usage: Period: 30 days"),
+  "usage.period.quarter": msg("Usage: Period: 90 days"),
+};
+
+const LATE_COMMAND_LABELS: Partial<Record<KeybindingCommand, string>> = {
+  "view.reopenClosed": msg("Reopen Closed Tab"),
+  "preview.focusUrl": msg("Preview: Focus URL"),
+  "preview.find": msg("Preview: Find on Page"),
+};
+
+export function commandLabel(command: KeybindingCommand, resolve: MessageResolver = m): string {
+  const label = COMMAND_LABELS[command];
+  if (label) return resolve(label);
+  const usageLabel = USAGE_COMMAND_LABELS[command as keyof typeof USAGE_COMMAND_LABELS];
+  if (usageLabel) return resolve(usageLabel);
+  const lateLabel = LATE_COMMAND_LABELS[command];
+  if (lateLabel) return resolve(lateLabel);
+  const raw = String(command);
+  if (raw.startsWith("thread.jump.")) {
+    return resolve(msg("Thread: Jump: {n}", { n: raw.slice("thread.jump.".length) }));
   }
-  return KEYBINDING_COMMAND_LABELS[command as LabeledKeybindingCommand] ?? command;
+  if (raw.startsWith("modelPicker.jump.")) {
+    return resolve(msg("Model Picker: Jump: {n}", { n: raw.slice("modelPicker.jump.".length) }));
+  }
+  if (raw.startsWith("script.") && raw.endsWith(".run")) {
+    return resolve(
+      msg("Run Script: {name}", {
+        name: titleCaseCommandSegment(raw.slice("script.".length, -".run".length)),
+      }),
+    );
+  }
+  return raw.split(".").map(titleCaseCommandSegment).join(": ");
+}
+
+function titleCaseCommandSegment(segment: string): string {
+  const words: Array<string> = [];
+  for (const part of segment.replace(/([a-z0-9])([A-Z])/g, "$1 $2").split(/[-_\s]+/)) {
+    if (part.length > 0) {
+      words.push(part.slice(0, 1).toUpperCase() + part.slice(1));
+    }
+  }
+  return words.join(" ");
 }
 
 function recordedLayoutShortcutKey(

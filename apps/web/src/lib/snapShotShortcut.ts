@@ -63,7 +63,8 @@ function modifierKeyLabel(modifier: SnapShotModifier, platform: string): string 
     if (modifier === "control") return "⌃";
     return "⌥";
   }
-  if (modifier === "meta") return isWindowsPlatform(platform) ? "⊞" : "超级";
+  // oxlint-disable-next-line t3code/no-untranslated-copy -- key names stay English
+  if (modifier === "meta") return isWindowsPlatform(platform) ? "⊞" : "Super";
   return modifier === "control" ? "Ctrl" : "Alt";
 }
 

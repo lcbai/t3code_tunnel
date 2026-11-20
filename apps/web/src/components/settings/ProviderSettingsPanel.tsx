@@ -7,8 +7,12 @@ import {
 } from "@t3tools/contracts";
 import { useEnvironmentScope, readEnvironmentScope } from "../../state/session";
 import { useAtomValue } from "@effect/atom-react";
-import { connectionStatusTitle } from "@t3tools/client-runtime/connection";
-import { safeErrorLogAttributes } from "@t3tools/client-runtime/errors";
+import { connectionErrorText, connectionStatusTitle } from "@t3tools/client-runtime/connection";
+import {
+  errorDisplayMessage,
+  safeErrorLogAttributes,
+  thrownErrorMessage,
+} from "@t3tools/client-runtime/errors";
 import {
   isAtomCommandInterrupted,
   settlePromise,
@@ -38,6 +42,8 @@ import * as Duration from "effect/Duration";
 import * as Result from "effect/Result";
 import { PlusIcon } from "lucide-react";
 import { useRef, useState, type ReactNode } from "react";
+import { msg, T, useGT, useMessages, Var } from "gt-react";
+import { m as resolveNow, type MessageResolver } from "../../i18n/messages";
 
 import { isDesktopLocalConnectionTarget } from "../../connection/desktopLocal";
 import {
@@ -95,8 +101,6 @@ import { useManagedPolicy } from "~/state/managedPolicy";
 import { ExpandableText } from "./ExpandableText";
 import { IntervalSecondsField } from "./IntervalSecondsField";
 import { ProviderInstanceCard } from "./ProviderInstanceCard";
-import { DoubaoCliSettings } from "./DoubaoCliSettings";
-import doubaoLogo from "./provider-logos/doubao.png";
 import { useSecretSources } from "./SecretSourceInput";
 import { TextGeneratorsSettings } from "./TextGeneratorsSettings";
 import { UsageProviderSettings } from "./UsageProviderSettings";
@@ -105,7 +109,7 @@ import { ProviderAuthenticationSection } from "./ProviderAuthenticationSection";
 import { CodexSetupSection, CodexManagedRuntimeFields } from "./CodexSetupSection";
 import { readCodexSetupMode } from "./CodexSetupSection.logic";
 import { providerClients } from "./providerDriverMeta";
-import { searchableSetting } from "./settingsSearch";
+import { useSearchableSetting } from "./settingsSearch";
 import { CompactIdleThreadsRow } from "./SettingsPanels";
 import {
   backgroundActivityOverrideSettings,
@@ -144,7 +148,7 @@ async function confirmProviderInstanceRemoval(
   question: string,
   consequence = "",
 ): Promise<boolean> {
-  const message = `${question}\n将删除已保存的设置，包括自定义程序路径。${consequence}`;
+  const message = `${question}\n${resolveNow(msg("Its saved settings, including any custom binary path, will be removed."))}${consequence}`;
   const confirmed = await settlePromise(() =>
     ensureLocalApi().dialogs.confirm(message, { variant: "destructive" }),
   );
@@ -187,34 +191,49 @@ function ProviderLastChecked({ environmentId }: { environmentId: EnvironmentId }
         )
       : null;
   const lastCheckedRelative = useRelativeTimeState(lastCheckedAt);
+  const gt = useGT();
 
   if (lastCheckedRelative.status === "missing") {
     return null;
   }
 
   if (lastCheckedRelative.status === "invalid") {
-    return <span>已检查不可用</span>;
+    return (
+      <span>
+        <T>Checked unavailable</T>
+      </span>
+    );
   }
 
   return (
     <span>
       {lastCheckedRelative.suffix ? (
-        <>
-          已检查 <span className="font-mono tabular-nums">{lastCheckedRelative.value}</span>{" "}
-          {lastCheckedRelative.suffix}
-        </>
+        <T context="the time is an elapsed time such as 5m">
+          Checked{" "}
+          <span className="font-mono tabular-nums">
+            <Var>{lastCheckedRelative.value}</Var>
+          </span>{" "}
+          ago
+        </T>
       ) : (
-        <>已检查 {lastCheckedRelative.value}</>
+        gt("Checked {time}", { time: lastCheckedRelative.value })
       )}
     </span>
   );
 }
 
-function providerEnvironmentDetail(environment: EnvironmentPresentation): string {
-  if (environment.entry.target._tag === "PrimaryConnectionTarget") return "Primary device";
+const T3_CONNECT_NAME = "T3 Connect";
+
+function providerEnvironmentDetail(
+  environment: EnvironmentPresentation,
+  resolve: MessageResolver,
+): string {
+  if (environment.entry.target._tag === "PrimaryConnectionTarget")
+    return resolve(msg("Primary device"));
+  if (environment.relayManaged) return T3_CONNECT_NAME;
   if (environment.entry.target._tag === "SshConnectionTarget") return "SSH";
-  if (isDesktopLocalConnectionTarget(environment.entry.target)) return "Local device";
-  return environment.displayUrl ?? "Remote device";
+  if (isDesktopLocalConnectionTarget(environment.entry.target)) return resolve(msg("Local device"));
+  return environment.displayUrl ?? resolve(msg("Remote device"));
 }
 
 const providerCardHeightClassName =
@@ -233,6 +252,7 @@ function ProviderSettingsPlaceholder({
   readonly description: string;
   readonly children?: ReactNode;
 }) {
+  const searchableSetting = useSearchableSetting();
   return (
     <SettingsSection {...searchableSetting("providers")} variant="plain">
       {deviceTabs ? (
@@ -267,18 +287,20 @@ function EnvironmentUnavailablePlaceholder({
   readonly access: Exclude<ProviderEnvironmentAccess, { kind: "editable" | "read-only" }>;
   readonly deviceTabs?: ReactNode;
 }) {
+  const gt = useGT();
+  const m = useMessages();
   const isLoading = access.kind === "loading";
   const title = isLoading
-    ? "Loading provider settings"
+    ? gt("Loading provider settings")
     : access.kind === "error"
-      ? "Could not connect to this device"
-      : "Provider settings are unavailable";
+      ? gt("Could not connect to this device")
+      : gt("Provider settings are unavailable");
   const description = isLoading
     ? access.reason === "permissions"
-      ? "Checking what this session is allowed to change."
-      : `Waiting for ${environment.label}'s configuration.`
-    : connectionStatusTitle(environment.connection);
-  const error = isLoading ? null : environment.connection.error;
+      ? gt("Checking what this session is allowed to change.")
+      : gt("Waiting for {environment}''s configuration.", { environment: environment.label })
+    : connectionStatusTitle(environment.connection, m);
+  const error = isLoading ? null : connectionErrorText(environment.connection, m);
   // Wedged devices can remain here indefinitely; a spinner would continuously repaint.
   return (
     <ProviderSettingsPlaceholder
@@ -320,6 +342,9 @@ export function ProviderSettingsPanel(target: ProviderSettingsTarget) {
 }
 
 function ProviderSettingsPanelContent(target: ProviderSettingsTarget) {
+  const searchableSetting = useSearchableSetting();
+  const gt = useGT();
+  const m = useMessages();
   const { environments, isReady } = useEnvironments();
   const primaryEnvironmentId = usePrimaryEnvironmentId();
   const searchTargetId = useSettingsSearchTargetId();
@@ -377,7 +402,7 @@ function ProviderSettingsPanelContent(target: ProviderSettingsTarget) {
     !target.scoped && !onlyPrimaryDevice && options.length > 0 ? (
       <ScrollArea radius="none" hideScrollbars scrollFade className="h-11 min-w-0 flex-1">
         <ToggleGroup
-          aria-label="设备"
+          aria-label={gt("Devices")}
           variant="segmented"
           className="my-2"
           value={effectiveEnvironmentId ? [effectiveEnvironmentId] : []}
@@ -388,8 +413,8 @@ function ProviderSettingsPanelContent(target: ProviderSettingsTarget) {
         >
           {options.map((environment) => {
             const machine = resolveEnvironmentMachineKind(environment.serverConfig);
-            const detail = providerEnvironmentDetail(environment);
-            const statusText = connectionStatusTitle(environment.connection);
+            const detail = providerEnvironmentDetail(environment, m);
+            const statusText = connectionStatusTitle(environment.connection, m);
             return (
               <Tooltip key={environment.environmentId}>
                 <TooltipTrigger
@@ -429,15 +454,21 @@ function ProviderSettingsPanelContent(target: ProviderSettingsTarget) {
         <ProviderSettingsPlaceholder
           deviceTabs={deviceTabs}
           icon={<EnvironmentMachineIcon kind={resolveEnvironmentMachineKind(null)} />}
-          title="设备不可用"
-          description="重新连接此设备来设置其提供者，或选择另一个设备。"
+          title={gt("Device unavailable")}
+          description={gt(
+            "Reconnect this device to set up its provider, or select another device.",
+          )}
         />
       ) : null}
       {options.length === 0 && !targetEnvironmentMissing ? (
         <ProviderSettingsPlaceholder
           icon={<EnvironmentMachineIcon kind={resolveEnvironmentMachineKind(null)} />}
-          title={isReady ? "没有连接的设备" : "装入设备"}
-          description={isReady ? "在配置提供者之前连接执行环境。" : "读取连接的执行环境。"}
+          title={isReady ? gt("No connected devices") : gt("Loading devices")}
+          description={
+            isReady
+              ? gt("Connect an execution environment before configuring providers.")
+              : gt("Reading connected execution environments.")
+          }
         />
       ) : null}
 
@@ -528,17 +559,6 @@ function AccessGatedProviderSettings({
 
 const NO_PROJECT_IDS: readonly ProjectId[] = [];
 const NO_FAVORITES: UnifiedSettings["favorites"] = [];
-const DOUBAO_CLI_SELECTION = Symbol("doubao-cli");
-
-function isDoubaoArkInstance(
-  instanceId: ProviderInstanceId,
-  instance: ProviderInstanceConfig | undefined,
-) {
-  return (
-    instance?.driver === "opencode" &&
-    (/^opencode_doubao(?:_\d+)?$/.test(instanceId) || instance.displayName === "豆包")
-  );
-}
 
 export function EnvironmentProviderSettings({
   environmentId,
@@ -555,6 +575,8 @@ export function EnvironmentProviderSettings({
   readonly projectIds?: readonly ProjectId[];
   readonly readOnly?: boolean;
 }) {
+  const searchableSetting = useSearchableSetting();
+  const gt = useGT();
   const settings = useEnvironmentSettings(environmentId);
   const managedPolicy = useManagedPolicy(environmentId);
   // A policy that allows no provider leaves nothing to add.
@@ -587,9 +609,9 @@ export function EnvironmentProviderSettings({
   });
   const [isRefreshingProviders, setIsRefreshingProviders] = useState(false);
   const [isAddInstanceDialogOpen, setIsAddInstanceDialogOpen] = useState(false);
-  const [selectedInstanceId, setSelectedInstanceId] = useState<
-    ProviderInstanceId | typeof DOUBAO_CLI_SELECTION | null
-  >(targetInstanceId ?? null);
+  const [selectedInstanceId, setSelectedInstanceId] = useState<ProviderInstanceId | null>(
+    targetInstanceId ?? null,
+  );
   const [updatingProviderInstanceIds, setUpdatingProviderInstanceIds] = useState<
     ReadonlySet<ProviderInstanceId>
   >(() => new Set());
@@ -605,8 +627,8 @@ export function EnvironmentProviderSettings({
         if (result._tag === "Success" && !result.value.accepted) {
           toastManager.add({
             type: "warning",
-            title: "认证请求过期",
-            description: "刷新提供者并再次启动认证流程。",
+            title: gt("Authentication request expired"),
+            description: gt("Refresh the provider and start the authentication flow again."),
           });
           return;
         }
@@ -614,8 +636,11 @@ export function EnvironmentProviderSettings({
           const error = squashAtomCommandFailure(result);
           toastManager.add({
             type: "error",
-            title: "无法继续认证",
-            description: error instanceof Error ? error.message : "认证请求已过期。",
+            title: gt("Could not continue authentication"),
+            description:
+              error instanceof Error
+                ? (thrownErrorMessage(error, resolveNow) ?? error.message)
+                : gt("The authentication request expired."),
           });
         }
       });
@@ -687,8 +712,13 @@ export function EnvironmentProviderSettings({
         toastManager.add(
           stackedThreadToast({
             type: "error",
-            title: `无法更新${PROVIDER_DISPLAY_NAMES[candidate.driver] ?? candidate.driver}`,
-            description: error instanceof Error ? error.message : "无法启动提供者更新命令。",
+            title: gt("Could not update {provider}", {
+              provider: PROVIDER_DISPLAY_NAMES[candidate.driver] ?? candidate.driver,
+            }),
+            description:
+              error instanceof Error
+                ? (errorDisplayMessage(error, resolveNow) ?? error.message)
+                : gt("The provider update command could not be started."),
           }),
         );
       }
@@ -779,16 +809,13 @@ export function EnvironmentProviderSettings({
     }
   }
 
-  const showDoubaoCli = managedPolicy?.limits?.providers?.allowedDrivers === undefined;
-  const standaloneDoubaoSelected = showDoubaoCli && selectedInstanceId === DOUBAO_CLI_SELECTION;
   const targetInstanceMissing =
     targetInstanceId !== undefined &&
     selectedInstanceId === targetInstanceId &&
     !rows.some((row) => row.instanceId === targetInstanceId);
-  const selectedRow = standaloneDoubaoSelected
-    ? null
-    : (rows.find((row) => row.instanceId === selectedInstanceId) ??
-      (targetInstanceMissing ? null : (rows[0] ?? null)));
+  const selectedRow =
+    rows.find((row) => row.instanceId === selectedInstanceId) ??
+    (targetInstanceMissing ? null : (rows[0] ?? null));
 
   const persistInstance = async (
     instanceId: ProviderInstanceId,
@@ -811,10 +838,14 @@ export function EnvironmentProviderSettings({
       const error = squashAtomCommandFailure(result);
       toastManager.add({
         type: "error",
-        title: "无法更新提供者实例",
-        description: error instanceof Error ? error.message : "设置更新失败。",
+        title: gt("Could not update provider instance"),
+        description:
+          error instanceof Error
+            ? (thrownErrorMessage(error, resolveNow) ?? error.message)
+            : gt("The settings update failed."),
       });
     }
+    return result._tag !== "Failure";
   };
 
   const updateInstance = useStableCallback(
@@ -828,7 +859,7 @@ export function EnvironmentProviderSettings({
         isDisabling &&
         resolveAppModelSelectionState(settings, serverProviders).instanceId === instanceId &&
         readEnvironmentScope(environmentId, AuthSettingsWriteScope);
-      void persistInstance(
+      return persistInstance(
         instanceId,
         next,
         shouldClearTextGen ? DEFAULT_UNIFIED_SETTINGS.textGenerationModelSelection : undefined,
@@ -844,7 +875,9 @@ export function EnvironmentProviderSettings({
   const deleteInstance = useStableCallback(
     async (instanceId: ProviderInstanceId, instance: ProviderInstanceConfig) => {
       const confirmed = await confirmProviderInstanceRemoval(
-        `要删除 ${providerInstanceName(instance)} 提供者实例吗？`,
+        gt("Remove the {provider} provider instance?", {
+          provider: providerInstanceName(instance),
+        }),
       );
       if (!confirmed) return;
       const updateResult = await persistProviderInstance({
@@ -855,8 +888,11 @@ export function EnvironmentProviderSettings({
         const error = squashAtomCommandFailure(updateResult);
         toastManager.add({
           type: "error",
-          title: "无法删除提供者实例",
-          description: error instanceof Error ? error.message : "设置更新失败。",
+          title: gt("Could not delete provider instance"),
+          description:
+            error instanceof Error
+              ? (thrownErrorMessage(error, resolveNow) ?? error.message)
+              : gt("The settings update failed."),
         });
         return;
       }
@@ -875,8 +911,11 @@ export function EnvironmentProviderSettings({
         const error = squashAtomCommandFailure(uninstallResult);
         toastManager.add({
           type: "warning",
-          title: "提供者已删除，但管理的文件仍保留",
-          description: error instanceof Error ? error.message : "管理二进制清理失败。",
+          title: gt("Provider deleted, but managed files remain"),
+          description:
+            error instanceof Error
+              ? (thrownErrorMessage(error, resolveNow) ?? error.message)
+              : gt("Managed binary cleanup failed."),
         });
       }
     },
@@ -889,8 +928,10 @@ export function EnvironmentProviderSettings({
       resolveProviderInstanceEnabled(instance) &&
       !resolveProviderInstanceEnabled({ driver: driverKind });
     const confirmed = await confirmProviderInstanceRemoval(
-      `要将 ${providerInstanceName(instance)} 提供者恢复为默认设置吗？`,
-      turnsOff ? "该提供者也将被停用。" : "",
+      gt("Reset the {provider} provider to its defaults?", {
+        provider: providerInstanceName(instance),
+      }),
+      turnsOff ? ` ${gt("It will also be turned off.")}` : "",
     );
     if (!confirmed) return;
     const result = await persistProviderInstance({ operation: "remove", instanceId });
@@ -898,8 +939,11 @@ export function EnvironmentProviderSettings({
       const error = squashAtomCommandFailure(result);
       toastManager.add({
         type: "error",
-        title: "无法重设提供者实例",
-        description: error instanceof Error ? error.message : "设置更新失败。",
+        title: gt("Could not reset provider instance"),
+        description:
+          error instanceof Error
+            ? (thrownErrorMessage(error, resolveNow) ?? error.message)
+            : gt("The settings update failed."),
       });
     }
   });
@@ -992,13 +1036,15 @@ export function EnvironmentProviderSettings({
                     size="icon-xs"
                     variant="ghost-muted"
                     onClick={() => setIsAddInstanceDialogOpen(true)}
-                    aria-label="添加代理提供方"
+                    aria-label={gt("Add provider")}
                   >
                     <PlusIcon />
                   </Button>
                 }
               />
-              <TooltipPopup side="top">添加代理提供方</TooltipPopup>
+              <TooltipPopup side="top">
+                <T>Add provider</T>
+              </TooltipPopup>
             </Tooltip>
           ) : null
         }
@@ -1017,10 +1063,12 @@ export function EnvironmentProviderSettings({
                     onClick={() => void refreshProviders()}
                   >
                     <RefreshIcon refreshing={isRefreshingProviders} />
-                    <span className="sr-only">刷新提供者状态</span>
+                    <span className="sr-only">
+                      <T>Refresh provider status</T>
+                    </span>
                     <span className="hidden min-w-0 truncate sm:inline">
                       {isRefreshingProviders ? (
-                        "刷新提供者"
+                        gt("Refreshing providers")
                       ) : (
                         <ProviderLastChecked environmentId={environmentId} />
                       )}
@@ -1028,7 +1076,9 @@ export function EnvironmentProviderSettings({
                   </Button>
                 }
               />
-              <TooltipPopup side="top">刷新提供者状态</TooltipPopup>
+              <TooltipPopup side="top">
+                <T>Refresh provider status</T>
+              </TooltipPopup>
             </Tooltip>
           </div>
         }
@@ -1039,8 +1089,11 @@ export function EnvironmentProviderSettings({
         {readOnly ? (
           <SettingsGroup divided={false} className="overflow-hidden">
             <SettingsRow
-              title="有限权限"
-              description={`此会话可以查看${environmentLabel} 提供者，但不能更改他们的设置。`}
+              title={gt("Limited permissions")}
+              description={gt(
+                "This session can view {environment}''s providers but can't change their settings.",
+                { environment: environmentLabel },
+              )}
             />
           </SettingsGroup>
         ) : null}
@@ -1059,20 +1112,6 @@ export function EnvironmentProviderSettings({
             >
               <div className="divide-y divide-border/50">
                 {rows.map((row) => renderProviderInstance(row, "list"))}
-                {showDoubaoCli ? (
-                  <button
-                    type="button"
-                    aria-pressed={standaloneDoubaoSelected}
-                    className={cn(
-                      "flex min-h-18 w-full cursor-pointer items-center gap-3 px-3 py-3 text-left text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring sm:px-4",
-                      standaloneDoubaoSelected ? "bg-foreground/[0.06]" : "hover:bg-muted/25",
-                    )}
-                    onClick={() => setSelectedInstanceId(DOUBAO_CLI_SELECTION)}
-                  >
-                    <img src={doubaoLogo} alt="" className="size-4 shrink-0" />
-                    豆包 CLI（企业）
-                  </button>
-                ) : null}
                 {canAddProvider ? (
                   <button
                     type="button"
@@ -1080,7 +1119,7 @@ export function EnvironmentProviderSettings({
                     onClick={() => setIsAddInstanceDialogOpen(true)}
                   >
                     <PlusIcon className="size-4 shrink-0" />
-                    添加代理提供方
+                    <T>Add provider</T>
                   </button>
                 ) : null}
               </div>
@@ -1088,20 +1127,18 @@ export function EnvironmentProviderSettings({
           </div>
 
           <div data-provider-detail className="min-w-0 @min-[48rem]/providers:min-h-0">
-            {standaloneDoubaoSelected || selectedRow ? (
+            {selectedRow ? (
               <ScrollArea scrollFade chainVerticalScroll className="@min-[48rem]/providers:h-full">
                 {/* Flat sections run dividers edge to edge and inset text like the list beside them. */}
                 <div className="space-y-6 py-4">
-                  {standaloneDoubaoSelected ? (
-                    <DoubaoCliSettings environmentId={environmentId} />
-                  ) : selectedRow ? (
-                    renderProviderInstance(selectedRow, "editor")
-                  ) : null}
+                  {renderProviderInstance(selectedRow, "editor")}
                 </div>
               </ScrollArea>
             ) : (
               <div className="p-6 text-sm text-muted-foreground">
-                {targetInstanceMissing ? "此设备已无法使用此提供者实例。" : "没有配置提供者。"}
+                {targetInstanceMissing
+                  ? gt("This provider instance is no longer available on this device.")
+                  : gt("No providers configured.")}
               </div>
             )}
           </div>
@@ -1127,18 +1164,22 @@ export function EnvironmentProviderSettings({
         />
       ) : null}
 
-      <SettingsSection title="高级">
+      <SettingsSection title={gt("Advanced")}>
         <SettingsRow
           id={searchableSetting("provider-health-check-interval").id}
           title={
             <span className="inline-flex items-center gap-1.5">
               {searchableSetting("provider-health-check-interval").title}
               <PolicyTooltip>
-                此间隔在此配置，然后共享背景活动政策决定当定时器起火时提供者探测器是否可以运行。自定义间隔在维护设置中显示为高级。
+                {gt(
+                  "This interval is configured here, then the shared Background activity policy decides whether provider probes may run when the timer fires. Custom intervals appear as Advanced in Maintenance settings.",
+                )}
               </PolicyTooltip>
             </span>
           }
-          description="刷新背景中的提供者状态、版本和模型。 设置为 0 以禁用。"
+          description={gt(
+            "Refresh provider status, versions, and models in the background. Set to 0 to disable.",
+          )}
           resetAction={
             providerHealthRefreshIntervalSeconds !== defaultProviderHealthRefreshIntervalSeconds ? (
               <span
@@ -1146,7 +1187,7 @@ export function EnvironmentProviderSettings({
                 className={!canWriteSettings ? "opacity-50" : undefined}
               >
                 <SettingResetButton
-                  label="提供者健康检查间隔"
+                  ariaLabel={gt("Reset provider health check interval to default")}
                   onClick={() =>
                     updateSettings(
                       backgroundActivityOverrideSettings(
@@ -1170,7 +1211,11 @@ export function EnvironmentProviderSettings({
               )}
             >
               <IntervalSecondsField
-                label="提供者健康检查间隔"
+                labels={{
+                  decrease: gt("Decrease provider health check interval"),
+                  input: gt("Provider health check interval in seconds"),
+                  increase: gt("Increase provider health check interval"),
+                }}
                 value={providerHealthRefreshIntervalSeconds}
                 min={0}
                 step={PROVIDER_HEALTH_INTERVAL_STEP_SECONDS}
@@ -1185,7 +1230,9 @@ export function EnvironmentProviderSettings({
                   )
                 }
               />
-              <span className="text-xs text-muted-foreground">seconds</span>
+              <span className="text-xs text-muted-foreground">
+                <T>seconds</T>
+              </span>
             </div>
           }
         />
@@ -1199,14 +1246,6 @@ export function EnvironmentProviderSettings({
           environmentLabel={environmentLabel}
           onOpenChange={setIsAddInstanceDialogOpen}
           onCreated={setSelectedInstanceId}
-          onSelectDoubaoCli={
-            showDoubaoCli
-              ? () => {
-                  setSelectedInstanceId(DOUBAO_CLI_SELECTION);
-                  setIsAddInstanceDialogOpen(false);
-                }
-              : undefined
-          }
         />
       ) : null}
     </>
@@ -1226,11 +1265,11 @@ interface ProviderInstanceRowActions {
     instanceId: ProviderInstanceId,
     previous: ProviderInstanceConfig,
     next: ProviderInstanceConfig,
-  ) => void;
+  ) => Promise<boolean>;
   readonly enableInstance: (
     instanceId: ProviderInstanceId,
     next: ProviderInstanceConfig,
-  ) => Promise<void>;
+  ) => Promise<boolean>;
   readonly deleteInstance: (
     instanceId: ProviderInstanceId,
     instance: ProviderInstanceConfig,
@@ -1291,6 +1330,7 @@ function ProviderInstanceRow({
   readonly favorites: UnifiedSettings["favorites"];
   readonly actions: ProviderInstanceRowActions;
 }) {
+  const gt = useGT();
   const allProjects = useProjects();
   const secretSources = useSecretSources(environmentId);
   const acpProjects =
@@ -1341,11 +1381,6 @@ function ProviderInstanceRow({
       instance={instance}
       driverOption={driverOption}
       liveProvider={liveProvider}
-      icon={
-        isDoubaoArkInstance(instanceId, explicitInstance) ? (
-          <img src={doubaoLogo} alt="" className="size-4 shrink-0" />
-        ) : undefined
-      }
       mode={mode}
       selected={selected}
       onSelect={mode === "list" ? () => actions.selectInstance(instanceId) : undefined}
@@ -1413,8 +1448,10 @@ function ProviderInstanceRow({
           driver === "cursor" &&
           liveProvider?.setup?.canAuthenticate === false ? (
           <SettingsRow
-            title="Cursor 账户"
-            description="使用 CURSOR_API_KEY。从此提供者的环境中删除它，以使用浏览器登录。"
+            title={gt("Cursor account")}
+            description={gt(
+              "Using CURSOR_API_KEY. Remove it from this provider's environment to use browser sign-in.",
+            )}
           />
         ) : null
       }
@@ -1427,7 +1464,9 @@ function ProviderInstanceRow({
       headerAction={
         mode === "editor" && isDefault && isDirty ? (
           <SettingResetButton
-            label={`${resetLabel} 代理提供方设置`}
+            ariaLabel={gt("Reset {provider} provider settings to default", {
+              provider: resetLabel,
+            })}
             onClick={() => actions.resetDefaultInstance(driver)}
           />
         ) : null

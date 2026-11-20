@@ -1,3 +1,4 @@
+import { msg } from "gt-react";
 import {
   ClientCapabilities,
   PlatformConnectionSource,
@@ -21,6 +22,7 @@ import {
 } from "@t3tools/client-runtime/connection";
 import { bootstrapRemoteBearerSession } from "@t3tools/client-runtime/authorization";
 import { fetchRemoteEnvironmentDescriptor } from "@t3tools/client-runtime/environment";
+import { managedRelayAccountChanges, managedRelaySessionAtom } from "@t3tools/client-runtime/relay";
 import { EnvironmentRpcRequestObserver } from "@t3tools/client-runtime/rpc";
 import {
   AuthStandardClientScopes,
@@ -52,6 +54,7 @@ import { clearComposerDraftsEnvironment } from "../composerDraftStore";
 import { isHostedStaticApp } from "../hostedPairing";
 import { isLocalEnvironmentDisabled } from "../localEnvironment";
 import { randomUUID } from "../lib/utils";
+import { appAtomRegistry } from "../rpc/atomRegistry";
 import { acknowledgeRpcRequest, trackRpcRequestSent } from "../rpc/requestLatencyState";
 import {
   desktopLocalConnectionId,
@@ -60,6 +63,7 @@ import {
 } from "./desktopLocal";
 import * as ConnectionStorage from "./storage";
 import { clientPresentationMetadata } from "./clientMetadata";
+import { m } from "../i18n/messages";
 
 let nextObservedRpcRequestId = 0;
 
@@ -140,6 +144,27 @@ const layerWakeups = Wakeups.layer({
             }),
         ).pipe(Effect.asVoid),
       ),
+      // A window left visible beside another app never fires visibilitychange when refocused.
+      Stream.callback<"application-focused">((queue) =>
+        Effect.acquireRelease(
+          Effect.sync(() => {
+            const listener = () => {
+              if (document.visibilityState === "visible") {
+                Queue.offerUnsafe(queue, "application-focused");
+              }
+            };
+            window.addEventListener("focus", listener);
+            return listener;
+          }),
+          (listener) =>
+            Effect.sync(() => {
+              window.removeEventListener("focus", listener);
+            }),
+        ).pipe(Effect.asVoid),
+      ),
+      managedRelayAccountChanges(appAtomRegistry).pipe(
+        Stream.map(() => "credentials-changed" as const),
+      ),
       networkPathChanges,
     ],
     { concurrency: "unbounded" },
@@ -169,7 +194,7 @@ function sshPreparationError(cause: unknown) {
   }
   return new ConnectionTransientError({
     reason: "remote-unavailable",
-    detail: `无法准备SSH 环境 :${message}`,
+    detail: m(msg("Could not prepare the SSH environment: {message}", { message })),
   });
 }
 
@@ -215,7 +240,7 @@ export const provisionDesktopSshEnvironment = Effect.fn(
   if (pairingToken === null) {
     return yield* new ConnectionBlockedError({
       reason: "authentication",
-      detail: "SSH 环境没有签发配对证书。",
+      detail: m(msg("The SSH environment did not issue a pairing credential.")),
     });
   }
   const descriptor = yield* Effect.tryPromise({
@@ -225,7 +250,12 @@ export const provisionDesktopSshEnvironment = Effect.fn(
   if (expectedEnvironmentId !== undefined && descriptor.environmentId !== expectedEnvironmentId) {
     return yield* new ConnectionBlockedError({
       reason: "configuration",
-      detail: `该主机到达了${descriptor.label}，一个不同的机器。 把它添加为它自己的环境。`,
+      detail: m(
+        msg(
+          "That host reaches {label}, a different machine. Add it as its own environment instead.",
+          { label: descriptor.label },
+        ),
+      ),
     });
   }
   const access = yield* Effect.tryPromise({
@@ -243,7 +273,16 @@ export const provisionDesktopSshEnvironment = Effect.fn(
       }
       return new ConnectionBlockedError({
         reason: "configuration",
-        detail: `${descriptor.label} runs T3 Code ${descriptor.serverVersion}, but this desktop is ${APP_VERSION}, and that server could not accept its pairing. Restart the T3 server on ${descriptor.label} so it runs ${APP_VERSION}, then retry.`,
+        detail: m(
+          msg(
+            "{label} runs T3 Code {serverVersion}, but this desktop is {appVersion}, and that server could not accept its pairing. Restart the T3 server on {label} so it runs {appVersion}, then retry.",
+            {
+              label: descriptor.label,
+              serverVersion: descriptor.serverVersion,
+              appVersion: APP_VERSION,
+            },
+          ),
+        ),
       });
     },
   });
@@ -279,7 +318,12 @@ export const prepareDesktopSshEnvironment = Effect.fn("web.connectionPlatform.ss
       if (descriptor.environmentId !== input.expectedEnvironmentId) {
         return yield* new ConnectionBlockedError({
           reason: "configuration",
-          detail: `该主机到达了${descriptor.label}，一个不同的机器。 把它添加为它自己的环境。`,
+          detail: m(
+            msg(
+              "That host reaches {label}, a different machine. Add it as its own environment instead.",
+              { label: descriptor.label },
+            ),
+          ),
         });
       }
       const session = yield* Effect.tryPromise({
@@ -324,13 +368,50 @@ const layerCapabilities = Layer.effectContext(
     const presentation = ClientCapabilities.ClientPresentation.of({
       metadata: currentClientMetadata(),
     });
+    const cloudSession = ClientCapabilities.CloudSession.of({
+      identity: Effect.sync(() =>
+        Option.fromNullishOr(appAtomRegistry.get(managedRelaySessionAtom)),
+      ),
+      clerkToken: Effect.gen(function* () {
+        const session = appAtomRegistry.get(managedRelaySessionAtom);
+        if (session === null) {
+          return yield* new ConnectionBlockedError({
+            reason: "authentication",
+            detail: m(msg("Sign in to T3 Connect to connect this environment.")),
+          });
+        }
+        const token = yield* session.readClerkToken().pipe(
+          Effect.mapError(
+            (error) =>
+              new ConnectionTransientError({
+                reason: "network",
+                detail: error.message,
+              }),
+          ),
+        );
+        if (token === null) {
+          return yield* new ConnectionBlockedError({
+            reason: "authentication",
+            detail: m(msg("The T3 Connect session is unavailable.")),
+          });
+        }
+        return token;
+      }),
+    });
+    const identity = ClientCapabilities.RelayDeviceIdentity.of({
+      deviceId: Effect.succeedNone,
+    });
     const primaryAuth = ClientCapabilities.PrimaryEnvironmentAuth.of({
       bearerToken: Effect.tryPromise({
         try: readDesktopPrimaryBearerToken,
         catch: (cause) =>
           new ConnectionTransientError({
             reason: "remote-unavailable",
-            detail: `无法装入桌面主证书 :${String(cause)}`,
+            detail: m(
+              msg("Could not load the desktop primary credential: {cause}", {
+                cause: String(cause),
+              }),
+            ),
           }),
       }).pipe(Effect.map(Option.fromNullishOr)),
     });
@@ -341,7 +422,7 @@ const layerCapabilities = Layer.effectContext(
           if (bridge === undefined) {
             return yield* new ConnectionBlockedError({
               reason: "unsupported",
-              detail: "SSH 环境只在桌面应用程序中可用。",
+              detail: m(msg("SSH environments are only available in the desktop app.")),
             });
           }
           return yield* provisionDesktopSshEnvironment(bridge, target, expectedEnvironmentId);
@@ -352,7 +433,7 @@ const layerCapabilities = Layer.effectContext(
         if (bridge === undefined) {
           return yield* new ConnectionBlockedError({
             reason: "unsupported",
-            detail: "SSH 环境只在桌面应用程序中可用。",
+            detail: m(msg("SSH environments are only available in the desktop app.")),
           });
         }
         return yield* prepareDesktopSshEnvironment(bridge, input);
@@ -368,14 +449,18 @@ const layerCapabilities = Layer.effectContext(
           catch: (cause) =>
             new ConnectionTransientError({
               reason: "remote-unavailable",
-              detail: `无法断开SSH 环境 :${String(cause)}`,
+              detail: m(
+                msg("Could not disconnect the SSH environment: {cause}", { cause: String(cause) }),
+              ),
             }),
         });
       }),
     });
 
-    return Context.make(ClientCapabilities.AnalyticsDevice, analyticsDevice).pipe(
+    return Context.make(ClientCapabilities.CloudSession, cloudSession).pipe(
+      Context.add(ClientCapabilities.AnalyticsDevice, analyticsDevice),
       Context.add(ClientCapabilities.PrimaryEnvironmentAuth, primaryAuth),
+      Context.add(ClientCapabilities.RelayDeviceIdentity, identity),
       Context.add(ClientCapabilities.ClientPresentation, presentation),
       Context.add(ClientCapabilities.SshEnvironmentGateway, ssh),
     );
@@ -411,7 +496,7 @@ const loadSecondaryConnectionRegistration = Effect.fn(
   ) {
     return yield* new ConnectionTransientError({
       reason: "endpoint-unavailable",
-      detail: `桌面本地后端${entry.id} 尚未准备好。`,
+      detail: m(msg("Desktop-local backend {id} is not ready yet.", { id: entry.id })),
     });
   }
   const httpBaseUrl = entry.httpBaseUrl;

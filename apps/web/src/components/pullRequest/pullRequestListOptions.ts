@@ -11,30 +11,61 @@ import {
   PenLineIcon,
   UserLockIcon,
 } from "lucide-react";
+import { msg } from "gt-react";
+
+import type { MessageResolver } from "~/i18n/messages";
 
 import type { PullRequestFilterOption } from "./PullRequestListFilters";
 import type { PullRequestListSort } from "./pullRequestListPreferences";
 import { PullRequestGlyph } from "./pullRequestIcons";
 
 export const INVOLVEMENT_TABS = [
-  { value: "all", label: "全部人员", Icon: LayersIcon },
-  { value: "reviewing", label: "审查", Icon: EyeIcon },
-  { value: "authored", label: "已撰写", Icon: PenLineIcon },
+  { value: "all", label: msg("All", { $context: "pull request filter" }), Icon: LayersIcon },
+  {
+    value: "reviewing",
+    label: msg("Reviewing", { $context: "pull request filter" }),
+    Icon: EyeIcon,
+  },
+  {
+    value: "authored",
+    label: msg("Authored", { $context: "pull request filter" }),
+    Icon: PenLineIcon,
+  },
 ] as const satisfies ReadonlyArray<PullRequestFilterOption<PullRequestInvolvement>>;
 
 export const STATE_TABS = [
-  { value: "all", label: "全部人员", Icon: LayersIcon },
-  { value: "open", label: "打开", Icon: PullRequestGlyph.pullRequest },
-  { value: "closed", label: "关闭", Icon: PullRequestGlyph.closed },
-  { value: "merged", label: "合并", Icon: PullRequestGlyph.merged },
+  { value: "all", label: msg("All", { $context: "pull request filter" }), Icon: LayersIcon },
+  {
+    value: "open",
+    label: msg("Open", { $context: "pull request state" }),
+    Icon: PullRequestGlyph.pullRequest,
+  },
+  {
+    value: "closed",
+    label: msg("Closed", { $context: "pull request state" }),
+    Icon: PullRequestGlyph.closed,
+  },
+  {
+    value: "merged",
+    label: msg("Merged", { $context: "pull request state" }),
+    Icon: PullRequestGlyph.merged,
+  },
 ] as const satisfies ReadonlyArray<PullRequestFilterOption<PullRequestListState>>;
 
 export const SORT_OPTIONS = [
-  { value: "ready", label: "合并准备", Icon: ListChecksIcon },
-  { value: "blocked", label: "挡着我", Icon: UserLockIcon },
-  { value: "updated", label: "最近更新", Icon: ClockIcon },
-  { value: "newest", label: "显示的最新", Icon: CalendarArrowDownIcon },
-  { value: "oldest", label: "最老的显示", Icon: CalendarArrowUpIcon },
-  { value: "largest", label: "显示的最大", Icon: Maximize2Icon },
-  { value: "smallest", label: "显示最小", Icon: Minimize2Icon },
+  { value: "ready", label: msg("Merge readiness"), Icon: ListChecksIcon },
+  { value: "blocked", label: msg("Blocked on me"), Icon: UserLockIcon },
+  { value: "updated", label: msg("Recently updated"), Icon: ClockIcon },
+  { value: "newest", label: msg("Newest shown"), Icon: CalendarArrowDownIcon },
+  { value: "oldest", label: msg("Oldest shown"), Icon: CalendarArrowUpIcon },
+  { value: "largest", label: msg("Largest shown"), Icon: Maximize2Icon },
+  { value: "smallest", label: msg("Smallest shown"), Icon: Minimize2Icon },
 ] as const satisfies ReadonlyArray<PullRequestFilterOption<PullRequestListSort>>;
+
+/** Static option tables hold `msg()` labels; components resolve them with `useMessages()`. */
+export function resolveFilterOptions<Option extends { readonly label: string }>(
+  options: ReadonlyArray<Option>,
+  resolve: MessageResolver,
+): Option[] {
+  return options.map((option) => ({ ...option, label: resolve(option.label) }));
+}

@@ -1,3 +1,4 @@
+import { useGT } from "gt-react";
 import { lazy, memo, Suspense, useLayoutEffect, useRef, useState } from "react";
 
 import { observeResize } from "../../lib/observeResize";
@@ -16,6 +17,7 @@ export const MarkdownMath = memo(function MarkdownMath(props: {
   display: boolean;
   focusable?: boolean;
 }) {
+  const gt = useGT();
   const viewportRef = useRef<HTMLSpanElement>(null);
   const contentRef = useRef<HTMLSpanElement>(null);
   const [overflows, setOverflows] = useState(false);
@@ -44,14 +46,24 @@ export const MarkdownMath = memo(function MarkdownMath(props: {
       data-markdown-copy={props.display ? `${source}\n\n` : source}
       role={props.focusable === false ? undefined : "group"}
       aria-label={
-        props.focusable === false ? undefined : props.display ? "显示方程式" : "内置方程式"
+        props.focusable === false
+          ? undefined
+          : props.display
+            ? gt("Display equation")
+            : gt("Inline equation")
       }
     >
       <span
         ref={viewportRef}
         className="block max-w-full overflow-x-auto overflow-y-hidden in-[.chat-markdown-table-container]:max-w-none in-[.chat-markdown-table-container]:overflow-visible px-0.5 py-0.75 focus-visible:outline-1 focus-visible:outline-solid focus-visible:-outline-offset-1 focus-visible:outline-border [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar-thumb]:rounded [&::-webkit-scrollbar-thumb]:border [&::-webkit-scrollbar-thumb]:border-transparent [&::-webkit-scrollbar-thumb]:bg-clip-content"
         tabIndex={scrollable ? 0 : -1}
-        aria-label={!scrollable ? undefined : props.display ? "滚动显示方程式" : "向内滚动公式"}
+        aria-label={
+          !scrollable
+            ? undefined
+            : props.display
+              ? gt("Scroll display equation")
+              : gt("Scroll inline equation")
+        }
       >
         <span
           ref={contentRef}

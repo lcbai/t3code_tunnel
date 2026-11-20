@@ -1,3 +1,6 @@
+import { thrownErrorMessage } from "@t3tools/client-runtime/errors";
+import { m } from "~/i18n/messages";
+import { T, useGT } from "gt-react";
 import { useState } from "react";
 
 import { isLocalEnvironmentDisabled } from "../../localEnvironment";
@@ -14,10 +17,12 @@ import { Button } from "../ui/button";
 import { Spinner } from "../ui/spinner";
 import { Switch } from "../ui/switch";
 import { SettingsRow } from "./settingsLayout";
-import { searchableSetting } from "./settingsSearch";
+import { useSearchableSetting } from "./settingsSearch";
 
 // Toggling relaunches desktop; the switch reflects startup state.
 export function LocalEnvironmentSetting() {
+  const searchableSetting = useSearchableSetting();
+  const gt = useGT();
   const setEnabled = window.desktopBridge?.setLocalEnvironmentEnabled;
   const [enabled] = useState(() => !isLocalEnvironmentDisabled());
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -31,7 +36,11 @@ export function LocalEnvironmentSetting() {
     try {
       await setEnabled(!enabled);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "无法改变这个设置。");
+      setError(
+        cause instanceof Error
+          ? (thrownErrorMessage(cause, m) ?? cause.message)
+          : gt("Couldn't change this setting."),
+      );
       setIsUpdating(false);
     }
   };
@@ -42,15 +51,17 @@ export function LocalEnvironmentSetting() {
         {...searchableSetting("local-environment")}
         description={
           enabled
-            ? "在此计算机上运行代理。 关闭只使用远程环境的T3 Code option: window"
-            : "关机了特工只在偏僻环境中跑"
+            ? gt(
+                "Run agents on this computer. Turn off to use T3 Code only with remote environments.",
+              )
+            : gt("Turned off. Agents only run in remote environments.")
         }
         control={
           <Switch
             checked={enabled}
             disabled={isUpdating}
             onCheckedChange={() => setConfirmOpen(true)}
-            aria-label="本地环境"
+            aria-label={gt("Local environment")}
           />
         }
       />
@@ -64,17 +75,21 @@ export function LocalEnvironmentSetting() {
       >
         <AlertDialogPopup>
           <AlertDialogHeader>
-            <AlertDialogTitle>{enabled ? "关掉本地环境?" : "打开本地环境?"}</AlertDialogTitle>
+            <AlertDialogTitle>
+              {enabled ? gt("Turn off local environment?") : gt("Turn on local environment?")}
+            </AlertDialogTitle>
             <AlertDialogDescription>
               {enabled
-                ? "T3 Code 将在不运行此计算机的服务器的情况下重新启动。在此运行的任何代理服务器和终端都会停止运行，其他设备将无法连接到此计算机。您的项目、 历史和远程环境不会受到影响。"
-                : "T3 Code 将重新启动，并再次开始在此计算机上运行服务器。"}
+                ? gt(
+                    "T3 Code will restart without running a server on this computer. Any agents and terminals running here will stop, and other devices will no longer be able to connect to this computer. Your projects, history, and remote environments are unaffected.",
+                  )
+                : gt("T3 Code will restart and start running a server on this computer again.")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           {error ? <p className="px-6 pb-4 text-sm text-destructive">{error}</p> : null}
           <AlertDialogFooter>
             <AlertDialogClose disabled={isUpdating} render={<Button variant="outline" />}>
-              取消
+              <T>Cancel</T>
             </AlertDialogClose>
             <Button
               variant={enabled ? "destructive" : "default"}
@@ -84,12 +99,12 @@ export function LocalEnvironmentSetting() {
               {isUpdating ? (
                 <>
                   <Spinner size="sm" />
-                  重新启动中…
+                  <T>Restarting…</T>
                 </>
               ) : enabled ? (
-                "重新启动并关闭"
+                gt("Restart and turn off")
               ) : (
-                "重新启动并打开"
+                gt("Restart and turn on")
               )}
             </Button>
           </AlertDialogFooter>

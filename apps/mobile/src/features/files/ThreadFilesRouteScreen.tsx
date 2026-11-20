@@ -8,6 +8,7 @@ import {
   usePreventRemove,
   type StaticScreenProps,
 } from "@react-navigation/native";
+import { useGT, useMessages } from "gt-react-native";
 import { type ComponentProps, type ReactNode, useId, useState } from "react";
 import { Platform, View } from "react-native";
 import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg";
@@ -81,9 +82,10 @@ function FilesBrowserHeader(props: {
   readonly onRefresh: () => void;
   readonly onBack: () => void;
 }) {
+  const gt = useGT();
   return (
     <AppBar
-      title="文件"
+      title={gt("Files", { $context: "screen title, workspace files" })}
       subtitle={props.projectName}
       onBack={props.onBack}
       hideBottomBorder
@@ -91,11 +93,11 @@ function FilesBrowserHeader(props: {
       search={{
         value: props.searchQuery,
         onChangeText: props.onSearchQueryChange,
-        placeholder: "搜索文件",
-        closeAccessibilityLabel: "Close file search",
-        clearAccessibilityLabel: "Clear file search",
+        placeholder: gt("Search files"),
+        closeAccessibilityLabel: gt("Close file search"),
+        clearAccessibilityLabel: gt("Clear file search"),
       }}
-      refresh={{ accessibilityLabel: "刷新文件", onPress: props.onRefresh }}
+      refresh={{ accessibilityLabel: gt("Refresh files"), onPress: props.onRefresh }}
     />
   );
 }
@@ -116,6 +118,7 @@ function FileHeader(props: {
   }>;
 }) {
   const { toggleAuxiliaryPane } = useAdaptiveWorkspaceLayout();
+  const gt = useGT();
   const { panes } = useWorkspacePaneState();
   const modes = props.actions.filter(({ inline }) => inline);
   return (
@@ -127,7 +130,7 @@ function FileHeader(props: {
       backInSplitView={
         props.fileInspectorSupported
           ? {
-              accessibilityLabel: "返回会话",
+              accessibilityLabel: gt("Return to chat"),
               icon: "chevron.left",
               onPress: props.onReturnToThread,
             }
@@ -137,7 +140,9 @@ function FileHeader(props: {
         props.fileInspectorSupported
           ? [
               {
-                accessibilityLabel: panes.auxiliaryPaneVisible ? "隐藏文件导航" : "显示文件导航",
+                accessibilityLabel: panes.auxiliaryPaneVisible
+                  ? gt("Hide file navigator")
+                  : gt("Show file navigator"),
                 icon: "sidebar.right",
                 selected: panes.auxiliaryPaneVisible,
                 onPress: toggleAuxiliaryPane,
@@ -147,7 +152,7 @@ function FileHeader(props: {
       }
       menus={[
         {
-          title: "文件操作",
+          title: gt("File actions"),
           icon: "ellipsis",
           separateBackground: false,
           items: [
@@ -224,7 +229,7 @@ function FileSourceSurface(props: ComponentProps<typeof SourceFileSurface>) {
     <SourceFileSurface
       {...props}
       initialLine={selection?.line ?? props.initialLine}
-      selectable={selection?.active === true}
+      selectable={props.selectable === true || selection?.active === true}
       onLongPressLine={
         Platform.OS === "android" ? (line) => setSelection({ line, active: true }) : undefined
       }
@@ -248,8 +253,10 @@ function FileContent(props: {
   readonly threadId: ThreadId | null;
   readonly initialLine: number | null;
   readonly truncated: boolean;
+  readonly selectable: boolean;
   readonly onRefresh?: () => Promise<void> | void;
 }) {
+  const gt = useGT();
   // Reopening a mutable host file must not reuse a poster from an earlier visit.
   const thumbnailInstanceId = useId();
   const barOverlap = useContentTopInset();
@@ -289,7 +296,7 @@ function FileContent(props: {
 
   if (isAudioFile) {
     return props.previewUri === null ? (
-      <FilePreviewLoading message="正在加载文件…" />
+      <FilePreviewLoading message={gt("Loading file...")} />
     ) : (
       <AudioFilePreview uri={props.previewUri} onRetry={props.onRetryPreview} />
     );
@@ -315,19 +322,21 @@ function FileContent(props: {
   if (props.fileError && props.fileContents === null) {
     return (
       <View className="flex-1 items-center justify-center bg-sheet px-6">
-        <EmptyState title="文件不可用" detail={props.fileError} />
+        <EmptyState title={gt("File unavailable")} detail={props.fileError} />
       </View>
     );
   }
 
   if (props.fileContents === null) {
-    return <FilePreviewLoading message="正在加载文件…" />;
+    return <FilePreviewLoading message={gt("Loading file...")} />;
   }
 
   return (
     <View className="flex-1 bg-sheet" style={{ paddingTop: reservedHeaderInset }}>
       {props.truncated ? (
-        <FilePreviewNotice title="部分文件">此文件已截断，预览仅显示前 1 MB。</FilePreviewNotice>
+        <FilePreviewNotice title={gt("Partial file")}>
+          {gt("Preview limited to the first 1 MB of a truncated file.")}
+        </FilePreviewNotice>
       ) : null}
       {props.activeMode === "preview" && delimiter ? (
         <DelimitedFilePreview table={parseDelimitedPreview(props.fileContents, delimiter)} />
@@ -347,6 +356,7 @@ function FileContent(props: {
           path={props.relativePath}
           initialLine={props.initialLine}
           headerInsetTop={props.truncated ? 0 : undefined}
+          selectable={props.selectable}
           onRefresh={props.onRefresh}
         />
       )}
@@ -404,20 +414,29 @@ function useThreadFilesWorkspace(params: {
 }
 
 function FilesUnavailable({
-  title = "Files unavailable",
-  detail = "This thread does not have an active workspace path.",
+  title,
+  detail,
   onBack,
 }: {
   title?: string;
   detail?: string;
   onBack: () => void;
 }) {
+  const gt = useGT();
   return (
     <View className="flex-1 bg-sheet">
-      <AppBar title="文件" onBack={onBack} onBackToList={onBack} hideBottomBorder />
+      <AppBar
+        title={gt("Files", { $context: "screen title, workspace files" })}
+        onBack={onBack}
+        onBackToList={onBack}
+        hideBottomBorder
+      />
       <ScreenContent>
         <View className="flex-1 items-center justify-center px-6">
-          <EmptyState title={title} detail={detail} />
+          <EmptyState
+            title={title ?? gt("Files unavailable")}
+            detail={detail ?? gt("This thread does not have an active workspace path.")}
+          />
         </View>
       </ScreenContent>
     </View>
@@ -454,6 +473,7 @@ function FilesToolbarBottomFade() {
 
 export function ThreadFilesTreeScreen(props: ThreadFilesRouteScreenProps) {
   const navigation = useNavigation();
+  const gt = useGT();
   const { fileInspector } = useWorkspacePaneState();
   const [searchQuery, setSearchQuery] = useState("");
   const { themeAppearance: highlightTheme } = useAppearancePreferences();
@@ -461,16 +481,20 @@ export function ThreadFilesTreeScreen(props: ThreadFilesRouteScreenProps) {
     props.route.params,
   );
   const hasFileInspector = fileInspector.supported && threadId !== null;
+  const messages = useMessages();
   const fileAccessSession = useEnvironmentQuery(
     environmentId !== null ? environmentSession.sessionStateAtom(environmentId) : null,
   );
   const fileEnvironment = useEnvironmentPresentation(environmentId);
-  const fileAccess = resolveFilesystemReadAccess({
-    isCatalogReady: fileEnvironment.isReady,
-    connection: fileEnvironment.presentation?.connection ?? null,
-    session: fileAccessSession.data,
-    sessionError: fileAccessSession.error,
-  });
+  const fileAccess = resolveFilesystemReadAccess(
+    {
+      isCatalogReady: fileEnvironment.isReady,
+      connection: fileEnvironment.presentation?.connection ?? null,
+      session: fileAccessSession.data,
+      sessionError: fileAccessSession.error,
+    },
+    messages,
+  );
   const { canReadFiles } = fileAccess;
   const entriesQuery = useFileTreeEntries({
     environmentId,
@@ -542,16 +566,18 @@ export function ThreadFilesTreeScreen(props: ThreadFilesRouteScreenProps) {
         />
       );
     }
-    return <LoadingScreen message="正在打开文件…" messagePlacement="above-spinner" />;
+    return <LoadingScreen message={gt("Opening files...")} messagePlacement="above-spinner" />;
   }
 
   if (!canReadFiles) {
     if (fileAccess.isPending) {
-      return <LoadingScreen message="正在检查文件访问权限…" messagePlacement="above-spinner" />;
+      return (
+        <LoadingScreen message={gt("Checking file access...")} messagePlacement="above-spinner" />
+      );
     }
     return (
       <FilesUnavailable
-        detail={fileAccess.error ?? "此连接无权读取主机文件。"}
+        detail={fileAccess.error ?? gt("This connection cannot read host files.")}
         onBack={handleReturnToThread}
       />
     );
@@ -610,22 +636,27 @@ export function ThreadFilesTreeScreen(props: ThreadFilesRouteScreenProps) {
 
 export function ThreadFileScreen(props: ThreadFileRouteScreenProps) {
   const navigation = useNavigation();
+  const gt = useGT();
   const { fileInspector } = useWorkspacePaneState();
   const { appearance, setCodeWordBreak } = useAppearancePreferences();
   const params = props.route.params;
   const targetLine = normalizeRouteLine(firstRouteParam(params.line));
   const { cwd, environmentId, projectName, relativePath, selectedThread, threadId } =
     useThreadFilesWorkspace(props.route.params);
+  const messages = useMessages();
   const fileAccessSession = useEnvironmentQuery(
     environmentId !== null ? environmentSession.sessionStateAtom(environmentId) : null,
   );
   const fileEnvironment = useEnvironmentPresentation(environmentId);
-  const fileAccess = resolveFilesystemReadAccess({
-    isCatalogReady: fileEnvironment.isReady,
-    connection: fileEnvironment.presentation?.connection ?? null,
-    session: fileAccessSession.data,
-    sessionError: fileAccessSession.error,
-  });
+  const fileAccess = resolveFilesystemReadAccess(
+    {
+      isCatalogReady: fileEnvironment.isReady,
+      connection: fileEnvironment.presentation?.connection ?? null,
+      session: fileAccessSession.data,
+      sessionError: fileAccessSession.error,
+    },
+    messages,
+  );
   const { canReadFiles } = fileAccess;
   const targetPath =
     cwd !== null && relativePath !== null ? resolveWorkspaceFilePath(cwd, relativePath) : null;
@@ -646,6 +677,7 @@ export function ThreadFileScreen(props: ThreadFileRouteScreenProps) {
     readonly path: string;
     readonly mode: FileViewMode;
   } | null>(null);
+  const [textSelectionPath, setTextSelectionPath] = useState<string | null>(null);
   const [previewRevision, setPreviewRevision] = useState(0);
   const previewKey = JSON.stringify([environmentId, cwd, relativePath, previewRevision]);
   const [fullScreenPreview, setFullScreenPreview] = useState<FilePreviewSource | null>(null);
@@ -745,6 +777,10 @@ export function ThreadFileScreen(props: ThreadFileRouteScreenProps) {
       : null,
   );
   const fileData = fileQuery.data as ProjectReadFileResult | null;
+  // iOS only: Android lays out a whole-file selectable TextView on the UI thread, which stalls.
+  const canSelectText =
+    Platform.OS === "ios" && resolvedActiveMode === "source" && fileData?.contents != null;
+  const selectingText = canSelectText && textSelectionPath === relativePath;
 
   const handleSelectFile = (path: string) => {
     const targetPath =
@@ -809,7 +845,9 @@ export function ThreadFileScreen(props: ThreadFileRouteScreenProps) {
       canToggleMode
         ? ({
             id: "preview",
-            title: filePreviewDelimiter({ name: relativePath }) ? "表格" : "预览",
+            title: filePreviewDelimiter({ name: relativePath })
+              ? gt("Table", { $context: "file view mode" })
+              : gt("Preview", { $context: "file view mode" }),
             icon: filePreviewDelimiter({ name: relativePath }) ? "tablecells" : "eye",
             inline: true,
             onPress: () => setModeOverride({ path: relativePath, mode: "preview" }),
@@ -818,7 +856,7 @@ export function ThreadFileScreen(props: ThreadFileRouteScreenProps) {
       canToggleMode
         ? ({
             id: "source",
-            title: "来源",
+            title: gt("Source", { $context: "file view mode, raw source text" }),
             icon: "doc.text",
             inline: true,
             onPress: () => setModeOverride({ path: relativePath, mode: "source" }),
@@ -827,10 +865,19 @@ export function ThreadFileScreen(props: ThreadFileRouteScreenProps) {
       resolvedActiveMode === "source"
         ? ({
             id: "word-wrap",
-            title: appearance.codeWordBreak ? "关闭自动换行" : "开启自动换行",
+            title: appearance.codeWordBreak ? gt("Disable word wrap") : gt("Enable word wrap"),
             icon: "text.alignleft",
             inline: false,
             onPress: () => setCodeWordBreak(!appearance.codeWordBreak),
+          } as const)
+        : null,
+      canSelectText
+        ? ({
+            id: "select-text",
+            title: selectingText ? gt("Done selecting") : gt("Select text"),
+            icon: "character.cursor.ibeam",
+            inline: false,
+            onPress: () => setTextSelectionPath(selectingText ? null : relativePath),
           } as const)
         : null,
       ...(mediaSource
@@ -847,7 +894,7 @@ export function ThreadFileScreen(props: ThreadFileRouteScreenProps) {
         : [
             {
               id: "copy-path",
-              title: "复制路径",
+              title: gt("Copy path"),
               icon: "doc.on.doc",
               inline: false,
               onPress: () =>
@@ -862,7 +909,7 @@ export function ThreadFileScreen(props: ThreadFileRouteScreenProps) {
       fileData?.contents != null
         ? ({
             id: "copy-contents",
-            title: fileData.truncated ? "复制预览" : "复制内容",
+            title: fileData.truncated ? gt("Copy preview") : gt("Copy contents"),
             icon: "doc.on.doc",
             inline: false,
             onPress: () => copyTextWithHaptic(fileData.contents),
@@ -871,7 +918,7 @@ export function ThreadFileScreen(props: ThreadFileRouteScreenProps) {
       isPdfFile({ name: relativePath }) && previewUri !== null
         ? ({
             id: "open-pdf",
-            title: "打开 PDF",
+            title: gt("Open PDF"),
             icon: "arrow.up.left.and.arrow.down.right",
             inline: false,
             onPress: () =>
@@ -895,7 +942,7 @@ export function ThreadFileScreen(props: ThreadFileRouteScreenProps) {
       isBrowserFile && typeof assetPreviewUri === "string"
         ? ({
             id: "open-browser",
-            title: Platform.OS === "ios" ? "在 Safari 中打开" : "在浏览器中打开",
+            title: Platform.OS === "ios" ? gt("Open in Safari") : gt("Open in browser"),
             icon: "safari",
             inline: false,
             onPress: () => tryOpenExternalUrl(assetPreviewUri, "file-preview"),
@@ -905,7 +952,7 @@ export function ThreadFileScreen(props: ThreadFileRouteScreenProps) {
       (isBrowserFile || isImageFile || isVideoFile || isAudioFile)
         ? ({
             id: "refresh",
-            title: "刷新",
+            title: gt("Refresh", { $context: "verb, reloads the file" }),
             icon: "arrow.clockwise",
             inline: false,
             onPress: async () => {
@@ -937,19 +984,19 @@ export function ThreadFileScreen(props: ThreadFileRouteScreenProps) {
 
   if (environmentId === null || (threadId !== null && selectedThread === null)) {
     return withInspector(
-      <LoadingScreen message="正在打开文件…" messagePlacement="above-spinner" />,
+      <LoadingScreen message={gt("Opening file...")} messagePlacement="above-spinner" />,
     );
   }
 
   if (!canReadFiles) {
     if (fileAccess.isPending) {
       return withInspector(
-        <LoadingScreen message="正在检查文件访问权限…" messagePlacement="above-spinner" />,
+        <LoadingScreen message={gt("Checking file access...")} messagePlacement="above-spinner" />,
       );
     }
     return withInspector(
       <FilesUnavailable
-        detail={fileAccess.error ?? "此连接无权读取主机文件。"}
+        detail={fileAccess.error ?? gt("This connection cannot read host files.")}
         onBack={handleBack}
       />,
     );
@@ -960,13 +1007,17 @@ export function ThreadFileScreen(props: ThreadFileRouteScreenProps) {
 
   if (relativePath === null) {
     return withInspector(
-      <FilesUnavailable title="文件不可用" detail="此文件路径无效。" onBack={handleBack} />,
+      <FilesUnavailable
+        title={gt("File unavailable")}
+        detail={gt("This file path is invalid.")}
+        onBack={handleBack}
+      />,
     );
   }
 
   if (metadataPending) {
     return withInspector(
-      <LoadingScreen message="正在打开文件…" messagePlacement="above-spinner" />,
+      <LoadingScreen message={gt("Opening file...")} messagePlacement="above-spinner" />,
     );
   }
   if (directoryPath !== null) {
@@ -1038,6 +1089,7 @@ export function ThreadFileScreen(props: ThreadFileRouteScreenProps) {
           relativePath={relativePath}
           threadId={threadId}
           truncated={fileData?.truncated ?? false}
+          selectable={selectingText}
           onRefresh={() => fileQuery.refresh()}
         />
       </ScreenContent>

@@ -6,8 +6,7 @@ import {
   providerInstanceInitials,
 } from "@t3tools/client-runtime/state/provider-instance-display";
 
-import { ProviderDriverKind, QODER_CN_ICON_URL } from "@t3tools/contracts";
-import qoderCnLogo from "../../../../../assets/providers/qoder-cn.png";
+import { ProviderDriverKind } from "@t3tools/contracts";
 import {
   AnthropicIcon,
   AntigravityIcon,
@@ -131,14 +130,7 @@ export const ProviderInstanceIcon = memo(function ProviderInstanceIcon(props: {
       style={accentStyle}
       data-provider-accent-color={accentColor}
     >
-      {isAcpRegistry && props.acpRegistryIconUrl === QODER_CN_ICON_URL ? (
-        <img
-          alt=""
-          className={cn("size-5 shrink-0 object-contain", iconClassName)}
-          data-slot="qoder-cn-icon"
-          src={qoderCnLogo}
-        />
-      ) : isAcpRegistry ? (
+      {isAcpRegistry ? (
         <AcpRegistryAgentIcon
           className={cn("size-5 rounded-none bg-transparent", iconClassName)}
           fallbackClassName="size-full"

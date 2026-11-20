@@ -13,6 +13,8 @@ import {
   type ConnectionRoute,
 } from "./catalog.ts";
 import { BearerConnectionTarget, type ConnectionTarget } from "./model.ts";
+import { mFallback, msg } from "gt-i18n";
+import type { MFunctionType } from "gt-i18n/types";
 
 export type ConnectionRouteKind =
   | "relay"
@@ -23,7 +25,7 @@ export type ConnectionRouteKind =
   | "public"
   | "ssh";
 
-const RELAY_ROUTE_ID = "relay";
+export const RELAY_ROUTE_ID = "relay";
 
 export function connectionRouteId(target: ConnectionTarget): string {
   switch (target._tag) {
@@ -81,6 +83,13 @@ function routeHostname(route: ConnectionRoute): string | null {
   }
 }
 
+function directAddressKind(hostname: string, tailscale = false) {
+  if (isLocalLoopbackHost(hostname)) return "loopback";
+  if (tailscale || isTailnetHost(hostname)) return "tailnet";
+  if (isSharedAddressSpaceHost(hostname)) return "vpn";
+  return isPrivateNetworkHost(hostname) ? "lan" : "public";
+}
+
 export function connectionRouteKind(route: ConnectionRoute): ConnectionRouteKind {
   switch (route.target._tag) {
     case "RelayConnectionTarget":
@@ -91,14 +100,33 @@ export function connectionRouteKind(route: ConnectionRoute): ConnectionRouteKind
     case "BearerConnectionTarget": {
       const hostname = routeHostname(route);
       if (hostname === null) return "public";
-      if (isLocalLoopbackHost(hostname)) return "loopback";
       const profile = Option.getOrNull(route.profile);
-      const tailscale =
-        profile?._tag === "BearerConnectionProfile" && profile.network === "tailscale";
-      if (tailscale || isTailnetHost(hostname)) return "tailnet";
-      if (isSharedAddressSpaceHost(hostname)) return "vpn";
-      return isPrivateNetworkHost(hostname) ? "lan" : "public";
+      return directAddressKind(
+        hostname,
+        profile?._tag === "BearerConnectionProfile" && profile.network === "tailscale",
+      );
     }
+  }
+}
+
+/**
+ * Whether the route's address reaches the same machine on every network: TLS
+ * proves who answers, and loopback cannot move. Any other plain http address,
+ * a tailnet one too once Tailscale is down, can belong to another machine after
+ * a network change, so an answer from it is not kept.
+ */
+export function routeKeepsItsHost(route: ConnectionRoute): boolean {
+  if (routeHttpBaseUrl(route)?.startsWith("https:") === true) return true;
+  return connectionRouteKind(route) === "loopback";
+}
+
+/** A loopback or LAN host answers within a few seconds or is not there. */
+export function isNearbyAddress(httpBaseUrl: string): boolean {
+  try {
+    const kind = directAddressKind(new URL(httpBaseUrl).hostname);
+    return kind === "loopback" || kind === "lan";
+  } catch {
+    return false;
   }
 }
 
@@ -160,12 +188,15 @@ function routeAddressKey(route: ConnectionRoute): string | null {
   }
 }
 
+const T3_CONNECT_NAME = "T3 Connect";
+
+/** The route's label in English. Display sites use `connectionRouteLabelText`. */
 export function connectionRouteLabel(route: ConnectionRoute): string {
   switch (connectionRouteKind(route)) {
     case "relay":
-      return "旧版托管连接";
+      return T3_CONNECT_NAME;
     case "loopback":
-      return "This device";
+      return msg("This device");
     case "lan":
       return "LAN";
     case "tailnet":
@@ -179,7 +210,22 @@ export function connectionRouteLabel(route: ConnectionRoute): string {
         : "SSH";
     }
     case "public":
-      return routeHostname(route) ?? "Remote link";
+      return routeHostname(route) ?? msg("Remote link");
+  }
+}
+
+/** @public */
+export function connectionRouteLabelText(
+  route: ConnectionRoute,
+  resolve: MFunctionType = mFallback,
+): string {
+  switch (connectionRouteKind(route)) {
+    case "loopback":
+      return resolve(msg("This device"));
+    case "public":
+      return routeHostname(route) ?? resolve(msg("Remote link"));
+    default:
+      return connectionRouteLabel(route);
   }
 }
 
@@ -194,6 +240,14 @@ export function connectionRouteAddress(route: ConnectionRoute): string | null {
 /** Learned routes alone must not make relay environments manually retryable. */
 export const hasSavedBearerRoute = (entry: ConnectionCatalogEntry) =>
   connectionRoutes(entry).some((r) => !isLearned(r) && r.target._tag === "BearerConnectionTarget");
+
+export function hasRelayRoute(
+  entry: Pick<ConnectionCatalogEntry, "target" | "alternateRoutes">,
+): boolean {
+  return [entry.target, ...(entry.alternateRoutes ?? []).map((route) => route.target)].some(
+    (target) => target._tag === "RelayConnectionTarget",
+  );
+}
 
 export function mergeLearnedRoutes(input: {
   readonly entry: ConnectionCatalogEntry;
@@ -398,7 +452,7 @@ export function isLearned(route: ConnectionRoute): boolean {
 
 /**
  * A learned route borrows the credential of the route it was learned over, so
- * it cannot outlive that route: removing a legacy relay also removes routes learned
+ * it cannot outlive that route: removing T3 Connect also removes routes learned
  * through it, and removing a paired address removes routes that borrow its
  * token.
  */

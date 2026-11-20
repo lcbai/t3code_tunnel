@@ -1,7 +1,10 @@
 import type { ServerProcessSignal } from "@t3tools/contracts";
+import { T, useGT, Var } from "gt-react";
 
 import { InlineButton } from "../ui/button";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "../ui/tooltip";
+
+const SIGNAL_SHORT_NAMES = { SIGINT: "INT", SIGKILL: "KILL" } as const;
 
 export function ProcessSignalActions({
   disabled,
@@ -10,6 +13,7 @@ export function ProcessSignalActions({
   disabled: boolean;
   onSignal: (signal: ServerProcessSignal) => void;
 }) {
+  const gt = useGT();
   return (
     <div className="flex items-center justify-end gap-1.5">
       <Tooltip>
@@ -17,30 +21,38 @@ export function ProcessSignalActions({
           render={
             <InlineButton
               disabled={disabled}
-              aria-label="发送签名"
+              aria-label={gt("Send {signal}", { signal: "SIGINT" })}
               tone="muted"
               onClick={() => onSignal("SIGINT")}
             >
-              INT
+              {SIGNAL_SHORT_NAMES.SIGINT}
             </InlineButton>
           }
         />
-        <TooltipPopup side="top">发送签名</TooltipPopup>
+        <TooltipPopup side="top">
+          <T>
+            Send <Var>{"SIGINT"}</Var>
+          </T>
+        </TooltipPopup>
       </Tooltip>
       <Tooltip>
         <TooltipTrigger
           render={
             <InlineButton
               disabled={disabled}
-              aria-label="发送SIGKIL"
+              aria-label={gt("Send {signal}", { signal: "SIGKILL" })}
               tone="destructive"
               onClick={() => onSignal("SIGKILL")}
             >
-              KILL
+              {SIGNAL_SHORT_NAMES.SIGKILL}
             </InlineButton>
           }
         />
-        <TooltipPopup side="top">发送SIGKIL</TooltipPopup>
+        <TooltipPopup side="top">
+          <T>
+            Send <Var>{"SIGKILL"}</Var>
+          </T>
+        </TooltipPopup>
       </Tooltip>
     </div>
   );

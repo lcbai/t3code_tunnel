@@ -1,8 +1,8 @@
-import {
-  managedRuntimeModeDenial,
-  type ManagedPolicySummary,
-  type RuntimeMode,
-} from "@t3tools/contracts";
+import { managedRuntimeModeDenial } from "@t3tools/client-runtime/contract-labels";
+import type { ManagedPolicySummary, RuntimeMode } from "@t3tools/contracts";
+import { msg } from "gt-react-native";
+
+import { m, type MessageResolver } from "../../i18n/messages";
 
 export const RUNTIME_MODE_CHOICES: ReadonlyArray<{
   readonly mode: RuntimeMode;
@@ -11,23 +11,23 @@ export const RUNTIME_MODE_CHOICES: ReadonlyArray<{
 }> = [
   {
     mode: "approval-required",
-    label: "受监督",
-    description: "运行命令和修改文件前询问。",
+    label: msg("Supervised"),
+    description: msg("Ask before commands and file changes."),
   },
   {
     mode: "auto-accept-edits",
-    label: "自动接受编辑",
-    description: "自动批准编辑，执行其他操作前询问。",
+    label: msg("Auto-accept edits"),
+    description: msg("Auto-approve edits, ask before other actions."),
   },
   {
     mode: "auto",
-    label: "自动",
-    description: "支持此模式的提供方会自动批准常规操作，其他提供方仍会询问。",
+    label: msg("Auto"),
+    description: msg("Supported providers approve routine actions; others still ask."),
   },
   {
     mode: "full-access",
-    label: "完整访问权限",
-    description: "允许运行命令和编辑文件，无需确认。",
+    label: msg("Full access"),
+    description: msg("Allow commands and edits without prompts."),
   },
 ];
 
@@ -51,10 +51,11 @@ export type RuntimeModeChoice = (typeof RUNTIME_MODE_CHOICES)[number] & {
 export function withManagedRuntimeModeLimits(
   choices: ReadonlyArray<RuntimeModeChoice>,
   policies: ReadonlyArray<ManagedPolicySummary | undefined>,
+  resolve: MessageResolver = m,
 ): ReadonlyArray<RuntimeModeChoice> {
   return choices.map((choice) => {
     const reason = policies
-      .map((policy) => managedRuntimeModeDenial(policy, choice.mode))
+      .map((policy) => managedRuntimeModeDenial(policy, choice.mode, resolve))
       .find((denial) => denial !== undefined);
     return reason === undefined ? choice : { ...choice, disabledReason: reason };
   });

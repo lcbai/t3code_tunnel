@@ -2,7 +2,9 @@ import * as Dialog from "../../components/ui/Dialog";
 import { sessionHasLegacyPermissions } from "@t3tools/contracts";
 import { Atom } from "effect/reactivity";
 import * as SecureStore from "expo-secure-store";
+import { msg } from "gt-react-native";
 
+import { m } from "../../i18n/messages";
 import { whenProtectedDataAvailable } from "../../lib/protectedData";
 import { appAtomRegistry } from "../../state/atom-registry";
 import { projectEnvironmentPresentation } from "../../state/environments";
@@ -65,9 +67,13 @@ export function installPermissionUpdateNotice(): () => void {
       presentNext();
     };
     Dialog.alert(
-      `访问权限已更改：${environment.label}`,
-      "此连接仍使用旧权限，部分操作可能已不可用。请使用包含所需权限的新链接重新配对。",
-      [{ text: "知道了", onPress: dismiss }],
+      m(msg("Permissions have changed for {environment}", { environment: environment.label })),
+      m(
+        msg(
+          "This connection still uses the old permissions, so some actions may no longer be available. Pair again using a new link with the permissions you need.",
+        ),
+      ),
+      [{ text: m(msg("Got it")), onPress: dismiss }],
       { cancelable: false },
     );
   };

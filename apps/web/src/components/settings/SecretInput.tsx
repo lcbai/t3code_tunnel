@@ -1,3 +1,5 @@
+import { useGT } from "gt-react";
+
 import { DraftInput, type DraftInputProps } from "../ui/draft-input";
 import { Input, type InputProps } from "../ui/input";
 
@@ -14,12 +16,15 @@ export function SecretInput({
   onCommit,
   ...props
 }: SecretInputProps) {
+  const gt = useGT();
   const shared = {
     ...props,
     type: "password" as const,
     autoComplete: "off",
     spellCheck: false,
-    placeholder: configured ? "存储密钥，输入新值以替换" : (placeholder ?? "未设置"),
+    placeholder: configured
+      ? gt("Stored secret, enter a new value to replace")
+      : (placeholder ?? gt("Not set")),
   };
   if (onCommit) {
     return (

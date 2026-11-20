@@ -1,13 +1,15 @@
+import { msg, T, useGT, useMessages, Var } from "gt-react";
+
 import { AndroidIcon, AppleIcon } from "../Icons";
 import { Button } from "../ui/button";
 import { Popover, PopoverPopup, PopoverTitle, PopoverTrigger } from "../ui/popover";
 import { QRCodeSvg } from "../ui/qr-code";
 import { SettingsRow } from "./settingsLayout";
-import { searchableSetting } from "./settingsSearch";
+import { useSearchableSetting } from "./settingsSearch";
 
 const stores = [
   {
-    label: "iPhone 和 iPad 软件",
+    label: msg("iPhone and iPad"),
     store: "App Store",
     url: "https://apps.apple.com/us/app/t3-code-remote-claude-more/id6787819824",
     Icon: AppleIcon,
@@ -21,29 +23,34 @@ const stores = [
 ];
 
 export function MobileAppSettingsRow() {
+  const searchableSetting = useSearchableSetting();
+  const gt = useGT();
+  const m = useMessages();
   return (
     <SettingsRow
       {...searchableSetting("mobile-app")}
-      description="从您的手机或平板电脑连接您的服务器。"
+      description={gt("Connect to your server from your phone or tablet.")}
       control={
         <div className="flex items-center gap-2">
           {stores.map(({ label, store, url, Icon }) => (
             <Popover key={store}>
               <PopoverTrigger render={<Button size="sm" variant="outline" />}>
                 <Icon />
-                {label}
+                {m(label)}
               </PopoverTrigger>
               <PopoverPopup align="end">
                 <div className="flex flex-col items-center gap-3">
                   <PopoverTitle>{store}</PopoverTitle>
-                  <p className="text-xs text-muted-foreground">扫描你的电话摄像机。</p>
+                  <p className="text-xs text-muted-foreground">
+                    <T>Scan with your phone camera.</T>
+                  </p>
                   <div className="rounded-lg bg-white p-1.5">
                     <QRCodeSvg
                       value={url}
                       size={128}
                       level="M"
                       marginSize={1}
-                      title={`${store} 链接`}
+                      title={gt("{store} link", { store })}
                     />
                   </div>
                   <Button
@@ -51,7 +58,9 @@ export function MobileAppSettingsRow() {
                     variant="outline"
                     render={<a href={url} target="_blank" rel="noreferrer noopener" />}
                   >
-                    打开 {store}
+                    <T>
+                      Open <Var>{store}</Var>
+                    </T>
                   </Button>
                 </div>
               </PopoverPopup>

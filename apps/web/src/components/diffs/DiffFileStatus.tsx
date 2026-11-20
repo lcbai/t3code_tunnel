@@ -1,3 +1,4 @@
+import { useGT } from "gt-react";
 import { InfoIcon, RotateCwIcon } from "lucide-react";
 import { Button } from "../ui/button";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "../ui/tooltip";
@@ -11,6 +12,7 @@ export function DiffFileStatus({
   truncated?: boolean | undefined;
   retry: () => void;
 }) {
+  const gt = useGT();
   if (!error && !truncated) return null;
   return (
     <Tooltip>
@@ -19,7 +21,7 @@ export function DiffFileStatus({
           <Button
             size="icon-micro"
             variant="ghost-muted"
-            aria-label={error ? "重试装入 diff" : "部分 diff 预览"}
+            aria-label={error ? gt("Retry loading diff") : gt("Partial diff preview")}
             onClick={(event) => {
               event.stopPropagation();
               if (error) retry();
@@ -30,7 +32,9 @@ export function DiffFileStatus({
         {error ? <RotateCwIcon className="size-3" /> : <InfoIcon className="size-3" />}
       </TooltipTrigger>
       <TooltipPopup>
-        {error ? "重试装入 diff" : "此文件太大，无法全部显示。 计数包括所有更改。"}
+        {error
+          ? gt("Retry loading diff")
+          : gt("This file is too large to show in full. Counts include all changes.")}
       </TooltipPopup>
     </Tooltip>
   );

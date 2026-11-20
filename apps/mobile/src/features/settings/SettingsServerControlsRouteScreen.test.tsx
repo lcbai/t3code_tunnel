@@ -42,11 +42,12 @@ vi.mock("@effect/atom-react", () => ({
 }));
 vi.mock("../../state/preferences", () => ({
   mobilePreferencesAtom: {},
-  updateMobilePreferencesAtom: {},
+  saveMobilePreferences: {},
 }));
 vi.mock("./components/AutoSettleDaysField", () => ({ AutoSettleDaysField: () => null }));
-vi.mock("./components/SourceControlSignInSection", () => ({
-  SourceControlSignInSection: () => null,
+vi.mock("./components/IssueTrackerSection", () => ({ IssueTrackerSection: () => null }));
+vi.mock("./components/SourceControlProvidersSection", () => ({
+  SourceControlProvidersSection: () => null,
 }));
 vi.mock("react-native-safe-area-context", () => ({ useSafeAreaInsets: () => ({ bottom: 0 }) }));
 vi.mock("@react-navigation/native", () => ({ useNavigation: () => ({}) }));
@@ -214,8 +215,8 @@ describe("SettingsServerControlsRouteScreen", () => {
         (button) => button.textContent === label,
       )!;
 
-    act(() => toggle("智能体浏览器访问权限").click());
-    act(() => toggle("自动收尾已合并的会话").click());
+    act(() => toggle("Agent browser access").click());
+    act(() => toggle("Auto-settle merged threads").click());
 
     // Both rewrite the whole project override, so a second write planned now would drop the first.
     expect(mocks.updateSettings).toHaveBeenCalledOnce();
@@ -231,7 +232,7 @@ describe("SettingsServerControlsRouteScreen", () => {
     act(() => root.render(<SettingsThreadsRouteScreen />));
 
     const autoSettle = [...container.querySelectorAll<HTMLButtonElement>('[role="switch"]')].find(
-      (button) => button.textContent === "自动收尾已合并的会话",
+      (button) => button.textContent === "Auto-settle merged threads",
     )!;
     expect(autoSettle.disabled).toBe(true);
   });

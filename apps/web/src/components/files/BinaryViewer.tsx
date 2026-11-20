@@ -6,7 +6,9 @@ import {
 } from "@t3tools/shared/filePreview";
 import { formatAttachmentSize } from "@t3tools/client-runtime/state/attachments";
 import { ChevronLeftIcon, ChevronRightIcon, FileIcon, FolderIcon } from "lucide-react";
+import { msg, T, useGT, useMessages } from "gt-react";
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import { m } from "~/i18n/messages";
 
 import {
   Select,
@@ -29,13 +31,31 @@ import {
 } from "./binaryPreviewProtocol";
 import { PreviewImage } from "./PreviewImage";
 import { readBinaryPreview } from "./readBinaryPreview";
+import { previewErrorText, previewFailureText } from "./previewFailureMessages";
 
 const SourcePreview = lazy(() => import("./ReadOnlySourcePreview"));
 type Archive = Extract<BinaryWorkerResult, { type: "archive" }>;
 type Database = Extract<BinaryWorkerResult, { type: "sqlite" }>;
 type Rows = Extract<BinaryWorkerResult, { type: "rows" }>;
 
+const rowsLabel = (count: number, gt: ReturnType<typeof useGT>) =>
+  gt("{count, plural, one {{formatted} row} other {{formatted} rows}}", {
+    count,
+    formatted: count.toLocaleString(),
+  });
+const columnsLabel = (count: number, gt: ReturnType<typeof useGT>) =>
+  gt("{count, plural, one {{formatted} column} other {{formatted} columns}}", {
+    count,
+    formatted: count.toLocaleString(),
+  });
+const entriesLabel = (count: number, gt: ReturnType<typeof useGT>) =>
+  gt("{count, plural, one {{formatted} entry} other {{formatted} entries}}", {
+    count,
+    formatted: count.toLocaleString(),
+  });
+
 function ArchiveFile(props: { readonly path: string; readonly bytes: Uint8Array<ArrayBuffer> }) {
+  const gt = useGT();
   const [url, setUrl] = useState<string | null>(null);
   const kind = filePreviewKind({ name: props.path });
   const text = (() => {
@@ -61,10 +81,19 @@ function ArchiveFile(props: { readonly path: string; readonly bytes: Uint8Array<
   }, [props.bytes, props.path, kind]);
   if (kind === "image")
     return url ? <PreviewImage key={url} src={url} name={props.path} /> : <FileSurfaceLoading />;
-  if (!text) return <FileSurfaceFailure message="只有UTF-8 文本和图像可以在一个归档中打开。" />;
+  if (!text)
+    return (
+      <FileSurfaceFailure
+        message={gt("Only UTF-8 text and images can be opened inside an archive.")}
+      />
+    );
   return (
     <>
-      {text.truncated ? <FileSurfaceNotice>预览仅限于前 1 MB。</FileSurfaceNotice> : null}
+      {text.truncated ? (
+        <FileSurfaceNotice>
+          <T>Preview limited to the first 1 MB.</T>
+        </FileSurfaceNotice>
+      ) : null}
       <Suspense fallback={<FileSurfaceLoading />}>
         <SourcePreview name={props.path} text={text.text} />
       </Suspense>
@@ -78,6 +107,8 @@ export default function BinaryViewer(props: {
   readonly kind: "archive" | "sqlite";
   readonly onRetry?: () => void;
 }) {
+  const gt = useGT();
+  const messages = useMessages();
   const [sizeBytes, setSizeBytes] = useState<number | null>(null);
   const [archive, setArchive] = useState<Archive | null>(null);
   const [database, setDatabase] = useState<Database | null>(null);
@@ -96,7 +127,7 @@ export default function BinaryViewer(props: {
     setError(null);
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => {
-      setError("此文件预览时间太长了。 关闭它再试一次。");
+      setError(m(msg("This file took too long to preview. Close it and try again.")));
       setBusy(false);
       workerRef.current?.terminate();
       workerRef.current = null;
@@ -120,18 +151,18 @@ export default function BinaryViewer(props: {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
     timerRef.current = setTimeout(
-      () => fail("This file took too long to preview. Close it and try again."),
+      () => fail(m(msg("This file took too long to preview. Close it and try again."))),
       30_000,
     );
     worker.addEventListener("error", () =>
-      fail("Could not load the file viewer. Close it and try again."),
+      fail(m(msg("Could not load the file viewer. Close it and try again."))),
     );
     worker.addEventListener("message", (event: MessageEvent<BinaryWorkerResult>) => {
       if (controller.signal.aborted) return;
       if (timerRef.current) clearTimeout(timerRef.current);
       const result = event.data;
       setBusy(false);
-      if (result.type === "error") setError(result.message);
+      if (result.type === "error") setError(previewFailureText(result));
       else if (result.type === "archive") setArchive(result);
       else if (result.type === "entry") setEntry(result);
       else if (result.type === "rows") setRows(result);
@@ -152,7 +183,7 @@ export default function BinaryViewer(props: {
         }
       })
       .catch((cause: unknown) =>
-        fail(cause instanceof Error ? cause.message : "Could not read this file."),
+        fail(previewErrorText(cause, m(msg("Could not read this file.")))),
       );
     return () => {
       controller.abort();
@@ -190,7 +221,7 @@ export default function BinaryViewer(props: {
       {archive ? (
         <div className="flex h-10 shrink-0 items-center gap-2 border-b border-border/60 px-3 text-xs">
           <FileSurfaceAction
-            label={selectedPath ? "返回归档" : "上级文件夹"}
+            label={selectedPath ? gt("Back to archive") : gt("Parent folder")}
             disabled={!selectedPath && !folder}
             onPress={() => {
               setError(null);
@@ -201,10 +232,12 @@ export default function BinaryViewer(props: {
           >
             <ChevronLeftIcon className="size-3.5" />
           </FileSurfaceAction>
-          <span className="min-w-0 flex-1 truncate">{selectedPath ?? (folder || "归档内容")}</span>
+          <span className="min-w-0 flex-1 truncate">
+            {selectedPath ?? (folder || gt("Archive contents"))}
+          </span>
           <span className="shrink-0 text-muted-foreground">
-            {archive.entries.length.toLocaleString()} entries
-            {sizeBytes !== null ? ` · ${formatAttachmentSize(sizeBytes)}` : ""}
+            {entriesLabel(archive.entries.length, gt)}
+            {sizeBytes !== null ? ` · ${formatAttachmentSize(sizeBytes, messages)}` : ""}
           </span>
         </div>
       ) : null}
@@ -218,22 +251,27 @@ export default function BinaryViewer(props: {
                   if (!busy && value !== null) selectPage(0, value);
                 }}
               >
-                <SelectTrigger aria-label="数据表" aria-disabled={busy} aria-busy={busy} size="xs">
+                <SelectTrigger
+                  aria-label={gt("Table", { $context: "noun, database table picker" })}
+                  aria-disabled={busy}
+                  aria-busy={busy}
+                  size="xs"
+                >
                   <SelectValue>
-                    {table.name}（{table.count.toLocaleString()} 行）
+                    {table.name} ({rowsLabel(table.count, gt)})
                   </SelectValue>
                 </SelectTrigger>
                 <SelectPopup>
                   {database.tables.map((item) => (
                     <SelectItem key={item.name} value={item.name}>
-                      {item.name}（{item.count.toLocaleString()} 行）
+                      {item.name} ({rowsLabel(item.count, gt)})
                     </SelectItem>
                   ))}
                 </SelectPopup>
               </Select>
             </div>
             <FileSurfaceAction
-              label="上行"
+              label={gt("Previous rows")}
               disabled={busy || page === 0}
               onPress={() => selectPage(page - 1)}
             >
@@ -241,11 +279,15 @@ export default function BinaryViewer(props: {
             </FileSurfaceAction>
             <span className="shrink-0 tabular-nums" aria-live="polite">
               {table.count === 0
-                ? "0行 :"
-                : `第 ${page * SQLITE_PAGE_SIZE + 1}–${Math.min(table.count, (page + 1) * SQLITE_PAGE_SIZE)} 项，共 ${table.count.toLocaleString()} 项`}
+                ? gt("0 rows")
+                : gt("{start}–{end} of {total}", {
+                    start: String(page * SQLITE_PAGE_SIZE + 1),
+                    end: String(Math.min(table.count, (page + 1) * SQLITE_PAGE_SIZE)),
+                    total: table.count.toLocaleString(),
+                  })}
             </span>
             <FileSurfaceAction
-              label="下一行"
+              label={gt("Next rows")}
               disabled={busy || (page + 1) * SQLITE_PAGE_SIZE >= table.count}
               onPress={() => selectPage(page + 1)}
             >
@@ -256,11 +298,14 @@ export default function BinaryViewer(props: {
             className="border-b border-border/60 px-3 py-2 text-xs text-muted-foreground tabular-nums"
             role="status"
           >
-            {table.count.toLocaleString()} 行 · {rows?.columns.length ?? "…"} 列
-            {sizeBytes !== null ? ` · ${formatAttachmentSize(sizeBytes)}` : ""}
+            {rowsLabel(table.count, gt)} ·{" "}
+            {rows ? columnsLabel(rows.columns.length, gt) : gt("… columns")}
+            {sizeBytes !== null ? ` · ${formatAttachmentSize(sizeBytes, messages)}` : ""}
           </div>
           <FileSurfaceNotice>
-            只读。每个单元格最多可有50列和1,024个字符。 Blob 内容会被省略。
+            <T>
+              Read-only. Up to 50 columns and 1,024 characters per cell. Blob contents are omitted.
+            </T>
           </FileSurfaceNotice>
         </>
       ) : null}
@@ -277,17 +322,20 @@ export default function BinaryViewer(props: {
         ) : null
       ) : archive ? (
         <div className="scrollbar-gutter-both min-h-0 flex-1 overflow-auto">
-          <table aria-label="存档条目" className="w-full border-separate border-spacing-0 text-xs">
+          <table
+            aria-label={gt("Archive entries")}
+            className="w-full border-separate border-spacing-0 text-xs"
+          >
             <thead className="sticky top-0 bg-background text-muted-foreground">
               <tr>
                 <th scope="col" className="px-3 py-2 text-left font-normal">
-                  名称
+                  <T $context="column header, file name">Name</T>
                 </th>
                 <th scope="col" className="px-3 py-2 text-right font-normal">
-                  大小
+                  <T $context="column header, file size">Size</T>
                 </th>
                 <th scope="col" className="px-3 py-2 text-right font-normal">
-                  已修改
+                  <T $context="column header, last modified date">Modified</T>
                 </th>
               </tr>
             </thead>
@@ -324,7 +372,7 @@ export default function BinaryViewer(props: {
                       </button>
                     </td>
                     <td className="w-20 border-b border-border/60 px-3 py-2 text-right whitespace-nowrap text-muted-foreground tabular-nums">
-                      {formatAttachmentSize(item.size)}
+                      {formatAttachmentSize(item.size, messages)}
                     </td>
                     <td className="w-28 border-b border-border/60 px-3 py-2 text-right whitespace-nowrap text-muted-foreground">
                       {item.modified ? new Date(item.modified).toLocaleDateString() : "-"}
@@ -334,7 +382,9 @@ export default function BinaryViewer(props: {
             </tbody>
           </table>
           {children.size === 0 ? (
-            <p className="p-6 text-xs text-muted-foreground">此文件夹为空。</p>
+            <p className="p-6 text-xs text-muted-foreground">
+              <T>This folder is empty.</T>
+            </p>
           ) : null}
         </div>
       ) : rows ? (
@@ -372,11 +422,15 @@ export default function BinaryViewer(props: {
             </tbody>
           </table>
           {rows.rows.length === 0 ? (
-            <p className="p-6 text-xs text-muted-foreground">此表为空。</p>
+            <p className="p-6 text-xs text-muted-foreground">
+              <T>This table is empty.</T>
+            </p>
           ) : null}
         </div>
       ) : (
-        <p className="p-6 text-xs text-muted-foreground">这个数据库没有可读的表格。</p>
+        <p className="p-6 text-xs text-muted-foreground">
+          <T>This database has no readable tables.</T>
+        </p>
       )}
     </div>
   );

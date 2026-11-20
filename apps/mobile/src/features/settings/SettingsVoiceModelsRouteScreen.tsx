@@ -1,9 +1,12 @@
+import { T, useGT, Var } from "gt-react-native";
+import { NativeScrollView } from "../../native/NativeScrollViewMarker";
+import { LegendList } from "@legendapp/list/react-native";
 import { useAtomValue } from "@effect/atom-react";
 import type { StaticScreenProps } from "@react-navigation/native";
 import type { EnvironmentId } from "@t3tools/contracts";
 import { AsyncResult } from "effect/reactivity";
 import { useState } from "react";
-import { FlatList, Platform, View } from "react-native";
+import { Platform, View } from "react-native";
 
 import { AppActivityIndicator } from "../../components/ui/AppActivityIndicator";
 import { AppText as Text } from "../../components/ui/AppText";
@@ -12,15 +15,16 @@ import { cn } from "../../lib/cn";
 import { useEnvironments } from "../../state/environments";
 import { voiceSpeechBenchmarksAtom } from "../voice-input/voiceDestination";
 import { PullRequestSearchSheet } from "../pull-requests/PullRequestSearchSheet";
-import { useVoiceModels, voiceModelLanguageLabel, VoiceModelRow } from "./VoiceModelSection";
+import { useVoiceModels, VoiceModelRow } from "./VoiceModelSection";
 
 export function SettingsVoiceModelsRouteScreen({
   route,
 }: StaticScreenProps<{ readonly environmentId: EnvironmentId }>) {
+  const gt = useGT();
   const { environments } = useEnvironments();
   const label =
     environments.find((environment) => environment.environmentId === route.params.environmentId)
-      ?.label ?? "此环境";
+      ?.label ?? gt("This environment");
   const voice = useVoiceModels(route.params.environmentId, label);
   const benchmarks = new Map(
     (
@@ -40,29 +44,27 @@ export function SettingsVoiceModelsRouteScreen({
       return benchmark ? { ...model, benchmark } : model;
     })
     .filter((model) =>
-      [
-        model.name,
-        model.description,
-        ...model.languages,
-        ...model.languages.map(voiceModelLanguageLabel),
-      ]
-        .join(" ")
+      `${model.name} ${model.description} ${model.languages.join(" ")}`
         .toLowerCase()
         .includes(needle),
     );
   return (
     <PullRequestSearchSheet
-      title="转录模型"
-      placeholder="搜索模型或语言"
-      closeAccessibilityLabel="关闭转录模型列表"
-      clearAccessibilityLabel="清除模型搜索"
+      title={gt("Transcription models")}
+      placeholder={gt("Search models or languages")}
+      closeAccessibilityLabel={gt("Close transcription models")}
+      clearAccessibilityLabel={gt("Clear model search")}
       query={query}
       onQueryChange={setQuery}
     >
       {({ paddingBottom }) => (
-        <FlatList
+        <LegendList
+          renderScrollComponent={NativeScrollView}
           data={models}
           keyExtractor={(model) => model.id}
+          extraData={{ voice, language, count: models.length }}
+          estimatedItemSize={72}
+          recycleItems
           className="flex-1"
           contentInsetAdjustmentBehavior="automatic"
           automaticallyAdjustKeyboardInsets={Platform.OS === "ios"}
@@ -73,7 +75,9 @@ export function SettingsVoiceModelsRouteScreen({
           ListHeaderComponent={
             voice.canManage ? undefined : (
               <Text className="pb-3 text-xs text-foreground-muted">
-                此连接无权修改 {label} 的设置。
+                <T>
+                  This connection can’t change settings on <Var>{label}</Var>.
+                </T>
               </Text>
             )
           }
@@ -93,8 +97,12 @@ export function SettingsVoiceModelsRouteScreen({
               <AppActivityIndicator className="my-8" />
             ) : (
               <EmptyState
-                title={needle ? "没有匹配的模型" : "没有转录模型"}
-                detail={needle ? "请尝试其他名称或语言。" : `${label} 没有可用的模型。`}
+                title={needle ? gt("No models match") : gt("No transcription models")}
+                detail={
+                  needle
+                    ? gt("Try another name or language.")
+                    : gt("{environment} has no models to list.", { environment: label })
+                }
                 variant="plain"
               />
             )

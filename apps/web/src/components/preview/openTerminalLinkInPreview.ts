@@ -22,7 +22,7 @@ export class TerminalLinkPreviewOpenError extends Schema.TaggedError<TerminalLin
   terminalLinkErrorContext,
 ) {
   override get message(): string {
-    return `在会话${this.threadId} 预览中打开终端链接${this.targetOrigin} 失败。`;
+    return `Failed to open terminal link ${this.targetOrigin} in preview for thread ${this.threadId}.`;
   }
 }
 
@@ -64,7 +64,9 @@ export async function openTerminalLinkInPreview<E>(
       url: input.url,
       viewport: defaults.viewport,
       profileId: defaults.profileId,
-      ...(runtime === undefined ? {} : { runtime }),
+      ...(runtime === undefined
+        ? {}
+        : { runtime, zoomFactor: defaults.zoomFactor, colorScheme: defaults.appearance }),
     },
   });
   if (result._tag === "Failure") {

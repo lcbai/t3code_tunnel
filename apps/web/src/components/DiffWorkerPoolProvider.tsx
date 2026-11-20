@@ -2,6 +2,7 @@ import { WorkerPoolContext, useWorkerPool } from "@pierre/diffs/react";
 import { WorkerPoolManager } from "@pierre/diffs/worker";
 import DiffsWorker from "@pierre/diffs/worker/worker.js?worker";
 import * as Schema from "effect/Schema";
+import { T } from "gt-react";
 import { useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
 import { getRenderedAppearance, subscribeRenderedAppearance } from "../hooks/useTheme";
 import { resolveDiffThemeName } from "../lib/diffRendering";
@@ -13,7 +14,7 @@ export class DiffWorkerError extends Schema.TaggedError<DiffWorkerError>()("Diff
   cause: Schema.Defect(),
 }) {
   override get message(): string {
-    return `Diff 工人操作${this.operation} 失败主题${this.themeName}。`;
+    return `Diff worker operation ${this.operation} failed for theme ${this.themeName}.`;
   }
 }
 
@@ -115,7 +116,7 @@ function DiffWorkerReady({ children }: { children?: ReactNode }) {
       role="status"
       className="flex min-h-0 flex-1 items-center justify-center p-4 text-xs text-muted-foreground"
     >
-      正在装入代码…
+      <T>Loading code...</T>
     </div>
   );
 }

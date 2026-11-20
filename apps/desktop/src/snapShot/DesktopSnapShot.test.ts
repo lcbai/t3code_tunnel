@@ -1048,7 +1048,6 @@ it.effect.each([
   { backend: "gnome", screenshot: "PNG" },
   { backend: "niri", screenshot: "PNG" },
   { backend: "kde", screenshot: "PNG" },
-  { backend: "hyprland", screenshot: "PNG" },
   { backend: "gnome", screenshot: "invalid" },
 ] as const)(
   "persists $backend accessibility text with a $screenshot screenshot",
@@ -2104,7 +2103,7 @@ it.effect(
         assert.isTrue((yield* service.state).shortcutActionRegistered);
         const check = yield* service.checkShortcut(settings.snapShotShortcut);
         assert.isFalse(check.available);
-        assert.include(check.message, "Hyprland 配置");
+        assert.include(check.message, "Hyprland config");
         yield* service.configure({ ...settings, snapShotPlaySound: false });
         assert.lengthOf(portalShortcutInstances, 1);
         assert.lengthOf(first.close.mock.calls, 0);

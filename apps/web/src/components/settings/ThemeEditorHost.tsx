@@ -1,6 +1,8 @@
+import { msg } from "gt-react";
 import { lazy, Suspense, useSyncExternalStore } from "react";
 
 import { useTheme } from "../../hooks/useTheme";
+import { m } from "../../i18n/messages";
 import {
   getThemeDefinition,
   subscribeToCustomThemes,
@@ -38,19 +40,12 @@ export function ThemeEditorHost() {
         toastManager.add(
           stackedThreadToast({
             type: "error",
-            title: "无法保存您的主题",
-            description: "浏览器存储不可用，因此更改没有保存。",
+            title: m(msg("Could not save your theme")),
+            description: m(msg("Browser storage is unavailable, so the change was not kept.")),
           }),
         );
         return false;
       }
-      toastManager.add(
-        stackedThreadToast({
-          type: "success",
-          title: `${savedTheme.label} 更新`,
-          description: `添加了它的${mergedAppearance} 调色板。`,
-        }),
-      );
       return true;
     }
     if (!created) {
@@ -60,13 +55,6 @@ export function ThemeEditorHost() {
         themeHalves?.light === savedTheme.id ||
         themeHalves?.dark === savedTheme.id;
       if (wasActive) refreshTheme();
-      toastManager.add(
-        stackedThreadToast({
-          type: "success",
-          title: `${savedTheme.label} 已保存`,
-          description: wasActive ? "您的更改现已激活。" : "您的更改已被保存。",
-        }),
-      );
       return true;
     }
 
@@ -74,19 +62,12 @@ export function ThemeEditorHost() {
       toastManager.add(
         stackedThreadToast({
           type: "error",
-          title: "无法保存您的主题",
-          description: "浏览器存储不可用，因此更改没有保存。",
+          title: m(msg("Could not save your theme")),
+          description: m(msg("Browser storage is unavailable, so the change was not kept.")),
         }),
       );
       return false;
     }
-    toastManager.add(
-      stackedThreadToast({
-        type: "success",
-        title: `${savedTheme.label} 创建`,
-        description: "现时已活跃。",
-      }),
-    );
     return true;
   };
 

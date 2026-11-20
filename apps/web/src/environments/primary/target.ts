@@ -2,6 +2,8 @@ import { PRIMARY_LOCAL_ENVIRONMENT_ID, type DesktopEnvironmentBootstrap } from "
 import * as Schema from "effect/Schema";
 
 import { isLocalEnvironmentDisabled } from "../../localEnvironment";
+import { msg } from "gt-react";
+import { m } from "../../i18n/messages";
 
 const PrimaryEnvironmentTargetSource = Schema.Literals([
   "configured",
@@ -39,7 +41,7 @@ export class PrimaryEnvironmentProtocolUnsupportedError extends Schema.TaggedErr
   },
 ) {
   override get message(): string {
-    return `${this.source}主环境目标使用不支持的协议${this.protocol}。`;
+    return `The ${this.source} primary environment target uses unsupported protocol ${this.protocol}.`;
   }
 }
 
@@ -55,7 +57,7 @@ export class DesktopEnvironmentBootstrapIncompleteError extends Schema.TaggedErr
       ...(this.hasHttpBaseUrl ? [] : ["httpBaseUrl"]),
       ...(this.hasWsBaseUrl ? [] : ["wsBaseUrl"]),
     ];
-    return `桌面端初始化本地环境时缺少 ${missing.join(" 和 ")}。`;
+    return `Desktop bootstrap is missing ${missing.join(" and ")} for the local environment.`;
   }
 }
 
@@ -64,7 +66,7 @@ export class PrimaryEnvironmentDisabledError extends Schema.TaggedError<PrimaryE
   {},
 ) {
   override get message(): string {
-    return "The local environment is disabled.";
+    return m(msg("The local environment is disabled."));
   }
 }
 

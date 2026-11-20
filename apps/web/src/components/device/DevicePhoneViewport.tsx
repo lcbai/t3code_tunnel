@@ -1,3 +1,4 @@
+import { useGT } from "gt-react";
 import { useEffect, useRef } from "react";
 import type { PhoneViewer } from "@t3tools/client-runtime/device/phone-viewer";
 import type {
@@ -24,6 +25,7 @@ export function DevicePhoneViewport(props: {
   readonly foldAngle: number | null;
   readonly onUnavailable: () => void;
 }) {
+  const gt = useGT();
   const viewerRef = useRef<PhoneViewer | null>(null);
   const interactionRef = useRef<ReturnType<typeof createPhoneInteraction> | null>(null);
   const screenRef = useRef(props.screen);
@@ -101,7 +103,9 @@ export function DevicePhoneViewport(props: {
         />
         <canvas
           ref={mountViewer}
-          aria-label="交互式 3D 设备。 拖动屏幕进行交互。 拖动屏幕到外面，或者用两个手指进行切换。"
+          aria-label={gt(
+            "Interactive 3D device. Drag the screen to interact. Drag outside it or swipe with two fingers to turn.",
+          )}
           className="size-full touch-none"
           onPointerDown={(event) => {
             if (event.button !== 0) return;

@@ -1,4 +1,5 @@
 import { RefreshIcon } from "~/components/ui/refresh-icon";
+import { T, useGT, Var } from "gt-react";
 import { PlusIcon, SearchIcon } from "lucide-react";
 
 import { openCommandPalette } from "../../commandPaletteBus";
@@ -68,18 +69,24 @@ export function PullRequestListEmptyState({
   onLoadMore: () => void;
   onRefresh: () => void;
 }) {
+  const gt = useGT();
+  const shownQuery = query.length > 48 ? `${query.slice(0, 48)}…` : query;
   if (!hasProjects) {
     return (
       <Empty>
         <BranchMark joined={false} />
         <EmptyHeader>
-          <EmptyTitle>此工作空间中没有工程</EmptyTitle>
-          <EmptyDescription>添加一个工程，并显示其寄存器的拉取请求。</EmptyDescription>
+          <EmptyTitle>
+            <T>No projects in this workspace</T>
+          </EmptyTitle>
+          <EmptyDescription>
+            <T>Add a project, and the pull requests from its repository appear here.</T>
+          </EmptyDescription>
         </EmptyHeader>
         <EmptyContent>
           <Button size="sm" onClick={() => openCommandPalette({ open: "add-project" })}>
             <PlusIcon className="size-3.5" />
-            添加工程
+            <T>Add project</T>
           </Button>
         </EmptyContent>
       </Empty>
@@ -90,7 +97,7 @@ export function PullRequestListEmptyState({
     return (
       <PullRequestListGhost
         rows={5}
-        caption={`搜索每个主机“${query.length > 48 ? `${query.slice(0, 48)}…` : query} ”`}
+        caption={gt("Searching every host for “{query}”", { query: shownQuery })}
       />
     );
   }
@@ -101,20 +108,25 @@ export function PullRequestListEmptyState({
         <BranchMark joined={false} />
         <EmptyHeader>
           <EmptyTitle>
-            无任何匹配之处“{query.length > 48 ? `${query.slice(0, 48)}…` : query}”
+            <T>
+              Nothing matches “<Var>{shownQuery}</Var>”
+            </T>
           </EmptyTitle>
           <EmptyDescription>
-            搜索了主机。 尝试更少的单词，或按数字、 作者或分支搜索。
+            <T>
+              The hosts were searched for it. Try fewer words, or search by number, author or
+              branch.
+            </T>
           </EmptyDescription>
         </EmptyHeader>
         <div className="flex flex-wrap justify-center gap-2">
           <Button size="sm" variant="outline" onClick={onClearQuery}>
             <SearchIcon className="size-3.5" />
-            清除搜索
+            <T>Clear search</T>
           </Button>
           <Button size="sm" variant="outline" disabled={refreshing} onClick={onRefresh}>
             <RefreshIcon size="sm" refreshing={refreshing} />
-            {refreshing ? "检查中…" : "再检查一遍"}
+            {refreshing ? gt("Checking...") : gt("Check again")}
           </Button>
         </div>
       </Empty>
@@ -125,22 +137,24 @@ export function PullRequestListEmptyState({
     <Empty>
       <BranchMark joined={false} />
       <EmptyHeader>
-        <EmptyTitle>{filtered ? "这些过滤器下面什么都没有" : "无拉取请求"}</EmptyTitle>
+        <EmptyTitle>
+          {filtered ? gt("Nothing under these filters") : gt("No pull requests")}
+        </EmptyTitle>
         <EmptyDescription>
           {filtered
-            ? "拓宽状态，参与或项目过滤器以查看更多。"
-            : "在此显示来自此工作空间中每个工程的调试请求。"}
+            ? gt("Widen the state, involvement or project filter to see more.")
+            : gt("Pull requests from every project in this workspace appear here.")}
         </EmptyDescription>
       </EmptyHeader>
       <div className="flex flex-wrap justify-center gap-2">
         {canLoadMore ? (
           <Button size="sm" variant="outline" disabled={loadingMore} onClick={onLoadMore}>
-            {loadingMore ? "正在装入…" : "装入更多拉取请求"}
+            {loadingMore ? gt("Loading...") : gt("Load more pull requests")}
           </Button>
         ) : null}
         <Button size="sm" variant="outline" disabled={refreshing} onClick={onRefresh}>
           <RefreshIcon size="sm" refreshing={refreshing} />
-          {refreshing ? "检查中…" : "再检查一遍"}
+          {refreshing ? gt("Checking...") : gt("Check again")}
         </Button>
       </div>
     </Empty>

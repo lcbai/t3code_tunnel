@@ -1,8 +1,10 @@
 import { useAtomValue } from "@effect/atom-react";
 import {
   connectionCatalogDisplayUrl,
+  hasRelayRoute,
   type EnvironmentPresentation as BaseEnvironmentPresentation,
 } from "@t3tools/client-runtime/connection";
+import { Discovery } from "@t3tools/client-runtime/relay";
 import type { EnvironmentId } from "@t3tools/contracts";
 import * as Option from "effect/Option";
 
@@ -14,12 +16,14 @@ import {
   useEnvironmentPresentation,
 } from "./presentation";
 import { primaryEnvironmentIdAtom } from "./primaryEnvironment";
+import { relayEnvironmentDiscovery } from "./relay";
 import { usePreparedConnection } from "./session";
 
 export interface EnvironmentPresentation extends BaseEnvironmentPresentation {
   readonly environmentId: EnvironmentId;
   readonly label: string;
   readonly displayUrl: string | null;
+  readonly relayManaged: boolean;
 }
 
 function projectEnvironmentPresentation(
@@ -31,6 +35,7 @@ function projectEnvironmentPresentation(
     environmentId,
     label: presentation.entry.target.label,
     displayUrl: connectionCatalogDisplayUrl(presentation.entry),
+    relayManaged: hasRelayRoute(presentation.entry),
   };
 }
 
@@ -54,6 +59,12 @@ export function useEnvironments() {
 /** Provider statuses change on every push, so they live apart from the presentations. */
 export function useEnvironmentProviders() {
   return useAtomValue(environmentPresentations.providersByEnvironmentAtom);
+}
+
+export function readEnvironmentProviders(environmentId: EnvironmentId) {
+  return appAtomRegistry
+    .get(environmentPresentations.providersByEnvironmentAtom)
+    .get(environmentId);
 }
 
 export function usePrimaryEnvironmentId(): EnvironmentId | null {
@@ -90,12 +101,20 @@ export function useEnvironmentHttpBaseUrl(environmentId: EnvironmentId | null): 
   return Option.isSome(prepared) ? prepared.value.httpBaseUrl : null;
 }
 
+export function useRelayEnvironmentDiscovery(): Discovery.RelayEnvironmentDiscoveryState {
+  return useAtomValue(relayEnvironmentDiscovery.stateValueAtom);
+}
+
 export function useEnvironmentIdentities() {
   return useAtomValue(environmentSummaries.identitiesAtom);
 }
 
 export function usePullRequestsSupported() {
   return useAtomValue(environmentSummaries.pullRequestsSupportedAtom);
+}
+
+export function useIssuesSupported() {
+  return useAtomValue(environmentSummaries.issuesSupportedAtom);
 }
 
 export function useEnvironmentMachines() {

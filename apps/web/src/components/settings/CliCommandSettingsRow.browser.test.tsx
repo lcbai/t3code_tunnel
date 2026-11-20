@@ -32,11 +32,11 @@ it("blocks installation behind another t3 without blocking removal of our instal
     </RegistryContext.Provider>,
   );
 
-  await expect.element(screen.getByRole("button", { name: "安装" })).toBeDisabled();
+  await expect.element(screen.getByRole("button", { name: "Install" })).toBeDisabled();
 
   getState.mockResolvedValue(state);
   await act(() => registry.refresh(desktopCliCommandStateAtom));
-  await expect.element(screen.getByRole("button", { name: "安装" })).toBeEnabled();
+  await expect.element(screen.getByRole("button", { name: "Install" })).toBeEnabled();
 
   getState.mockResolvedValue({
     ...state,
@@ -44,7 +44,7 @@ it("blocks installation behind another t3 without blocking removal of our instal
     shadowedBy: "/usr/local/bin/t3",
   });
   await act(() => registry.refresh(desktopCliCommandStateAtom));
-  const remove = screen.getByRole("button", { name: "移除" });
+  const remove = screen.getByRole("button", { name: "Remove" });
   await expect.element(remove).toBeEnabled();
   await remove.click();
   expect(uninstall).toHaveBeenCalledOnce();

@@ -1,3 +1,5 @@
+import { mFallback, msg } from "gt-i18n";
+import type { MFunctionType } from "gt-i18n/types";
 import type { ChatAttachment } from "@t3tools/contracts";
 import { assistantCitationsToPlainText } from "@t3tools/shared/assistantCitations";
 import { replaceComposerContextReferences } from "@t3tools/shared/composerContextReferences";
@@ -25,7 +27,14 @@ function modelMentionsAsSlugs(value: string): string {
   return result + value.slice(cursor);
 }
 
-export function threadTitleTextFromPrompt(value: string): string {
+function attachedImagesTitle(count: number, resolve: MFunctionType): string {
+  return count === 1 ? resolve(msg("Attached image")) : resolve(msg("Attached images"));
+}
+
+export function threadTitleTextFromPrompt(
+  value: string,
+  resolve: MFunctionType = mFallback,
+): string {
   const imageIds = new Set<string>();
   const prose = replaceComposerContextReferences(value, (reference) => {
     if (reference.kind === "image") {
@@ -34,23 +43,29 @@ export function threadTitleTextFromPrompt(value: string): string {
     }
     return reference.label;
   });
-  return normalizeTitleSeed(modelMentionsAsSlugs(prose)) || (imageIds.size > 0 ? "图片附件" : "");
+  return (
+    normalizeTitleSeed(modelMentionsAsSlugs(prose)) ||
+    (imageIds.size > 0 ? attachedImagesTitle(imageIds.size, resolve) : "")
+  );
 }
 
-export function deriveThreadTitleSeed(input: ThreadTitleSeedInput): string {
-  const text = threadTitleTextFromPrompt(input.text);
+export function deriveThreadTitleSeed(
+  input: ThreadTitleSeedInput,
+  resolve: MFunctionType = mFallback,
+): string {
+  const text = threadTitleTextFromPrompt(input.text, resolve);
   if (text.length > 0) {
     return truncate(text);
   }
 
   const images = input.attachments.filter((attachment) => attachment.type === "image");
   if (images.length > 0) {
-    return "图片附件";
+    return attachedImagesTitle(images.length, resolve);
   }
 
   const attachmentName = normalizeTitleSeed(input.attachments[0]?.name ?? "");
   if (attachmentName.length > 0) {
-    return truncate(`文件：${attachmentName}`);
+    return truncate(resolve(msg("File: {name}", { name: attachmentName })));
   }
 
   for (const label of input.fallbackLabels ?? []) {
@@ -60,5 +75,5 @@ export function deriveThreadTitleSeed(input: ThreadTitleSeedInput): string {
     }
   }
 
-  return "新建会话";
+  return resolve(msg("New thread"));
 }

@@ -19,6 +19,7 @@ const emptyCatalog = {
   targets: [],
   profiles: [],
   credentials: [],
+  remoteDpopTokens: [],
   disabledEnvironmentIds: [],
 } as const;
 const decodeCatalog = Schema.decodeUnknownSync(Schema.fromJsonString(ConnectionCatalogDocument));
@@ -281,6 +282,6 @@ describe("browser GitHub routing permissions", () => {
         ConnectionTransientError,
       );
       expect(yield* second.get(entry)).toBe("off");
-    }).pipe(Effect.scoped),
+    }),
   );
 });

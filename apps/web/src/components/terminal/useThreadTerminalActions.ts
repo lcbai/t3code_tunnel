@@ -17,6 +17,7 @@ import { terminalEnvironment } from "../../state/terminal";
 import { useKnownTerminalSessions } from "../../state/terminalSessions";
 import { useAtomCommand } from "../../state/use-atom-command";
 import { selectThreadTerminalUiState, useTerminalUiStateStore } from "../../terminalUiStateStore";
+import { closingTerminalIds, holdTerminalIdWhileClosing } from "./closingTerminals";
 
 /** Where a new terminal starts. Omitted fields fall back to the thread's project and worktree. */
 export interface TerminalLaunchLocation {
@@ -55,19 +56,20 @@ export function useThreadTerminalActions(threadRef: ScopedThreadRef | null) {
     threadRef !== null && readEnvironmentScope(threadRef.environmentId, AuthTerminalOperateScope);
 
   // Server lists lag and colliding ids share a PTY; without read access, suffix ids to avoid unseen sessions.
-  const allocateTerminalId = (unique: boolean) => {
+  const allocateTerminalId = () => {
     const ids = new Set([
       ...(knownSessions ?? []).map((session) => session.target.terminalId),
       ...drawerTerminalIds,
       ...panelSurfaces.flatMap((surface) =>
         surface.kind === "terminal" ? surface.terminalIds : [],
       ),
+      ...(threadRef ? closingTerminalIds(threadRef) : []),
     ]);
     const canReuse =
       knownSessions !== null &&
       threadRef !== null &&
       readEnvironmentScope(threadRef.environmentId, AuthTerminalReadScope);
-    return nextTerminalId([...ids], unique || !canReuse ? randomUUID() : undefined);
+    return nextTerminalId([...ids], canReuse ? undefined : randomUUID());
   };
 
   const defaultLaunchLocation = (): TerminalLaunchLocation | null =>
@@ -85,7 +87,6 @@ export function useThreadTerminalActions(threadRef: ScopedThreadRef | null) {
   const launchTerminal = (input: {
     readonly place: (terminalId: string) => void;
     readonly terminalId?: string;
-    readonly uniqueId?: boolean;
     readonly location?: TerminalLaunchLocation | null;
     readonly extraEnv?: Record<string, string>;
     readonly stopOnSettle?: boolean;
@@ -94,7 +95,7 @@ export function useThreadTerminalActions(threadRef: ScopedThreadRef | null) {
     if (!threadRef || !canWrite() || !project) return null;
     const location = input.location ?? defaultLaunchLocation();
     if (!location) return null;
-    const terminalId = input.terminalId ?? allocateTerminalId(input.uniqueId ?? false);
+    const terminalId = input.terminalId ?? allocateTerminalId();
     input.place(terminalId);
     const result = openTerminalCommand({
       environmentId: threadRef.environmentId,
@@ -120,7 +121,7 @@ export function useThreadTerminalActions(threadRef: ScopedThreadRef | null) {
     if (!target || !readEnvironmentScope(target.environmentId, AuthTerminalOperateScope)) return;
     const environmentId = target.environmentId;
     const threadId = target.threadId;
-    void (async () => {
+    void holdTerminalIdWhileClosing(target, terminalId, async () => {
       const closeResult = await closeTerminalCommand({
         environmentId,
         input: { threadId, terminalId, deleteHistory: true },
@@ -132,7 +133,7 @@ export function useThreadTerminalActions(threadRef: ScopedThreadRef | null) {
       ) {
         await writeTerminal({ environmentId, input: { threadId, terminalId, data: "exit\n" } });
       }
-    })();
+    });
   };
 
   const writeToTerminal = (terminalId: string, data: string) => {

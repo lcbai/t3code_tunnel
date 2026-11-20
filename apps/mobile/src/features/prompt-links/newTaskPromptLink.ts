@@ -1,3 +1,4 @@
+import { errorDisplayMessage } from "@t3tools/client-runtime/errors";
 import * as Dialog from "../../components/ui/Dialog";
 import {
   StackActions,
@@ -19,14 +20,16 @@ import {
 } from "@t3tools/client-runtime/state/runtime";
 import type { EnvironmentProject } from "@t3tools/client-runtime/state/shell";
 import type { EnvironmentId, ThreadId } from "@t3tools/contracts";
-import {
-  parseNewThreadLink,
-  type LinkedPrompt,
-  type PromptLinkPullRequest,
-  type PromptLinkRepository,
+import type {
+  LinkedPrompt,
+  PromptLinkPullRequest,
+  PromptLinkRepository,
 } from "@t3tools/shared/promptLinks";
+import { parseNewThreadLink } from "@t3tools/shared/promptLinksCopy";
 import { Atom, type AsyncResult } from "effect/reactivity";
+import { msg } from "gt-react-native";
 
+import { m } from "../../i18n/messages";
 import { findLinkedRoute, findStackRoute, updateLinkedRoute } from "../../lib/appLinking";
 import { rootNavigationRef } from "../../lib/rootNavigation";
 import { scopedThreadKey } from "../../lib/scopedEntities";
@@ -225,7 +228,10 @@ async function openProjectDraft(project: EnvironmentProject, request: LinkedDraf
   try {
     await waitForComposerDraftsLoaded();
   } catch {
-    Dialog.alert("Could not open link", "无法加载草稿，提示词未添加。");
+    Dialog.alert(
+      m(msg("Could not open link")),
+      m(msg("Drafts could not be loaded, so the prompt was not added.")),
+    );
     return;
   }
   const draftKey = createNewTaskDraft({
@@ -263,7 +269,9 @@ async function openProjectDraft(project: EnvironmentProject, request: LinkedDraf
     StackActions.push("Thread", {
       draft: {
         draftId: draftKey,
-        title: request.pullRequest ? `PR #${request.pullRequest.number}` : project.title,
+        title: request.pullRequest
+          ? m(msg("PR #{number}", { number: request.pullRequest.number }))
+          : project.title,
       },
     }),
   );
@@ -294,7 +302,10 @@ async function openScratchDraft(request: LinkedDraftRequest) {
       .map((environment) => environment.environmentId),
   );
   if (environmentId === null) {
-    Dialog.alert("无法在没有项目的情况下启动", "已连接的环境均不支持创建无项目会话。");
+    Dialog.alert(
+      m(msg("Could not start without a project")),
+      m(msg("No connected environment offers threads without a project.")),
+    );
     return;
   }
   const result = await runAtomCommand(
@@ -307,8 +318,10 @@ async function openScratchDraft(request: LinkedDraftRequest) {
     if (!isAtomCommandInterrupted(result)) {
       const error = squashAtomCommandFailure(result);
       Dialog.alert(
-        "无法在没有项目的情况下启动",
-        error instanceof Error ? error.message : "无法创建无项目会话的文件夹。",
+        m(msg("Could not start without a project")),
+        error instanceof Error
+          ? (errorDisplayMessage(error, m) ?? error.message)
+          : m(msg("The folder for threads without a project could not be created.")),
       );
     }
     return;
@@ -323,7 +336,7 @@ function cloneRepository(repository: PromptLinkRepository, request: LinkedDraftR
     appAtomRegistry.get(workspaceConnections.environmentsAtom)[0]?.environmentId ??
     null;
   if (environmentId === null) {
-    Dialog.alert("Could not clone", "请先连接环境。");
+    Dialog.alert(m(msg("Could not clone")), m(msg("Connect an environment first.")));
     return;
   }
   const prompt =
@@ -349,17 +362,17 @@ function cloneRepository(repository: PromptLinkRepository, request: LinkedDraftR
         modelUnavailable: prompt !== null && request.provider !== null,
       }),
       prompt
-        ? "The prompt opens in a new task once the clone starts."
-        : "Open the link again after the clone to get the prompt.",
+        ? m(msg("The prompt opens in a new task once the clone starts."))
+        : m(msg("Open the link again after the clone to get the prompt.")),
     ].join("\n\n"),
   );
 }
 
 function resolveLink(linkSearch: string) {
   const threads = appAtomRegistry.get(environmentThreadShells.threadShellsAtom);
-  const parsed = parseNewThreadLink(linkSearch);
+  const parsed = parseNewThreadLink(linkSearch, m);
   if (!parsed.ok) {
-    Dialog.alert("Could not open link", parsed.error);
+    Dialog.alert(m(msg("Could not open link")), parsed.error);
     return;
   }
   const link = parsed.value;
@@ -404,11 +417,18 @@ function resolveLink(linkSearch: string) {
     })();
     return;
   }
-  Dialog.alert(`缺少 ${promptLinkRepositoryName(repository)}`, undefined, [
-    { text: "取消", style: "cancel" },
-    ...(request.prompt
-      ? [{ text: "不使用项目", onPress: () => void openScratchDraft(request) }]
-      : []),
-    { text: "克隆", onPress: () => cloneRepository(repository, request) },
-  ]);
+  Dialog.alert(
+    m(msg("You don't have {repository}", { repository: promptLinkRepositoryName(repository) })),
+    undefined,
+    [
+      { text: m(msg("Cancel")), style: "cancel" },
+      ...(request.prompt
+        ? [{ text: m(msg("Use without project")), onPress: () => void openScratchDraft(request) }]
+        : []),
+      {
+        text: m(msg("Clone", { $context: "verb, clones the repository" })),
+        onPress: () => cloneRepository(repository, request),
+      },
+    ],
+  );
 }

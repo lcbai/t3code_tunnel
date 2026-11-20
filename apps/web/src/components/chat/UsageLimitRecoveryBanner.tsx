@@ -1,3 +1,6 @@
+import { T, msg, useGT } from "gt-react";
+import { thrownErrorMessage } from "@t3tools/client-runtime/errors";
+import { m, type MessageResolver } from "~/i18n/messages";
 import {
   type OrchestrationV2LimitRecovery,
   type OrchestrationV2LimitRecoveryUpdate,
@@ -34,7 +37,10 @@ type RecoveryProps = {
   onChange: (recovery: OrchestrationV2LimitRecoveryUpdate) => Promise<void>;
 };
 
-export function usageLimitRecoveryBannerItem(props: RecoveryProps): ComposerBannerStackItem {
+export function usageLimitRecoveryBannerItem(
+  props: RecoveryProps,
+  resolve: MessageResolver = m,
+): ComposerBannerStackItem {
   const {
     runId,
     errorCode,
@@ -61,15 +67,37 @@ export function usageLimitRecoveryBannerItem(props: RecoveryProps): ComposerBann
       ? snoozedUntil
       : resetAt;
   const resetDescription = displayAt
-    ? `${formatUpcomingTimestamp(displayAt, timestampFormat)}${resumes ? "恢复" : "重置"}`
-    : "无法重设时间; 手动重试";
+    ? resumes
+      ? resolve(
+          msg("Resumes {time}", {
+            time: formatUpcomingTimestamp(
+              displayAt,
+              timestampFormat,
+              undefined,
+              undefined,
+              resolve,
+            ),
+          }),
+        )
+      : resolve(
+          msg("Resets {time}", {
+            time: formatUpcomingTimestamp(
+              displayAt,
+              timestampFormat,
+              undefined,
+              undefined,
+              resolve,
+            ),
+          }),
+        )
+    : resolve(msg("Reset time unavailable; retry manually"));
   if (!chatGptLimit) {
     return {
       id: `usage-limit-recovery:${runId}`,
       variant: "warning",
       group: "environment",
       icon: <GaugeIcon />,
-      title: "达到使用限额",
+      title: resolve(msg("Usage limit reached")),
       description: resetDescription,
       actions: recoveryActions,
     };
@@ -80,16 +108,18 @@ export function usageLimitRecoveryBannerItem(props: RecoveryProps): ComposerBann
     variant: "warning",
     group: "environment",
     icon: <OpenAI aria-hidden="true" />,
-    title: "ChatGPT 使用限制",
+    title: resolve(msg("ChatGPT usage limit reached")),
     description: workspaceLimit
-      ? "您已经达到了工作空间的极限，可以在其它应用程序中使用您的ChatGPT 计划。"
+      ? resolve(
+          msg("You've reached your workspace's limit for using your ChatGPT plan in other apps."),
+        )
       : resetDescription,
     actions: (
       <>
         {recoveryActions}
         {workspaceLimit ? (
           <Button size="xs" variant="ghost" onClick={copyAdminRequest}>
-            复制管理员请求
+            <T>Copy request for admin</T>
           </Button>
         ) : (
           <ChatGptUsageButton size="xs" variant="ghost" />
@@ -100,6 +130,7 @@ export function usageLimitRecoveryBannerItem(props: RecoveryProps): ComposerBann
 }
 
 function RecoveryActions({ runId, resetAt, recovery, snoozedUntil, onChange }: RecoveryProps) {
+  const gt = useGT();
   const [pending, setPending] = useState(false);
 
   const scheduled =
@@ -114,8 +145,8 @@ function RecoveryActions({ runId, resetAt, recovery, snoozedUntil, onChange }: R
     if (action === "snooze" && !snoozed && Date.parse(resetAt) <= Date.now()) {
       toastManager.add({
         type: "error",
-        title: "无法刷新会话",
-        description: "重设时间已过，手动重试会话。",
+        title: m(msg("Could not snooze thread")),
+        description: m(msg("The reset time has passed. Retry the thread manually.")),
       });
       // The deadline timer can lag after a throttled tab or sleep; disable now.
       deadlineStore(Date.parse(resetAt)).refresh();
@@ -131,8 +162,11 @@ function RecoveryActions({ runId, resetAt, recovery, snoozedUntil, onChange }: R
     } catch (cause) {
       toastManager.add({
         type: "error",
-        title: action === "resume" ? "无法更改自动重现" : "无法刷新会话",
-        description: cause instanceof Error ? cause.message : "发生了错误。",
+        title:
+          action === "resume"
+            ? m(msg("Could not change auto-resume"))
+            : m(msg("Could not snooze thread")),
+        description: thrownErrorMessage(cause, m) ?? m(msg("An error occurred.")),
       });
     }
     setPending(false);
@@ -141,14 +175,14 @@ function RecoveryActions({ runId, resetAt, recovery, snoozedUntil, onChange }: R
   return (
     <span className="flex flex-wrap items-center gap-x-3 gap-y-1 px-1">
       <InlineButton touchTarget="padded" disabled={pending} onClick={() => void toggle("resume")}>
-        {pending ? "正在保存…" : scheduled ? "取消自动重现" : "重置时恢复"}
+        {pending ? gt("Saving...") : scheduled ? gt("Cancel auto-resume") : gt("Resume at reset")}
       </InlineButton>
       <InlineButton
         touchTarget="padded"
         disabled={pending || (!snoozed && resetPassed)}
         onClick={() => void toggle("snooze")}
       >
-        {pending ? "正在保存…" : snoozed ? "醒来吧" : "Snooze 直至重置"}
+        {pending ? gt("Saving...") : snoozed ? gt("Wake now") : gt("Snooze until reset")}
       </InlineButton>
     </span>
   );

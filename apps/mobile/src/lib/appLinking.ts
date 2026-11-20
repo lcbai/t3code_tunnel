@@ -6,20 +6,25 @@ import type { NavigationState, PartialState } from "@react-navigation/native";
  * the launcher, not app navigation. Without this filter it falls through
  * to the NotFound wildcard route on every dev launch.
  */
-export function shouldHandleAppLink(url: string): boolean {
+export function shouldHandleAppLink(url: string, cloudConfigured: boolean): boolean {
   // Only the route: a thread link's ?prompt= may mention either lifecycle URL.
   const route = url.split(/[?#]/)[0] ?? "";
   return (
     !route.includes("expo-development-client") &&
     !route.includes("://expo-sharing") &&
     !/^t3code(-dev|-preview)?:\/*$/.test(url) &&
-    !REMOVED_LINK_PATH.test(route)
+    (cloudConfigured || !CLOUD_ONLY_LINK_PATH.test(route))
   );
 }
 
-// Ignore old account links without affecting file paths that share the same names.
-const REMOVED_LINK_PATH =
-  /^[a-z][\w+.-]*:\/*(?:[^/]*\/--\/)?(?:connect-onboarding|settings\/(?:auth|waitlist|notifications))\/*$/i;
+/**
+ * Screens that only exist with T3 Connect configured. A build without it has
+ * no entry points to them, so a link must not open one empty. Anchored to the
+ * app-relative path (after `exp://host/--/` in Expo Go) so a file route whose
+ * path merely ends in one of these names still opens.
+ */
+const CLOUD_ONLY_LINK_PATH =
+  /^[a-z][\w+.-]*:\/*(?:[^/]*\/--\/)?(?:connect-onboarding|settings\/(?:auth|waitlist))\/*$/i;
 
 /** Keep the published draft URLs while using the root thread screen. */
 export function restoreDraftLinkState(

@@ -100,6 +100,7 @@ const contentTarget = {
 };
 
 it.each([
+  { query: "", expected: "" },
   { query: "src", expected: "src" },
   { query: "a".repeat(256), expected: "a".repeat(256) },
   {
@@ -124,6 +125,16 @@ it.each([
   },
 );
 
+it("explains an overlong content query instead of sending it", () => {
+  state.session = { authenticated: true, scopes: [AuthFilesystemReadScope] };
+  const result = useProjectContentSearch({ ...contentTarget, query: "a".repeat(257) });
+
+  expect(state.contentRequests).not.toHaveBeenCalled();
+  expect(result.matches).toEqual([]);
+  expect(result.isPending).toBe(false);
+  expect(result.error).toMatch(/256/);
+});
+
 it("shows content-search denial before typing and never issues an unauthorized request", () => {
   state.session = { authenticated: true, scopes: [] };
   for (const query of ["", contentTarget.query]) {
@@ -133,7 +144,7 @@ it("shows content-search denial before typing and never issues an unauthorized r
       canReadFiles: false,
       isCheckingAccess: false,
       matches: [],
-      error: "此连接无法搜索主机文件。",
+      error: "This connection cannot search host files.",
       isPending: false,
     });
   }
@@ -156,7 +167,7 @@ it("keeps confirmed content access during revalidation and drops results when it
   expect(result).toMatchObject({
     canReadFiles: false,
     matches: [],
-    error: "此连接无法搜索主机文件。",
+    error: "This connection cannot search host files.",
     isPending: false,
   });
   expect(state.contentRequests).not.toHaveBeenCalled();

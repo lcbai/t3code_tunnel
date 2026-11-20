@@ -1,8 +1,11 @@
+import { T, useGT, useMessages } from "gt-react-native";
 import { useAtomValue } from "@effect/atom-react";
 import {
   AVAILABLE_CONNECTION_STATE,
   type ConnectionDiagnosis,
   connectionDiagnosisText,
+  connectionRoutes,
+  hasRelayRoute,
   presentConnectionDiagnosis,
   type EnvironmentPresentation,
 } from "@t3tools/client-runtime/connection";
@@ -10,6 +13,7 @@ import type { EnvironmentId } from "@t3tools/contracts";
 import Constants from "expo-constants";
 import { AsyncResult } from "effect/reactivity";
 import { View } from "react-native";
+import { tryOpenExternalUrl } from "../../lib/openExternalUrl";
 
 import { AppText as Text } from "../../components/ui/AppText";
 import { Button } from "../../components/ui/Button";
@@ -18,13 +22,13 @@ import { cn } from "../../lib/cn";
 import { copyTextWithHaptic } from "../../lib/copyTextWithHaptic";
 
 const HOP_MARK = { ok: "✓", failed: "✕", unchecked: "–" } as const;
-const HOP_NOTE = { ok: "", failed: " · Failed", unchecked: " · Not checked" } as const;
 
 /** Same model as the web Settings row; null while connected, off, or not failed. */
 export function useConnectionDiagnosis(
   environmentId: EnvironmentId,
   presentation: EnvironmentPresentation | null,
 ) {
+  const messages = useMessages();
   const state = AsyncResult.getOrElse(
     useAtomValue(environmentCatalog.stateAtom(environmentId)),
     () => AVAILABLE_CONNECTION_STATE,
@@ -32,12 +36,18 @@ export function useConnectionDiagnosis(
   if (presentation === null || !presentation.entry.enabled) return { diagnosis: null, state };
   const phase = presentation.connection.phase;
   if (phase === "connected" || phase === "unsupported") return { diagnosis: null, state };
-  const diagnosis = presentConnectionDiagnosis({
-    hostLabel: presentation.entry.target.label,
-    state,
-    clientVersion: Constants.expoConfig?.version,
-    serverVersion: presentation.serverConfig?.environment.serverVersion,
-  });
+  const relayOnly =
+    connectionRoutes(presentation.entry).length === 1 && hasRelayRoute(presentation.entry);
+  const diagnosis = presentConnectionDiagnosis(
+    {
+      hostLabel: presentation.entry.target.label,
+      state,
+      via: relayOnly ? "relay" : "direct",
+      clientVersion: Constants.expoConfig?.version,
+      serverVersion: presentation.serverConfig?.environment.serverVersion,
+    },
+    messages,
+  );
   return { diagnosis, state };
 }
 
@@ -45,7 +55,9 @@ export function ConnectionDiagnosisDetails(props: {
   readonly hostLabel: string;
   readonly diagnosis: ConnectionDiagnosis;
 }) {
+  const gt = useGT();
   const { diagnosis } = props;
+  const { moreInfoUrl } = diagnosis;
   return (
     <View className="gap-3">
       <View className="gap-0.5">
@@ -57,12 +69,18 @@ export function ConnectionDiagnosisDetails(props: {
               hop.result === "failed" ? "text-danger-foreground" : "text-foreground-muted",
             )}
           >
-            {`${HOP_MARK[hop.result]}  ${hop.label}${HOP_NOTE[hop.result]}`}
+            {hop.result === "failed"
+              ? gt("{mark}  {hop} · Failed", { mark: HOP_MARK[hop.result], hop: hop.label })
+              : hop.result === "unchecked"
+                ? gt("{mark}  {hop} · Not checked", { mark: HOP_MARK[hop.result], hop: hop.label })
+                : `${HOP_MARK[hop.result]}  ${hop.label}`}
           </Text>
         ))}
       </View>
       <View className="gap-0.5">
-        <Text className="text-sm font-t3-bold text-foreground">可尝试的操作</Text>
+        <Text className="text-sm font-t3-bold text-foreground">
+          <T>What to try</T>
+        </Text>
         {diagnosis.steps.map((step, index) => (
           <Text key={step} className="text-sm text-foreground-muted">
             {`${index + 1}. ${step}`}
@@ -73,7 +91,7 @@ export function ConnectionDiagnosisDetails(props: {
         {diagnosis.facts.map(([label, value]) => `${label}: ${value}`).join("\n")}
       </Text>
       <Button
-        label="复制诊断信息"
+        label={gt("Copy diagnostics")}
         icon="doc.on.doc"
         onPress={() => {
           copyTextWithHaptic(connectionDiagnosisText(props.hostLabel, diagnosis), {
@@ -81,6 +99,14 @@ export function ConnectionDiagnosisDetails(props: {
           });
         }}
       />
+      {moreInfoUrl ? (
+        <Button
+          label={gt("More info")}
+          icon="safari"
+          tone="secondary"
+          onPress={() => void tryOpenExternalUrl(moreInfoUrl)}
+        />
+      ) : null}
     </View>
   );
 }

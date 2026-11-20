@@ -30,9 +30,9 @@ describe("worktree cleanup inheritance", () => {
       "worktreeCleanup",
     );
     expect(layers.map((layer) => [layer.key, layer.value, layer.effective])).toEqual([
-      ["project", "关闭", true],
-      ["environment", "自定义", false],
-      ["built-in", "未设置", false],
+      ["project", "Off", true],
+      ["environment", "Custom", false],
+      ["built-in", "Not set", false],
     ]);
   });
 });
@@ -58,8 +58,8 @@ describe("settingInheritanceLayers", () => {
       "backgroundActivity",
     );
     expect(layers.map((layer) => [layer.key, layer.value, layer.effective])).toEqual([
-      ["environment", "性能优先", true],
-      ["built-in", "均衡", false],
+      ["environment", "Performance", true],
+      ["built-in", "Balanced", false],
     ]);
   });
 
@@ -76,10 +76,10 @@ describe("settingInheritanceLayers", () => {
       "defaultThreadEnvMode",
     );
     expect(fromFile.map((layer) => [layer.label, layer.value, layer.effective])).toEqual([
-      ["项目", "继承", false],
-      ["Laptop", "继承", false],
-      ["t3.json", "新建工作树", true],
-      ["默认", "当前检出目录", false],
+      ["Project", "Inherits", false],
+      ["Laptop", "Inherits", false],
+      ["t3.json", "New worktree", true],
+      ["Default", "Current checkout", false],
     ]);
     const settings = { ...DEFAULT_SERVER_SETTINGS, defaultThreadEnvMode: "local" as const };
     const fromEnvironment = settingInheritanceLayers(
@@ -93,10 +93,10 @@ describe("settingInheritanceLayers", () => {
       "defaultThreadEnvMode",
     );
     expect(fromEnvironment.map((layer) => [layer.value, layer.effective])).toEqual([
-      ["继承", false],
-      ["当前检出目录", true],
-      ["继承", false],
-      ["当前检出目录", false],
+      ["Inherits", false],
+      ["Current checkout", true],
+      ["Inherits", false],
+      ["Current checkout", false],
     ]);
   });
 });

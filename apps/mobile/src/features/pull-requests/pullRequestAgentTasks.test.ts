@@ -36,15 +36,15 @@ describe("PR agent tasks", () => {
     expect(pullRequestAgentThread([thread, archived], archived.id)).toBe(archived);
     const actions = pullRequestAgentThreadActions([settled, archived], "ask", true);
     expect(actions.map((action) => action.title)).toEqual([
-      "新建会话",
+      "Start a new thread",
       "Existing work",
-      "已收尾的会话",
+      "Settled threads",
     ]);
     expect(actions[2]?.subactions).toMatchObject([
-      { id: `ask:${settled.id}`, subtitle: "已收尾的会话" },
+      { id: `ask:${settled.id}`, subtitle: "Settled thread" },
     ]);
     expect(pullRequestAgentThreadActions([thread], "ask", false)).toMatchObject([
-      { id: `ask:${thread.id}`, subtitle: "继续会话" },
+      { id: `ask:${thread.id}`, subtitle: "Continue thread" },
     ]);
     expect(
       pullRequestAgentThreadActions([settled], "feedback", false)[0]?.subactions,

@@ -1,3 +1,4 @@
+import { thrownErrorMessage } from "@t3tools/client-runtime/errors";
 import {
   AuthOrchestrationOperateScope,
   AuthProvidersManageScope,
@@ -18,6 +19,8 @@ import {
   type AtomCommandResult,
 } from "@t3tools/client-runtime/state/runtime";
 import { useLayoutEffect, useRef, useState } from "react";
+import { msg, T, useGT } from "gt-react";
+import { m } from "../../i18n/messages";
 
 import { ensureLocalApi } from "../../localApi";
 import { serverEnvironment } from "../../state/server";
@@ -34,15 +37,8 @@ interface AcpSessionProject {
   readonly workspaceRoot: string;
 }
 
-function providerProtocolLabel(protocol: string): string {
-  switch (protocol) {
-    case "openai":
-      return "OpenAI 接口";
-    case "anthropic":
-      return "Anthropic 接口";
-    default:
-      return protocol;
-  }
+function needsImport(session: AcpRegistrySession) {
+  return session.importedThreadId === null || session.nativeHistoryPending === true;
 }
 
 function reportFailure(title: string, result: AtomCommandResult<unknown, unknown>) {
@@ -51,7 +47,10 @@ function reportFailure(title: string, result: AtomCommandResult<unknown, unknown
   toastManager.add({
     type: "error",
     title,
-    description: error instanceof Error ? error.message : "ACP 操作失败。",
+    description:
+      error instanceof Error
+        ? (thrownErrorMessage(error, m) ?? error.message)
+        : m(msg("The ACP operation failed.")),
   });
 }
 
@@ -67,7 +66,10 @@ function parseProviderHeaders(
   } catch (error) {
     return {
       ok: false,
-      error: error instanceof Error ? error.message : "信头必须是有效的JSON。",
+      error:
+        error instanceof Error
+          ? (thrownErrorMessage(error, m) ?? error.message)
+          : m(msg("Headers must be valid JSON.")),
     };
   }
   if (
@@ -76,7 +78,7 @@ function parseProviderHeaders(
     Array.isArray(parsed) ||
     !Object.values(parsed).every((value) => typeof value === "string")
   ) {
-    return { ok: false, error: "信头必须是带有字符串值的JSON 对象。" };
+    return { ok: false, error: m(msg("Headers must be a JSON object with string values.")) };
   }
   return { ok: true, headers: parsed as Record<string, string> };
 }
@@ -113,14 +115,17 @@ function InstanceSessionManagement(
     readonly onProjectChange: (projectId: ProjectId) => void;
   },
 ) {
+  const gt = useGT();
   const canOperate = useEnvironmentScope(props.environmentId, AuthOrchestrationOperateScope);
   const canRead = useEnvironmentScope(props.environmentId, AuthOrchestrationReadScope);
   const { projectId } = props;
   const projectGeneration = useRef(0);
+  const deletionsDuringList = useRef<Set<string> | null>(null);
   // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- Late continuations must not act on a replaced project scope.
   useLayoutEffect(() => {
     return () => {
       projectGeneration.current += 1;
+      deletionsDuringList.current = null;
     };
     // oxlint-disable-next-line react/exhaustive-effect-dependencies -- Retiring a project invalidates its pending operations even when the instance stays mounted.
   }, [projectId]);
@@ -188,6 +193,8 @@ function InstanceSessionManagement(
   const loadSessions = async (cursor?: string) => {
     const generation = projectGeneration.current;
     if (projectId === null || loading) return;
+    const deletedSessionIds = new Set<string>();
+    deletionsDuringList.current = deletedSessionIds;
     setLoading(true);
     const result = await listSessions({
       environmentId: props.environmentId,
@@ -198,15 +205,20 @@ function InstanceSessionManagement(
       },
     });
     if (generation !== projectGeneration.current) return;
+    deletionsDuringList.current = null;
     setLoading(false);
     if (result._tag === "Success") {
+      // A pending list can return a snapshot taken before a deletion completed.
+      const listedSessions = result.value.sessions.filter(
+        (session) => !deletedSessionIds.has(session.sessionId),
+      );
       setSessions((current) =>
-        cursor === undefined ? result.value.sessions : [...current, ...result.value.sessions],
+        cursor === undefined ? listedSessions : [...current, ...listedSessions],
       );
       setNextCursor(result.value.nextCursor);
       return;
     }
-    reportFailure("Could not list ACP sessions", result);
+    reportFailure(gt("Could not list ACP sessions"), result);
   };
 
   const importNativeSession = async (session: AcpRegistrySession) => {
@@ -234,17 +246,19 @@ function InstanceSessionManagement(
       setSessions((current) =>
         current.map((candidate) =>
           candidate.sessionId === session.sessionId
-            ? { ...candidate, importedThreadId: result.value.threadId }
+            ? { ...candidate, importedThreadId: result.value.threadId, nativeHistoryPending: false }
             : candidate,
         ),
       );
       toastManager.add({
         type: "success",
-        title: result.value.imported ? "ACP会话导入" : "ACP会话已导入",
+        title: result.value.imported
+          ? gt("ACP session imported")
+          : gt("ACP session already imported"),
       });
       return;
     }
-    reportFailure("Could not import ACP session", result);
+    reportFailure(gt("Could not import ACP session"), result);
   };
 
   const deleteNativeSession = async (session: AcpRegistrySession) => {
@@ -252,7 +266,9 @@ function InstanceSessionManagement(
     if (projectId === null || deletingSessionId !== null || session.importedThreadId !== null)
       return;
     const confirmed = await ensureLocalApi().dialogs.confirm(
-      `永久删除本地的ACP会话 "${session.title ?? session.sessionId}" ?`,
+      gt('Permanently delete native ACP session "{session}"?', {
+        session: session.title ?? session.sessionId,
+      }),
       { variant: "destructive" },
     );
     if (
@@ -269,13 +285,13 @@ function InstanceSessionManagement(
     if (generation !== projectGeneration.current) return;
     setDeletingSessionId(null);
     if (result._tag === "Success") {
+      deletionsDuringList.current?.add(session.sessionId);
       setSessions((current) =>
         current.filter((candidate) => candidate.sessionId !== session.sessionId),
       );
-      toastManager.add({ type: "success", title: "ACP会话已删除" });
       return;
     }
-    reportFailure("Could not delete ACP session", result);
+    reportFailure(gt("Could not delete ACP session"), result);
   };
 
   const loadProviders = async (resetProviderId?: string) => {
@@ -306,7 +322,7 @@ function InstanceSessionManagement(
       );
       return;
     }
-    reportFailure("Could not list ACP providers", result);
+    reportFailure(gt("Could not list ACP providers"), result);
   };
 
   const saveProvider = async (provider: AcpRegistryConfigurableProvider) => {
@@ -324,7 +340,7 @@ function InstanceSessionManagement(
     if (!parsedHeaders.ok) {
       toastManager.add({
         type: "error",
-        title: "无效的提供者信头",
+        title: gt("Invalid provider headers"),
         description: parsedHeaders.error,
       });
       return;
@@ -345,11 +361,10 @@ function InstanceSessionManagement(
     if (generation !== projectGeneration.current) return;
     setSavingProviderId(null);
     if (result._tag === "Success") {
-      toastManager.add({ type: "success", title: "ACP 已配置提供者" });
       await loadProviders(provider.providerId);
       return;
     }
-    reportFailure("Could not configure ACP provider", result);
+    reportFailure(gt("Could not configure ACP provider"), result);
   };
 
   const disableConfiguredProvider = async (provider: AcpRegistryConfigurableProvider) => {
@@ -357,7 +372,7 @@ function InstanceSessionManagement(
     if (projectId === null || savingProviderId !== null || loadingProviders || provider.required)
       return;
     const confirmed = await ensureLocalApi().dialogs.confirm(
-      `禁用ACP 提供者 "${provider.providerId}"?`,
+      gt('Disable ACP provider "{provider}"?', { provider: provider.providerId }),
       { variant: "destructive" },
     );
     if (
@@ -374,11 +389,10 @@ function InstanceSessionManagement(
     if (generation !== projectGeneration.current) return;
     setSavingProviderId(null);
     if (result._tag === "Success") {
-      toastManager.add({ type: "success", title: "ACP 提供者已禁用" });
       await loadProviders(provider.providerId);
       return;
     }
-    reportFailure("Could not disable ACP provider", result);
+    reportFailure(gt("Could not disable ACP provider"), result);
   };
 
   const logoutProvider = async () => {
@@ -392,20 +406,19 @@ function InstanceSessionManagement(
     if (result._tag === "Success") {
       setSessions([]);
       setNextCursor(null);
-      toastManager.add({ type: "success", title: "从ACP action 登录出去" });
       return;
     }
-    reportFailure("Could not log out of ACP agent", result);
+    reportFailure(gt("Could not log out of ACP agent"), result);
   };
 
   return (
     <div className="grid gap-3">
       <SettingsRow
-        title="土著会议"
-        description="恢复代理拥有的对话为T3 会话。"
+        title={gt("Native sessions")}
+        description={gt("Resume agent-owned conversations as T3 threads.")}
         status={
           canList && props.projects.length === 0
-            ? "Add a project before importing sessions."
+            ? gt("Add a project before importing sessions.")
             : undefined
         }
         control={
@@ -418,7 +431,7 @@ function InstanceSessionManagement(
                 disabled={props.readOnly || loggingOut}
                 onClick={() => void logoutProvider()}
               >
-                {loggingOut ? "正在注销" : "注销"}
+                {loggingOut ? gt("Logging out") : gt("Log out")}
               </Button>
             ) : null}
             {canList && props.projects.length > 0 ? (
@@ -431,7 +444,11 @@ function InstanceSessionManagement(
                     props.onProjectChange(value as ProjectId);
                   }}
                 >
-                  <SelectTrigger aria-label="ACP会话的项目" className="w-40" size="sm">
+                  <SelectTrigger
+                    aria-label={gt("Project for ACP sessions")}
+                    className="w-40"
+                    size="sm"
+                  >
                     <SelectValue>
                       {props.projects.find((project) => project.id === projectId)?.title}
                     </SelectValue>
@@ -451,7 +468,11 @@ function InstanceSessionManagement(
                   disabled={!canRead || loading || projectId === null}
                   onClick={() => void loadSessions()}
                 >
-                  {loading ? "正在加载" : sessions.length === 0 ? "清单会议" : "刷新"}
+                  {loading
+                    ? gt("Loading")
+                    : sessions.length === 0
+                      ? gt("List sessions")
+                      : gt("Refresh")}
                 </Button>
               </>
             ) : null}
@@ -483,16 +504,16 @@ function InstanceSessionManagement(
                         disabled={
                           !canOperate ||
                           !canImport ||
-                          session.importedThreadId !== null ||
+                          !needsImport(session) ||
                           importingSessionId !== null
                         }
                         onClick={() => void importNativeSession(session)}
                       >
-                        {session.importedThreadId !== null
-                          ? "已导入"
+                        {!needsImport(session)
+                          ? gt("Imported")
                           : importingSessionId === session.sessionId
-                            ? "导入"
-                            : "导入"}
+                            ? gt("Importing")
+                            : gt("Import", { $context: "verb" })}
                       </Button>
                       {canDelete ? (
                         <Button
@@ -506,7 +527,9 @@ function InstanceSessionManagement(
                           }
                           onClick={() => void deleteNativeSession(session)}
                         >
-                          {deletingSessionId === session.sessionId ? "删除" : "删除"}
+                          {deletingSessionId === session.sessionId
+                            ? gt("Deleting")
+                            : gt("Delete", { $context: "verb, deletes a session" })}
                         </Button>
                       ) : null}
                     </div>
@@ -524,7 +547,7 @@ function InstanceSessionManagement(
                 disabled={!canRead || loading}
                 onClick={() => void loadSessions(nextCursor)}
               >
-                {loading ? "正在加载" : "装入更多"}
+                {loading ? gt("Loading") : gt("Load more")}
               </Button>
             ) : null}
           </>
@@ -535,8 +558,12 @@ function InstanceSessionManagement(
         <div className="grid gap-3 border-t border-border/60 px-3 py-3 sm:px-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
-              <p className="text-xs font-medium text-foreground">代理代理提供方</p>
-              <p className="text-xs text-muted-foreground">配置非秘密路由。 信头只写。</p>
+              <p className="text-xs font-medium text-foreground">
+                <T>Agent providers</T>
+              </p>
+              <p className="text-xs text-muted-foreground">
+                <T>Configure non-secret routing. Headers are write-only.</T>
+              </p>
             </div>
             <Button
               type="button"
@@ -547,7 +574,11 @@ function InstanceSessionManagement(
               }
               onClick={() => void loadProviders()}
             >
-              {loadingProviders ? "正在加载" : providers.length === 0 ? "名单提供者" : "刷新"}
+              {loadingProviders
+                ? gt("Loading")
+                : providers.length === 0
+                  ? gt("List providers")
+                  : gt("Refresh")}
             </Button>
           </div>
 
@@ -560,7 +591,11 @@ function InstanceSessionManagement(
                 props.onProjectChange(value as ProjectId);
               }}
             >
-              <SelectTrigger aria-label="ACP 提供者的项目" className="min-w-48" size="xs">
+              <SelectTrigger
+                aria-label={gt("Project for ACP providers")}
+                className="min-w-48"
+                size="xs"
+              >
                 <SelectValue>
                   {props.projects.find((project) => project.id === projectId)?.title}
                 </SelectValue>
@@ -596,8 +631,10 @@ function InstanceSessionManagement(
                           {provider.providerId}
                         </p>
                         <p className="text-3xs text-muted-foreground">
-                          {provider.current === null ? "已禁用" : "配置"}
-                          {provider.required ? " · 所需员额" : ""}
+                          {provider.current === null
+                            ? gt("Disabled", { $context: "ACP provider status" })
+                            : gt("Configured")}
+                          {provider.required ? ` · ${gt("Required")}` : ""}
                         </p>
                       </div>
                       <div className="flex items-center gap-1">
@@ -614,7 +651,9 @@ function InstanceSessionManagement(
                           }
                           onClick={() => void saveProvider(provider)}
                         >
-                          {savingProviderId === provider.providerId ? "保存" : "保存"}
+                          {savingProviderId === provider.providerId
+                            ? gt("Saving")
+                            : gt("Save", { $context: "verb" })}
                         </Button>
                         {!provider.required && provider.current !== null ? (
                           <Button
@@ -626,7 +665,7 @@ function InstanceSessionManagement(
                             }
                             onClick={() => void disableConfiguredProvider(provider)}
                           >
-                            禁用
+                            <T>Disable</T>
                           </Button>
                         ) : null}
                       </div>
@@ -639,13 +678,16 @@ function InstanceSessionManagement(
                           if (value !== null) updateDraft({ apiType: value });
                         }}
                       >
-                        <SelectTrigger aria-label={`${provider.providerId} 协议`} size="sm">
-                          <SelectValue>{providerProtocolLabel(draft.apiType)}</SelectValue>
+                        <SelectTrigger
+                          aria-label={gt("{provider} protocol", { provider: provider.providerId })}
+                          size="sm"
+                        >
+                          <SelectValue>{draft.apiType}</SelectValue>
                         </SelectTrigger>
                         <SelectPopup>
                           {provider.supported.map((protocol) => (
                             <SelectItem key={protocol} value={protocol}>
-                              {providerProtocolLabel(protocol)}
+                              {protocol}
                             </SelectItem>
                           ))}
                         </SelectPopup>
@@ -653,7 +695,7 @@ function InstanceSessionManagement(
                       <Input
                         size="sm"
                         type="url"
-                        aria-label={`${provider.providerId} 的基础 URL`}
+                        aria-label={gt("{provider} base URL", { provider: provider.providerId })}
                         placeholder="https://api.example.com"
                         value={draft.baseUrl}
                         disabled={props.readOnly || savingProviderId !== null}
@@ -663,8 +705,12 @@ function InstanceSessionManagement(
                     <Input
                       size="sm"
                       type="password"
-                      aria-label={`${provider.providerId}只写信头JSON`}
-                      placeholder='仅写入请求头（JSON），例如 {"Authorization":"Bearer …"}'
+                      aria-label={gt("{provider} write-only headers JSON", {
+                        provider: provider.providerId,
+                      })}
+                      placeholder={gt("Write-only headers JSON, e.g. {example}", {
+                        example: '{"Authorization":"Bearer …"}',
+                      })}
                       value={draft.headers}
                       disabled={props.readOnly || savingProviderId !== null}
                       onValueChange={(value) => updateDraft({ headers: value })}

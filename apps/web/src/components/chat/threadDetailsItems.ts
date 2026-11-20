@@ -1,19 +1,32 @@
 import type { ClientSettings } from "@t3tools/contracts";
+import { msg } from "gt-react";
 
 // Ids are stored in client settings, so never rename one.
 export const THREAD_DETAILS_ITEMS = [
-  { id: "environment", label: "环境与工作树", defaultVisible: true },
-  { id: "openIn", label: "在编辑器中打开", defaultVisible: true },
-  { id: "scripts", label: "项目脚本", defaultVisible: true },
-  { id: "branch", label: "分支和拉取请求", defaultVisible: true },
-  { id: "gitActions", label: "Git 动作", defaultVisible: true },
-  { id: "changes", label: "变动", defaultVisible: true },
-  { id: "servers", label: "服务器", defaultVisible: true },
-  { id: "automations", label: "自动化", defaultVisible: true },
-  { id: "lineage", label: "线性", defaultVisible: true },
-  { id: "sideChats", label: "边聊边聊", defaultVisible: true },
-  { id: "usage", label: "用量限制", defaultVisible: false },
-  { id: "context", label: "上下文窗口", defaultVisible: false },
+  { id: "environment", label: msg("Environment and worktree"), defaultVisible: true },
+  { id: "openIn", label: msg("Open in editor"), defaultVisible: true },
+  { id: "scripts", label: msg("Project scripts"), defaultVisible: true },
+  { id: "branch", label: msg("Branch and pull request"), defaultVisible: true },
+  { id: "gitActions", label: msg("Git actions"), defaultVisible: true },
+  {
+    id: "changes",
+    label: msg("Changes", { $context: "thread details item: version control changes" }),
+    defaultVisible: true,
+  },
+  {
+    id: "servers",
+    label: msg("Servers", { $context: "thread details item: running dev servers" }),
+    defaultVisible: true,
+  },
+  { id: "automations", label: msg("Automations"), defaultVisible: true },
+  {
+    id: "lineage",
+    label: msg("Lineage", { $context: "thread details item: parent and child agents" }),
+    defaultVisible: true,
+  },
+  { id: "sideChats", label: msg("Side chats"), defaultVisible: true },
+  { id: "usage", label: msg("Usage limits"), defaultVisible: false },
+  { id: "context", label: msg("Context window"), defaultVisible: false },
 ] as const;
 
 export type ThreadDetailsItemId = (typeof THREAD_DETAILS_ITEMS)[number]["id"];

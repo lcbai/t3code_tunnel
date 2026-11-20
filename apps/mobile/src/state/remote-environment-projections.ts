@@ -52,6 +52,10 @@ export function createRemoteEnvironmentProjectionAtoms(input: {
             : displayUrl.replace(/^http:/, "ws:")
           : new URL(socketUrl).origin;
       const authorization = prepared?.httpAuthorization ?? null;
+      // Credentials follow the route in use, which may not be the preferred one.
+      const relayManaged = prepared
+        ? prepared.target._tag === "RelayConnectionTarget"
+        : presentation.entry.target._tag === "RelayConnectionTarget";
 
       previousEntry = presentation.entry;
       previousPrepared = prepared;
@@ -63,6 +67,15 @@ export function createRemoteEnvironmentProjectionAtoms(input: {
         httpBaseUrl,
         wsBaseUrl,
         bearerToken: authorization?._tag === "Bearer" ? authorization.token : null,
+        ...(relayManaged
+          ? {
+              authenticationMethod: "dpop" as const,
+              relayManaged: true as const,
+              ...(authorization?._tag === "Dpop"
+                ? { dpopAccessToken: authorization.accessToken }
+                : {}),
+            }
+          : { authenticationMethod: "bearer" as const }),
       };
       return previous;
     }).pipe(Atom.withLabel(`mobile:saved-connection:${environmentId}`));
@@ -88,7 +101,9 @@ export function createRemoteEnvironmentProjectionAtoms(input: {
         previous !== null &&
         connection.phase === previousConnection?.phase &&
         connection.error === previousConnection?.error &&
+        connection.i18nError === previousConnection?.i18nError &&
         connection.traceId === previousConnection?.traceId &&
+        connection.awaitingApproval === previousConnection?.awaitingApproval &&
         serverConfig === previousServerConfig
       ) {
         return previous;
@@ -99,7 +114,11 @@ export function createRemoteEnvironmentProjectionAtoms(input: {
       previous = {
         connectionState: connection.phase,
         connectionError: connection.error,
+        ...(connection.i18nError !== undefined
+          ? { i18nConnectionError: connection.i18nError }
+          : {}),
         connectionErrorTraceId: connection.traceId,
+        ...(connection.awaitingApproval ? { connectionAwaitingApproval: true as const } : {}),
         serverConfig,
       };
       return previous;

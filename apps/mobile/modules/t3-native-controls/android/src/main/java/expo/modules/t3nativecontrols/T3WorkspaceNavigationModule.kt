@@ -126,7 +126,7 @@ class T3WorkspaceNavigationView(
   private val onTabSelected by EventDispatcher()
   private val onNewThread by EventDispatcher()
   private val onOverlayChange by EventDispatcher()
-  var tabs by mutableStateOf(listOf("threads", "pullRequests", "usage", "settings"))
+  var tabs by mutableStateOf(listOf("threads", "pullRequests", "issues", "usage", "settings"))
   var selectedTab by mutableStateOf("threads")
   var rail by mutableStateOf(false)
   var floating by mutableStateOf(false)
@@ -234,7 +234,7 @@ class T3WorkspaceNavigationView(
                 role = Role.Tab,
                 onClick = { onTabSelected(mapOf("tab" to tab)) },
               )
-              .semantics { contentDescription = tabTitle(tab) }
+              .semantics { contentDescription = expandedTabTitle(tab) }
               .padding(4.dp)
               .background(if (selected) Color(indicatorColor) else Color.Transparent, CircleShape),
             contentAlignment = Alignment.Center,
@@ -287,7 +287,7 @@ class T3WorkspaceNavigationView(
       val railShape = RoundedCornerShape(topEnd = 16.dp * fraction, bottomEnd = 16.dp * fraction)
       if (fraction > 0f) {
         Scrim(
-          contentDescription = "关闭侧边导航",
+          contentDescription = "Close navigation rail",
           onClick = { expanded = false },
           alpha = { fraction },
         )
@@ -310,7 +310,7 @@ class T3WorkspaceNavigationView(
             onClick = { expanded = !expanded },
             modifier = Modifier.semantics {
               contentDescription =
-                if (expanded) "收起侧边导航" else "展开侧边导航"
+                if (expanded) "Collapse navigation rail" else "Expand navigation rail"
             },
           ) {
             Icon(
@@ -356,7 +356,7 @@ class T3WorkspaceNavigationView(
         .height(FAB_SIZE)
         .width(lerp(FAB_SIZE, EXPANDED_RAIL_WIDTH - RAIL_INSET * 2, fraction))
         .alpha(if (newEnabled) 1f else DISABLED_ALPHA)
-        .semantics { contentDescription = "新建会话" },
+        .semantics { contentDescription = "New thread" },
     ) {
       Row(
         Modifier.padding(start = (FAB_SIZE - ICON_SIZE) / 2).clipToBounds(),
@@ -364,7 +364,7 @@ class T3WorkspaceNavigationView(
       ) {
         Icon(painterResource(R.drawable.t3_new_thread), contentDescription = null)
         Text(
-          "新建会话",
+          "New thread",
           Modifier.padding(start = 12.dp).alpha(labelAlpha(fraction)).clearAndSetSemantics {},
           style = MaterialTheme.typography.labelLarge,
           fontSize = (14 * textScale).sp,
@@ -382,7 +382,7 @@ class T3WorkspaceNavigationView(
   @Composable
   private fun railItem(tab: String, fraction: Float, onClick: () -> Unit) {
     val selected = selectedTab == tab
-    val title = tabTitle(tab)
+    val title = expandedTabTitle(tab)
     val tint = Color(if (selected) selectedColor else unselectedColor)
     Box(
       Modifier
@@ -413,17 +413,22 @@ class T3WorkspaceNavigationView(
   }
 
   private fun tabTitle(tab: String) = when (tab) {
-    "threads" -> "会话"
-    "pullRequests" -> "拉取请求"
-    "usage" -> "用量"
-    else -> "设置"
+    "threads" -> "Chats"
+    "pullRequests" -> "Pulls"
+    "issues" -> "Issues"
+    "usage" -> "Usage"
+    else -> "Settings"
   }
+
+  private fun expandedTabTitle(tab: String) =
+    if (tab == "pullRequests") "Pull Requests" else tabTitle(tab)
 
   @Composable
   private fun tabIconPainter(tab: String) = painterResource(
     when (tab) {
       "threads" -> R.drawable.t3_chats
       "pullRequests" -> R.drawable.t3_pull_requests
+      "issues" -> R.drawable.t3_issues
       "usage" -> R.drawable.t3_usage
       else -> R.drawable.t3_settings
     }

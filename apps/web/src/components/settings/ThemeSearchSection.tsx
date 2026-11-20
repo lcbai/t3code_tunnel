@@ -1,3 +1,4 @@
+import { thrownErrorMessage } from "@t3tools/client-runtime/errors";
 import { sourceControlClients } from "@t3tools/client-runtime/source-control-clients";
 import { RefreshIcon } from "~/components/ui/refresh-icon";
 import { ExternalLinkIcon, PackagePlusIcon, PaletteIcon, SearchIcon } from "lucide-react";
@@ -29,6 +30,8 @@ import { Button } from "../ui/button";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "../ui/input-group";
 import { Select, SelectItem, SelectPopup, SelectTrigger, SelectValue } from "../ui/select";
 import { Spinner } from "../ui/spinner";
+import { msg, T, useGT, useMessages, Var } from "gt-react";
+import { m } from "../../i18n/messages";
 
 const DOWNLOAD_FORMAT = new Intl.NumberFormat(undefined, {
   notation: "compact",
@@ -36,10 +39,10 @@ const DOWNLOAD_FORMAT = new Intl.NumberFormat(undefined, {
 });
 const SUGGESTED_SEARCHES = ["Dracula", "Catppuccin", "Nord", "Tokyo Night"];
 const SORT_OPTIONS: ReadonlyArray<{ value: OpenVsxThemeSort; label: string }> = [
-  { value: "downloadCount", label: "下载量最高" },
-  { value: "rating", label: "评分最高" },
-  { value: "timestamp", label: "最新发布" },
-  { value: "relevance", label: "相关性最高" },
+  { value: "downloadCount", label: msg("Most downloaded") },
+  { value: "rating", label: msg("Best rated") },
+  { value: "timestamp", label: msg("Newest") },
+  { value: "relevance", label: msg("Most relevant") },
 ];
 const SEARCH_DEBOUNCE_MS = 350;
 
@@ -134,7 +137,11 @@ export function createThemeSearch(
           if (controller.signal.aborted) return;
           view.setResults(null);
           shownKey = null;
-          view.setError(cause instanceof Error ? cause.message : "打开 VSX 搜索失败。");
+          view.setError(
+            cause instanceof Error
+              ? (thrownErrorMessage(cause, m) ?? cause.message)
+              : m(msg("Open VSX search failed.")),
+          );
         },
       )
       .then(() => {
@@ -234,6 +241,8 @@ export function ThemeSearchSection({
   signal: AbortSignal;
   onInstalled: (themes: ReadonlyArray<ThemeDefinition>, context: { updated: boolean }) => void;
 }) {
+  const messages = useMessages();
+  const gt = useGT();
   const [query, setQuery] = useState("");
   const [sortBy, setSortBy] = useState<OpenVsxThemeSort>("downloadCount");
   const [results, setResults] = useState<ReadonlyArray<OpenVsxThemeExtension> | null>(null);
@@ -263,7 +272,11 @@ export function ThemeSearchSection({
     try {
       installedCollection = getStoredCustomThemeCollection(extension.collectionId);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "无法读取已安装的主题。");
+      setError(
+        cause instanceof Error
+          ? (thrownErrorMessage(cause, m) ?? cause.message)
+          : gt("Installed themes could not be read."),
+      );
       return;
     }
     const updated = installedCollection.length > 0;
@@ -284,7 +297,11 @@ export function ThemeSearchSection({
       }
     } catch (cause) {
       if (!installSignal.aborted) {
-        setError(cause instanceof Error ? cause.message : "无法添加该主题。");
+        setError(
+          cause instanceof Error
+            ? (thrownErrorMessage(cause, m) ?? cause.message)
+            : gt("That theme could not be added."),
+        );
       }
     }
     if (themeSearch.endInstall(installSignal)) setInstallingId(null);
@@ -294,16 +311,18 @@ export function ThemeSearchSection({
     <section className="space-y-3" aria-labelledby="theme-search-heading">
       <div>
         <h3 className="text-sm font-medium" id="theme-search-heading">
-          搜索社区主题
+          <T>Search community themes</T>
         </h3>
-        <p className="mt-0.5 text-muted-foreground text-xs">从 Open VSX 中查找开源主题。</p>
+        <p className="mt-0.5 text-muted-foreground text-xs">
+          <T>Find open-source themes from Open VSX.</T>
+        </p>
       </div>
       <InputGroup>
         <InputGroupAddon>
           {isSearching ? <Spinner aria-hidden /> : <SearchIcon aria-hidden />}
         </InputGroupAddon>
         <InputGroupInput
-          aria-label="搜索打开的 VSX 主题"
+          aria-label={gt("Search Open VSX themes")}
           autoFocus
           onChange={(event) => changeQuery(event.currentTarget.value)}
           onKeyDown={(event) => {
@@ -311,7 +330,7 @@ export function ThemeSearchSection({
             if (event.key === "Enter" && !isSearching && installingId === null)
               themeSearch.searchNow();
           }}
-          placeholder="搜索主题…"
+          placeholder={gt("Search themes...")}
           size="lg"
           type="search"
           value={query}
@@ -321,7 +340,9 @@ export function ThemeSearchSection({
       {!isSearching || results !== null ? (
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-            <p className="text-muted-foreground text-xs">大众</p>
+            <p className="text-muted-foreground text-xs">
+              <T>Popular</T>
+            </p>
             {SUGGESTED_SEARCHES.map((suggestion) => (
               <Button
                 key={suggestion}
@@ -342,21 +363,23 @@ export function ThemeSearchSection({
           </div>
           {results && results.length > 0 ? (
             <div className="flex shrink-0 items-center justify-end gap-2">
-              <p className="text-muted-foreground text-xs">排序</p>
+              <p className="text-muted-foreground text-xs">
+                <T>Sort</T>
+              </p>
               <Select
                 disabled={installingId !== null}
                 value={sortBy}
                 onValueChange={handleSortChange}
               >
-                <SelectTrigger size="sm" className="w-40" aria-label="排序主题">
+                <SelectTrigger size="sm" className="w-40" aria-label={gt("Sort themes")}>
                   <SelectValue>
-                    {SORT_OPTIONS.find((option) => option.value === sortBy)?.label}
+                    {messages(SORT_OPTIONS.find((option) => option.value === sortBy)?.label ?? "")}
                   </SelectValue>
                 </SelectTrigger>
                 <SelectPopup align="end" alignItemWithTrigger={false}>
                   {SORT_OPTIONS.map((option) => (
                     <SelectItem key={option.value} hideIndicator value={option.value}>
-                      {option.label}
+                      {messages(option.label)}
                     </SelectItem>
                   ))}
                 </SelectPopup>
@@ -367,7 +390,14 @@ export function ThemeSearchSection({
       ) : null}
 
       <div className="sr-only" role="status">
-        {isSearching ? "正在搜索主题…" : results ? `找到 ${results.length} 个受支持的主题。` : ""}
+        {isSearching
+          ? gt("Searching themes...")
+          : results
+            ? gt(
+                "{count, plural, one {{count} supported theme found.} other {{count} supported themes found.}}",
+                { count: results.length },
+              )
+            : ""}
       </div>
 
       {error ? (
@@ -378,15 +408,19 @@ export function ThemeSearchSection({
 
       {isSearching && results === null ? (
         <div className="flex min-h-20 items-center justify-center gap-2 text-muted-foreground text-sm">
-          <Spinner /> 正在搜索主题…
+          <Spinner /> <T>Searching themes...</T>
         </div>
       ) : null}
 
       {results ? (
         results.length === 0 ? (
           <div className="flex min-h-40 flex-col items-center justify-center rounded-2xl border border-dashed text-center">
-            <p className="text-sm font-medium">未找到支持的开源主题</p>
-            <p className="mt-1 text-muted-foreground text-xs">尝试一个更广泛的搜索。</p>
+            <p className="text-sm font-medium">
+              <T>No supported open-source themes found</T>
+            </p>
+            <p className="mt-1 text-muted-foreground text-xs">
+              <T>Try a broader search.</T>
+            </p>
           </div>
         ) : (
           <div className="grid gap-2 sm:grid-cols-2">
@@ -395,8 +429,7 @@ export function ThemeSearchSection({
               const isInstalled = getCustomThemes().some(
                 (theme) => theme.collection?.id === extension.collectionId,
               );
-              const action = isInstalled ? "Update" : "Install";
-              const progressAction = isInstalled ? "Updating" : "Installing";
+              const action = isInstalled ? gt("Update") : gt("Install");
               return (
                 <article
                   className="group flex min-w-0 flex-col gap-3 rounded-xl border border-border/70 bg-card/60 p-3 transition-colors hover:bg-accent/20"
@@ -413,13 +446,13 @@ export function ThemeSearchSection({
                     </div>
                   </div>
                   <p className="line-clamp-2 min-h-8 text-muted-foreground text-xs leading-4">
-                    {extension.description || "您编辑器的社区色彩主题。"}
+                    {extension.description || gt("A community color theme for your editor.")}
                   </p>
                   <div className="mt-auto flex items-center justify-between gap-2">
                     <div className="flex min-w-0 items-center gap-2">
                       {extension.sourceUrl ? (
                         <Button
-                          aria-label={`查看 ${extension.name} 的源代码`}
+                          aria-label={gt("View source for {name}", { name: extension.name })}
                           render={<a href={extension.sourceUrl} rel="noreferrer" target="_blank" />}
                           size="icon-micro"
                           variant="ghost-muted"
@@ -429,7 +462,15 @@ export function ThemeSearchSection({
                       ) : null}
                     </div>
                     <Button
-                      aria-label={`${isInstalling ? progressAction : action} ${extension.name}`}
+                      aria-label={
+                        isInstalled
+                          ? isInstalling
+                            ? gt("Updating {name}", { name: extension.name })
+                            : gt("Update {name}", { name: extension.name })
+                          : isInstalling
+                            ? gt("Installing {name}", { name: extension.name })
+                            : gt("Install {name}", { name: extension.name })
+                      }
                       disabled={installingId !== null}
                       size="xs"
                       variant="outline"
@@ -442,7 +483,11 @@ export function ThemeSearchSection({
                       ) : (
                         <PackagePlusIcon />
                       )}
-                      {isInstalling ? `${progressAction}...` : action}
+                      {isInstalling
+                        ? isInstalled
+                          ? gt("Updating...")
+                          : gt("Installing...")
+                        : action}
                     </Button>
                   </div>
                 </article>
@@ -460,13 +505,22 @@ export function ThemeSearchSection({
       >
         <AlertDialogPopup>
           <AlertDialogHeader>
-            <AlertDialogTitle>更新“{pendingUpdate?.name}”?</AlertDialogTitle>
+            <AlertDialogTitle>
+              <T>
+                Update “<Var>{pendingUpdate?.name}</Var>”?
+              </T>
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              这将替换已安装的变体，包括任何本地编辑。 扩展中不再使用的变体将被删除。
+              <T>
+                This replaces its installed variants, including any local edits. Variants no longer
+                in the extension will be removed.
+              </T>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogClose render={<Button variant="outline" />}>取消</AlertDialogClose>
+            <AlertDialogClose render={<Button variant="outline" />}>
+              <T>Cancel</T>
+            </AlertDialogClose>
             <Button
               onClick={() => {
                 const extension = pendingUpdate;
@@ -474,7 +528,7 @@ export function ThemeSearchSection({
                 if (extension) void handleInstall(extension, true);
               }}
             >
-              更新主题
+              <T>Update theme</T>
             </Button>
           </AlertDialogFooter>
         </AlertDialogPopup>

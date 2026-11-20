@@ -1,3 +1,4 @@
+import { T, useGT } from "gt-react";
 import { useState } from "react";
 import * as Option from "effect/Option";
 import type { SshDeviceHostConfig } from "@t3tools/contracts";
@@ -22,6 +23,8 @@ import {
   parseDeviceHostDraft,
   type DeviceHostCheckTarget,
 } from "./deviceHostConnectionChecks";
+
+const EXAMPLE_HOST_NAME = "Mac mini";
 
 export function DeviceHostEditor({
   host,
@@ -75,6 +78,7 @@ function DeviceHostEditorForm({
   onSave: (host: SshDeviceHostConfig) => void;
   onClose: () => void;
 }) {
+  const gt = useGT();
   const [draft, setDraft] = useState(host);
   const [expandedChecks, setExpandedChecks] = useState<{ key: string; open: boolean } | null>(null);
   const { checks, testConnection } = useHostConnectionChecks(targets);
@@ -88,12 +92,12 @@ function DeviceHostEditorForm({
     targets.length === 1 ||
     (expandedChecks?.key === connectionKey ? expandedChecks.open : failed > 0);
   const checkSummary = checking
-    ? "Checking environments…"
+    ? gt("Checking environments…")
     : results
       ? failed
-        ? `${failed} of ${targets.length} failed`
-        : "Connection checks passed"
-      : "Check access before saving";
+        ? gt("{failed} of {total} failed", { failed, total: targets.length })
+        : gt("Connection checks passed")
+      : gt("Check access before saving");
   return (
     <form
       className="flex min-h-0 flex-col"
@@ -103,17 +107,21 @@ function DeviceHostEditorForm({
       }}
     >
       <DialogHeader>
-        <DialogTitle>{isNew ? "添加设备主机" : "编辑设备主机"}</DialogTitle>
+        <DialogTitle>{isNew ? gt("Add device host") : gt("Edit device host")}</DialogTitle>
         <DialogDescription>
           {targets.length === 1
-            ? `从${targets[0]?.label} 连接。`
-            : `从${targets.length} 选定环境连接。`}{" "}
-          同一机上的主机被跳过。
+            ? gt("Connect from {environment}.", { environment: targets[0]?.label })
+            : gt("{count, plural, other {Connect from {count} selected environments.}}", {
+                count: targets.length,
+              })}{" "}
+          <T>Hosts on the same machine are skipped.</T>
         </DialogDescription>
       </DialogHeader>
       <DialogPanel>
         <label className="block space-y-1.5 text-sm">
-          <span>名称</span>
+          <span>
+            <T>Name</T>
+          </span>
           <Input
             autoFocus
             required
@@ -123,11 +131,13 @@ function DeviceHostEditorForm({
               const label = event.target.value;
               setDraft((current) => ({ ...current, label }));
             }}
-            placeholder="麦克迷你"
+            placeholder={EXAMPLE_HOST_NAME}
           />
         </label>
         <label className="block space-y-1.5 text-sm">
-          <span>SSH 目标</span>
+          <span>
+            <T>SSH target</T>
+          </span>
           <Input
             required
             value={draft.target}
@@ -136,17 +146,21 @@ function DeviceHostEditorForm({
               const target = event.target.value;
               setDraft((current) => ({ ...current, target }));
             }}
-            placeholder="user@host 或 SSH 别名"
+            placeholder={gt("user@host or SSH alias")}
           />
         </label>
         <details
           open={host.port !== undefined || host.identityFile !== undefined || undefined}
           className="text-sm"
         >
-          <summary className="cursor-pointer text-muted-foreground">SSH 选项</summary>
+          <summary className="cursor-pointer text-muted-foreground">
+            <T>SSH options</T>
+          </summary>
           <div className="mt-3 grid grid-cols-[minmax(0,1fr)_7rem] gap-3">
             <label className="block space-y-1.5">
-              <span>身份文件</span>
+              <span>
+                <T>Identity file</T>
+              </span>
               <Input
                 value={draft.identityFile ?? ""}
                 disabled={busy}
@@ -157,11 +171,13 @@ function DeviceHostEditorForm({
                     return identityFile ? { ...rest, identityFile } : rest;
                   });
                 }}
-                placeholder="SSH 配置默认"
+                placeholder={gt("SSH config default")}
               />
             </label>
             <label className="block space-y-1.5">
-              <span>端口</span>
+              <span>
+                <T>Port</T>
+              </span>
               <Input
                 type="number"
                 min={1}
@@ -175,11 +191,13 @@ function DeviceHostEditorForm({
                     return port ? { ...rest, port: Number(port) } : rest;
                   });
                 }}
-                placeholder="默认"
+                placeholder={gt("Default", { $context: "uses the default SSH port" })}
               />
             </label>
           </div>
-          <p className="mt-2 text-xs text-muted-foreground">可选性在每个环境上分别解决。</p>
+          <p className="mt-2 text-xs text-muted-foreground">
+            <T>Optional. Resolved separately on each environment.</T>
+          </p>
         </details>
         <Collapsible
           open={checksOpen}
@@ -195,7 +213,7 @@ function DeviceHostEditorForm({
               <div className="min-w-0 text-xs [--inline-button-white-space:normal]">
                 <CollapsibleTrigger
                   disabled={!results}
-                  aria-label={`${checkSummary}.每台机器的结果`}
+                  aria-label={gt("{summary}. Per-machine results", { summary: checkSummary })}
                   render={<InlineButton tone="muted" />}
                 >
                   <span role="status" className="text-left">
@@ -218,7 +236,7 @@ function DeviceHostEditorForm({
                 if (Option.isSome(input)) void testConnection(input.value);
               }}
             >
-              {checking ? <Spinner size="xs" /> : null} 测试连接
+              {checking ? <Spinner size="xs" /> : null} <T>Test connection</T>
             </Button>
           </div>
           {results ? (
@@ -237,19 +255,20 @@ function DeviceHostEditorForm({
                       >
                         {result.status === "pending" ? (
                           <>
-                            <Spinner size="xs" /> 正在检查…
+                            <Spinner size="xs" /> <T>Checking…</T>
                           </>
                         ) : result.status === "local" ? (
                           <>
-                            <MonitorIcon className="size-3" /> 已在当地提供
+                            <MonitorIcon className="size-3" /> <T>Already available locally</T>
                           </>
                         ) : result.status === "failed" ? (
                           <>
-                            <XIcon className="size-3" /> 失败
+                            <XIcon className="size-3" />{" "}
+                            {gt("Failed", { $context: "connection check status" })}
                           </>
                         ) : (
                           <>
-                            <CheckIcon className="size-3" /> 已连接
+                            <CheckIcon className="size-3" /> <T>Connected</T>
                           </>
                         )}
                       </span>
@@ -261,7 +280,9 @@ function DeviceHostEditorForm({
                     ) : null}
                     {result.status === "failed" ? (
                       <details className="mt-1.5 text-muted-foreground">
-                        <summary className="cursor-pointer">显示错误</summary>
+                        <summary className="cursor-pointer">
+                          <T>Show error</T>
+                        </summary>
                         <p className="mt-1 max-h-32 overflow-auto whitespace-pre-wrap break-words">
                           {result.error}
                         </p>
@@ -276,10 +297,10 @@ function DeviceHostEditorForm({
       </DialogPanel>
       <DialogFooter>
         <Button type="button" variant="ghost" disabled={busy} onClick={onClose}>
-          取消
+          <T>Cancel</T>
         </Button>
         <Button type="submit" disabled={busy || checking || !valid || !draft.label.trim()}>
-          {busy ? <Spinner size="xs" /> : null} 保存主机
+          {busy ? <Spinner size="xs" /> : null} <T>Save host</T>
         </Button>
       </DialogFooter>
     </form>

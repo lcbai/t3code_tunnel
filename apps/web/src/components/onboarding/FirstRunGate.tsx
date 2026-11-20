@@ -2,6 +2,7 @@ import { RefreshIcon } from "~/components/ui/refresh-icon";
 import { useAtomValue } from "@effect/atom-react";
 import { useLocation, useNavigate } from "@tanstack/react-router";
 import { Atom } from "effect/reactivity";
+import { useGT } from "gt-react";
 import { useEffect, useState } from "react";
 
 import {
@@ -188,14 +189,17 @@ function FirstRunRecovery({
   readonly retrying?: boolean;
 }) {
   const settingsReadFailed = reason === "settings";
+  const gt = useGT();
   return (
     <main className="flex h-dvh min-h-0 items-center justify-center bg-background px-6 text-foreground">
       <div className="flex max-w-sm flex-col items-center text-center">
         <h1 className="text-lg font-semibold">
-          {settingsReadFailed ? "无法读取设置" : "还在连接"}
+          {settingsReadFailed ? gt("Could not read settings") : gt("Still connecting")}
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          {settingsReadFailed ? "无法装入您保存的设置。" : "T3 Code 无法确认此工作空间。"}
+          {settingsReadFailed
+            ? gt("Your saved settings could not be loaded.")
+            : gt("T3 Code could not confirm this workspace.")}
         </p>
         <Button
           className="mt-5"
@@ -211,7 +215,7 @@ function FirstRunRecovery({
           }}
         >
           <RefreshIcon refreshing={retrying} />
-          {settingsReadFailed ? "重试" : "重新加载"}
+          {settingsReadFailed ? gt("Retry") : gt("Reload")}
         </Button>
       </div>
     </main>

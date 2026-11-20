@@ -5,6 +5,7 @@ import {
   isAtomCommandInterrupted,
   squashAtomCommandFailure,
 } from "@t3tools/client-runtime/state/runtime";
+import { T, useGT, Var } from "gt-react-native";
 import { useState } from "react";
 import { useEnvironmentScope } from "../../state/session";
 import { ScrollView, View } from "react-native";
@@ -15,13 +16,18 @@ import { useAtomCommand } from "../../state/use-atom-command";
 import { PendingApprovalCard } from "./PendingApprovalCard";
 
 function ChildApproval({ entry }: { entry: ChildThreadApproval }) {
+  const gt = useGT();
   const canRespond = useEnvironmentScope(entry.thread.environmentId, AuthOrchestrationOperateScope);
   const respond = useAtomCommand(threadEnvironment.respondToApproval, { reportFailure: false });
   const [responding, setResponding] = useState(false);
   const [error, setError] = useState<string | null>(null);
   return (
     <View className="mx-3.5 my-2 gap-2">
-      <AppText className="font-t3-bold text-sm text-foreground">批准方 {entry.title}</AppText>
+      <AppText className="font-t3-bold text-sm text-foreground">
+        <T>
+          Approval from <Var>{entry.title}</Var>
+        </T>
+      </AppText>
       <PendingApprovalCard
         canOperateThread={canRespond}
         approval={entry.approval}
@@ -37,7 +43,9 @@ function ChildApproval({ entry }: { entry: ChildThreadApproval }) {
           if (result._tag === "Failure" && !isAtomCommandInterrupted(result)) {
             const failure = squashAtomCommandFailure(result);
             setError(
-              failure instanceof Error ? failure.message : "Failed to submit approval decision.",
+              failure instanceof Error
+                ? failure.message
+                : gt("Failed to submit approval decision."),
             );
           }
           setResponding(false);

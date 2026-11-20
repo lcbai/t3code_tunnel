@@ -1,3 +1,4 @@
+import { useGT } from "gt-react-native";
 import { resolveEnvironmentMachineKind } from "@t3tools/contracts";
 
 import type { AppBarMenu } from "../../../components/ui/AppBar.types";
@@ -6,6 +7,7 @@ import { useSettingsEnvironmentFilter } from "../settings-environment-filter";
 
 /** The settings scope filter, as an `AppBar` menu. */
 export function useSettingsEnvironmentMenu(): AppBarMenu {
+  const gt = useGT();
   const {
     availableTargets,
     selectedTargets,
@@ -17,7 +19,7 @@ export function useSettingsEnvironmentMenu(): AppBarMenu {
     selectProject,
   } = useSettingsEnvironmentFilter();
   return {
-    title: "筛选设置中的环境和项目",
+    title: gt("Filter settings environments and projects"),
     icon:
       selectedIds === null && selectedProjectKey === null
         ? "line.3.horizontal.decrease"
@@ -25,11 +27,16 @@ export function useSettingsEnvironmentMenu(): AppBarMenu {
     items: [
       {
         id: "environments",
-        title: selectedIds === null ? "所有环境" : `${selectedTargets.length} 个环境`,
+        title:
+          selectedIds === null
+            ? gt("All environments")
+            : gt("{count, plural, one {{count} environment} other {{count} environments}}", {
+                count: selectedTargets.length,
+              }),
         items: [
           {
             id: "all",
-            title: "所有已连接的环境",
+            title: gt("All connected environments"),
             selected: selectedIds === null,
             onPress: selectAll,
           },
@@ -47,17 +54,19 @@ export function useSettingsEnvironmentMenu(): AppBarMenu {
         id: "projects",
         title:
           selectableProjectGroups.find((group) => group.key === selectedProjectKey)?.label ??
-          (selectedProjectKey === null ? "所有项目" : "项目不可用"),
+          (selectedProjectKey === null ? gt("All projects") : gt("Unavailable project")),
         items: [
           {
             id: "project:all",
-            title: "所有项目",
+            title: gt("All projects"),
             selected: selectedProjectKey === null,
             onPress: () => selectProject(null),
           },
           ...selectableProjectGroups.map((group) => ({
             id: `project:${group.key}`,
-            title: projectMenuLabel(group),
+            title: group.archived
+              ? gt("{project} · Archived", { project: group.label })
+              : group.label,
             selected: selectedProjectKey === group.key,
             onPress: () => selectProject(group.key),
           })),
@@ -66,6 +75,3 @@ export function useSettingsEnvironmentMenu(): AppBarMenu {
     ],
   };
 }
-
-const projectMenuLabel = (group: { readonly label: string; readonly archived: boolean }) =>
-  group.archived ? `${group.label} · 已归档` : group.label;

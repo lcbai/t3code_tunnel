@@ -4,6 +4,7 @@ import {
   type SecretReference,
   type SettingsSecretValue,
 } from "@t3tools/contracts";
+import { T, useGT, Var } from "gt-react";
 import { ExternalLinkIcon } from "lucide-react";
 import { useState } from "react";
 
@@ -34,11 +35,17 @@ export function SourceControlTokenSettings({
   readonly credentials: SourceControlHostCredentials;
   readonly onSaved: () => void;
 }) {
+  const gt = useGT();
+  // Translates the GitHub definition's English `tokenAccess`.
+  const tokenAccess =
+    definition.kind === "github"
+      ? gt("read and write access to pull requests and contents")
+      : credentials.tokenAccess;
   const { tokens } = useEnvironmentSettings(environmentId, (settings) =>
     readHostCredentialSettings(settings, definition.kind),
   );
   const updateSettings = useAtomCommand(serverEnvironment.updateSettings, {
-    label: `保存 ${definition.label} 访问令牌`,
+    label: `save ${definition.label} token`,
   });
   const defaultHost = definition.publicHost ?? "";
   const [host, setHost] = useState(defaultHost);
@@ -88,11 +95,18 @@ export function SourceControlTokenSettings({
       {/* Locked while saving: a successful save clears the draft, which would drop edits made mid-request. */}
       <fieldset disabled={saving} className="contents">
         <p className="max-w-2xl text-xs leading-relaxed text-muted-foreground">
-          此处保存的符号在之前使用过{" "}
-          <code className="rounded bg-muted px-1 py-px text-2xs">{credentials.tokenEnvVar}</code>{" "}
-          页:1 <code className="rounded bg-muted px-1 py-px text-2xs">{credentials.cliName}</code>{" "}
-          登录，所以 {definition.label} 工作没有 {credentials.cliLabel}给它{" "}
-          {credentials.tokenAccess}.{" "}
+          <T>
+            A token saved here is used before{" "}
+            <code className="rounded bg-muted px-1 py-px text-2xs">
+              <Var>{credentials.tokenEnvVar}</Var>
+            </code>{" "}
+            and the{" "}
+            <code className="rounded bg-muted px-1 py-px text-2xs">
+              <Var>{credentials.cliName}</Var>
+            </code>{" "}
+            login, so <Var>{definition.label}</Var> works without the{" "}
+            <Var>{credentials.cliLabel}</Var>. Give it <Var>{tokenAccess}</Var>.
+          </T>{" "}
           {normalizedHost || defaultHost ? (
             <InlineButton
               render={
@@ -103,14 +117,16 @@ export function SourceControlTokenSettings({
                 />
               }
             >
-              创建访问令牌
+              <T>Create a token</T>
               <ExternalLinkIcon aria-hidden className="size-3" />
             </InlineButton>
           ) : null}
         </p>
         <div className="grid gap-3 sm:grid-cols-[12rem_1fr]">
           <div className="grid gap-1.5">
-            <Label htmlFor={`${definition.kind}-token-host-${environmentId}`}>主机</Label>
+            <Label htmlFor={`${definition.kind}-token-host-${environmentId}`}>
+              <T>Host</T>
+            </Label>
             <Input
               id={`${definition.kind}-token-host-${environmentId}`}
               autoComplete="off"
@@ -121,11 +137,14 @@ export function SourceControlTokenSettings({
             />
           </div>
           <div className="grid gap-1.5">
-            <Label htmlFor={`${definition.kind}-token-${environmentId}`}>访问令牌</Label>
+            <Label htmlFor={`${definition.kind}-token-${environmentId}`}>
+              <T>Token</T>
+            </Label>
             <SecretSourceInput
               id={`${definition.kind}-token-${environmentId}`}
               size="sm"
-              aria-label={`${definition.label} 访问令牌`}
+              aria-label={gt("{host} token", { host: definition.label })}
+              environmentId={environmentId}
               configured={isSaved && !isSecretReference(savedToken)}
               value={draft}
               sources={secretSources}
@@ -137,8 +156,11 @@ export function SourceControlTokenSettings({
         <div className="flex items-center justify-between gap-3">
           <p className="text-xs text-muted-foreground">
             {savedHosts.length === 0
-              ? `没有保存任何令牌;服务器使用${credentials.tokenEnvVar}或${credentials.cliName}登录。`
-              : `保存于${savedHosts.join(", ")}。`}
+              ? gt("No token saved; the server uses {envVar} or the {cliName} login.", {
+                  envVar: credentials.tokenEnvVar,
+                  cliName: credentials.cliName,
+                })
+              : gt("Saved for {hosts}.", { hosts: savedHosts.join(", ") })}
           </p>
           <div className="flex shrink-0 gap-2">
             {isSaved ? (
@@ -148,7 +170,7 @@ export function SourceControlTokenSettings({
                 disabled={saving}
                 onClick={() => void save(normalizedHost, "")}
               >
-                移除
+                <T>Remove</T>
               </Button>
             ) : null}
             <Button
@@ -156,7 +178,7 @@ export function SourceControlTokenSettings({
               size="xs"
               disabled={!normalizedHost || submission === "" || saving}
             >
-              保存
+              <T>Save</T>
             </Button>
           </div>
         </div>

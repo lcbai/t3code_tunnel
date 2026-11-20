@@ -1,4 +1,5 @@
 import { proposedPlanTitle, stripDisplayedPlanMarkdown } from "@t3tools/shared/proposedPlanText";
+import { msg, T, useGT, useMessages, Var } from "gt-react";
 import { memo, useState, useId } from "react";
 import { findRevealRef } from "./markdownFindContext";
 import {
@@ -53,6 +54,8 @@ export const ProposedPlanCard = memo(function ProposedPlanCard({
   workspaceRoot: string | undefined;
   findActive?: boolean;
 }) {
+  const gt = useGT();
+  const messages = useMessages();
   const [expanded, setExpanded] = useState(false);
   const canWriteFiles = useEnvironmentScope(environmentId, AuthFilesystemWriteScope);
   const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
@@ -62,23 +65,28 @@ export const ProposedPlanCard = memo(function ProposedPlanCard({
     reportFailure: false,
   });
   const { copyToClipboard, isCopied } = useCopyToClipboard({
-    target: "plan",
+    target: {
+      target: "plan",
+      unavailableMessage: msg("Clipboard API is unavailable while copying plan."),
+      failureMessage: msg("Failed to copy plan to the clipboard."),
+    },
     onError: (error) => {
       toastManager.add(
         stackedThreadToast({
           type: "error",
-          title: "无法复制计划",
-          description: error instanceof Error ? error.message : "复制时发生错误。",
+          title: gt("Could not copy plan"),
+          description:
+            error instanceof Error ? error.message : gt("An error occurred while copying."),
         }),
       );
     },
   });
-  const title = proposedPlanTitle(planMarkdown) ?? "Proposed plan";
+  const title = proposedPlanTitle(planMarkdown) ?? gt("Proposed plan");
   const lineCount = planMarkdown.split("\n").length;
   const canCollapse = planMarkdown.length > 900 || lineCount > 20;
   const displayedPlanMarkdown = stripDisplayedPlanMarkdown(planMarkdown);
   const collapsedPreview = canCollapse
-    ? buildCollapsedProposedPlanPreviewMarkdown(planMarkdown, { maxLines: 10 })
+    ? buildCollapsedProposedPlanPreviewMarkdown(planMarkdown, { maxLines: 10 }, messages)
     : null;
   const isCollapsed = canCollapse && !expanded;
   // Mount clipped plans during find to count hidden matches without revealing them.
@@ -101,8 +109,8 @@ export const ProposedPlanCard = memo(function ProposedPlanCard({
       toastManager.add(
         stackedThreadToast({
           type: "error",
-          title: "无法使用工作空间路径",
-          description: "此会话没有要保存的工作空间路径。",
+          title: gt("Workspace path is unavailable"),
+          description: gt("This thread does not have a workspace path to save into."),
         }),
       );
       return;
@@ -118,7 +126,7 @@ export const ProposedPlanCard = memo(function ProposedPlanCard({
     if (!relativePath) {
       toastManager.add({
         type: "warning",
-        title: "输入工作空间路径",
+        title: gt("Enter a workspace path"),
       });
       return;
     }
@@ -139,7 +147,7 @@ export const ProposedPlanCard = memo(function ProposedPlanCard({
         setIsSaveDialogOpen(false);
         toastManager.add({
           type: "success",
-          title: "保存到工作空间的计划",
+          title: gt("Plan saved to workspace"),
           description: result.value.relativePath,
         });
         return;
@@ -149,8 +157,9 @@ export const ProposedPlanCard = memo(function ProposedPlanCard({
         toastManager.add(
           stackedThreadToast({
             type: "error",
-            title: "无法保存计划",
-            description: error instanceof Error ? error.message : "保存时发生错误。",
+            title: gt("Could not save plan"),
+            description:
+              error instanceof Error ? error.message : gt("An error occurred while saving."),
           }),
         );
       }
@@ -161,26 +170,30 @@ export const ProposedPlanCard = memo(function ProposedPlanCard({
     <div className="rounded-2xl border border-border/80 bg-card/70 p-4 sm:p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2">
-          <Badge variant="secondary">计划</Badge>
+          <Badge variant="secondary">{gt("Plan", { $context: "badge, noun" })}</Badge>
           {}
           <h3 data-thread-find-text="true" className="truncate text-sm font-medium text-foreground">
             {title}
           </h3>
         </div>
         <Menu>
-          <MenuTrigger render={<Button aria-label="计划行动" size="icon-xs" variant="outline" />}>
+          <MenuTrigger
+            render={<Button aria-label={gt("Plan actions")} size="icon-xs" variant="outline" />}
+          >
             <EllipsisIcon aria-hidden="true" className="size-4" />
           </MenuTrigger>
           <MenuPopup align="end">
             <MenuItem onClick={handleCopyPlan}>
-              {isCopied ? "被复制了! Copy!" : "复制到剪贴板"}
+              {isCopied ? gt("Copied!") : gt("Copy to clipboard")}
             </MenuItem>
-            <MenuItem onClick={handleDownload}>下载为下标</MenuItem>
+            <MenuItem onClick={handleDownload}>
+              <T>Download as markdown</T>
+            </MenuItem>
             <MenuItem
               onClick={openSaveDialog}
               disabled={!canWriteFiles || !workspaceRoot || isSavingToWorkspace}
             >
-              保存到工作区
+              <T>Save to workspace</T>
             </MenuItem>
           </MenuPopup>
         </Menu>
@@ -223,7 +236,7 @@ export const ProposedPlanCard = memo(function ProposedPlanCard({
               data-scroll-anchor-ignore
               onClick={() => setExpanded((value) => !value)}
             >
-              {expanded ? "折叠计划" : "扩展计划"}
+              {expanded ? gt("Collapse plan") : gt("Expand plan")}
             </Button>
           </div>
         ) : null}
@@ -270,19 +283,36 @@ function SavePlanToWorkspaceForm({
   onCancel: () => void;
   onSave: (path: string) => void;
 }) {
+  const gt = useGT();
   const [savePath, setSavePath] = useState(initialPath);
   const savePathInputId = useId();
   return (
     <>
       <DialogHeader>
-        <DialogTitle>将计划保存到工作区</DialogTitle>
+        <DialogTitle>
+          <T>Save plan to workspace</T>
+        </DialogTitle>
         <DialogDescription>
-          输入相对路径 <code>{workspaceRoot ?? "工作空间"}</code>.
+          {workspaceRoot !== undefined ? (
+            <T>
+              Enter a path relative to{" "}
+              <code>
+                <Var>{workspaceRoot}</Var>
+              </code>
+              .
+            </T>
+          ) : (
+            <T>
+              Enter a path relative to <code>the workspace</code>.
+            </T>
+          )}
         </DialogDescription>
       </DialogHeader>
       <DialogPanel>
         <label htmlFor={savePathInputId} className="grid gap-1.5">
-          <span className="text-xs font-medium text-foreground">工作空间路径</span>
+          <span className="text-xs font-medium text-foreground">
+            <T>Workspace path</T>
+          </span>
           <Input
             id={savePathInputId}
             value={savePath}
@@ -295,10 +325,10 @@ function SavePlanToWorkspaceForm({
       </DialogPanel>
       <DialogFooter>
         <Button variant="outline" size="sm" onClick={onCancel} disabled={saving}>
-          取消
+          <T>Cancel</T>
         </Button>
         <Button size="sm" onClick={() => onSave(savePath)} disabled={!canWriteFiles || saving}>
-          {saving ? "正在保存…" : "保存"}
+          {saving ? gt("Saving...") : gt("Save")}
         </Button>
       </DialogFooter>
     </>

@@ -2,6 +2,7 @@ import { settlePromise } from "@t3tools/client-runtime/state/runtime";
 import { AsyncResult } from "effect/reactivity";
 import * as Dialog from "../../components/ui/Dialog";
 import { useFocusEffect, useNavigation, type StaticScreenProps } from "@react-navigation/native";
+import { T, useGT, useMessages } from "gt-react-native";
 import { useRef, useState } from "react";
 import { View } from "react-native";
 import type { PullRequestReviewPosition } from "@t3tools/contracts";
@@ -29,6 +30,8 @@ export type InlineCommentParams = PullRequestParams & {
 export function PullRequestInlineCommentScreen({ route }: StaticScreenProps<InlineCommentParams>) {
   const params = route.params;
   const navigation = useNavigation();
+  const gt = useGT();
+  const m = useMessages();
   const store = usePullRequestReviewDraft(params);
   const saved = store.draft.comments.find((draft) => draft.id === params.draftId);
   const [editedBody, setBody] = useState<string | null>(null);
@@ -84,13 +87,13 @@ export function PullRequestInlineCommentScreen({ route }: StaticScreenProps<Inli
   return (
     <PullRequestSheetContent
       busy={busy}
-      title={saved ? "编辑审查评论" : "审查评论"}
-      subtitle={`#${params.number} · ${reviewPositionLabel(params.position)}`}
+      title={saved ? gt("Edit review comment") : gt("Review comment")}
+      subtitle={`#${params.number} · ${reviewPositionLabel(params.position, m)}`}
       footer={
         <Button
           fullWidth
           tone="contrast"
-          label={busy ? "正在保存…" : "保存草稿"}
+          label={busy ? gt("Saving…") : gt("Save draft")}
           loading={busy}
           disabled={
             !store.ready ||
@@ -118,8 +121,8 @@ export function PullRequestInlineCommentScreen({ route }: StaticScreenProps<Inli
         onBlur={completions.onBlur}
         editable={store.ready && !busy}
         autoFocus
-        accessibilityLabel="行内审查评论"
-        placeholder="填写对此行的反馈…"
+        accessibilityLabel={gt("Inline review comment")}
+        placeholder={gt("Write feedback on this line…")}
         placeholderTextColorClassName="accent-foreground-muted"
         maxLength={65536}
         value={body}
@@ -127,10 +130,12 @@ export function PullRequestInlineCommentScreen({ route }: StaticScreenProps<Inli
         className="min-h-32 rounded-[20px] bg-grouped-card p-4 text-base text-foreground"
         style={{ textAlignVertical: "top" }}
       />
-      <Text className="text-xs text-foreground-muted">提交审查前，已保存的评论仅你可见。</Text>
+      <Text className="text-xs text-foreground-muted">
+        <T>Saved comments are private until you submit your review.</T>
+      </Text>
       {stale ? (
         <Text className="text-sm text-danger-foreground">
-          分支已变更。请返回当前差异并重新选择对应行。
+          <T>The branch changed. Return to the current diff and select the line again.</T>
         </Text>
       ) : null}
       {store.error || detail.error ? (
@@ -138,12 +143,12 @@ export function PullRequestInlineCommentScreen({ route }: StaticScreenProps<Inli
       ) : null}
       {saved ? (
         <Button
-          label="删除草稿"
+          label={gt("Delete draft")}
           onPress={() =>
-            Dialog.alert("删除此草稿？", "其他审查评论会保留。", [
-              { text: "取消", style: "cancel" },
+            Dialog.alert(gt("Delete this draft?"), gt("Your other review comments will be kept."), [
+              { text: gt("Cancel"), style: "cancel" },
               {
-                text: "删除",
+                text: gt("Delete"),
                 style: "destructive",
                 onPress: () => {
                   store.update((draft) => ({

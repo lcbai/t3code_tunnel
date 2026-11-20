@@ -11,22 +11,28 @@ import {
   type PreviewViewportSetting,
 } from "@t3tools/contracts";
 import { PREVIEW_VIEWPORT_PRESETS } from "@t3tools/shared/previewViewport";
+import { msg, useGT, useMessages } from "gt-react-native";
 
 import { ControlPill } from "../../components/ui/ControlPill";
 import { Menu } from "../../components/ui/Menu";
+import { m } from "../../i18n/messages";
+import { useEnvironmentPreviewTunnelOff } from "../../state/entities";
 import { previewEnvironment } from "../../state/preview";
 import { useAtomCommand } from "../../state/use-atom-command";
+import { browserTabUrl, loopbackUrlForDevice } from "./browserTabs";
+import { useOpenLocalPreview } from "./useOpenLocalPreview";
 
 const APPEARANCES = [
-  { id: "system", title: "系统" },
-  { id: "light", title: "浅色" },
-  { id: "dark", title: "深色" },
+  {
+    id: "system",
+    title: msg("System", { $context: "appearance option, follow the system theme" }),
+  },
+  { id: "light", title: msg("Light", { $context: "appearance option" }) },
+  { id: "dark", title: msg("Dark", { $context: "appearance option" }) },
 ] as const;
 
-const VIEWPORT_CATEGORY_LABELS = { Phone: "手机", Tablet: "平板", Desktop: "桌面" } as const;
-
 const VIEWPORTS = [
-  { id: "fill", title: "适应屏幕", setting: FILL_PREVIEW_VIEWPORT },
+  { id: "fill", title: msg("Fit to screen"), setting: FILL_PREVIEW_VIEWPORT },
   ...(["Phone", "Tablet", "Desktop"] as const).flatMap((category) => {
     const preset = PREVIEW_VIEWPORT_PRESETS.find((candidate) => candidate.category === category);
     if (!preset) return [];
@@ -36,13 +42,13 @@ const VIEWPORTS = [
       width: preset.width,
       height: preset.height,
     };
-    return [
-      {
-        id: `preset:${preset.id}`,
-        title: `${VIEWPORT_CATEGORY_LABELS[category]}（${preset.label}）`,
-        setting,
-      },
-    ];
+    const title =
+      category === "Phone"
+        ? msg("Phone ({device})", { device: preset.label })
+        : category === "Tablet"
+          ? msg("Tablet ({device})", { device: preset.label })
+          : msg("Desktop ({device})", { device: preset.label });
+    return [{ id: `preset:${preset.id}`, title, setting }];
   }),
 ];
 
@@ -51,16 +57,22 @@ export function BrowserTabMenu({
   tab,
   streaming,
   onPaste,
+  onReleaseControl,
 }: {
   readonly environmentId: EnvironmentId;
   readonly tab: PreviewSessionSnapshot;
   readonly streaming: boolean;
   readonly onPaste?: () => void;
+  readonly onReleaseControl?: () => void;
 }) {
+  const openLocalPreview = useOpenLocalPreview();
+  const tunnelOff = useEnvironmentPreviewTunnelOff(environmentId);
   const adjust = useAtomCommand(previewEnvironment.adjust, "browser tab change");
   const resize = useAtomCommand(previewEnvironment.resize, "browser viewport change");
   const close = useAtomCommand(previewEnvironment.close, "browser tab close");
   const canClose = useAtomValue(previewEnvironment.close.permissionAtom(environmentId));
+  const gt = useGT();
+  const resolveMessage = useMessages();
   const target = { threadId: tab.threadId as PreviewAdjustInput["threadId"], tabId: tab.tabId };
   const colorScheme = tab.colorScheme ?? "system";
   const zoomFactor = tab.zoomFactor ?? DEFAULT_PREVIEW_ZOOM_FACTOR;
@@ -78,50 +90,61 @@ export function BrowserTabMenu({
 
   const closeAction: MenuAction = {
     id: "close",
-    title: "关闭标签页",
+    title: gt("Close tab"),
     image: "xmark",
     attributes: { destructive: true, disabled: !canClose },
   };
+  const deviceUrl = tunnelOff ? null : loopbackUrlForDevice(browserTabUrl(tab));
+  // The device preview has its own webview and tunnel, so it doesn't wait for the stream.
+  const openOnDevice: MenuAction[] = deviceUrl
+    ? [{ id: "open-on-device", title: gt("Open on this device"), image: "iphone" }]
+    : [];
   const actions: MenuAction[] = [
-    ...(onPaste ? [{ id: "paste", title: "粘贴", image: "doc.on.clipboard" }] : []),
-    { id: "hard-reload", title: "强制重新加载", image: "arrow.clockwise.circle" },
+    ...openOnDevice,
+    ...(onPaste
+      ? [{ id: "paste", title: gt("Paste", { $context: "verb" }), image: "doc.on.clipboard" }]
+      : []),
+    ...(onReleaseControl
+      ? [{ id: "release-control", title: gt("Release control"), image: "hand.raised" }]
+      : []),
+    { id: "hard-reload", title: gt("Hard reload"), image: "arrow.clockwise.circle" },
     {
       id: "appearance",
-      title: "外观",
+      title: gt("Appearance"),
       image: "circle.lefthalf.filled",
       subactions: APPEARANCES.map((option) => ({
         id: `appearance:${option.id}`,
-        title: option.title,
+        title: resolveMessage(option.title),
         state: option.id === colorScheme ? "on" : "off",
       })),
     },
     {
       id: "zoom",
-      title: `缩放（${Math.round(zoomFactor * 100)}%）`,
+      title: gt("Zoom ({percent}%)", { percent: Math.round(zoomFactor * 100) }),
       image: "plus.magnifyingglass",
       subactions: [
-        { id: "zoom:in", title: "放大", image: "plus.magnifyingglass" },
-        { id: "zoom:out", title: "缩小", image: "minus.magnifyingglass" },
-        { id: "zoom:reset", title: "实际大小", image: "1.magnifyingglass" },
+        { id: "zoom:in", title: gt("Zoom in"), image: "plus.magnifyingglass" },
+        { id: "zoom:out", title: gt("Zoom out"), image: "minus.magnifyingglass" },
+        { id: "zoom:reset", title: gt("Actual size"), image: "1.magnifyingglass" },
       ],
     },
     {
       id: "viewport",
-      title: "视口",
+      title: gt("Viewport"),
       image: "rectangle.and.arrow.up.right.and.arrow.down.left",
       subactions: VIEWPORTS.map((option) => ({
         id: `viewport:${option.id}`,
-        title: option.title,
+        title: resolveMessage(option.title),
         state: option.id === viewportId ? "on" : "off",
       })),
     },
     {
       id: "site-data",
-      title: "网站数据",
+      title: gt("Site data"),
       image: "trash",
       subactions: [
-        { id: "clear:cookies", title: "清除 Cookie", attributes: { destructive: true } },
-        { id: "clear:cache", title: "清除缓存", attributes: { destructive: true } },
+        { id: "clear:cookies", title: gt("Clear cookies"), attributes: { destructive: true } },
+        { id: "clear:cache", title: gt("Clear cache"), attributes: { destructive: true } },
       ],
     },
     closeAction,
@@ -129,17 +152,21 @@ export function BrowserTabMenu({
 
   const run = async (change: Omit<PreviewAdjustInput, "threadId" | "tabId">) => {
     const result = await adjust({ environmentId, input: { ...target, ...change } });
-    if (result._tag === "Failure") Dialog.alert("无法更改此浏览器标签页");
+    if (result._tag === "Failure") Dialog.alert(m(msg("Could not change this browser tab")));
   };
 
   const onAction = (id: string) => {
     if (id === "close") {
       void close({ environmentId, input: target }).then((result) => {
-        if (result._tag === "Failure") Dialog.alert("无法关闭此浏览器标签页");
+        if (result._tag === "Failure") Dialog.alert(m(msg("Could not close this browser tab")));
       });
       return;
     }
+    if (id === "open-on-device" && deviceUrl) {
+      return openLocalPreview({ environmentId, threadId: tab.threadId }, deviceUrl);
+    }
     if (id === "paste") return onPaste?.();
+    if (id === "release-control") return onReleaseControl?.();
     if (id === "hard-reload") return void run({ hardReload: true });
     if (id === "zoom:in") return void run({ zoomFactor: zoomTo(1) });
     if (id === "zoom:out") return void run({ zoomFactor: zoomTo(-1) });
@@ -156,7 +183,7 @@ export function BrowserTabMenu({
       if (!option) return;
       void resize({ environmentId, input: { ...target, viewport: option.setting } }).then(
         (result) => {
-          if (result._tag === "Failure") Dialog.alert("无法更改视口");
+          if (result._tag === "Failure") Dialog.alert(m(msg("Could not change the viewport")));
         },
       );
     }
@@ -168,12 +195,12 @@ export function BrowserTabMenu({
       // the other state's actions.
       key={streaming ? "streaming" : "idle"}
       accessible
-      accessibilityLabel="浏览器标签页选项"
+      accessibilityLabel={gt("Browser tab options")}
       accessibilityRole="button"
-      actions={streaming ? actions : [closeAction]}
+      actions={streaming ? actions : [...openOnDevice, closeAction]}
       onPressAction={({ nativeEvent }) => onAction(nativeEvent.event)}
     >
-      <ControlPill icon="ellipsis" accessibilityLabel="浏览器标签页选项" />
+      <ControlPill icon="ellipsis" accessibilityLabel={gt("Browser tab options")} />
     </Menu>
   );
 }

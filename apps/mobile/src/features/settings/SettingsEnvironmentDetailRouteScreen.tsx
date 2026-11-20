@@ -1,21 +1,26 @@
+import { errorDisplayMessage } from "@t3tools/client-runtime/errors";
+import { serverUpdateFailureText } from "@t3tools/client-runtime/state/server";
+import { T, useGT, useMessages, Var } from "gt-react-native";
 import * as Dialog from "../../components/ui/Dialog";
 import { useAtom, useAtomValue } from "@effect/atom-react";
 import { useNavigation, type StaticScreenProps } from "@react-navigation/native";
 import {
   AuthProvidersManageScope,
   AuthOrchestrationReadScope,
-  managedUpdatesDenial,
   type EnvironmentId,
   type ServerProvider,
 } from "@t3tools/contracts";
 import { settlePromise, squashAtomCommandFailure } from "@t3tools/client-runtime/state/runtime";
+import { managedUpdatesDenial } from "@t3tools/client-runtime/contract-labels";
 import { sessionPermissionsUnavailableMessage } from "@t3tools/shared/authScopeOptions";
 import * as Cause from "effect/Cause";
 import * as Exit from "effect/Exit";
 import { AsyncResult } from "effect/reactivity";
 import { useRef, useState } from "react";
-import { Linking, View } from "react-native";
+import { View } from "react-native";
+import { tryOpenExternalUrl } from "../../lib/openExternalUrl";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { m } from "../../i18n/messages";
 
 import { AppText as Text } from "../../components/ui/AppText";
 import { ProviderIcon } from "../../components/ProviderIcon";
@@ -53,6 +58,8 @@ export function SettingsEnvironmentDetailRouteScreen({
 }
 
 function EnvironmentDetail({ environmentId }: { readonly environmentId: EnvironmentId }) {
+  const gt = useGT();
+  const messages = useMessages();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
   const connections = useRemoteConnections();
@@ -98,7 +105,7 @@ function EnvironmentDetail({ environmentId }: { readonly environmentId: Environm
   const managedPolicy = config?.managedPolicy;
   const supportUrl = managedPolicy?.supportUrl;
   // The server refuses checks and installs; say so instead of offering them.
-  const updatesDenial = managedUpdatesDenial(managedPolicy);
+  const updatesDenial = managedUpdatesDenial(managedPolicy, messages);
 
   async function run(label: string, action: () => Promise<void>) {
     if (pendingRef.current) return;
@@ -112,7 +119,9 @@ function EnvironmentDetail({ environmentId }: { readonly environmentId: Environm
     if (AsyncResult.isFailure(result)) {
       const cause = squashAtomCommandFailure(result);
       setError(
-        cause instanceof Error ? cause.message : "The action could not be completed. Try again.",
+        cause instanceof Error
+          ? (errorDisplayMessage(cause, m) ?? cause.message)
+          : gt("The action could not be completed. Try again."),
       );
     }
   }
@@ -122,12 +131,22 @@ function EnvironmentDetail({ environmentId }: { readonly environmentId: Environm
     if (disabled || !targetVersion || !capabilities || !supportsEnvironmentUpdate(capabilities))
       return;
     Dialog.alert(
-      `更新 ${environment?.environmentLabel ?? "environment"}?`,
-      `Install T3 Code ${targetVersion}. ${capabilities.serverSelfUpdate === "desktop-managed" ? "The desktop app will close and relaunch." : "The server will restart and reconnect."} Running threads may be interrupted.`,
+      environment
+        ? gt("Update {environment}?", { environment: environment.environmentLabel })
+        : gt("Update environment?"),
+      capabilities.serverSelfUpdate === "desktop-managed"
+        ? gt(
+            "Install {product} {version}. The desktop app will close and relaunch. Running threads may be interrupted.",
+            { product: "T3 Code", version: targetVersion },
+          )
+        : gt(
+            "Install {product} {version}. The server will restart and reconnect. Running threads may be interrupted.",
+            { product: "T3 Code", version: targetVersion },
+          ),
       [
-        { text: "取消", style: "cancel" },
+        { text: gt("Cancel"), style: "cancel" },
         {
-          text: "更新",
+          text: gt("Update", { $context: "verb, install an update" }),
           onPress: () =>
             void run("server", async () => {
               if (
@@ -145,7 +164,7 @@ function EnvironmentDetail({ environmentId }: { readonly environmentId: Environm
                 input: { targetVersion },
               });
               if (AsyncResult.isFailure(result)) throw squashAtomCommandFailure(result);
-              setNotice(`Updated to ${result.value.targetVersion}.`);
+              setNotice(gt("Updated to {version}.", { version: result.value.targetVersion }));
             }),
         },
       ],
@@ -172,7 +191,7 @@ function EnvironmentDetail({ environmentId }: { readonly environmentId: Environm
   }
 
   return (
-    <SettingsScreen title={environment?.environmentLabel ?? "环境"}>
+    <SettingsScreen title={environment?.environmentLabel ?? gt("Environment")}>
       <ScreenScrollView
         contentInsetAdjustmentBehavior="automatic"
         className="flex-1"
@@ -180,10 +199,12 @@ function EnvironmentDetail({ environmentId }: { readonly environmentId: Environm
         contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 18) + 18 }}
       >
         {!environment ? (
-          <Text className="text-base text-foreground-muted">此环境已从当前设备移除。</Text>
+          <Text className="text-base text-foreground-muted">
+            <T>This environment is no longer saved on this device.</T>
+          </Text>
         ) : (
           <>
-            <SettingsSection title="连接">
+            <SettingsSection title={gt("Connection")}>
               <ConnectionEnvironmentRow
                 environment={environment}
                 expanded={connectionExpanded}
@@ -207,17 +228,22 @@ function EnvironmentDetail({ environmentId }: { readonly environmentId: Environm
                 label={environment.environmentLabel}
               />
             ) : !connected ? (
-              <Text className="px-2 text-sm text-foreground-muted">连接此环境后即可管理。</Text>
+              <Text className="px-2 text-sm text-foreground-muted">
+                <T>Connect this environment to manage it.</T>
+              </Text>
             ) : !allowed ? (
               <Text className="px-2 text-sm text-foreground-muted">
                 {AsyncResult.isFailure(sessionResult) || session === null || !session.authenticated
-                  ? sessionPermissionsUnavailableMessage({
-                      connected,
-                      failed: AsyncResult.isFailure(sessionResult),
-                      rejected:
-                        !AsyncResult.isFailure(sessionResult) && session?.authenticated === false,
-                    })
-                  : "此连接无权管理该环境。"}
+                  ? sessionPermissionsUnavailableMessage(
+                      {
+                        connected,
+                        failed: AsyncResult.isFailure(sessionResult),
+                        rejected:
+                          !AsyncResult.isFailure(sessionResult) && session?.authenticated === false,
+                      },
+                      messages,
+                    )
+                  : gt("This connection does not have permission to manage the environment.")}
               </Text>
             ) : null}
             {error ? (
@@ -230,10 +256,16 @@ function EnvironmentDetail({ environmentId }: { readonly environmentId: Environm
               <>
                 <SettingsSection title="T3 Code">
                   <View className="gap-1 p-4">
-                    <Text className="text-base text-foreground">版本 {version}</Text>
+                    <Text className="text-base text-foreground">
+                      <T>
+                        Version <Var>{version}</Var>
+                      </T>
+                    </Text>
                     {managedPolicy ? (
                       <Text className="text-sm text-foreground-muted">
-                        管理方 {managedPolicy.organization}
+                        <T>
+                          Managed by <Var>{managedPolicy.organization}</Var>
+                        </T>
                       </Text>
                     ) : null}
                     {updatesDenial ? (
@@ -241,18 +273,22 @@ function EnvironmentDetail({ environmentId }: { readonly environmentId: Environm
                     ) : null}
                     {running ? (
                       <Text className="text-sm text-foreground-muted">
-                        {updateState.stage === "resuming" ? "正在重启并重新连接…" : "正在下载更新…"}
+                        {updateState.stage === "resuming"
+                          ? gt("Restarting and reconnecting…")
+                          : gt("Downloading update…")}
                       </Text>
                     ) : updateState.status === "failed" ? (
                       <Text selectable className="text-sm text-danger-foreground">
-                        {updateState.message}
+                        {serverUpdateFailureText(updateState, messages)}
                       </Text>
                     ) : null}
                     {checkedRelease && !updatesDenial ? (
                       <Text className="text-sm text-foreground-muted">
                         {checkedRelease.targetVersion
-                          ? `版本 ${checkedRelease.targetVersion} 可用。`
-                          : "当前已是最新版本。"}
+                          ? gt("Version {version} is available.", {
+                              version: checkedRelease.targetVersion,
+                            })
+                          : gt("You are up to date.")}
                       </Text>
                     ) : null}
                     {checkedRelease?.targetVersion &&
@@ -260,22 +296,26 @@ function EnvironmentDetail({ environmentId }: { readonly environmentId: Environm
                     !supportsEnvironmentUpdate(config.environment.capabilities) ? (
                       <Text className="text-sm text-foreground-muted">
                         {capabilities?.serverSelfUpdate === "desktop-managed"
-                          ? "请更新该设备上的桌面应用。"
-                          : "请更新并重启该设备上的 T3 Code。"}
+                          ? gt("Update the desktop app on this machine.")
+                          : gt("Update and restart {product} on this machine.", {
+                              product: "T3 Code",
+                            })}
                       </Text>
                     ) : null}
                   </View>
                   {supportUrl ? (
                     <SettingsActionRow
                       icon="questionmark.bubble"
-                      label={`获取帮助：${managedPolicy.organization}`}
-                      onPress={() => void Linking.openURL(supportUrl).catch(() => undefined)}
+                      label={gt("Get help from {organization}", {
+                        organization: managedPolicy.organization,
+                      })}
+                      onPress={() => void tryOpenExternalUrl(supportUrl)}
                     />
                   ) : null}
                   {updatesDenial ? null : (
                     <SettingsActionRow
                       icon="arrow.clockwise"
-                      label="检查更新"
+                      label={gt("Check for updates")}
                       disabled={disabled}
                       loading={pending === "check"}
                       onPress={() => {
@@ -294,17 +334,17 @@ function EnvironmentDetail({ environmentId }: { readonly environmentId: Environm
                   supportsEnvironmentUpdate(config.environment.capabilities) ? (
                     <SettingsActionRow
                       icon="arrow.up.circle"
-                      label={`更新到 ${checkedRelease.targetVersion}`}
+                      label={gt("Update to {version}", { version: checkedRelease.targetVersion })}
                       disabled={disabled}
                       loading={pending === "server" || running}
                       onPress={requestServerUpdate}
                     />
                   ) : null}
                 </SettingsSection>
-                <SettingsSection title="提供方">
+                <SettingsSection title={gt("Providers")}>
                   <SettingsActionRow
                     icon="arrow.clockwise"
-                    label="刷新提供方"
+                    label={gt("Refresh providers")}
                     disabled={busy || !canRead}
                     loading={pending === "refresh"}
                     onPress={() => {
@@ -317,7 +357,7 @@ function EnvironmentDetail({ environmentId }: { readonly environmentId: Environm
                           input: { reloadSecrets: true },
                         });
                         if (AsyncResult.isFailure(result)) throw squashAtomCommandFailure(result);
-                        setNotice("Provider status refreshed.");
+                        setNotice(gt("Provider status refreshed."));
                       });
                     }}
                   />
@@ -337,10 +377,16 @@ function EnvironmentDetail({ environmentId }: { readonly environmentId: Environm
                             </Text>
                           </View>
                           <Text className="text-sm text-foreground-muted">
-                            {provider.installed ? (provider.version ?? "版本未知") : "未安装"}
                             {provider.versionAdvisory?.latestVersion
-                              ? ` · 最新版本 ${provider.versionAdvisory.latestVersion}`
-                              : ""}
+                              ? gt("{version} · Latest {latest}", {
+                                  version: provider.installed
+                                    ? (provider.version ?? gt("Version unknown"))
+                                    : gt("Not installed"),
+                                  latest: provider.versionAdvisory.latestVersion,
+                                })
+                              : provider.installed
+                                ? (provider.version ?? gt("Version unknown"))
+                                : gt("Not installed")}
                           </Text>
                           {provider.updateState && provider.updateState.status !== "idle" ? (
                             <Text
@@ -352,7 +398,13 @@ function EnvironmentDetail({ environmentId }: { readonly environmentId: Environm
                               }
                             >
                               {provider.updateState.message ??
-                                `更新 ${provider.updateState.status}`}
+                                {
+                                  queued: gt("Update queued"),
+                                  running: gt("Update running"),
+                                  succeeded: gt("Update succeeded"),
+                                  failed: gt("Update failed"),
+                                  unchanged: gt("Update unchanged"),
+                                }[provider.updateState.status]}
                             </Text>
                           ) : null}
                           {provider.compatibilityAdvisory?.message ? (
@@ -368,14 +420,16 @@ function EnvironmentDetail({ environmentId }: { readonly environmentId: Environm
                           {provider.versionAdvisory?.status === "behind_latest" &&
                           !provider.versionAdvisory.canUpdate ? (
                             <Text className="text-sm text-foreground-muted">
-                              请在此环境所在的设备上更新该提供方。
+                              <T>Update this provider on the environment's machine.</T>
                             </Text>
                           ) : null}
                         </View>
                         {canUpdateEnvironmentProvider(provider) ? (
                           <SettingsActionRow
                             icon="arrow.up.circle"
-                            label={`更新 ${provider.displayName ?? provider.driver}`}
+                            label={gt("Update {provider}", {
+                              provider: provider.displayName ?? provider.driver,
+                            })}
                             disabled={busy || !canManageProviders}
                             loading={pending === provider.instanceId}
                             onPress={() => requestProviderUpdate(provider)}

@@ -123,7 +123,7 @@ describe("model price writes", () => {
     });
     expect(onResult).toHaveBeenCalledWith("old", {
       status: "failed",
-      error: "更新服务器以映射模型",
+      error: "Update server to map models",
     });
   });
 });

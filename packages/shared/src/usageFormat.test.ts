@@ -2,7 +2,7 @@
 import { describe, expect, it, vi } from "vite-plus/test";
 import type { UsageSource } from "@t3tools/contracts";
 
-import { formatHourShort, makeWindow, usageSourceMessages } from "./usageFormat.ts";
+import { formatHourShort, formatTokens, makeWindow, usageSourceMessages } from "./usageFormat.ts";
 
 function malformedSource(count: number, overrides: Partial<UsageSource> = {}): UsageSource {
   return {
@@ -30,7 +30,7 @@ describe("usage source messages", () => {
     });
 
     expect(usageSourceMessages([codex, claude])).toEqual([
-      "已跳过 12 条格式错误或内容不一致的记录，用量统计可能不完整。",
+      "12 malformed or inconsistent usage record(s) were skipped; usage may be incomplete.",
     ]);
   });
 
@@ -46,13 +46,13 @@ describe("usage source messages", () => {
       });
 
       expect(usageSourceMessages([source, source, otherHost, otherHost])).toEqual([
-        `已跳过 ${total} 条格式错误或内容不一致的记录，用量统计可能不完整。`,
+        `${total} malformed or inconsistent usage record(s) were skipped; usage may be incomplete.`,
       ]);
       expect(usageSourceMessages([source, source])).toEqual([
-        `已跳过 ${first} 条格式错误或内容不一致的记录，用量统计可能不完整。`,
+        `${first} malformed or inconsistent usage record(s) were skipped; usage may be incomplete.`,
       ]);
       expect(usageSourceMessages([otherHost, otherHost])).toEqual([
-        `已跳过 ${second} 条格式错误或内容不一致的记录，用量统计可能不完整。`,
+        `${second} malformed or inconsistent usage record(s) were skipped; usage may be incomplete.`,
       ]);
     },
   );
@@ -64,7 +64,7 @@ describe("usage source messages", () => {
     });
 
     expect(usageSourceMessages([source, otherMachine])).toEqual([
-      "已跳过 12 条格式错误或内容不一致的记录，用量统计可能不完整。",
+      "12 malformed or inconsistent usage record(s) were skipped; usage may be incomplete.",
     ]);
   });
 
@@ -72,7 +72,7 @@ describe("usage source messages", () => {
     const source = malformedSource(1);
 
     expect(usageSourceMessages([source, malformedSource(11), source])).toEqual([
-      "已跳过 11 条格式错误或内容不一致的记录，用量统计可能不完整。",
+      "11 malformed or inconsistent usage record(s) were skipped; usage may be incomplete.",
     ]);
   });
 
@@ -94,7 +94,7 @@ describe("usage source messages", () => {
     ).toEqual([
       readFailure,
       cursor.message,
-      "已跳过 1 条格式错误或内容不一致的记录，用量统计可能不完整。",
+      "1 malformed or inconsistent usage record(s) were skipped; usage may be incomplete.",
     ]);
   });
 
@@ -112,7 +112,7 @@ describe("usage source messages", () => {
 
     expect(usageSourceMessages([source, missing, missing])).toEqual([
       "No transcript directory on this environment.",
-      "已跳过 3 条格式错误或内容不一致的记录，用量统计可能不完整。",
+      "3 malformed or inconsistent usage record(s) were skipped; usage may be incomplete.",
     ]);
   });
 
@@ -132,7 +132,7 @@ describe("hourly usage formatting", () => {
     const instant = "2026-08-11T12:37:00.000Z";
     for (const zone of ["UTC", "America/New_York", "Asia/Kathmandu", "UTC"]) {
       expect(formatHourShort(instant, zone)).toBe(
-        new Intl.DateTimeFormat("zh-CN", { timeZone: zone, hour: "numeric", hour12: true }).format(
+        new Intl.DateTimeFormat("en-US", { timeZone: zone, hour: "numeric" }).format(
           new Date(instant),
         ),
       );
@@ -142,13 +142,13 @@ describe("hourly usage formatting", () => {
   });
 
   it("disambiguates repeated hours during a fall-back transition", () => {
-    expect(formatHourShort("2026-11-01T05:37:00.000Z", "America/New_York")).toBe("GMT-4上午1时");
-    expect(formatHourShort("2026-11-01T06:37:00.000Z", "America/New_York")).toBe("GMT-5上午1时");
+    expect(formatHourShort("2026-11-01T05:37:00.000Z", "America/New_York")).toBe("1 AM EDT");
+    expect(formatHourShort("2026-11-01T06:37:00.000Z", "America/New_York")).toBe("1 AM EST");
     expect(formatHourShort("2026-11-01T05:37:00.000Z", "America/New_York", false)).toBe(
-      "GMT-4 01:00",
+      "01:00 EDT",
     );
     expect(formatHourShort("2026-11-01T06:37:00.000Z", "America/New_York", false)).toBe(
-      "GMT-5 01:00",
+      "01:00 EST",
     );
   });
 
@@ -174,5 +174,13 @@ describe("hourly usage formatting", () => {
     } finally {
       resolvedOptions.mockRestore();
     }
+  });
+});
+
+describe("token formatting", () => {
+  it("moves to the next unit when rounding reaches it", () => {
+    expect(formatTokens(999_999)).toBe("1M");
+    expect(formatTokens(999_999_999)).toBe("1B");
+    expect(formatTokens(-999_999)).toBe("-1M");
   });
 });

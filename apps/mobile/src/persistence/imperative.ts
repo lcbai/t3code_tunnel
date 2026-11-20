@@ -5,7 +5,7 @@ import * as MobilePreferences from "./mobile-preferences";
 import * as MobileStorage from "./mobile-storage";
 
 export type { Preferences } from "./mobile-preferences";
-export type { RecentThreadShortcut } from "./mobile-storage";
+export type { AgentAwarenessRegistrationRecord, RecentThreadShortcut } from "./mobile-storage";
 export { MobilePreferencesLoadError, MobilePreferencesSaveError } from "./mobile-preferences";
 export {
   MobileDeviceIdGenerationError,
@@ -28,6 +28,18 @@ export const savePreferencesPatch = (patch: Partial<MobilePreferences.Preference
 export const updatePreferences = (
   transform: (current: MobilePreferences.Preferences) => Partial<MobilePreferences.Preferences>,
 ) => runPreferences((store) => store.update(transform));
+
+export const loadOrCreateAgentAwarenessDeviceId = () =>
+  runStorage((storage) => storage.loadOrCreateAgentAwarenessDeviceId);
+export const loadAgentAwarenessDeviceId = () =>
+  runStorage((storage) => storage.loadAgentAwarenessDeviceId);
+export const loadAgentAwarenessRegistrationRecord = () =>
+  runStorage((storage) => storage.loadAgentAwarenessRegistrationRecord);
+export const saveAgentAwarenessRegistrationRecord = (
+  record: MobileStorage.AgentAwarenessRegistrationRecord,
+) => runStorage((storage) => storage.saveAgentAwarenessRegistrationRecord(record));
+export const clearAgentAwarenessRegistrationRecord = () =>
+  runStorage((storage) => storage.clearAgentAwarenessRegistrationRecord);
 
 export const loadRecentThreadShortcuts = () =>
   runStorage((storage) => storage.loadRecentThreadShortcuts);

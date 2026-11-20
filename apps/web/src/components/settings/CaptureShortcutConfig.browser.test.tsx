@@ -58,7 +58,7 @@ async function renderConfig(desktop: "niri" | "hyprland" = "niri") {
     shortcutMessage: null,
     message: null,
     shortcutConfigPath: preview.path,
-    shortcutBinding: "手动设置",
+    shortcutBinding: "manual binding",
   };
   const screen = await render(<CaptureShortcutConfig state={state} onComplete={complete} />);
   const { container } = screen;
@@ -68,7 +68,7 @@ async function renderConfig(desktop: "niri" | "hyprland" = "niri") {
   return Object.assign(screen, {
     button,
     recorder,
-    diff: () => container.querySelector('[aria-label="快捷键更改"]'),
+    diff: () => container.querySelector('[aria-label="Shortcut changes"]'),
     alert: () => container.querySelector('[role="alert"]'),
     advanced: () => container.querySelector("details")!,
     async click(label: string) {
@@ -88,14 +88,18 @@ it.each(["niri", "hyprland"] as const)(
   async (desktop) => {
     using _env = setup();
     await using screen = await renderConfig(desktop);
-    expect(screen.recorder().getAttribute("aria-label")).toBe("记录快照快捷键，当前为Ctrl+Shift+2");
-    expect(screen.advanced().textContent).toContain("手动设置");
+    expect(screen.recorder().getAttribute("aria-label")).toBe(
+      "Record snapshot shortcut, currently Ctrl+Shift+2",
+    );
+    expect(screen.advanced().textContent).toContain("manual binding");
     expect(bridge.previewSnapShotConfig).not.toHaveBeenCalled();
-    await screen.click("审查变动");
-    expect(screen.recorder().getAttribute("aria-label")).toBe("记录快照快捷键，当前为Ctrl+Shift+2");
+    await screen.click("Review changes");
+    expect(screen.recorder().getAttribute("aria-label")).toBe(
+      "Record snapshot shortcut, currently Ctrl+Shift+2",
+    );
     expect(bridge.applySnapShotConfig).not.toHaveBeenCalled();
     expect(screen.diff()).not.toBeNull();
-    await screen.click("保存快捷键");
+    await screen.click("Save shortcut");
     expect(bridge.applySnapShotConfig).toHaveBeenCalledExactlyOnceWith(preview.id);
     expect(complete).toHaveBeenCalledOnce();
     expect(toast).toHaveBeenCalledWith(expect.objectContaining({ type: "success" }));
@@ -105,14 +109,14 @@ it.each(["niri", "hyprland"] as const)(
 it("withdraws a stale diff and requires another read instead of retrying its write", async () => {
   using _env = setup();
   await using screen = await renderConfig();
-  await screen.click("审查变动");
+  await screen.click("Review changes");
   bridge.applySnapShotConfig.mockRejectedValue(
     new Error("Your config changed since this preview."),
   );
-  await screen.click("保存快捷键");
-  expect(screen.alert()?.textContent).toContain("审查修改并再次尝试");
+  await screen.click("Save shortcut");
+  expect(screen.alert()?.textContent).toContain("Review the changes and try again");
   expect(screen.advanced().textContent).toContain("Your config changed since this preview.");
-  expect(screen.button("审查变动")).toBeDefined();
+  expect(screen.button("Review changes")).toBeDefined();
   expect(screen.diff()).toBeNull();
   expect(complete).not.toHaveBeenCalled();
 });

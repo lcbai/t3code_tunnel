@@ -1,5 +1,6 @@
 import { useAtomValue } from "@effect/atom-react";
 import type { EnvironmentId, ProviderDriverKind } from "@t3tools/contracts";
+import { T, Var } from "gt-react";
 import { InfoIcon } from "lucide-react";
 
 import { serverEnvironment } from "../../state/server";
@@ -34,15 +35,17 @@ export function MultipleAccountsNote({
       <InfoIcon aria-hidden />
       <AlertDescription>
         <p>
-          我们不建议管理多个 {providerName} 账户在T3 Code。{" "}
-          <a
-            href={MULTIPLE_ACCOUNTS_FAQ_URL}
-            target="_blank"
-            rel="noreferrer"
-            className="underline underline-offset-2 hover:text-foreground"
-          >
-            更多信息
-          </a>
+          <T>
+            We do not recommend managing multiple <Var>{providerName}</Var> accounts in T3 Code.{" "}
+            <a
+              href={MULTIPLE_ACCOUNTS_FAQ_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="underline underline-offset-2 hover:text-foreground"
+            >
+              More info
+            </a>
+          </T>
         </p>
       </AlertDescription>
     </Alert>

@@ -1,3 +1,4 @@
+import { useAuth } from "@clerk/react";
 import { useAtomValue } from "@effect/atom-react";
 import type {
   AgentSessionProjectCandidate,
@@ -8,7 +9,7 @@ import type {
   ServerConfig,
   ServerProvider,
 } from "@t3tools/contracts";
-import { scopeProjectRef } from "@t3tools/client-runtime/environment";
+import { scopeProjectRef, scopeThreadRef } from "@t3tools/client-runtime/environment";
 import { resolveProviderInstanceDisplayName as agentName } from "@t3tools/client-runtime/state/provider-instance-display";
 import {
   isAtomCommandInterrupted,
@@ -17,11 +18,14 @@ import {
 import {
   AgentSessionSource,
   AuthProvidersManageScope,
+  AuthRelayReadScope,
+  AuthRelayWriteScope,
   AuthTerminalOperateScope,
   CommandId,
   AuthOrchestrationOperateScope,
   isManagedDriverAllowed,
   ProviderDriverKind,
+  ThreadId,
 } from "@t3tools/contracts";
 import { Link, useBlocker } from "@tanstack/react-router";
 import * as Schema from "effect/Schema";
@@ -33,14 +37,20 @@ import {
   SmartphoneIcon,
   TerminalIcon,
 } from "lucide-react";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { msg, T, useGT, useLocale, useMessages, Var } from "gt-react";
+import { useEffect, useEffectEvent, useRef, useState, type ReactNode } from "react";
 
+import { TYPOGRAPHY_ADVANCED_STORAGE_KEY } from "../../appearanceFonts";
 import { MOBILE_APP_URL } from "../../branding";
 import { isElectron } from "../../env";
 import { useLocalStorage } from "../../hooks/useLocalStorage";
 import { usePersistEnvironmentProviderInstanceMutation } from "../../hooks/useSettings";
+import { useCloudLinkState } from "../../cloud/cloudLinkState";
+import { hasCloudPublicConfig } from "../../cloud/publicConfig";
 import { PRIVACY_POLICY_URL } from "../../legalLinks";
 import { workspaceAreaProps } from "../../lib/workspaceFocus";
+import { retryClerkLoad, useClerkLoadFailed } from "../clerk/clerkLoadFailure";
+import { useT3ConnectAuthPrompt } from "../clerk/useT3ConnectAuthPrompt";
 import { completeOnboarding } from "../../onboarding/firstRun";
 import {
   groupOnboardingProjects,
@@ -64,13 +74,14 @@ import {
   isBrokenVersion,
   turnedOnInstance,
   welcomeAgentState,
+  welcomeOffersPhone,
 } from "../../onboarding/welcomePage.logic";
 import {
   StoredWelcomeImportSelection,
   type WelcomeImportSelection,
   welcomeImportSelectionKey,
 } from "../../onboarding/welcomeState";
-import { newProjectId } from "../../lib/utils";
+import { newProjectId, randomUUID } from "../../lib/utils";
 import { agentSessionImport } from "../../state/agentSessions";
 import { readProjects, useProjects, waitForProject } from "../../state/entities";
 import { useEnvironments, usePrimaryEnvironmentId } from "../../state/environments";
@@ -83,13 +94,15 @@ import {
   useEnvironmentScope,
   useEnvironmentsWithScope,
 } from "../../state/session";
+import { terminalEnvironment } from "../../state/terminal";
+import { useThreadRunningTerminalIds } from "../../state/terminalSessions";
 import { useAtomCommand } from "../../state/use-atom-command";
 import { getProviderSummary } from "../settings/providerStatus";
 import { AddProviderInstanceDialog } from "../settings/AddProviderInstanceDialog";
 import { useDesktopCliCommand } from "../settings/CliCommandSettingsRow";
 import { CodexSetupSection } from "../settings/CodexSetupSection";
 import { readCodexSetupMode } from "../settings/CodexSetupSection.logic";
-import { ProviderSetupTerminal } from "../settings/ProviderSetupTerminal";
+import { TerminalViewport } from "../ThreadTerminalDrawer";
 import { ProviderInstanceIcon } from "../chat/ProviderInstanceIcon";
 import { ACPRegistryIcon } from "../Icons";
 import { Button } from "../ui/button";
@@ -104,7 +117,10 @@ import { WorkspacePageHeader } from "../WorkspacePageHeader";
 import { cn } from "../../lib/utils";
 import { formatRelativeTime } from "../../timestampFormat";
 
-const SCAN_LIMIT_MESSAGE = "已达到扫描限制。有些工程或对话框可能缺失。";
+const AGENT_ONBOARDING_THREAD_ID = ThreadId.make("onboarding-agent-setup");
+const SCAN_LIMIT_MESSAGE = msg(
+  "Scan limit reached. Some projects or conversations may be missing.",
+);
 
 /**
  * First-run page for one computer: its agents, the projects found in agent history, and the
@@ -118,12 +134,22 @@ export function WelcomePage({
   readonly onDone: (projectRef?: ScopedProjectRef) => void | Promise<void>;
 }) {
   const { environments } = useEnvironments();
+  const gt = useGT();
   const label =
     environments.find((environment) => environment.environmentId === environmentId)?.label ??
-    "this computer";
+    gt("this computer");
   const agentReady = useWelcomeAgents(environmentId).readyCount > 0;
   // The phone and `t3` on PATH belong to the primary computer, so only it offers them.
   const isPrimary = usePrimaryEnvironmentId() === environmentId;
+  // The same access Settings → Sharing & access checks.
+  const canReadRelay = useEnvironmentScope(environmentId, AuthRelayReadScope);
+  const canWriteRelay = useEnvironmentScope(environmentId, AuthRelayWriteScope);
+  const showPhone = welcomeOffersPhone({
+    isPrimary,
+    cloud: hasCloudPublicConfig(),
+    canShare: canReadRelay && canWriteRelay,
+    policy: useManagedPolicy(environmentId),
+  });
   const scans = useProjectScans([environmentId]);
   const [storedSelection, storeSelection] = useLocalStorage(
     welcomeImportSelectionKey(environmentId),
@@ -145,8 +171,8 @@ export function WelcomePage({
       toastManager.add({
         id: "welcome-finishing",
         type: "info",
-        title: "正在完成设置",
-        description: "请等一下。",
+        title: gt("Finishing setup"),
+        description: gt("One moment."),
       });
       return true;
     },
@@ -182,14 +208,17 @@ export function WelcomePage({
         if (importWarning) {
           toastManager.add({
             type: "warning",
-            title: "一些历史没有导入",
+            title: gt("Some history was not imported"),
             description: importWarning,
             timeout: 0,
           });
         } else if (importedThreadCount > 0) {
           toastManager.add({
             type: "success",
-            title: `已导入 ${importedThreadCount} 个会话`,
+            title: gt(
+              "{count, plural, one {Imported {count} thread} other {Imported {count} threads}}",
+              { count: importedThreadCount },
+            ),
           });
         }
         return true;
@@ -198,8 +227,8 @@ export function WelcomePage({
         holdPageRef.current = false;
         const errorToast = {
           type: "error",
-          title: "无法完成设置",
-          description: "您的设置无法保存。请再试一次。",
+          title: gt("Could not finish setup"),
+          description: gt("Your settings could not be saved. Try again."),
         } as const;
         if (completionErrorToastIdRef.current === null) {
           completionErrorToastIdRef.current = toastManager.add(errorToast);
@@ -241,7 +270,7 @@ export function WelcomePage({
 
   return (
     <SidebarInset
-      {...workspaceAreaProps("home", 1, "欢迎光临")}
+      {...workspaceAreaProps("home", 1, gt("Welcome"))}
       role="main"
       className="h-dvh min-h-0 overflow-hidden overscroll-y-none"
     >
@@ -251,10 +280,16 @@ export function WelcomePage({
         <div className="min-h-0 flex-1 overflow-y-auto scrollbar-gutter-both">
           <div className="mx-auto flex min-h-full w-full max-w-3xl flex-col px-6 pt-12 pb-8 sm:pt-20">
             <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-              欢迎使用 T3 Code
+              <T>Welcome to T3 Code</T>
             </h1>
             <p className="mt-1.5 text-sm text-muted-foreground">
-              正在设置 <span className="text-foreground">{label}</span>.
+              <T>
+                Setting up{" "}
+                <span className="text-foreground">
+                  <Var>{label}</Var>
+                </span>
+                .
+              </T>
             </p>
             <div className="mt-10 border-t border-border/60">
               <AgentsSection
@@ -268,30 +303,35 @@ export function WelcomePage({
                 projectImport={projectImport}
                 isImporting={isImporting}
               />
-              {isPrimary ? <PhoneSection /> : null}
+              {showPhone ? <PhoneSection environmentId={environmentId} /> : null}
             </div>
             <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
               {agentReady ? (
                 <span />
               ) : (
                 <Button variant="ghost-muted" disabled={isImporting} onClick={start}>
-                  暂不设置代理
+                  <T>Start without an agent</T>
                 </Button>
               )}
               <div className="flex items-center gap-3">
                 {agentReady ? null : (
-                  <span className="text-xs text-muted-foreground">设置一个代理开始。</span>
+                  <span className="text-xs text-muted-foreground">
+                    <T>Set up one agent to start.</T>
+                  </span>
                 )}
                 <Button disabled={!agentReady || isImporting} onClick={start}>
                   {isImporting
                     ? selected.length > 0
-                      ? "正在导入…"
-                      : "开始…"
+                      ? gt("Importing…")
+                      : gt("Starting…")
                     : newCount > 0
-                      ? `导入 ${newCount} 个项目并开始`
+                      ? gt(
+                          "{count, plural, one {Import {count} project and start} other {Import {count} projects and start}}",
+                          { count: newCount },
+                        )
                       : selected.length > 0
-                        ? "导入会话并启动"
-                        : "开始"}
+                        ? gt("Import threads and start")
+                        : gt("Start", { $context: "verb, finishes setup" })}
                 </Button>
               </div>
             </div>
@@ -304,20 +344,40 @@ export function WelcomePage({
 }
 
 function TelemetryNotice({ environmentId }: { readonly environmentId: EnvironmentId }) {
-  const telemetryOff = managedTelemetryOffMessage(useManagedPolicy(environmentId));
+  const messages = useMessages();
+  const telemetryOff = managedTelemetryOffMessage(useManagedPolicy(environmentId), messages);
   return (
     <p className="mt-auto pt-12 text-2xs leading-relaxed text-muted-foreground/70">
-      {telemetryOff ?? "T3 Code 收集匿名使用数据来改进应用程序。"}{" "}
-      {telemetryOff === undefined ? "选择退出，看" : "见"}{" "}
-      <a
-        className="underline decoration-current/40 underline-offset-2 hover:text-muted-foreground"
-        href={PRIVACY_POLICY_URL}
-        target="_blank"
-        rel="noreferrer noopener"
-      >
-        隐私政策
-      </a>
-      .
+      {telemetryOff === undefined ? (
+        <T>
+          T3 Code collects anonymous usage data to improve the app. To opt out, see the{" "}
+          <a
+            className="underline decoration-current/40 underline-offset-2 hover:text-muted-foreground"
+            href={PRIVACY_POLICY_URL}
+            target="_blank"
+            rel="noreferrer noopener"
+          >
+            privacy policy
+          </a>
+          .
+        </T>
+      ) : (
+        <>
+          {telemetryOff}{" "}
+          <T>
+            See the{" "}
+            <a
+              className="underline decoration-current/40 underline-offset-2 hover:text-muted-foreground"
+              href={PRIVACY_POLICY_URL}
+              target="_blank"
+              rel="noreferrer noopener"
+            >
+              privacy policy
+            </a>
+            .
+          </T>
+        </>
+      )}
     </p>
   );
 }
@@ -395,6 +455,7 @@ function AgentsSection({
   readonly onImportSourceEnabled: () => void;
 }) {
   const { providers, serverConfig, checking, found, available } = useWelcomeAgents(environmentId);
+  const gt = useGT();
   const refreshProviders = useAtomCommand(serverEnvironment.refreshProviders, {
     reportFailure: false,
   });
@@ -497,7 +558,7 @@ function AgentsSection({
         const cause = squashAtomCommandFailure(result);
         toastManager.add({
           type: "error",
-          title: `无法打开${agentName(provider)}`,
+          title: gt("Could not turn on {agent}", { agent: agentName(provider) }),
           ...(cause instanceof Error ? { description: cause.message } : {}),
         });
       }
@@ -515,7 +576,7 @@ function AgentsSection({
       <Button
         size="xs"
         variant="outline"
-        aria-label={`${actionLabel}: ${name}`}
+        aria-label={gt("{action}: {agent}", { action: actionLabel, agent: name })}
         render={
           <Link
             to="/settings/providers"
@@ -531,27 +592,28 @@ function AgentsSection({
         <Button
           size="xs"
           variant="outline"
-          aria-label={`打开 :${name}`}
+          aria-label={gt("Turn on: {agent}", { agent: name })}
           disabled={!canManageProviders || serverConfig === null}
           onClick={() => void turnOn(provider)}
         >
-          打开
+          <T>Turn on</T>
         </Button>
       );
     }
     // Settings updates a broken CLI the way it was installed, including a custom binary path.
-    if (isBrokenVersion(provider)) return settingsAction("更新");
+    if (isBrokenVersion(provider))
+      return settingsAction(gt("Update", { $context: "verb, updates an agent CLI" }));
     if (serverConfig !== null && codexNeedsSetup(provider, serverConfig.settings)) {
       const open = codexSetupId === provider.instanceId;
       return (
         <Button
           size="xs"
           variant="outline"
-          aria-label={`设置 :${name}`}
+          aria-label={gt("Set up: {agent}", { agent: name })}
           aria-expanded={open}
           onClick={() => setCodexSetupId(open ? null : provider.instanceId)}
         >
-          设置
+          <T>Set up</T>
         </Button>
       );
     }
@@ -569,7 +631,9 @@ function AgentsSection({
         />
       );
     }
-    return settingsAction(state === "signIn" ? "登录" : state === "attention" ? "详情" : "设置");
+    return settingsAction(
+      state === "signIn" ? gt("Sign in") : state === "attention" ? gt("Details") : gt("Set up"),
+    );
   };
 
   const notes = [
@@ -578,7 +642,7 @@ function AgentsSection({
       (provider) =>
         needsInstallOrSignIn(provider) || codexNeedsSetup(provider, serverConfig?.settings),
     )
-      ? "当前连接无权操作终端。"
+      ? gt("This connection cannot control terminals.")
       : null,
     !canManageProviders &&
     (acpAllowed ||
@@ -586,12 +650,12 @@ function AgentsSection({
         (provider) =>
           stateOf(provider) === "disabled" || codexNeedsSetup(provider, serverConfig?.settings),
       ))
-      ? "当前连接无权管理代理。"
+      ? gt("This connection cannot manage agents.")
       : null,
   ].filter((note) => note !== null);
 
   return (
-    <WelcomeSection title="代理">
+    <WelcomeSection title={gt("Agents")}>
       {found.map((provider) => (
         <AgentRow
           key={provider.instanceId}
@@ -601,7 +665,11 @@ function AgentsSection({
         />
       ))}
       {checking && found.length === 0 ? (
-        <p className="text-sm leading-10 text-muted-foreground">检查中 {label}…</p>
+        <p className="text-sm leading-10 text-muted-foreground">
+          <T>
+            Checking <Var>{label}</Var>…
+          </T>
+        </p>
       ) : null}
       {notes.map((note) => (
         <p key={note} className="pl-8 text-xs text-muted-foreground">
@@ -619,7 +687,7 @@ function AgentsSection({
               found.length > 0 ? "text-muted-foreground" : "text-foreground",
             )}
           >
-            {found.length > 0 ? "添加更多代理" : "设置代理"}
+            {found.length > 0 ? gt("Add more agents") : gt("Set up an agent")}
           </span>
           {showMore ? null : <AgentLogoStack providers={available} acp={acpAllowed} />}
           <ChevronDownIcon className="ml-auto size-4 text-muted-foreground group-data-panel-open:rotate-180" />
@@ -642,7 +710,7 @@ function AgentsSection({
                 <ACPRegistryIcon className="size-4" />
               </RowIcon>
               <span className="min-w-0 flex-1 text-sm text-muted-foreground">
-                ACP 登记簿中更多代理
+                <T>More agents in the ACP Registry</T>
               </span>
               <Button
                 size="xs"
@@ -650,7 +718,7 @@ function AgentsSection({
                 disabled={!canManageProviders}
                 onClick={() => setAddingProvider(true)}
               >
-                浏览
+                <T>Browse</T>
               </Button>
             </div>
           ) : null}
@@ -670,14 +738,15 @@ function AgentsSection({
       ) : null}
       {isPrimary ? <CliPathSetup /> : null}
       {terminalSession !== null ? (
-        <ProviderSetupTerminal
+        <AgentInstallTerminal
           key={`${terminalSession.environmentId}:${terminalSession.providerInstanceId}:${terminalSession.driver}`}
-          command={terminalSession.command}
-          cwd={terminalSession.cwd}
-          environmentId={terminalSession.environmentId}
-          keybindings={terminalSession.keybindings}
-          terminalLabel={`Install ${terminalSession.driver}`}
-          providerInstanceId={terminalSession.providerInstanceId}
+          session={terminalSession}
+          onCommandFinished={() =>
+            void refreshProviders({
+              environmentId,
+              input: { instanceId: terminalSession.providerInstanceId },
+            })
+          }
           onClose={() => {
             setTerminalSession(null);
             void refreshProviders({ environmentId, input: {} });
@@ -735,6 +804,9 @@ function ProjectsSection({
   readonly projectImport: ReturnType<typeof useProjectImport>;
   readonly isImporting: boolean;
 }) {
+  const gt = useGT();
+  const m = useMessages();
+  const importSourcesLabel = useImportSourcesLabel();
   const [reviewing, setReviewing] = useState(false);
   const {
     canWrite,
@@ -749,26 +821,28 @@ function ProjectsSection({
   if (scan === undefined) return null;
   if (scan.isPending && candidates.length === 0) {
     return (
-      <WelcomeSection title="项目">
+      <WelcomeSection title={gt("Projects")}>
         <p className="text-sm leading-10 text-muted-foreground">
-          正在寻找您的工程 {IMPORT_SOURCES_LABEL} 历史…
+          <T>
+            Looking for projects in your <Var>{importSourcesLabel}</Var> history…
+          </T>
         </p>
       </WelcomeSection>
     );
   }
   const retry = (
     <Button variant="ghost" size="sm" onClick={scan.refresh}>
-      重试
+      <T>Retry</T>
     </Button>
   );
   if (scan.error !== null && candidates.length === 0) {
     return (
-      <WelcomeSection title="项目">
+      <WelcomeSection title={gt("Projects")}>
         <div
           role="alert"
           className="flex min-h-10 items-center justify-between gap-3 text-sm text-muted-foreground"
         >
-          <span>无法检查工程。 {scan.error}</span>
+          <span>{gt("Could not check projects. {error}", { error: scan.error })}</span>
           {retry}
         </div>
       </WelcomeSection>
@@ -776,9 +850,9 @@ function ProjectsSection({
   }
   if (candidates.length === 0) {
     return scan.data?.truncated ? (
-      <WelcomeSection title="项目">
+      <WelcomeSection title={gt("Projects")}>
         <p className="text-xs leading-10 text-muted-foreground" role="status">
-          {SCAN_LIMIT_MESSAGE}
+          {m(SCAN_LIMIT_MESSAGE)}
         </p>
       </WelcomeSection>
     ) : null;
@@ -795,7 +869,7 @@ function ProjectsSection({
     selected.length < candidates.length &&
     !(selected.length === defaultKeys.length && defaultKeys.every((key) => selectedKeys.has(key)));
   return (
-    <WelcomeSection title="项目">
+    <WelcomeSection title={gt("Projects")}>
       <div className="flex min-h-10 items-center gap-3 py-1">
         <label className="flex min-w-0 flex-1 items-center gap-3">
           <RowIcon>
@@ -811,11 +885,16 @@ function ProjectsSection({
           <span className="min-w-0 flex-1">
             <span className="block text-sm font-medium text-foreground">
               {canWrite && selected.length > 0
-                ? `导入 ${selected.length} 个项目及其会话`
-                : "导入项目及其会话"}
+                ? gt(
+                    "{count, plural, one {Import {count} project and their threads} other {Import {count} projects and their threads}}",
+                    { count: selected.length },
+                  )
+                : gt("Import projects and their threads")}
             </span>
             <span className="block text-xs text-muted-foreground">
-              来自 {IMPORT_SOURCES_LABEL} 历史记录
+              <T>
+                From your <Var>{importSourcesLabel}</Var> history
+              </T>
             </span>
           </span>
         </label>
@@ -826,7 +905,11 @@ function ProjectsSection({
             aria-expanded={reviewing}
             onClick={() => setReviewing((open) => !open)}
           >
-            {reviewing ? "隐藏" : `查看全部 ${candidates.length} 项`}
+            {reviewing
+              ? gt("Hide")
+              : gt("{count, plural, one {Review all {count}} other {Review all {count}}}", {
+                  count: candidates.length,
+                })}
             <ChevronDownIcon className={cn("size-3.5", reviewing && "rotate-180")} />
           </Button>
         ) : null}
@@ -836,7 +919,13 @@ function ProjectsSection({
         <fieldset className="-mx-1.5 mt-1 min-w-0" disabled={isImporting}>
           <div className="flex items-center justify-between gap-3 px-2 text-xs text-muted-foreground">
             <span role="status">
-              已选 {selected.length} 项，共 {candidates.length} 项
+              {gt(
+                "{selected, plural, one {{selected} of {total} selected} other {{selected} of {total} selected}}",
+                {
+                  selected: selected.length,
+                  total: candidates.length,
+                },
+              )}
             </span>
             <div className="flex items-center gap-1">
               <Button
@@ -845,7 +934,7 @@ function ProjectsSection({
                 disabled={selected.length === candidates.length}
                 onClick={() => setSelectedKeys(new Set(allKeys))}
               >
-                全选
+                <T>Select all</T>
               </Button>
               <Button
                 variant="ghost"
@@ -853,7 +942,7 @@ function ProjectsSection({
                 disabled={selected.length === 0}
                 onClick={() => setSelectedKeys(new Set())}
               >
-                取消全选
+                <T>Select none</T>
               </Button>
             </div>
           </div>
@@ -870,7 +959,7 @@ function ProjectsSection({
       ) : null}
       {scan.data?.truncated ? (
         <p className="pl-8 text-xs text-muted-foreground" role="status">
-          {SCAN_LIMIT_MESSAGE}
+          {m(SCAN_LIMIT_MESSAGE)}
         </p>
       ) : null}
       {scan.error !== null ? (
@@ -878,31 +967,32 @@ function ProjectsSection({
           role="alert"
           className="flex items-center justify-between gap-3 pl-8 text-sm text-muted-foreground"
         >
-          <span>无法再次检查项目。 {scan.error}</span>
+          <span>{gt("Could not check projects again. {error}", { error: scan.error })}</span>
           {retry}
         </div>
       ) : null}
       {visibleImportError ? (
-        <p className="pt-1 pl-8 text-sm text-destructive">{visibleImportError}</p>
+        <p className="pt-1 pl-8 text-sm text-destructive">{m(visibleImportError)}</p>
       ) : null}
     </WelcomeSection>
   );
 }
 
-function PhoneSection() {
+function PhoneSection({ environmentId }: { readonly environmentId: EnvironmentId }) {
+  const gt = useGT();
   const [open, setOpen] = useState(false);
   return (
-    <WelcomeSection title="手机">
+    <WelcomeSection title={gt("Phone")}>
       <Collapsible open={open} onOpenChange={setOpen}>
         <div className="flex min-h-10 items-center gap-3 py-1">
           <RowIcon>
             <SmartphoneIcon className="size-4" />
           </RowIcon>
           <span className="min-w-0 flex-1 text-sm font-medium text-foreground">
-            在您的电话中使用T3 Code option
+            <T>Use T3 Code on your phone</T>
           </span>
           <CollapsibleTrigger render={<Button variant="ghost-muted" size="xs" />}>
-            {open ? "隐藏" : "设置"}
+            {open ? gt("Hide") : gt("Set up")}
             <ChevronDownIcon className={cn("size-3.5", open && "rotate-180")} />
           </CollapsibleTrigger>
         </div>
@@ -910,13 +1000,12 @@ function PhoneSection() {
           <div className="flex items-center gap-8 pt-2 pb-3 pl-8">
             <ol className="min-w-0 flex-1 space-y-5">
               <PhoneStep step={1}>
-                <p className="text-sm text-foreground">用你的手机扫描一下才能拿到应用程序</p>
+                <p className="text-sm text-foreground">
+                  <T>Scan with your phone to get the app.</T>
+                </p>
               </PhoneStep>
               <PhoneStep step={2}>
-                <p className="text-sm text-foreground">打开应用程序并扫描此计算机的配对代码。</p>
-                <Button variant="outline" size="xs" render={<Link to="/settings/access" />}>
-                  打开配对设置
-                </Button>
+                <PhoneConnectLink environmentId={environmentId} />
               </PhoneStep>
             </ol>
             {/* One code for both stores: the link opens the store that matches the phone. */}
@@ -926,7 +1015,7 @@ function PhoneSection() {
                 size={124}
                 level="M"
                 marginSize={2}
-                title="iPhone 和 Android 版 T3 Code"
+                title={gt("T3 Code app for iPhone and Android")}
               />
             </div>
           </div>
@@ -945,6 +1034,97 @@ function PhoneStep({ step, children }: { readonly step: number; readonly childre
   );
 }
 
+function PhoneConnectLink({ environmentId }: { readonly environmentId: EnvironmentId }) {
+  const { isLoaded, isSignedIn, userId } = useAuth({ treatPendingAsSignedOut: false });
+  const gt = useGT();
+  const loadFailed = useClerkLoadFailed();
+  const { openAuthPrompt } = useT3ConnectAuthPrompt();
+  const linkState = useCloudLinkState(environmentId);
+  const refreshLinkState = useEffectEvent(linkState.refresh);
+  // The server rechecks the tunnel every 30 s; read its latest result while this panel is open.
+  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- 30 s interval that refreshes the cloud link reachability while mounted
+  useEffect(() => {
+    const interval = window.setInterval(() => refreshLinkState(), 30_000);
+    return () => window.clearInterval(interval);
+  }, []);
+  const link = linkState.data;
+  // The phone reaches this computer through its tunnel; older servers leave that flag out.
+  const shared =
+    link !== null &&
+    link.linked &&
+    link.linkRevoked !== true &&
+    link.cloudUserId === userId &&
+    link.managedTunnelActive !== false;
+  // The server checks the tunnel on its own; until it has, the result is unknown.
+  const reachability = shared ? link.reachability?.status : undefined;
+  const settingsLink = (label: string) => (
+    <Button variant="outline" size="xs" render={<Link to="/settings/access" />}>
+      {label}
+    </Button>
+  );
+  if (isSignedIn && link === null && linkState.isPending) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        <T>Checking T3 Connect…</T>
+      </p>
+    );
+  }
+  if (isSignedIn && linkState.error !== null) {
+    return (
+      <>
+        <p className="text-sm text-foreground">
+          <T>Could not check T3 Connect.</T>
+        </p>
+        {settingsLink(gt("Check T3 Connect"))}
+      </>
+    );
+  }
+  if (isSignedIn && reachability === "reachable") {
+    return (
+      <p className="flex gap-1.5 text-sm text-foreground">
+        <CheckIcon className="mt-0.5 size-4 shrink-0 text-success-foreground" />
+        <T>Your phone can reach this computer. Sign in to the app with the same account.</T>
+      </p>
+    );
+  }
+  if (isSignedIn && shared && reachability === undefined) {
+    return (
+      <p className="text-sm text-foreground">
+        <T>T3 Connect is on for this computer. Sign in to the app with the same account.</T>
+      </p>
+    );
+  }
+  if (isSignedIn) {
+    // Signing in alone does not share this computer, for example after "Not now".
+    return (
+      <>
+        <p className="text-sm text-foreground">
+          {shared
+            ? gt("T3 Connect is on, but the app cannot reach this computer.")
+            : gt("Signed in. Share this computer so the app can reach it.")}
+        </p>
+        {settingsLink(shared ? gt("Check T3 Connect") : gt("Set up T3 Connect"))}
+      </>
+    );
+  }
+  return (
+    <>
+      <p className="text-sm text-foreground">
+        <T>Sign in to T3 Connect here, then in the app with the same account.</T>
+      </p>
+      {loadFailed ? (
+        <Button variant="outline" size="xs" onClick={retryClerkLoad}>
+          <T>Retry sign-in</T>
+        </Button>
+      ) : (
+        <Button variant="outline" size="xs" disabled={!isLoaded} onClick={openAuthPrompt}>
+          <T>Sign in to T3 Connect</T>
+        </Button>
+      )}
+    </>
+  );
+}
+
 // The ChatGPT card and the CLI card stay one card, so either choice can be undone here.
 function OnboardingCodexSetup({
   environmentId,
@@ -958,6 +1138,7 @@ function OnboardingCodexSetup({
   // True asks for the CLI's install or sign-in terminal once Codex has checked the CLI.
   readonly onUseCliChange: (useCli: boolean) => void;
 }) {
+  const gt = useGT();
   const canManageProviders = useEnvironmentScope(environmentId, AuthProvidersManageScope);
   const canOperateTerminal = useEnvironmentScope(environmentId, AuthTerminalOperateScope);
   const persistProviderInstance = usePersistEnvironmentProviderInstanceMutation(environmentId);
@@ -986,7 +1167,7 @@ function OnboardingCodexSetup({
           const cause = squashAtomCommandFailure(result);
           toastManager.add({
             type: "error",
-            title: "无法保存Codex 设置",
+            title: gt("Could not save Codex setup"),
             ...(cause instanceof Error ? { description: cause.message } : {}),
           });
         }
@@ -1020,12 +1201,13 @@ function TerminalAction({
   readonly disabled: boolean;
   readonly onClick: () => void;
 }) {
-  const label = signIn ? "登录" : "安装";
+  const gt = useGT();
+  const label = signIn ? gt("Sign in") : gt("Install");
   return (
     <Button
       size="xs"
       variant="outline"
-      aria-label={`${label}: ${name}`}
+      aria-label={gt("{action}: {agent}", { action: label, agent: name })}
       disabled={disabled}
       onClick={onClick}
     >
@@ -1048,6 +1230,8 @@ function AgentRow({
   readonly compact?: boolean;
 }) {
   const name = agentName(provider);
+  const gt = useGT();
+  const messages = useMessages();
   // Claude Code and Codex tiles show Install or Set up; other agents that are on say why not.
   const brokenMessage = isBrokenVersion(provider)
     ? (provider.compatibilityAdvisory?.message ?? null)
@@ -1056,15 +1240,15 @@ function AgentRow({
     state === "install"
       ? isInstallableDriver(provider.driver)
         ? null
-        : "Not installed"
+        : gt("Not installed")
       : compact || state === "ready" || state === "checking"
         ? null
         : state === "attention"
           ? (provider.unavailableReason ??
             brokenMessage ??
             provider.message ??
-            getProviderSummary(provider).headline)
-          : (brokenMessage ?? getProviderSummary(provider).headline);
+            getProviderSummary(provider, messages).headline)
+          : (brokenMessage ?? getProviderSummary(provider, messages).headline);
   return (
     <div className={cn("flex items-center gap-3", compact ? "min-h-9" : "min-h-10 py-1")}>
       <RowIcon>
@@ -1088,10 +1272,12 @@ function AgentRow({
         {state === "ready" ? (
           <span className="inline-flex items-center gap-1.5 text-xs font-medium text-success-foreground">
             <CheckIcon className="size-3.5" />
-            准备
+            <T context="agent status">Ready</T>
           </span>
         ) : state === "checking" ? (
-          <span className="text-xs text-muted-foreground">正在检查…</span>
+          <span className="text-xs text-muted-foreground">
+            <T>Checking…</T>
+          </span>
         ) : (
           action
         )}
@@ -1100,7 +1286,190 @@ function AgentRow({
   );
 }
 
-const IMPORT_PERMISSION_MESSAGE = "当前连接无法导入项目或会话历史。";
+function AgentInstallTerminal({
+  session,
+  onCommandFinished,
+  onClose,
+}: {
+  readonly session: AgentTerminalSession;
+  readonly onCommandFinished: () => void;
+  readonly onClose: () => void;
+}) {
+  const { command, cwd, driver, environmentId, keybindings, providerInstanceId } = session;
+  const canOperateTerminal = useEnvironmentScope(environmentId, AuthTerminalOperateScope);
+  const gt = useGT();
+  const [advancedTypography] = useLocalStorage(
+    TYPOGRAPHY_ADVANCED_STORAGE_KEY,
+    false,
+    Schema.Boolean,
+  );
+  const openTerminal = useAtomCommand(terminalEnvironment.open, { reportFailure: false });
+  const writeTerminal = useAtomCommand(terminalEnvironment.write, { reportFailure: false });
+  const closeTerminal = useAtomCommand(terminalEnvironment.close, { reportFailure: false });
+  const setupQueueRef = useRef(Promise.resolve());
+  const setupGenerationRef = useRef(0);
+  const activeSetupGenerationRef = useRef<number | null>(null);
+  const [terminalId] = useState(() => `onboarding-${driver}-${randomUUID()}`);
+  const threadRef = scopeThreadRef(environmentId, AGENT_ONBOARDING_THREAD_ID);
+  const [setupAttempt, setSetupAttempt] = useState(0);
+  const [setupState, setSetupState] = useState<
+    "preparing" | "ready" | "openFailed" | "writeFailed"
+  >("preparing");
+  const terminalReady = setupState === "ready" || setupState === "writeFailed";
+  const commandRunning = useThreadRunningTerminalIds({
+    environmentId,
+    threadId: AGENT_ONBOARDING_THREAD_ID,
+  }).includes(terminalId);
+  const commandStartedRef = useRef(false);
+  const handleCommandFinished = useEffectEvent(onCommandFinished);
+
+  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- the shell stays open after an install or sign-in, so its command exiting is the only signal to check the agent again
+  useEffect(() => {
+    if (commandRunning) {
+      commandStartedRef.current = true;
+    } else if (commandStartedRef.current) {
+      commandStartedRef.current = false;
+      handleCommandFinished();
+    }
+  }, [commandRunning]);
+
+  // StrictMode can finish a cancelled open after replacement setup; it must not close or pre-type into that
+  // session.
+  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- opens the setup PTY, types the command into it, and closes it on cleanup
+  useEffect(() => {
+    const generation = setupGenerationRef.current + 1;
+    setupGenerationRef.current = generation;
+    activeSetupGenerationRef.current = generation;
+    // oxlint-disable-next-line react/set-state-in-effect -- A retry or a new command reopens the terminal, which shows as preparing until the open settles.
+    setSetupState("preparing");
+
+    setupQueueRef.current = setupQueueRef.current.then(async () => {
+      if (activeSetupGenerationRef.current !== generation) return;
+      if (!readEnvironmentScope(environmentId, AuthTerminalOperateScope)) {
+        setSetupState("openFailed");
+        return;
+      }
+      const opened = await openTerminal({
+        environmentId,
+        input: {
+          threadId: AGENT_ONBOARDING_THREAD_ID,
+          terminalId,
+          cwd,
+          providerInstanceId,
+        },
+      });
+      if (opened._tag !== "Success") {
+        if (activeSetupGenerationRef.current === generation) setSetupState("openFailed");
+        return;
+      }
+
+      if (activeSetupGenerationRef.current !== generation) return;
+      if (!readEnvironmentScope(environmentId, AuthTerminalOperateScope)) {
+        setSetupState("writeFailed");
+        return;
+      }
+
+      const wrote = await writeTerminal({
+        environmentId,
+        input: { threadId: AGENT_ONBOARDING_THREAD_ID, terminalId, data: command },
+      });
+      if (activeSetupGenerationRef.current !== generation) return;
+      setSetupState(wrote._tag === "Success" ? "ready" : "writeFailed");
+    });
+
+    // Revocation leaves the PTY running; close only while terminal access remains.
+    return () => {
+      if (activeSetupGenerationRef.current === generation) {
+        activeSetupGenerationRef.current = null;
+      }
+      setupQueueRef.current = setupQueueRef.current.then(async () => {
+        if (!readEnvironmentScope(environmentId, AuthTerminalOperateScope)) return;
+        await closeTerminal({
+          environmentId,
+          input: { threadId: AGENT_ONBOARDING_THREAD_ID, terminalId, deleteHistory: true },
+        });
+      });
+    };
+  }, [
+    closeTerminal,
+    command,
+    cwd,
+    environmentId,
+    openTerminal,
+    providerInstanceId,
+    // oxlint-disable-next-line react/exhaustive-effect-dependencies -- Retry bumps setupAttempt to open the terminal again.
+    setupAttempt,
+    terminalId,
+    writeTerminal,
+  ]);
+
+  return (
+    <div
+      data-thread-terminal-drawer
+      className="mt-4 overflow-hidden rounded-lg border border-border/70 bg-background text-foreground"
+    >
+      <div className="flex items-center justify-between border-b border-border/60 bg-background/60 px-3 py-1.5">
+        <span className="text-2xs font-medium text-muted-foreground">
+          {!canOperateTerminal ? (
+            gt("This connection cannot control terminals.")
+          ) : setupState === "writeFailed" ? (
+            <T>
+              Run{" "}
+              <code className="rounded bg-muted px-1 font-mono">
+                <Var>{command}</Var>
+              </code>{" "}
+              in this terminal.
+            </T>
+          ) : setupState === "ready" ? (
+            gt("Review the command, then press Enter to run it.")
+          ) : setupState === "openFailed" ? (
+            gt("Could not open the setup terminal.")
+          ) : (
+            gt("Preparing command...")
+          )}
+        </span>
+        <div className="flex items-center gap-1">
+          {setupState === "openFailed" ? (
+            <Button
+              size="xs"
+              variant="ghost"
+              disabled={!canOperateTerminal}
+              onClick={() => {
+                if (readEnvironmentScope(environmentId, AuthTerminalOperateScope)) {
+                  setSetupAttempt((value) => value + 1);
+                }
+              }}
+            >
+              <T>Retry</T>
+            </Button>
+          ) : null}
+          <Button size="xs" variant="ghost-muted" onClick={onClose}>
+            <T>Close</T>
+          </Button>
+        </div>
+      </div>
+      <div className="h-64">
+        {terminalReady ? (
+          <TerminalViewport
+            threadRef={threadRef}
+            threadId={AGENT_ONBOARDING_THREAD_ID}
+            terminalId={terminalId}
+            terminalLabel={gt("Install {agent}", { agent: driver })}
+            cwd={cwd}
+            providerInstanceId={providerInstanceId}
+            advancedTypography={advancedTypography}
+            onSessionExited={onClose}
+            autoFocus
+            visible
+            keybindings={keybindings}
+          />
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+const IMPORT_PERMISSION_MESSAGE = msg("This connection cannot import projects or thread history.");
 
 // Creates the selected projects, then imports each one's agent history. Owns retry state so a
 // second Start resumes instead of recreating projects.
@@ -1127,6 +1496,7 @@ function useProjectImport({
   ) => Promise<boolean>;
 }) {
   const writableEnvironments = useEnvironmentsWithScope(scans, AuthOrchestrationOperateScope);
+  const gt = useGT();
   const createProject = useAtomCommand(projectEnvironment.create, { reportFailure: false });
   const importThreads = useAtomCommand(agentSessionImport, { reportFailure: false });
   const importWarningRef = useRef("");
@@ -1338,13 +1708,25 @@ function useProjectImport({
     const importedThreadCount = importedThreadTotal();
     if (importedProjectsCount < selection.length) {
       if (importedThreadCount > 0 && skippedThreadCount > 0) {
-        importWarningRef.current = `已导入 ${importedThreadCount} 个会话. 有 ${skippedThreadCount} 个会话导入失败。`;
+        importWarningRef.current = `${gt(
+          "{count, plural, one {Imported {count} thread.} other {Imported {count} threads.}}",
+          { count: importedThreadCount },
+        )} ${gt(
+          "{count, plural, one {{count} thread could not be imported.} other {{count} threads could not be imported.}}",
+          { count: skippedThreadCount },
+        )}`;
       } else if (skippedThreadCount > 0) {
-        importWarningRef.current = `有 ${skippedThreadCount} 个会话导入失败。`;
+        importWarningRef.current = gt(
+          "{count, plural, one {{count} thread could not be imported.} other {{count} threads could not be imported.}}",
+          { count: skippedThreadCount },
+        );
       } else if (importedThreadCount > 0) {
-        importWarningRef.current = `已导入 ${importedThreadCount} 个会话. 部分会话历史未能导入。`;
+        importWarningRef.current = gt(
+          "{count, plural, one {Imported {count} thread. Some thread history could not be imported.} other {Imported {count} threads. Some thread history could not be imported.}}",
+          { count: importedThreadCount },
+        );
       } else {
-        importWarningRef.current = "无法导入会话历史。";
+        importWarningRef.current = gt("Could not import thread history.");
       }
     }
     finishAfterImport();
@@ -1388,6 +1770,7 @@ function ImportCandidateList({
     onSelectionChange(next);
   };
   const otherSelected = other.filter((candidate) => selectedKeys.has(candidate.key)).length;
+  const gt = useGT();
 
   return (
     <>
@@ -1414,9 +1797,13 @@ function ImportCandidateList({
             />
             <CollapsibleTrigger className="group flex min-w-0 flex-1 items-center gap-1.5 text-left">
               <ChevronRightIcon className="size-3.5 shrink-0 text-muted-foreground transition-transform group-data-panel-open:rotate-90" />
-              <span className="truncate text-sm text-muted-foreground">其他文件夹</span>
+              <span className="truncate text-sm text-muted-foreground">
+                <T>Other folders</T>
+              </span>
               <span className="ml-auto shrink-0 text-xs text-muted-foreground tabular-nums">
-                {other.length} {other.length === 1 ? "folder" : "folders"}
+                {gt("{count, plural, one {{count} folder} other {{count} folders}}", {
+                  count: other.length,
+                })}
               </span>
             </CollapsibleTrigger>
           </div>
@@ -1565,9 +1952,11 @@ const IMPORT_SOURCE_NAMES: Record<AgentSessionSource, string> = {
   codex: "Codex",
   pi: "Pi",
 };
-const IMPORT_SOURCES_LABEL = new Intl.ListFormat("en", { type: "conjunction" }).format(
-  AgentSessionSource.literals.map((source) => IMPORT_SOURCE_NAMES[source]),
-);
+function useImportSourcesLabel() {
+  return new Intl.ListFormat(useLocale(), { type: "conjunction" }).format(
+    AgentSessionSource.literals.map((source) => IMPORT_SOURCE_NAMES[source]),
+  );
+}
 
 function ImportRowMeta({
   sources,
@@ -1578,8 +1967,16 @@ function ImportRowMeta({
   readonly threadCount: number;
   readonly lastActiveAt: string | null;
 }) {
-  const relative = lastActiveAt === null ? null : formatRelativeTime(lastActiveAt);
-  const age = relative === null ? "" : relative.suffix === null ? "now" : relative.value;
+  const gt = useGT();
+  const messages = useMessages();
+  const relative =
+    lastActiveAt === null ? null : formatRelativeTime(lastActiveAt, undefined, messages);
+  const age =
+    relative === null
+      ? ""
+      : relative.suffix === null
+        ? gt("now", { $context: "relative time" })
+        : relative.value;
   return (
     <span className="ml-auto grid shrink-0 grid-cols-[1rem_1rem_1rem_2.5rem_2.25rem] items-center gap-x-1 text-xs text-muted-foreground tabular-nums">
       {AgentSessionSource.literals.map((source) => (
@@ -1613,18 +2010,20 @@ function CliPathSetup() {
       </RowIcon>
       <p className="min-w-0 flex-1 text-sm text-muted-foreground">
         {setup.added ? (
-          <>
-            添加到 {setup.file}启用新终端。 <code className="font-mono">t3</code>.
-          </>
+          <T>
+            Added to <Var>{setup.file}</Var>. Open a new terminal to use{" "}
+            <code className="font-mono">t3</code>.
+          </T>
         ) : (
-          <>
-            使用 <code className="font-mono">t3</code> 从任何终端。添加一行到 {setup.file}.
-          </>
+          <T>
+            Use <code className="font-mono">t3</code> from any terminal. Adds one line to{" "}
+            <Var>{setup.file}</Var>.
+          </T>
         )}
       </p>
       {setup.added ? null : (
         <Button size="xs" variant="outline" disabled={busy} onClick={() => run("addToPath")}>
-          添加到路径
+          <T>Add to PATH</T>
         </Button>
       )}
     </div>

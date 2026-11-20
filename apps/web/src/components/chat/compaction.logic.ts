@@ -1,4 +1,7 @@
 import type { ProviderDriverKind, ProviderInstanceId } from "@t3tools/contracts";
+import { msg } from "gt-react";
+
+import { getActiveLocale, m, type MessageResolver } from "../../i18n/messages";
 import {
   resolveSelectableProviderInstanceEntry,
   type ProviderInstanceEntry,
@@ -34,9 +37,17 @@ export function hasAvailableCompactionProvider(input: {
   );
 }
 
-export function formatContextWindowCompactionMessage(autoCompactThreshold?: number | null): string {
+export function formatContextWindowCompactionMessage(
+  autoCompactThreshold?: number | null,
+  resolve: MessageResolver = m,
+  locale: string = getActiveLocale(),
+): string {
   if (typeof autoCompactThreshold === "number" && autoCompactThreshold > 0) {
-    return `约在${autoCompactThreshold.toLocaleString("en-US")} 令牌上自动压缩。`;
+    return resolve(
+      msg("Compacts automatically at about {tokens} tokens.", {
+        tokens: autoCompactThreshold.toLocaleString(locale),
+      }),
+    );
   }
-  return "需要时自动设置上下文紧凑。";
+  return resolve(msg("Context compacts automatically when needed."));
 }

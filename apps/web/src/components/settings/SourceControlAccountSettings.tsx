@@ -1,6 +1,7 @@
 import type { EnvironmentId, SourceControlProviderAuth } from "@t3tools/contracts";
 import { EyeIcon, EyeOffIcon } from "lucide-react";
 import { useState } from "react";
+import { T, useGT, Var } from "gt-react";
 
 import { useEnvironmentSettings } from "../../hooks/useSettings";
 import { serverEnvironment } from "../../state/server";
@@ -24,6 +25,7 @@ function RedactedLogin(props: {
   readonly revealed: boolean;
   readonly label?: string;
 }) {
+  const gt = useGT();
   return props.revealed ? (
     <span className="min-w-0 truncate font-mono text-2xs">{props.account}</span>
   ) : (
@@ -31,7 +33,7 @@ function RedactedLogin(props: {
       <span className="select-none blur-xs" aria-hidden>
         {redactedPlaceholder(props.account)}
       </span>
-      <span className="sr-only">{props.label ?? "隐藏账户"}</span>
+      <span className="sr-only">{props.label ?? gt("Hidden account")}</span>
     </span>
   );
 }
@@ -49,13 +51,14 @@ export function SourceControlAccountSettings({
   readonly auth: SourceControlProviderAuth;
   readonly onSaved: () => void;
 }) {
+  const gt = useGT();
   const { hosts } = useEnvironmentSettings(environmentId, (settings) =>
     readHostCredentialSettings(settings, definition.kind),
   );
   const { label } = definition;
   const { cliName } = credentials;
   const updateSettings = useAtomCommand(serverEnvironment.updateSettings, {
-    label: `保存${label} 帐号设置`,
+    label: `save ${label} account settings`,
   });
   const [saving, setSaving] = useState(false);
   const [revealed, setRevealed] = useState(false);
@@ -83,9 +86,13 @@ export function SourceControlAccountSettings({
   if (groups.length === 0) {
     return (
       <p className="text-xs text-muted-foreground">
-        签入{" "}
-        <code className="rounded bg-muted px-1 py-px text-2xs">{credentials.loginCommand}</code>{" "}
-        在服务器主机上，然后重新扫描可在此选择账户。
+        <T>
+          Sign in with{" "}
+          <code className="rounded bg-muted px-1 py-px text-2xs">
+            <Var>{credentials.loginCommand}</Var>
+          </code>{" "}
+          on the server host, then rescan to choose accounts here.
+        </T>
       </p>
     );
   }
@@ -94,14 +101,23 @@ export function SourceControlAccountSettings({
     <div className="grid gap-4">
       <div className="flex items-center justify-between gap-3">
         <p className="max-w-2xl text-xs leading-relaxed text-muted-foreground">
-          选择哪个 <code className="rounded bg-muted px-1 py-px text-2xs">{cliName}</code> 登录每个{" "}
-          {label} 主机使用，或关闭主机。
+          <T>
+            Choose which{" "}
+            <code className="rounded bg-muted px-1 py-px text-2xs">
+              <Var>{cliName}</Var>
+            </code>{" "}
+            login each <Var>{label}</Var> host uses, or turn a host off.
+          </T>
         </p>
         <Button
           size="icon-xs"
           variant="ghost-muted"
           onClick={() => setRevealed((current) => !current)}
-          aria-label={revealed ? `隐藏${label} 帐号` : `揭示${label} 账户`}
+          aria-label={
+            revealed
+              ? gt("Hide {label} accounts", { label })
+              : gt("Reveal {label} accounts", { label })
+          }
           aria-pressed={revealed}
         >
           {revealed ? <EyeOffIcon /> : <EyeIcon />}
@@ -120,7 +136,9 @@ export function SourceControlAccountSettings({
                 <span className="text-xs font-medium text-foreground">{group.host}</span>
                 {group.selectable.length === 1 && group.selectable[0] !== undefined ? (
                   <p className="flex min-w-0 items-center gap-1 text-xs text-muted-foreground">
-                    <span>签名为</span>
+                    <span>
+                      <T>Signed in as</T>
+                    </span>
                     <RedactedLogin revealed={revealed} account={group.selectable[0]} />
                   </p>
                 ) : null}
@@ -128,13 +146,15 @@ export function SourceControlAccountSettings({
               <Switch
                 checked={enabled}
                 disabled={saving}
-                aria-label={`使用${label}在${group.host} 上`}
+                aria-label={gt("Use {label} on {host}", { label, host: group.host })}
                 onCheckedChange={(checked) => void save(group.host, { enabled: checked })}
               />
             </div>
             {group.selectable.length > 1 ? (
               <div className="flex items-center justify-between gap-3">
-                <span className="text-xs text-muted-foreground">账户</span>
+                <span className="text-xs text-muted-foreground">
+                  <T>Account</T>
+                </span>
                 <div className="w-64 max-w-full">
                   <Select
                     value={pinned}
@@ -146,22 +166,28 @@ export function SourceControlAccountSettings({
                       });
                     }}
                   >
-                    <SelectTrigger size="sm" aria-label={`${group.host} 的 ${label} 账户`}>
+                    <SelectTrigger
+                      size="sm"
+                      aria-label={gt("{label} account for {host}", { label, host: group.host })}
+                    >
                       <SelectValue>
                         {(value: string) =>
                           value === ACTIVE_ACCOUNT ? (
                             <span className="flex min-w-0 items-center gap-1">
-                              当前 {cliName} 账户
                               {group.activeAccount ? (
-                                <>
-                                  (
+                                <T>
+                                  Active <Var>{cliName}</Var> account (
                                   <RedactedLogin
                                     revealed={revealed}
                                     account={group.activeAccount}
                                   />
                                   )
-                                </>
-                              ) : null}
+                                </T>
+                              ) : (
+                                <T>
+                                  Active <Var>{cliName}</Var> account
+                                </T>
+                              )}
                             </span>
                           ) : (
                             <RedactedLogin revealed={revealed} account={value} />
@@ -172,12 +198,16 @@ export function SourceControlAccountSettings({
                     <SelectPopup align="end" alignItemWithTrigger={false}>
                       <SelectItem value={ACTIVE_ACCOUNT}>
                         <span className="flex min-w-0 items-center gap-1">
-                          当前 {cliName} 账户
                           {group.activeAccount ? (
-                            <>
-                              (<RedactedLogin revealed={revealed} account={group.activeAccount} />)
-                            </>
-                          ) : null}
+                            <T>
+                              Active <Var>{cliName}</Var> account (
+                              <RedactedLogin revealed={revealed} account={group.activeAccount} />)
+                            </T>
+                          ) : (
+                            <T>
+                              Active <Var>{cliName}</Var> account
+                            </T>
+                          )}
                         </span>
                       </SelectItem>
                       {group.selectable.map((account, index) => (
@@ -185,7 +215,7 @@ export function SourceControlAccountSettings({
                           <RedactedLogin
                             revealed={revealed}
                             account={account}
-                            label={`账户${index + 1}`}
+                            label={gt("Account {number}", { number: index + 1 })}
                           />
                         </SelectItem>
                       ))}
@@ -197,7 +227,10 @@ export function SourceControlAccountSettings({
             {stalePin ? (
               <div className="flex items-center justify-between gap-3">
                 <p className="text-xs text-warning">
-                  选中的登录不再签名，所以活动 {cliName} 使用登录。
+                  <T>
+                    The chosen login is no longer signed in, so the active <Var>{cliName}</Var>{" "}
+                    login is used.
+                  </T>
                 </p>
                 <Button
                   size="xs"
@@ -205,7 +238,7 @@ export function SourceControlAccountSettings({
                   disabled={saving}
                   onClick={() => void save(group.host, { account: null })}
                 >
-                  使用活动登录
+                  <T>Use active login</T>
                 </Button>
               </div>
             ) : null}
@@ -214,14 +247,29 @@ export function SourceControlAccountSettings({
                 key={entry.account}
                 className="flex min-w-0 flex-wrap items-center gap-1 text-xs text-muted-foreground/70"
               >
-                <RedactedLogin revealed={revealed} account={entry.account} />
-                <span>无法使用 : {entry.error ?? `${cliName} 报告此登录无效。`}</span>
+                {entry.error ? (
+                  <T>
+                    <RedactedLogin revealed={revealed} account={entry.account} />{" "}
+                    <span>
+                      can&apos;t be used: <Var>{entry.error}</Var>
+                    </span>
+                  </T>
+                ) : (
+                  <T>
+                    <RedactedLogin revealed={revealed} account={entry.account} />{" "}
+                    <span>
+                      can&apos;t be used: <Var>{cliName}</Var> reports this login as invalid.
+                    </span>
+                  </T>
+                )}
               </p>
             ))}
             {group.environmentVariable ? (
               <p className="text-xs text-warning">
-                {group.environmentVariable}{" "}
-                设置在服务器上，因此它会覆盖此处选择的账户，直到它未设置为止。
+                <T>
+                  <Var>{group.environmentVariable}</Var> is set on the server, so it overrides the
+                  account chosen here until it is unset.
+                </T>
               </p>
             ) : null}
           </div>

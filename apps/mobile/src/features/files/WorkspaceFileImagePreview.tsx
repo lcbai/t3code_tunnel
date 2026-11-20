@@ -1,3 +1,4 @@
+import { useGT } from "gt-react-native";
 import { useId, useState } from "react";
 import { Image, Pressable, View } from "react-native";
 
@@ -14,6 +15,7 @@ function ResolvedWorkspaceFileImagePreview(props: {
   readonly uri: string;
   readonly actionsSource?: MediaActionsSource;
 }) {
+  const gt = useGT();
   const [loadError, setLoadError] = useState<string | null>(null);
   const [preview, setPreview] = useState<FilePreviewSource | null>(null);
   const sourceIdentifier = useId();
@@ -25,8 +27,12 @@ function ResolvedWorkspaceFileImagePreview(props: {
       <MediaActionsMenu media={mediaActions} style={{ flex: 1 }}>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={`全屏预览 ${props.accessibilityLabel}`}
-          accessibilityHint={mediaActions.actions.length > 0 ? "长按查看媒体操作" : undefined}
+          accessibilityLabel={gt("Open full-screen preview of {name}", {
+            name: props.accessibilityLabel,
+          })}
+          accessibilityHint={
+            mediaActions.actions.length > 0 ? gt("Touch and hold for media actions") : undefined
+          }
           disabled={loadError !== null}
           className="flex-1 p-4 active:bg-subtle-strong"
           onPress={() =>
@@ -47,7 +53,7 @@ function ResolvedWorkspaceFileImagePreview(props: {
               resizeMode="contain"
               onLoadStart={() => setLoadError(null)}
               onError={(event) => {
-                setLoadError(event.nativeEvent.error || "The image could not be rendered.");
+                setLoadError(event.nativeEvent.error || gt("The image could not be rendered."));
               }}
             />
           </PresentationSource>
@@ -58,7 +64,7 @@ function ResolvedWorkspaceFileImagePreview(props: {
           pointerEvents="none"
           className="absolute inset-0 items-center justify-center bg-card px-6"
         >
-          <EmptyState title="图片不可用" detail={loadError} />
+          <EmptyState title={gt("Image unavailable")} detail={loadError} />
         </View>
       ) : null}
       <FilePreviewModal source={preview} onRequestClose={() => setPreview(null)} />
@@ -71,8 +77,9 @@ export function WorkspaceFileImagePreview(props: {
   readonly uri: string | null;
   readonly actionsSource?: MediaActionsSource;
 }) {
+  const gt = useGT();
   if (props.uri === null) {
-    return <FilePreviewLoading message="正在准备图片预览…" background="card" />;
+    return <FilePreviewLoading message={gt("Preparing image preview...")} background="card" />;
   }
 
   return (

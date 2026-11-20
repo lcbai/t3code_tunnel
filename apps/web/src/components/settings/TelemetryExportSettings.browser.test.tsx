@@ -63,7 +63,7 @@ import { TelemetryExportSettings } from "./TelemetryExportSettings";
 
 function setup() {
   updateSettings.mockClear();
-  checkOtlpEndpoint.mockClear();
+  checkOtlpEndpoint.mockReset();
   state.serverConfig = { environment: { capabilities: {} } };
 }
 
@@ -88,7 +88,7 @@ describe("TelemetryExportSettings", () => {
     await screen.rerender(<TelemetryExportSettings />);
     await replace("otlpMetricsUrl", "http://new/v1/metrics");
     const save = [...container.querySelectorAll("button")].find(
-      (button) => button.textContent === "保存",
+      (button) => button.textContent === "Save",
     )!;
     await userEvent.click(save);
 
@@ -96,7 +96,7 @@ describe("TelemetryExportSettings", () => {
       environmentId: "env",
       input: { patch: { observability: { otlpMetricsUrl: "http://new/v1/metrics" } } },
     });
-    expect(container.textContent).toContain("已保存，重启服务器后生效。");
+    expect(container.textContent).toContain("Saved. Restart the server to apply.");
   });
 
   it("reports and tests the endpoint the environment set over an empty setting", async () => {
@@ -117,10 +117,12 @@ describe("TelemetryExportSettings", () => {
     };
     await using screen = await render(<TelemetryExportSettings />);
 
-    await expect.element(screen.getByText("由环境设置 · 已连接 · 12 ms")).toBeInTheDocument();
+    await expect
+      .element(screen.getByText("Set by environment · Connected · 12 ms"))
+      .toBeInTheDocument();
     await expect
       .element(
-        screen.getByText("正在使用：http://collector/v1/traces 来源：OTEL_EXPORTER_OTLP_ENDPOINT"),
+        screen.getByText("Running: http://collector/v1/traces from OTEL_EXPORTER_OTLP_ENDPOINT"),
       )
       .toBeInTheDocument();
     expect(checkOtlpEndpoint).toHaveBeenCalledExactlyOnceWith({
@@ -129,12 +131,47 @@ describe("TelemetryExportSettings", () => {
     });
     expect(screen.container.querySelector<HTMLInputElement>("#otlpTracesUrl")!.value).toBe("");
 
-    await userEvent.click(screen.getByRole("button", { name: "测试" }).first());
+    await userEvent.click(screen.getByRole("button", { name: "Test" }).first());
 
     expect(checkOtlpEndpoint).toHaveBeenCalledTimes(2);
     expect(checkOtlpEndpoint).toHaveBeenLastCalledWith({
       environmentId: "env",
       input: { signal: "traces", url: "http://collector/v1/traces" },
     });
+  });
+
+  it("can test a corrected URL and reports only the latest attempt when a URL is reused", async () => {
+    setup();
+    state.observability = { ...DEFAULT_SERVER_SETTINGS.observability, otlpTracesUrl: "" };
+    state.serverConfig = { environment: { capabilities: { otlpEndpointCheck: true } } };
+    const first = Promise.withResolvers<Awaited<ReturnType<typeof checkOtlpEndpoint>>>();
+    const corrected = Promise.withResolvers<Awaited<ReturnType<typeof checkOtlpEndpoint>>>();
+    const latest = Promise.withResolvers<Awaited<ReturnType<typeof checkOtlpEndpoint>>>();
+    checkOtlpEndpoint
+      .mockReturnValueOnce(first.promise)
+      .mockReturnValueOnce(corrected.promise)
+      .mockReturnValueOnce(latest.promise);
+    await using screen = await render(<TelemetryExportSettings />);
+
+    const traces = screen.getByLabelText("Traces endpoint");
+    const testTraces = screen.getByRole("button", { name: "Test" }).first();
+    await userEvent.fill(traces, "http://first/v1/traces");
+    await userEvent.click(testTraces);
+    await expect.element(testTraces).toBeDisabled();
+
+    await userEvent.fill(traces, "http://corrected/v1/traces");
+    await expect.element(testTraces).toBeEnabled();
+    await userEvent.click(testTraces);
+    await expect.element(testTraces).toBeDisabled();
+
+    await userEvent.fill(traces, "http://first/v1/traces");
+    await userEvent.click(testTraces);
+    await expect.element(testTraces).toBeDisabled();
+
+    corrected.resolve({ _tag: "Success", value: { _tag: "Accepted", latencyMs: 22 } });
+    first.resolve({ _tag: "Success", value: { _tag: "Accepted", latencyMs: 11 } });
+    latest.resolve({ _tag: "Success", value: { _tag: "Accepted", latencyMs: 33 } });
+
+    await expect.element(screen.getByText("Connected · 33 ms")).toBeInTheDocument();
   });
 });

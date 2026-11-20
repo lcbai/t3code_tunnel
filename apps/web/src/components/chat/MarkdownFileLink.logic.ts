@@ -1,10 +1,10 @@
 import type { EnvironmentId } from "@t3tools/contracts";
 import { splitFilePathPosition } from "@t3tools/shared/fileLinks";
+import { msg } from "gt-react";
 
-import {
-  shouldOpenMarkdownFileLinkInBrowserByDefault,
-  type MarkdownFileLinkMeta,
-} from "../../markdown-links";
+import { m } from "../../i18n/messages";
+
+import type { MarkdownFileLinkMeta } from "../../markdown-links";
 import type { RemoteOpenMode } from "../../remoteOpen";
 
 export function canUseMarkdownFileShellActions(
@@ -33,28 +33,30 @@ export function markdownFileCopyMenuItems({
   targetPath,
   workspaceRelativePath,
 }: Pick<MarkdownFileLinkMeta, "targetPath" | "workspaceRelativePath">) {
-  const items = [{ id: "copy-full", label: "复制完整路径", value: targetPath, title: "完整路径" }];
+  const items = [
+    {
+      id: "copy-full",
+      label: m(msg("Copy full path")),
+      value: targetPath,
+      title: m(msg("Full path")),
+    },
+  ];
   if (workspaceRelativePath !== null) {
     const position = targetPath.slice(splitFilePathPosition(targetPath).path.length);
     items.unshift({
       id: "copy-relative",
-      label: "复制相对路径",
+      label: m(msg("Copy relative path")),
       value: `${workspaceRelativePath}${position}`,
-      title: "相对路径",
+      title: m(msg("Relative path")),
     });
   }
   return items;
 }
 
 export function shouldUseMarkdownFileBrowserPrimaryAction(input: {
-  iconPath: string;
   canOpenInEditor: boolean;
   canOpenInBrowser: boolean;
   canOpenInPanel: boolean;
 }): boolean {
-  return (
-    input.canOpenInBrowser &&
-    (shouldOpenMarkdownFileLinkInBrowserByDefault(input.iconPath) ||
-      (!input.canOpenInEditor && !input.canOpenInPanel))
-  );
+  return input.canOpenInBrowser && !input.canOpenInEditor && !input.canOpenInPanel;
 }

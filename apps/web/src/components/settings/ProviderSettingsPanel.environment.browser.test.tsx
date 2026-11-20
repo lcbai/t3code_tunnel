@@ -6,10 +6,9 @@ import {
   ProviderInstanceId,
   type ProviderAuthState,
   type ServerProvider,
-  type ServerConfig,
   type UnifiedSettings,
 } from "@t3tools/contracts";
-import { DEFAULT_RESOLVED_KEYBINDINGS } from "@t3tools/shared/keybindings";
+import * as Cause from "effect/Cause";
 import * as Duration from "effect/Duration";
 import { AsyncResult, type Atom } from "effect/reactivity";
 import type { ReactNode } from "react";
@@ -17,21 +16,15 @@ import { describe, expect, it, vi } from "vite-plus/test";
 import { page, userEvent } from "vite-plus/test/browser";
 
 import "~/index.css";
-import { act, render, stubGlobal } from "../../../test/render";
+import { act, render } from "../../../test/render";
 
 const state = vi.hoisted(() => ({
   providers: null as unknown as Atom.Writable<ReadonlyArray<ServerProvider>>,
-  config: null as unknown as Atom.Writable<Pick<
-    ServerConfig,
-    "cwd" | "keybindings" | "environment"
-  > | null>,
   providerAuthQuery: null as unknown,
   providerAuth: null as ProviderAuthState | null,
   settings: null as unknown as UnifiedSettings,
   canManageProviders: true,
   canWriteSettings: true,
-  canOperateTerminal: false,
-  primaryEnvironmentId: null as EnvironmentId | null,
   searchTargetId: null as string | null,
   readEnvironmentIds: [] as string[],
   updateEnvironmentIds: [] as string[],
@@ -45,9 +38,6 @@ const state = vi.hoisted(() => ({
   toggleFavorite: vi.fn(),
   mutateProviderInstance: vi.fn(),
   confirm: vi.fn<() => Promise<boolean>>(),
-  openTerminal: vi.fn(),
-  writeTerminal: vi.fn(),
-  closeTerminal: vi.fn(),
 }));
 
 vi.mock(import("../../state/server"), async (original) => {
@@ -55,8 +45,7 @@ vi.mock(import("../../state/server"), async (original) => {
   const { Atom } = await import("effect/reactivity");
   const providers = Atom.make<ReadonlyArray<ServerProvider>>([]).pipe(Atom.keepAlive);
   state.providers = providers;
-  const config = Atom.make<Pick<ServerConfig, "cwd" | "keybindings" | "environment"> | null>(null);
-  state.config = config;
+  const config = Atom.make(null);
   const providerAuth = Atom.make(null);
   state.providerAuthQuery = providerAuth;
   const commandLabels = {
@@ -91,9 +80,6 @@ vi.mock(import("../../state/use-atom-command"), async (original) => ({
       update: state.updateProvider,
       uninstall: state.uninstall,
       "accept-url-auth": state.acceptUrlAuth,
-      "environment-data:terminal:open": state.openTerminal,
-      "environment-data:terminal:write": state.writeTerminal,
-      "environment-data:terminal:close": state.closeTerminal,
     })[command.label ?? ""] ?? vi.fn()) as never,
 }));
 vi.mock(import("~/localApi"), async (original) => {
@@ -137,19 +123,13 @@ vi.mock(import("../../state/session"), async (original) => {
       ? state.canManageProviders
       : requested === "settings:write"
         ? state.canWriteSettings
-        : requested === "terminal:operate"
-          ? state.canOperateTerminal
-          : requested === "orchestration:read");
+        : requested === "orchestration:read");
   return {
     ...(await original()),
     useEnvironmentScope: scope as never,
     readEnvironmentScope: scope as never,
   };
 });
-vi.mock(import("../../state/environments"), async (original) => ({
-  ...(await original()),
-  usePrimaryEnvironmentId: () => state.primaryEnvironmentId,
-}));
 vi.mock(import("../../state/entities"), async (original) => ({
   ...(await original()),
   useProjects: (() => []) as never,
@@ -188,13 +168,6 @@ vi.mock(import("./UsageProviderSettings"), async (original) => ({
 vi.mock(import("../ProviderUpdatesAction"), async (original) => ({
   ...(await original()),
   ProviderUpdatesAction: (() => null) as never,
-}));
-vi.mock(import("../ThreadTerminalDrawer"), () => ({
-  TerminalViewport: ({ onResized }: { onResized?: (success: boolean) => void }) => (
-    <button type="button" onClick={() => onResized?.(true)}>
-      同步测试终端尺寸
-    </button>
-  ),
 }));
 
 import { appAtomRegistry } from "~/rpc/atomRegistry";
@@ -259,9 +232,6 @@ async function setup() {
   state.settings = DEFAULT_UNIFIED_SETTINGS;
   state.canManageProviders = true;
   state.canWriteSettings = true;
-  state.canOperateTerminal = false;
-  state.primaryEnvironmentId = null;
-  appAtomRegistry.set(state.config, null);
   state.searchTargetId = null;
   state.providerAuth = null;
   state.readEnvironmentIds = [];
@@ -276,122 +246,17 @@ async function setup() {
   state.updateProvider.mockReset().mockResolvedValue(AsyncResult.success(undefined));
   state.uninstall.mockReset().mockResolvedValue(AsyncResult.success({}));
   state.acceptUrlAuth.mockReset().mockResolvedValue(AsyncResult.success({ accepted: true }));
-  state.openTerminal.mockReset().mockResolvedValue(AsyncResult.success(undefined));
-  state.writeTerminal.mockReset().mockResolvedValue(AsyncResult.success(undefined));
-  state.closeTerminal.mockReset().mockResolvedValue(AsyncResult.success(undefined));
   await setProviders([]);
 }
 
 describe("EnvironmentProviderSettings routing", () => {
-  it("opens macOS Terminal for the local desktop's Doubao login", async () => {
-    await setup();
-    state.canOperateTerminal = true;
-    state.primaryEnvironmentId = environmentId;
-    const openDoubaoLoginTerminal = vi.fn(async () => true);
-    using _bridge = stubGlobal("desktopBridge", {
-      getClientPlatform: () => "darwin",
-      getLocalEnvironmentEnabled: () => true,
-      getLocalEnvironmentBootstraps: () => [
-        {
-          id: "primary",
-          httpBaseUrl: "http://localhost:4000",
-          wsBaseUrl: "ws://localhost:4000",
-        },
-      ],
-      openDoubaoLoginTerminal,
-    });
-    appAtomRegistry.set(state.config, {
-      cwd: "/workspace",
-      keybindings: DEFAULT_RESOLVED_KEYBINDINGS,
-      environment: {
-        capabilities: {},
-        platform: { os: "darwin", arch: "arm64" },
-      } as ServerConfig["environment"],
-    });
-    const instanceId = ProviderInstanceId.make("opencode_doubao");
-    state.settings = {
-      ...DEFAULT_UNIFIED_SETTINGS,
-      providerInstances: {
-        [instanceId]: { driver: ProviderDriverKind.make("opencode"), enabled: true },
-      },
-    };
-    await using _screen = await render(panel({ targetInstanceId: instanceId }));
-    await userEvent.click(page.getByRole("button", { name: "豆包 CLI（企业）" }));
-    await userEvent.click(page.getByRole("button", { name: "扫码登录" }));
-    expect(openDoubaoLoginTerminal).toHaveBeenCalledOnce();
-    expect(state.openTerminal).not.toHaveBeenCalled();
-    await expect
-      .element(page.getByRole("dialog", { name: "豆包扫码登录" }))
-      .not.toBeInTheDocument();
-  });
-
-  it("opens the Doubao login on the selected device without using the saved Ark instance", async () => {
-    await setup();
-    state.canOperateTerminal = true;
-    const cwd = "/workspace";
-    appAtomRegistry.set(state.config, {
-      cwd,
-      keybindings: DEFAULT_RESOLVED_KEYBINDINGS,
-      environment: { capabilities: {} } as ServerConfig["environment"],
-    });
-    const instanceId = ProviderInstanceId.make("opencode_doubao");
-    state.settings = {
-      ...DEFAULT_UNIFIED_SETTINGS,
-      providerInstances: {
-        [instanceId]: {
-          driver: ProviderDriverKind.make("opencode"),
-          displayName: "豆包",
-          enabled: true,
-        },
-      },
-    };
-    await using _screen = await render(panel({ targetInstanceId: instanceId }));
-    await expect.element(page.getByText("火山方舟 Coding Plan 密钥")).toBeVisible();
-    await expect.element(page.getByRole("button", { name: "扫码登录" })).not.toBeInTheDocument();
-    await userEvent.click(page.getByRole("button", { name: "豆包 CLI（企业）" }));
-    await expect.element(page.getByText("火山方舟 Coding Plan 密钥")).toHaveLength(0);
-    await userEvent.click(page.getByRole("button", { name: "扫码登录" }));
-    const loginDialog = page.getByRole("dialog", { name: "豆包扫码登录" });
-    await expect.element(loginDialog).toBeVisible();
-    const resize = loginDialog.getByRole("button", { name: "同步测试终端尺寸" });
-    await expect.element(resize).toBeVisible();
-    expect(state.writeTerminal).not.toHaveBeenCalled();
-    await userEvent.click(resize);
-    await vi.waitFor(() => expect(state.writeTerminal).toHaveBeenCalledOnce());
-    const input = state.openTerminal.mock.calls[0]?.[0]?.input;
-    expect(state.openTerminal).toHaveBeenCalledWith({
-      environmentId,
-      input: { cwd, threadId: input.threadId, terminalId: input.terminalId },
-    });
-    expect(state.writeTerminal).toHaveBeenCalledWith({
-      environmentId,
-      input: {
-        threadId: input.threadId,
-        terminalId: input.terminalId,
-        data: "doubao login --qr=small\r",
-      },
-    });
-    expect(state.mutateProviderInstance).not.toHaveBeenCalled();
-    await userEvent.keyboard("{Escape}");
-    await expect.element(loginDialog).not.toBeInTheDocument();
-    await vi.waitFor(() =>
-      expect(state.closeTerminal).toHaveBeenCalledWith({
-        environmentId,
-        input: { threadId: input.threadId, terminalId: input.terminalId, deleteHistory: true },
-      }),
-    );
-    await userEvent.click(page.getByRole("button", { name: "扫码登录" }));
-    await expect.element(resize).toBeVisible();
-    await userEvent.keyboard("{Escape}");
-    await vi.waitFor(() => expect(state.closeTerminal).toHaveBeenCalledTimes(2));
-    expect(state.writeTerminal).toHaveBeenCalledOnce();
-  });
-
   it("does not substitute another account when the requested instance was removed", async () => {
     await setup();
     await setProviders([provider()]);
     await using _screen = await render(panel({ targetInstanceId: customId }));
-    await expect.element(page.getByText("此设备已无法使用此提供者实例。")).toBeVisible();
+    await expect
+      .element(page.getByText("This provider instance is no longer available on this device."))
+      .toBeVisible();
     expect(state.updateSettings).not.toHaveBeenCalled();
   });
 
@@ -408,7 +273,7 @@ describe("EnvironmentProviderSettings routing", () => {
       },
     };
     await using _screen = await render(panel());
-    await userEvent.click(page.getByRole("switch", { name: "启用Work" }).first());
+    await userEvent.click(page.getByRole("switch", { name: "Enable Work" }).first());
 
     expect(state.mutateProviderInstance).toHaveBeenCalledWith(
       {
@@ -418,6 +283,104 @@ describe("EnvironmentProviderSettings routing", () => {
       },
       {},
     );
+  });
+
+  it.each([false, true])(
+    "builds a custom model save on the last one before its config echo (replied %s)",
+    async (replied) => {
+      await setup();
+      const first = { slug: "model-a", name: "Original A" };
+      const second = { slug: "model-b", name: "Original B" };
+      const stored = (customModels: ReadonlyArray<{ slug: string; name: string }>) => ({
+        ...DEFAULT_UNIFIED_SETTINGS,
+        providerInstances: {
+          [customId]: { driver: ProviderDriverKind.make("codex"), config: { customModels } },
+        },
+      });
+      state.settings = stored([first, second]);
+      const replies: Array<() => void> = [];
+      state.mutateProviderInstance.mockImplementation(
+        () => new Promise((resolve) => replies.push(() => resolve(AsyncResult.success({})))),
+      );
+      await using screen = await render(panel({ targetInstanceId: customId }));
+      const rename = async (slug: string, name: string) => {
+        await userEvent.click(screen.getByRole("button", { name: `Edit ${slug}`, exact: true }));
+        await userEvent.fill(
+          screen.getByRole("textbox", { name: "Display name", exact: true }),
+          name,
+        );
+        await userEvent.click(screen.getByRole("button", { name: "Save", exact: true }));
+      };
+
+      await rename("model-a", "Entered A");
+      if (replied) await act(() => replies[0]!());
+      await rename("model-b", "Entered B");
+
+      expect(state.mutateProviderInstance.mock.calls[1]?.[0]).toEqual({
+        operation: "upsert",
+        instanceId: customId,
+        instance: {
+          driver: ProviderDriverKind.make("codex"),
+          config: {
+            customModels: [
+              { ...first, name: "Entered A" },
+              { ...second, name: "Entered B" },
+            ],
+          },
+        },
+      });
+
+      // The first save's echo lands after both replied, ahead of the second's.
+      await act(() => replies.forEach((reply) => reply()));
+      state.settings = stored([{ ...first, name: "Entered A" }, second]);
+      await screen.rerender(panel({ targetInstanceId: customId }));
+      await rename("model-a", "Again A");
+      expect(state.mutateProviderInstance.mock.calls[2]?.[0].instance.config.customModels).toEqual([
+        { ...first, name: "Again A" },
+        { ...second, name: "Entered B" },
+      ]);
+    },
+  );
+
+  it("preserves a failed model draft for retry without including it in another edit", async () => {
+    await setup();
+    const first = { slug: "model-a", name: "Original A" };
+    const second = { slug: "model-b", name: "Original B" };
+    state.settings = {
+      ...DEFAULT_UNIFIED_SETTINGS,
+      providerInstances: {
+        [customId]: {
+          driver: ProviderDriverKind.make("codex"),
+          config: { customModels: [first, second] },
+        },
+      },
+    };
+    state.mutateProviderInstance
+      .mockResolvedValueOnce(AsyncResult.failure(Cause.fail(new Error("Save failed"))))
+      .mockResolvedValueOnce(AsyncResult.failure(Cause.fail(new Error("Still offline"))));
+    await using screen = await render(panel({ targetInstanceId: customId }));
+    await screen.getByRole("button", { name: "Edit model-a", exact: true }).click();
+    const displayName = screen.getByRole("textbox", { name: "Display name", exact: true });
+    await userEvent.fill(displayName, "Entered A");
+    const save = screen.getByRole("button", { name: "Save", exact: true });
+    await save.click();
+    await expect.element(save).toBeEnabled();
+    await expect.element(displayName).toHaveValue("Entered A");
+    await save.click();
+    await expect.element(save).toBeEnabled();
+    expect(state.mutateProviderInstance.mock.calls[1]?.[0].instance.config.customModels).toEqual([
+      { ...first, name: "Entered A" },
+      second,
+    ]);
+    await screen.getByRole("button", { name: "Cancel", exact: true }).click();
+    await screen.getByRole("button", { name: "Edit model-b", exact: true }).click();
+    await userEvent.fill(displayName, "Entered B");
+    await save.click();
+    await expect.element(displayName).not.toBeInTheDocument();
+    expect(state.mutateProviderInstance.mock.calls[2]?.[0].instance.config.customModels).toEqual([
+      first,
+      { ...second, name: "Entered B" },
+    ]);
   });
 
   it("routes explicit ACP browser authentication consent to the selected environment", async () => {
@@ -447,7 +410,7 @@ describe("EnvironmentProviderSettings routing", () => {
       },
     ]);
     await using _screen = await render(panel({ targetInstanceId: instanceId }));
-    const link = page.getByRole("link", { name: "继续认证" });
+    const link = page.getByRole("link", { name: "Continue authentication" });
     link.element().addEventListener("click", (event) => event.preventDefault());
     await userEvent.click(link);
 
@@ -455,26 +418,6 @@ describe("EnvironmentProviderSettings routing", () => {
       environmentId,
       input: { instanceId, elicitationId: action.elicitationId },
     });
-  });
-
-  it("shows the Qoder CN icon in the list and details of an existing local instance", async () => {
-    await setup();
-    const instanceId = ProviderInstanceId.make("acpRegistry_custom");
-    state.settings = {
-      ...DEFAULT_UNIFIED_SETTINGS,
-      providerInstances: {
-        [instanceId]: {
-          driver: ProviderDriverKind.make("acpRegistry"),
-          displayName: "Work agent",
-          enabled: true,
-          config: { source: "local", commandPath: "qoderclicn", commandArgs: ["--acp"] },
-        },
-      },
-    };
-    await using _screen = await render(panel({ targetInstanceId: instanceId }));
-    const icons = document.querySelectorAll<HTMLImageElement>('img[data-slot="qoder-cn-icon"]');
-    expect(icons).toHaveLength(2);
-    await expect.poll(() => Array.from(icons).every((icon) => icon.naturalWidth > 0)).toBe(true);
   });
 
   it("lets a signed-out managed Codex account switch to the existing CLI", async () => {
@@ -507,8 +450,8 @@ describe("EnvironmentProviderSettings routing", () => {
       },
     ]);
     await using _screen = await render(panel({ targetInstanceId: codexId }));
-    await expect.element(page.getByRole("button", { name: "重新连接账户" })).toBeVisible();
-    await userEvent.click(page.getByRole("button", { name: "使用已有的 CLI" }).element());
+    await expect.element(page.getByRole("button", { name: "Reconnect account" })).toBeVisible();
+    await userEvent.click(page.getByRole("button", { name: "Use existing CLI" }).element());
 
     expect(state.mutateProviderInstance).toHaveBeenCalledWith(
       {
@@ -522,6 +465,49 @@ describe("EnvironmentProviderSettings routing", () => {
       },
       {},
     );
+  });
+});
+
+describe("EnvironmentProviderSettings provider list", () => {
+  it("selects a provider when its row is clicked near the edge", async () => {
+    await setup();
+    await setProviders([provider()]);
+    await using _screen = await render(panel());
+    const select = page.getByRole("button", { name: "Select Claude" });
+    await expect.element(select).toHaveAttribute("aria-pressed", "false");
+    const row = page.elementLocator(select.element().closest('[data-slot="settings-row"]')!);
+
+    await userEvent.click(row, { position: { x: 3, y: 3 } });
+
+    await expect.element(select).toHaveAttribute("aria-pressed", "true");
+  });
+});
+
+describe("EnvironmentProviderSettings account email", () => {
+  it("keeps the real email until the hide blur finishes", async () => {
+    await setup();
+    const email = "developer@example.com";
+    await setProviders([{ ...provider(), auth: { status: "authenticated", email } }]);
+    await using _screen = await render(panel({ targetInstanceId: codexId }));
+    const toggle = page.getByRole("button", { name: "Toggle account email visibility" });
+    const button = toggle.element() as HTMLButtonElement;
+
+    await act(() => button.click());
+    for (const animation of button.getAnimations()) animation.finish();
+    await expect.element(toggle).toHaveTextContent(email);
+
+    await act(() => button.click());
+    const blur = button
+      .getAnimations()
+      .find(
+        (animation) =>
+          animation instanceof CSSTransition && animation.transitionProperty === "filter",
+      )!;
+    blur.pause();
+    expect(button.textContent).toBe(email);
+
+    await act(() => blur.finish());
+    await expect.element(toggle).not.toHaveTextContent(email);
   });
 });
 
@@ -540,7 +526,7 @@ describe("EnvironmentProviderSettings instance removal", () => {
     };
     await setProviders([provider()]);
     await using _screen = await render(panel({ targetInstanceId: codexId }));
-    const reset = page.getByRole("button", { name: "重置Codex 代理提供方设置 默认值" });
+    const reset = page.getByRole("button", { name: "Reset Codex provider settings to default" });
     await userEvent.click(reset);
 
     expect(state.mutateProviderInstance).not.toHaveBeenCalled();
@@ -572,11 +558,14 @@ describe("EnvironmentProviderSettings instance removal", () => {
     };
     await setProviders([{ ...provider(), instanceId: antigravityId, driver: antigravity }]);
     await using _screen = await render(panel({ targetInstanceId: antigravityId }));
-    await userEvent.click(page.getByRole("button", { name: /^重置.*代理提供方设置/ }));
+    await userEvent.click(page.getByRole("button", { name: /^Reset .* provider settings/ }));
 
-    expect(state.confirm).toHaveBeenCalledWith(expect.stringContaining("该提供者也将被停用。"), {
-      variant: "destructive",
-    });
+    expect(state.confirm).toHaveBeenCalledWith(
+      expect.stringContaining("It will also be turned off."),
+      {
+        variant: "destructive",
+      },
+    );
     expect(state.mutateProviderInstance).not.toHaveBeenCalled();
   });
 
@@ -589,7 +578,7 @@ describe("EnvironmentProviderSettings instance removal", () => {
       },
     };
     await using _screen = await render(panel({ targetInstanceId: customId }));
-    const remove = page.getByRole("button", { name: `删除实例${customId}` });
+    const remove = page.getByRole("button", { name: `Delete instance ${customId}` });
     await userEvent.click(remove);
 
     expect(state.mutateProviderInstance).not.toHaveBeenCalled();
@@ -610,7 +599,7 @@ describe("EnvironmentProviderSettings health check interval", () => {
   it("commits interval drafts and allows retrying rejected edits", async () => {
     await setup();
     await using _screen = await render(panel());
-    const input = page.getByRole("textbox", { name: "提供者健康检查间隔（秒）" });
+    const input = page.getByRole("textbox", { name: "Provider health check interval in seconds" });
 
     await userEvent.type(input, "{ArrowUp}{ArrowDown}");
     expect(
@@ -651,7 +640,7 @@ describe("EnvironmentProviderSettings health check interval", () => {
   it("restores the saved interval when a cleared field loses focus", async () => {
     await setup();
     await using _screen = await render(panel());
-    const input = page.getByRole("textbox", { name: "提供者健康检查间隔（秒）" });
+    const input = page.getByRole("textbox", { name: "Provider health check interval in seconds" });
 
     await userEvent.type(input, "{Backspace}{Backspace}{Backspace}");
     await userEvent.tab();

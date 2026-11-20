@@ -3,14 +3,18 @@ import {
   AVAILABLE_CONNECTION_STATE,
   type ConnectionDiagnosis,
   connectionDiagnosisText,
+  connectionRoutes,
+  hasRelayRoute,
   presentConnectionDiagnosis,
 } from "@t3tools/client-runtime/connection";
+import * as Option from "effect/Option";
 import { AsyncResult } from "effect/reactivity";
+import { msg, T, useGT, useMessages, Var } from "gt-react";
 import { ChevronRightIcon } from "lucide-react";
 
 import { APP_VERSION } from "~/branding";
 import { environmentCatalog } from "~/connection/catalog";
-import type { EnvironmentPresentation } from "~/state/environments";
+import { type EnvironmentPresentation, useRelayEnvironmentDiscovery } from "~/state/environments";
 import { useCopyToClipboard } from "../../hooks/useCopyToClipboard";
 import { useDeadlinePassed } from "../../hooks/useDeadline";
 import { useNowSecond } from "../../hooks/useNowSecond";
@@ -24,22 +28,32 @@ import { stackedThreadToast, toastManager } from "../ui/toast";
  * the headline do not re-render on every attempt.
  */
 export function useConnectionDiagnosis(environment: EnvironmentPresentation) {
+  const m = useMessages();
   const environmentId = environment.environmentId;
   const state = AsyncResult.getOrElse(
     useAtomValue(environmentCatalog.stateAtom(environmentId)),
     () => AVAILABLE_CONNECTION_STATE,
   );
+  const relayStatus = useRelayEnvironmentDiscovery().environments.get(environmentId)?.status;
+  const routes = connectionRoutes(environment.entry);
+  const relayOnly = routes.length === 1 && hasRelayRoute(environment.entry);
   const phase = environment.connection.phase;
   const diagnosis =
     environment.entry.enabled && phase !== "connected" && phase !== "unsupported"
-      ? presentConnectionDiagnosis({
-          hostLabel: environment.label,
-          state,
-          clientVersion: APP_VERSION,
-          serverVersion: environment.serverConfig?.environment.serverVersion,
-        })
+      ? presentConnectionDiagnosis(
+          {
+            hostLabel: environment.label,
+            state,
+            via: relayOnly ? "relay" : "direct",
+            // With a direct route as well, the relay's health says nothing about the route in use.
+            relayStatus: relayOnly ? Option.getOrNull(relayStatus ?? Option.none()) : null,
+            clientVersion: APP_VERSION,
+            serverVersion: environment.serverConfig?.environment.serverVersion,
+          },
+          m,
+        )
       : null;
-  return { diagnosis, state };
+  return { diagnosis, state, relayOnly };
 }
 
 /** The failure headline alone, for banners outside Settings. */
@@ -52,16 +66,22 @@ export function ConnectionDiagnosisHeadline({
 }
 
 const HOP_MARK = { ok: "✓", failed: "✕", unchecked: "–" } as const;
-const HOP_NOTE = { ok: "", failed: "失败", unchecked: "尚未检查" } as const;
+const HOP_NOTE = {
+  ok: "",
+  failed: msg("Failed", { $context: "connection hop status" }),
+  unchecked: msg("Not checked"),
+} as const;
 
 /** Ticks once per second, and only while a retry is scheduled, so the list around it does not re-render. */
 function RetryCountdown({ retryAt }: { readonly retryAt: number }) {
-  return useDeadlinePassed(retryAt) ? "正在重试" : <RetryCountdownTicker retryAt={retryAt} />;
+  const gt = useGT();
+  return useDeadlinePassed(retryAt) ? gt("retrying") : <RetryCountdownTicker retryAt={retryAt} />;
 }
 
 function RetryCountdownTicker({ retryAt }: { readonly retryAt: number }) {
+  const gt = useGT();
   const seconds = Math.ceil((retryAt - useNowSecond()) / 1_000);
-  return <>{seconds > 0 ? `${seconds} 秒后重试` : "正在重试"}</>;
+  return <>{seconds > 0 ? gt("retrying in {seconds}s", { seconds }) : gt("retrying")}</>;
 }
 
 /** The collapsed failure: the full headline, then the retry state and a Details toggle. */
@@ -84,7 +104,13 @@ export function ConnectionDiagnosisSummary({
       <p className="flex flex-wrap items-center gap-1 text-muted-foreground">
         {retryAt !== null ? <RetryCountdown retryAt={retryAt} /> : null}
         {retryAt !== null && attempt > 0 ? <span aria-hidden>·</span> : null}
-        {attempt > 0 ? <span>第 {attempt} 次尝试</span> : null}
+        {attempt > 0 ? (
+          <span>
+            <T>
+              attempt <Var>{attempt}</Var>
+            </T>
+          </span>
+        ) : null}
         {retryAt !== null || attempt > 0 ? <span aria-hidden>·</span> : null}
         <button
           type="button"
@@ -92,7 +118,7 @@ export function ConnectionDiagnosisSummary({
           onClick={onToggle}
           className="inline-flex items-center gap-0.5 rounded-sm outline-none hover:text-foreground focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-ring"
         >
-          详情
+          <T>Details</T>
           <ChevronRightIcon
             aria-hidden
             className={cn(
@@ -111,19 +137,26 @@ export function ConnectionDiagnosisPanel({
   hostLabel,
   diagnosis,
   onRetry,
+  onAddRoute,
 }: {
   readonly hostLabel: string;
   readonly diagnosis: ConnectionDiagnosis;
   readonly onRetry: () => void;
+  readonly onAddRoute: (() => void) | null;
 }) {
+  const gt = useGT();
+  const m = useMessages();
   const { copyToClipboard } = useCopyToClipboard({
-    target: "connection diagnostics",
-    onCopy: () => toastManager.add({ type: "success", title: "已复制诊断信息" }),
+    target: {
+      target: "connection diagnostics",
+      unavailableMessage: msg("Clipboard API is unavailable while copying connection diagnostics."),
+      failureMessage: msg("Failed to copy connection diagnostics to the clipboard."),
+    },
     onError: (error) =>
       toastManager.add(
         stackedThreadToast({
           type: "error",
-          title: "无法复制诊断",
+          title: gt("Could not copy diagnostics"),
           description: error.message,
         }),
       ),
@@ -143,17 +176,29 @@ export function ConnectionDiagnosisPanel({
               {HOP_MARK[hop.result]}
             </span>
             <span className={cn(hop.result === "ok" && "text-foreground")}>{hop.label}</span>
-            <span>{HOP_NOTE[hop.result]}</span>
+            <span>{m(HOP_NOTE[hop.result])}</span>
           </li>
         ))}
       </ol>
       <div>
-        <p className="font-medium text-foreground">处理建议</p>
+        <p className="font-medium text-foreground">
+          <T>What to try</T>
+        </p>
         <ol className="list-decimal pl-4 text-muted-foreground">
           {diagnosis.steps.map((step) => (
             <li key={step}>{step}</li>
           ))}
         </ol>
+        {diagnosis.moreInfoUrl ? (
+          <a
+            href={diagnosis.moreInfoUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="text-muted-foreground underline underline-offset-2 hover:text-foreground"
+          >
+            <T>More info</T>
+          </a>
+        ) : null}
       </div>
       <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 font-mono text-muted-foreground">
         {diagnosis.facts.map(([label, value]) => (
@@ -165,7 +210,7 @@ export function ConnectionDiagnosisPanel({
       </dl>
       <div className="flex flex-wrap gap-2">
         <Button type="button" size="xs" variant="outline" onClick={onRetry}>
-          现在重试
+          <T>Retry now</T>
         </Button>
         <Button
           type="button"
@@ -176,8 +221,13 @@ export function ConnectionDiagnosisPanel({
             copyToClipboard(text, undefined);
           }}
         >
-          复制诊断
+          <T>Copy diagnostics</T>
         </Button>
+        {onAddRoute ? (
+          <Button type="button" size="xs" variant="outline" onClick={onAddRoute}>
+            <T>Add direct route</T>
+          </Button>
+        ) : null}
       </div>
     </div>
   );

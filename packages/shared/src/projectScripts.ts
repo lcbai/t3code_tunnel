@@ -1,15 +1,5 @@
 import type { ProjectId, ProjectScript, ServerSettings } from "@t3tools/contracts";
 
-export const DOUBAO_CLI_PROJECT_SCRIPT = {
-  id: "doubao-cli",
-  name: "豆包 CLI",
-  command: "doubao",
-  icon: "play",
-  runOnWorktreeCreate: false,
-} satisfies ProjectScript;
-
-export const DOUBAO_CLI_LOGIN_COMMAND = "doubao login --qr=small";
-
 type ProjectScriptSettings = Pick<
   ServerSettings,
   | "defaultProjectScripts"
@@ -64,14 +54,6 @@ export function projectScriptRuntimeEnv(
 
 export function setupProjectScript(scripts: readonly ProjectScript[]): ProjectScript | null {
   return scripts.find((script) => script.runOnWorktreeCreate) ?? null;
-}
-
-export function projectScriptMenuLabel(script: ProjectScript): string {
-  const roles = [
-    ...(script.runOnWorktreeCreate ? ["setup"] : []),
-    ...(script.runOnSettle ? ["on settle"] : []),
-  ];
-  return roles.length === 0 ? script.name : `${script.name} (${roles.join(", ")})`;
 }
 
 export function settleProjectScript(scripts: readonly ProjectScript[]): ProjectScript | null {

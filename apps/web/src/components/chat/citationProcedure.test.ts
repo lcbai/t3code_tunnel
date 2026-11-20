@@ -53,7 +53,7 @@ describe("loadCitedHistory", () => {
     const history = scriptedHistory([notLoaded, { message: null, hasMoreHistory: false }]);
     await expect(history.run()).resolves.toMatchObject({
       _tag: "failed",
-      title: "未提供所引用的答复",
+      title: "The cited response is unavailable",
     });
   });
 
@@ -61,7 +61,7 @@ describe("loadCitedHistory", () => {
     const history = scriptedHistory([{ message: "other", hasMoreHistory: false }]);
     await expect(history.run()).resolves.toMatchObject({
       _tag: "failed",
-      title: "引文未提及助理答复",
+      title: "The citation does not refer to an assistant response",
     });
   });
 
@@ -69,7 +69,7 @@ describe("loadCitedHistory", () => {
     const history = scriptedHistory([notLoaded]);
     await expect(history.run(["error"])).resolves.toMatchObject({
       _tag: "failed",
-      title: "无法装入引用的响应",
+      title: "Could not load the cited response",
     });
     expect(history.loads).toBe(1);
   });
@@ -78,7 +78,7 @@ describe("loadCitedHistory", () => {
     const history = scriptedHistory([notLoaded]);
     await expect(history.run(["noop"])).resolves.toMatchObject({
       _tag: "failed",
-      title: "未提供所引用的答复",
+      title: "The cited response is unavailable",
     });
     expect(history.loads).toBe(1);
   });
@@ -87,7 +87,7 @@ describe("loadCitedHistory", () => {
     const history = scriptedHistory([notLoaded]);
     await expect(history.run()).resolves.toMatchObject({
       _tag: "failed",
-      title: "无法装入引用的响应",
+      title: "Could not load the cited response",
     });
     expect(history.loads).toBe(20);
   });
@@ -126,7 +126,7 @@ describe("citedThreadSnapshot", () => {
     expect(snapshot).not.toBeNull();
     await expect(scriptedHistory([snapshot]).run()).resolves.toMatchObject({
       _tag: "failed",
-      title: "无法装入引用的响应",
+      title: "Could not load the cited response",
     });
   });
 });
@@ -179,6 +179,23 @@ describe("resolveCitationPhase", () => {
       _tag: "ready",
       rowId: "cited-row",
     });
+  });
+
+  it("finds text an agent sent with send_to_user by its item id", () => {
+    const sent: TimelineEntry = {
+      kind: "sent-message",
+      id: messageId,
+      createdAt: at,
+      runId,
+      text: "Draft",
+    };
+    expect(phase({ entries: [sent] })).toEqual({ _tag: "expanding" });
+    expect(
+      phase({
+        entries: [sent],
+        rows: [{ kind: "sent-message", id: messageId, createdAt: at, text: "Draft" }],
+      }),
+    ).toEqual({ _tag: "ready", rowId: messageId });
   });
 
   it("fails for a citation that names a user message", () => {

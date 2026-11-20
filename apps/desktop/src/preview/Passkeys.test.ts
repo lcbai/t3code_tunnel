@@ -338,7 +338,7 @@ describe("PreviewPasskeys", () => {
       assert.deepStrictEqual(electron.showMessageBox.mock.calls[0]?.[0]?.buttons, [
         "alice@example.com",
         "Bob (bob@example.com)",
-        "取消",
+        "Cancel",
       ]);
 
       electron.showMessageBox.mockResolvedValueOnce({ response: 2 });

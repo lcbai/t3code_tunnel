@@ -1,12 +1,14 @@
+import { msg, T, useGT, useMessages, Var } from "gt-react-native";
 import { ScreenScrollView as ScrollView } from "../../components/ui/ScreenScrollView";
-import { useAtomSet, useAtomValue } from "@effect/atom-react";
+import { useAtomValue } from "@effect/atom-react";
 import { AsyncResult } from "effect/reactivity";
 import { Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AppText as Text } from "../../components/ui/AppText";
 import { DEFAULT_FOLLOW_UP_BEHAVIOR, type FollowUpBehavior } from "../../lib/followUpBehavior";
-import { mobilePreferencesAtom, updateMobilePreferencesAtom } from "../../state/preferences";
+import { mobilePreferencesAtom, saveMobilePreferences } from "../../state/preferences";
+import { useAtomCommand } from "../../state/use-atom-command";
 import { ListChoiceRow as SettingsChoiceRow } from "../../components/ui/ListChoiceRow";
 import { SettingsSection } from "./components/SettingsSection";
 import { SettingsScreen } from "./components/SettingsScreen";
@@ -18,20 +20,22 @@ const FOLLOW_UP_OPTIONS: ReadonlyArray<{
 }> = [
   {
     behavior: "queue",
-    label: "队列",
-    description: "消息会加入队列，等当前轮次结束后执行。",
+    label: msg("Queue", { $context: "verb, follow-up behavior" }),
+    description: msg("Your message waits and runs after the current turn finishes."),
   },
   {
     behavior: "steer",
-    label: "引导",
-    description: "立即向智能体发送此消息，调整它当前的工作。",
+    label: msg("Steer", { $context: "verb, follow-up behavior" }),
+    description: msg("Your message reaches the agent right away, changing what it is working on."),
   },
 ];
 
 export function SettingsFollowUpRouteScreen() {
+  const gt = useGT();
+  const m = useMessages();
   const insets = useSafeAreaInsets();
   const preferencesResult = useAtomValue(mobilePreferencesAtom);
-  const savePreferences = useAtomSet(updateMobilePreferencesAtom);
+  const savePreferences = useAtomCommand(saveMobilePreferences);
   const preferencesReady = AsyncResult.isSuccess(preferencesResult) && !preferencesResult.waiting;
   const selectedBehavior = AsyncResult.isSuccess(preferencesResult)
     ? (preferencesResult.value.followUpBehavior ?? DEFAULT_FOLLOW_UP_BEHAVIOR)
@@ -45,25 +49,29 @@ export function SettingsFollowUpRouteScreen() {
       contentContainerClassName="gap-3 px-5 pt-4"
       contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 18) + 18 }}
     >
-      <SettingsSection title="智能体运行期间">
+      <SettingsSection title={gt("While the agent is running")}>
         {FOLLOW_UP_OPTIONS.map((option, index) => (
           <SettingsChoiceRow
             key={option.behavior}
-            label={option.label}
-            description={option.description}
+            label={m(option.label)}
+            description={m(option.description)}
             selected={selectedBehavior === option.behavior}
             separated={index > 0}
             disabled={!preferencesReady}
-            onPress={() => savePreferences({ followUpBehavior: option.behavior })}
+            onPress={() => {
+              void savePreferences({ followUpBehavior: option.behavior });
+            }}
           />
         ))}
       </SettingsSection>
       <Text className="px-2 text-sm text-foreground-muted">
-        长按发送按钮可为当前消息使用另一选项。使用实体键盘时，按住{" "}
-        {Platform.OS === "android" ? "Ctrl" : "⌘"} 发送。
+        <T>
+          Long-press the send button to use the other option for a single message. With a hardware
+          keyboard, hold <Var>{Platform.OS === "android" ? "Ctrl" : "Command"}</Var> while sending.
+        </T>
       </Text>
     </ScrollView>
   );
 
-  return <SettingsScreen title="会话">{content}</SettingsScreen>;
+  return <SettingsScreen title={gt("Chat")}>{content}</SettingsScreen>;
 }

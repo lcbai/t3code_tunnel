@@ -34,7 +34,7 @@ describe("price table edits", () => {
       const environment = target("a", {});
       expect(usagePriceCell([environment], model, "inputCostPerMillionTokens")).toEqual({
         value: "",
-        placeholder: "自动",
+        placeholder: "Automatic",
       });
       const result = usagePriceTableChanges(environment, [
         {

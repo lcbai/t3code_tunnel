@@ -59,7 +59,8 @@ vi.mock(import("./settingsLayout"), async (original) => ({
 
 import { SourceControlWritingSettingsSection } from "./SourceControlWritingSettings";
 
-const resetButton = (label: string) => page.getByRole("button", { name: `重置${label} 默认值` });
+const resetButton = (label: string) =>
+  page.getByRole("button", { name: `Reset ${label} to default` });
 
 const content = () => (
   <StrictMode>
@@ -98,11 +99,11 @@ describe("mixed source control instructions", () => {
       customInstructions,
     }));
 
-    await userEvent.click(page.getByRole("button", { name: "高级" }));
+    await userEvent.click(page.getByRole("button", { name: "Advanced" }));
     // Mid-open, Playwright scrolls the clipped panel to reach the button, then the growing panel
     // shifts it between press and release and the click misses. Wait until the panel shows it.
-    await expect.element(resetButton("拉取请求模板")).toBeInViewport({ ratio: 1 });
-    await userEvent.click(resetButton("拉取请求模板"));
+    await expect.element(resetButton("pull request templates")).toBeInViewport({ ratio: 1 });
+    await userEvent.click(resetButton("pull request templates"));
 
     expect(state.updateSettings).toHaveBeenCalledTimes(1);
     expect(state.styles.map((style) => style.followChangeRequestTemplates)).toEqual([

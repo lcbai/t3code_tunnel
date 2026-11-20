@@ -1,3 +1,5 @@
+import { errorDisplayMessage } from "@t3tools/client-runtime/errors";
+import { useGT } from "gt-react-native";
 import type { MenuAction } from "@react-native-menu/menu";
 import {
   isAtomCommandInterrupted,
@@ -11,6 +13,7 @@ import {
 } from "@t3tools/contracts";
 import { useRef, useState } from "react";
 import { TextInput, View } from "react-native";
+import { m } from "../../i18n/messages";
 
 import * as Dialog from "../../components/ui/Dialog";
 import { AppText as Text } from "../../components/ui/AppText";
@@ -28,6 +31,7 @@ import {
 import type { SettingsTarget } from "./settings-environment-filter";
 
 function useProviderInstanceMutation(environment: SettingsTarget) {
+  const gt = useGT();
   const mutate = useAtomCommand(serverEnvironment.mutateProviderInstance, {
     reportFailure: false,
     reportDefect: false,
@@ -49,7 +53,11 @@ function useProviderInstanceMutation(environment: SettingsTarget) {
     if (result._tag === "Success") return true;
     if (!isAtomCommandInterrupted(result)) {
       const failure = squashAtomCommandFailure(result);
-      setError(failure instanceof Error ? failure.message : "无法保存 Claude 账号。");
+      setError(
+        failure instanceof Error
+          ? (errorDisplayMessage(failure, m) ?? failure.message)
+          : gt("Could not save the {provider} account.", { provider: "Claude" }),
+      );
     }
     return false;
   }
@@ -63,19 +71,20 @@ export function ClaudeAccount({
   readonly environment: SettingsTarget;
   readonly provider: ServerProvider;
 }) {
+  const gt = useGT();
   const [editing, setEditing] = useState(false);
   const { run, pending, error } = useProviderInstanceMutation(environment);
   const instance = environment.serverConfig.settings.providerInstances[provider.instanceId];
   const configDir = claudeConfigDir(instance);
   const name = provider.displayName ?? "Claude";
   const status = !provider.enabled
-    ? "已关闭"
+    ? gt("Turned off")
     : provider.auth.status === "authenticated"
-      ? "已登录"
+      ? gt("Signed in")
       : provider.auth.status === "unauthenticated"
-        ? "未登录"
+        ? gt("Not signed in")
         : !provider.installed
-          ? "未安装"
+          ? gt("Not installed")
           : null;
   const removable =
     provider.instanceId !== DEFAULT_CLAUDE_INSTANCE_ID &&
@@ -84,12 +93,12 @@ export function ClaudeAccount({
       `providerInstances.${provider.instanceId}`,
     );
   const actions: MenuAction[] = [
-    { id: "edit", title: "编辑", image: "pencil" },
+    { id: "edit", title: gt("Edit"), image: "pencil" },
     ...(removable
       ? [
           {
             id: "remove",
-            title: "移除",
+            title: gt("Remove"),
             image: "trash",
             attributes: { destructive: true },
           } satisfies MenuAction,
@@ -98,12 +107,15 @@ export function ClaudeAccount({
   ];
   function remove() {
     Dialog.alert(
-      `移除 ${name}?`,
-      `此账号将从 ${environment.label} 的模型选择器中移除。配置目录和登录状态仍保存在服务器上。`,
+      gt("Remove {account}?", { account: name }),
+      gt(
+        "It leaves the model picker on {environment}. The config folder and its sign-in stay on the server.",
+        { environment: environment.label },
+      ),
       [
-        { text: "取消", style: "cancel" },
+        { text: gt("Cancel"), style: "cancel" },
         {
-          text: "移除",
+          text: gt("Remove"),
           style: "destructive",
           onPress: () => {
             void run({ operation: "remove", instanceId: provider.instanceId });
@@ -120,14 +132,14 @@ export function ClaudeAccount({
             {name}
           </Text>
           <Text textRole="footnote" className="text-foreground-muted" numberOfLines={2}>
-            {[status, configDir || "默认配置目录"].filter(Boolean).join(" · ")}
+            {[status, configDir || gt("Default config folder")].filter(Boolean).join(" · ")}
           </Text>
         </View>
         {editing ? null : (
           <Menu
             accessible
             accessibilityRole="button"
-            accessibilityLabel={`${name} 选项`}
+            accessibilityLabel={gt("{account} options", { account: name })}
             title={name}
             actions={actions}
             onPressAction={({ nativeEvent }) => {
@@ -136,7 +148,11 @@ export function ClaudeAccount({
               else if (nativeEvent.event === "remove") remove();
             }}
           >
-            <ControlPill icon="ellipsis" accessibilityLabel={`${name} 选项`} disabled={pending} />
+            <ControlPill
+              icon="ellipsis"
+              accessibilityLabel={gt("{account} options", { account: name })}
+              disabled={pending}
+            />
           </Menu>
         )}
       </View>
@@ -157,6 +173,7 @@ export function ClaudeAccount({
 }
 
 export function AddClaudeAccount({ environment }: { readonly environment: SettingsTarget }) {
+  const gt = useGT();
   const [adding, setAdding] = useState(false);
   return (
     <View className="border-t border-border-subtle">
@@ -170,8 +187,11 @@ export function AddClaudeAccount({ environment }: { readonly environment: Settin
       ) : (
         <ListActionRow
           icon="plus"
-          label="添加 Claude 账号"
-          description="请使用此服务器上已登录的 Claude 配置目录。"
+          label={gt("Add {provider} account", { provider: "Claude" })}
+          description={gt(
+            "Use a {provider} config folder that is already signed in on this server.",
+            { provider: "Claude" },
+          )}
           onPress={() => setAdding(true)}
         />
       )}
@@ -190,6 +210,7 @@ function ClaudeAccountForm({
   readonly initial: ClaudeAccountDraft;
   readonly onDone: () => void;
 }) {
+  const gt = useGT();
   const [draft, setDraft] = useState(initial);
   const { run, pending, error, setError } = useProviderInstanceMutation(environment);
   function save() {
@@ -225,20 +246,32 @@ function ClaudeAccountForm({
   return (
     <View className="gap-2 px-4 py-3">
       <Text textRole="footnote" className="text-foreground-muted">
-        {`选择 ${environment.label} 上已登录 Claude Code 的 CLAUDE_CONFIG_DIR 目录。请先在该设备上通过 Claude CLI 登录。`}
+        {gt(
+          "Point at a {variable} folder on {environment} where {product} is already signed in. Sign in there with the {cli} first.",
+          {
+            variable: "CLAUDE_CONFIG_DIR",
+            environment: environment.label,
+            product: "Claude Code",
+            cli: "Claude CLI",
+          },
+        )}
       </Text>
-      {field("name", "账号名称", "名称，例如：工作")}
-      {field("configDir", "Claude 配置目录", "配置目录，例如：~/.claude-work")}
+      {field("name", gt("Account name"), gt("Name, e.g. Work"))}
+      {field(
+        "configDir",
+        gt("{provider} config folder", { provider: "Claude" }),
+        gt("Config folder, e.g. {path}", { path: "~/.claude-work" }),
+      )}
       {error ? (
         <Text accessibilityRole="alert" className="text-danger-foreground">
           {error}
         </Text>
       ) : null}
       <View className="flex-row justify-end gap-2">
-        <ControlPill variant="pill" label="取消" disabled={pending} onPress={onDone} />
+        <ControlPill variant="pill" label={gt("Cancel")} disabled={pending} onPress={onDone} />
         <ControlPill
           variant="primary"
-          label={instanceId === null ? "添加" : "保存"}
+          label={instanceId === null ? gt("Add") : gt("Save")}
           disabled={pending}
           onPress={save}
         />

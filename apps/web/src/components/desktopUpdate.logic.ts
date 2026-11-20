@@ -1,4 +1,9 @@
 import type { DesktopUpdateActionResult, DesktopUpdateState } from "@t3tools/contracts";
+import { desktopUpdateChannelOf } from "@t3tools/shared/cliRelease";
+import { msg } from "gt-react";
+
+import { m, type MessageResolver } from "../i18n/messages";
+import { channelSwitchLabel } from "./sidebar/updateEverything.logic";
 
 export type DesktopUpdateButtonAction = "download" | "install" | "none";
 
@@ -71,60 +76,124 @@ export function isDesktopUpdateButtonDisabled(state: DesktopUpdateState | null):
   return state?.status === "downloading";
 }
 
-export function getArm64IntelBuildWarningDescription(state: DesktopUpdateState): string {
+export function getArm64IntelBuildWarningDescription(
+  state: DesktopUpdateState,
+  resolve: MessageResolver = m,
+): string {
   if (!shouldShowArm64IntelBuildWarning(state)) {
-    return "此安装使用正确的架构。";
+    return resolve(msg("This install is using the correct architecture."));
   }
 
   const action = resolveDesktopUpdateButtonAction(state);
   if (action === "download") {
-    return "这款Mac有苹果硅，但T3 Code仍在Rosetta下运行Intel架构，下载可用的更新以切换到原产地的苹果硅架构。";
+    return resolve(
+      msg(
+        "This Mac has Apple Silicon, but T3 Code is still running the Intel build under Rosetta. Download the available update to switch to the native Apple Silicon build.",
+      ),
+    );
   }
   if (action === "install") {
-    return "这个Mac有Apple Silicon，但T3 Code仍在Rosetta下运行Intel架构. Restart以安装下载的Apple Silicon架构。";
+    return resolve(
+      msg(
+        "This Mac has Apple Silicon, but T3 Code is still running the Intel build under Rosetta. Restart to install the downloaded Apple Silicon build.",
+      ),
+    );
   }
-  return "这个Mac有Apple Silicon，但T3 Code仍在Rosetta下运行Intel架构，下一次的应用程序更新将替换为原产地的Apple Silicon架构。";
+  return resolve(
+    msg(
+      "This Mac has Apple Silicon, but T3 Code is still running the Intel build under Rosetta. The next app update will replace it with the native Apple Silicon build.",
+    ),
+  );
 }
 
-export function getDesktopUpdateButtonTooltip(state: DesktopUpdateState): string {
+export function getDesktopUpdateButtonTooltip(
+  state: DesktopUpdateState,
+  resolve: MessageResolver = m,
+): string {
   if (
     state.notAppliedVersion !== undefined &&
     (state.status === "available" || state.status === "downloaded") &&
     getDesktopUpdateDownloadedVersion(state) === state.notAppliedVersion
   ) {
-    return `更新${state.notAppliedVersion}未应用。 点击可重试。`;
+    return resolve(
+      msg("Update {version} did not apply. Click to retry.", { version: state.notAppliedVersion }),
+    );
+  }
+  if (
+    (state.status === "available" || state.status === "error") &&
+    state.errorContext === "download" &&
+    state.availableVersion
+  ) {
+    return resolve(
+      msg("Download failed for {version}. Click to retry.", { version: state.availableVersion }),
+    );
   }
   if (state.status === "available") {
-    return `更新${state.availableVersion ?? "available"} 准备下载`;
+    return state.availableVersion === null
+      ? resolve(msg("Update available ready to download"))
+      : resolve(msg("Update {version} ready to download", { version: state.availableVersion }));
   }
   if (state.status === "downloading") {
-    const progress =
-      typeof state.downloadPercent === "number" ? ` (${Math.floor(state.downloadPercent)}%)` : "";
-    return `正在下载更新${progress}`;
+    return typeof state.downloadPercent === "number"
+      ? resolve(
+          msg("Downloading update ({percent}%)", { percent: Math.floor(state.downloadPercent) }),
+        )
+      : resolve(msg("Downloading update"));
   }
   if (state.status === "downloaded") {
-    return `更新${state.downloadedVersion ?? state.availableVersion ?? "ready"} 下载。 点击以重新启动并安装。`;
+    const version = state.downloadedVersion ?? state.availableVersion;
+    return version === null
+      ? resolve(msg("Update ready downloaded. Click to restart and install."))
+      : resolve(msg("Update {version} downloaded. Click to restart and install.", { version }));
   }
   if (state.status === "error") {
-    if (state.errorContext === "download" && state.availableVersion) {
-      return `${state.availableVersion} 下载失败。 点击可重试。`;
-    }
     if (state.errorContext === "install" && state.downloadedVersion) {
-      return `为${state.downloadedVersion}. 点击重试失败。`;
+      return resolve(
+        msg("Install failed for {version}. Click to retry.", { version: state.downloadedVersion }),
+      );
     }
     if (state.downloadedVersion) {
-      return `更新${state.downloadedVersion} 下载。 点击以重新启动并安装。`;
+      return resolve(
+        msg("Update {version} downloaded. Click to restart and install.", {
+          version: state.downloadedVersion,
+        }),
+      );
     }
-    return state.message ?? "更新失败";
+    return state.message ?? resolve(msg("Update failed"));
   }
-  return "最新数据";
+  // The updater discards every release of the other track, so "up to date" would be false here.
+  const buildChannel = desktopUpdateChannelOf(state.currentVersion);
+  if (state.status === "up-to-date" && buildChannel !== state.channel) {
+    return resolve(
+      msg(
+        "This {build} build ignores {track} releases. Review the update track in Settings to finish the switch.",
+        {
+          build: channelSwitchLabel(buildChannel, resolve),
+          track: channelSwitchLabel(state.channel, resolve),
+        },
+      ),
+    );
+  }
+  return resolve(msg("Up to date"));
 }
 
 export function getDesktopUpdateInstallConfirmationMessage(
   state: Pick<DesktopUpdateState, "availableVersion" | "downloadedVersion">,
+  resolve: MessageResolver = m,
 ): string {
   const version = state.downloadedVersion ?? state.availableVersion;
-  return `安装更新${version ? ` ${version}` : ""}并重启 T3 Code？\n\n正在运行的任务将中断。确认准备好后再继续。`;
+  return version
+    ? resolve(
+        msg(
+          "Install update {version} and restart T3 Code?\n\nAny running tasks will be interrupted. Make sure you're ready before continuing.",
+          { version },
+        ),
+      )
+    : resolve(
+        msg(
+          "Install update and restart T3 Code?\n\nAny running tasks will be interrupted. Make sure you're ready before continuing.",
+        ),
+      );
 }
 
 export function getDesktopUpdateActionError(result: DesktopUpdateActionResult): string | null {
@@ -149,18 +218,22 @@ export function canCheckForUpdate(state: DesktopUpdateState | null): boolean {
 export function getDesktopUpdateDisabledReason(
   state: Pick<DesktopUpdateState, "enabled" | "status" | "message"> | null,
   managedDenial?: string,
+  resolve: MessageResolver = m,
 ): string | null {
   if (managedDenial !== undefined) return managedDenial;
   if (!state || (state.enabled && state.status !== "disabled")) return null;
-  return state.message?.trim() || "此构建中没有自动更新。";
+  return (
+    state.message?.trim() || resolve(msg("Automatic updates are not available in this build."))
+  );
 }
 
 export function getDesktopUpdateIdleTooltip(
   state: Pick<DesktopUpdateState, "enabled" | "status" | "message"> | null,
   managedDenial?: string,
+  resolve: MessageResolver = m,
 ) {
-  const disabledReason = getDesktopUpdateDisabledReason(state, managedDenial);
+  const disabledReason = getDesktopUpdateDisabledReason(state, managedDenial, resolve);
   return disabledReason
-    ? { title: "无法更新", detail: disabledReason }
-    : { title: "检查更新", detail: null };
+    ? { title: resolve(msg("Updates unavailable")), detail: disabledReason }
+    : { title: resolve(msg("Check for updates")), detail: null };
 }

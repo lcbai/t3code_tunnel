@@ -34,6 +34,9 @@ import {
   type FormEvent,
   type KeyboardEvent,
 } from "react";
+import { msg, T, useGT, useMessages } from "gt-react";
+
+import { m } from "~/i18n/messages";
 
 import { useIncrementalTimelineEntries } from "~/hooks/useIncrementalTimelineEntries";
 import { useNowMinute } from "~/hooks/useNowMinute";
@@ -141,7 +144,7 @@ async function fetchGuestHistoryPage(
   shareId: string,
   cursor: string,
 ): Promise<OrchestrationV2ThreadHistoryPage | string> {
-  const failed = "Could not load earlier turns. Try again.";
+  const failed = m(msg("Could not load earlier turns. Try again."));
   try {
     const response = await fetch(
       `${GUEST_HISTORY_ROUTE}?${GUEST_SHARE_PARAM}=${encodeURIComponent(shareId)}&cursor=${encodeURIComponent(cursor)}`,
@@ -155,7 +158,7 @@ async function fetchGuestHistoryPage(
     }
     return Option.getOrElse(decodeHistoryPage(json), () => failed);
   } catch {
-    return "Could not reach the server.";
+    return m(msg("Could not reach the server."));
   }
 }
 
@@ -178,18 +181,18 @@ async function postGuest(
     if (response.ok) return null;
     const json: unknown = await response.json().catch(() => null);
     return Option.match(decodeErrorBody(json), {
-      onNone: () => "Something went wrong. Try again.",
+      onNone: () => m(msg("Something went wrong. Try again.")),
       onSome: ({ message }) => message,
     });
   } catch {
-    return "Could not reach the server.";
+    return m(msg("Could not reach the server."));
   }
 }
 
 const STATUS_LABEL: Record<ThreadGuestMessageStatus, string> = {
-  pending: "Waiting for approval",
-  sent: "Sent",
-  dismissed: "Not sent",
+  pending: msg("Waiting for approval"),
+  sent: msg("Sent", { $context: "message status" }),
+  dismissed: msg("Not sent"),
 };
 
 /** Same column as the owner's timeline, so both views wrap text at the same width. */
@@ -198,6 +201,7 @@ const LANE = "chat-content-lane px-4";
 type GuestAccess = "checking" | "session" | "name" | "none";
 
 export function GuestPage() {
+  const gt = useGT();
   const [{ credential, shareId }] = useState(takeGuestEntry);
   // A browser that already joined this share goes straight back in, even from the spent link.
   // Sessions are per share, so one for another link never stands in for this one.
@@ -235,7 +239,7 @@ export function GuestPage() {
   return (
     <div className="flex h-dvh flex-col bg-background text-foreground">
       {access === "checking" ? (
-        <Notice title="正在连接…" />
+        <Notice title={gt("Connecting...")} />
       ) : access === "name" && credential !== null ? (
         <NameForm
           credential={credential}
@@ -249,8 +253,8 @@ export function GuestPage() {
         <GuestSession shareId={shareId} />
       ) : (
         <Notice
-          title="此链接已终止或无效"
-          detail="向所有者询问新链接。每个链接在一个浏览器中工作。"
+          title={gt("This link has ended or is not valid")}
+          detail={gt("Ask the owner for a new link. Each link works in one browser.")}
         />
       )}
     </div>
@@ -258,6 +262,7 @@ export function GuestPage() {
 }
 
 function GuestSession({ shareId }: { readonly shareId: string }) {
+  const gt = useGT();
   const [stream, dispatch] = useReducer(applyGuestStreamEvent, null, () => ({
     ...initialGuestStreamState,
     awaitingRowIds: readAwaitingRowIds(),
@@ -317,10 +322,15 @@ function GuestSession({ shareId }: { readonly shareId: string }) {
   }, [shareId]);
 
   if (stream.ended || (rejected && stream.view !== null)) {
-    return <Notice title="此链接已终止" detail="店主不再分享这个线条了。" />;
+    return (
+      <Notice
+        title={gt("This link has ended")}
+        detail={gt("The owner stopped sharing this thread.")}
+      />
+    );
   }
   if (stream.view !== null) {
-    if (stream.projection === null) return <Notice title="正在连接…" />;
+    if (stream.projection === null) return <Notice title={gt("Connecting...")} />;
     return (
       <GuestThread
         view={stream.view}
@@ -330,9 +340,12 @@ function GuestSession({ shareId }: { readonly shareId: string }) {
       />
     );
   }
-  if (!rejected) return <Notice title="正在连接…" />;
+  if (!rejected) return <Notice title={gt("Connecting...")} />;
   return (
-    <Notice title="此链接已终止或无效" detail="向所有者询问新链接。每个链接在一个浏览器中工作。" />
+    <Notice
+      title={gt("This link has ended or is not valid")}
+      detail={gt("Ask the owner for a new link. Each link works in one browser.")}
+    />
   );
 }
 
@@ -352,6 +365,7 @@ function NameForm({
   readonly credential: string;
   readonly onJoined: () => void;
 }) {
+  const gt = useGT();
   const [name, setName] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -367,9 +381,11 @@ function NameForm({
   };
   return (
     <form className="m-auto flex w-full max-w-xs flex-col gap-3 p-6" onSubmit={submit}>
-      <h1 className="text-base font-medium">加入共享会话</h1>
+      <h1 className="text-base font-medium">
+        <T>Join a shared thread</T>
+      </h1>
       <label className="flex flex-col gap-1.5 text-sm" htmlFor="guest-name">
-        你的名字
+        {gt("Your name")}
         <Input
           id="guest-name"
           autoFocus
@@ -385,10 +401,10 @@ function NameForm({
         </p>
       ) : null}
       <Button type="submit" disabled={submitting || name.trim() === ""}>
-        联合
+        <T context="verb, join a shared thread">Join</T>
       </Button>
       <p className="text-xs text-muted-foreground">
-        店主看到你的名字，并在代理收到之前批准每条消息。
+        <T>The owner sees your name and approves each message before the agent gets it.</T>
       </p>
     </form>
   );
@@ -540,9 +556,10 @@ function GuestThread({
 
 function ExpiryLabel({ expiresAt }: { readonly expiresAt: string }) {
   const nowMinute = useNowMinute();
+  const m = useMessages();
   return (
     <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
-      {formatGuestExpiry(expiresAt, Date.parse(`${nowMinute}Z`))}
+      {formatGuestExpiry(expiresAt, Date.parse(`${nowMinute}Z`), m)}
     </span>
   );
 }
@@ -567,10 +584,12 @@ function UnplacedGuestMessage({
 }) {
   // A dismissed message's files are deleted, so only their names remain.
   const served = message.status !== "dismissed";
+  const gt = useGT();
+  const m = useMessages();
   const url = (attachment: { readonly id: string }) => guestAttachmentUrl(shareId, attachment.id);
   return (
     <div className="flex flex-col items-end gap-1">
-      <GuestMessageName name="You" />
+      <GuestMessageName name={gt("You", { $context: "the guest's own messages" })} />
       <div
         className={cn(
           BUBBLE,
@@ -586,7 +605,7 @@ function UnplacedGuestMessage({
         />
         {message.text ? <span>{message.text}</span> : null}
       </div>
-      <p className="me-1 text-2xs text-muted-foreground">{STATUS_LABEL[message.status]}</p>
+      <p className="me-1 text-2xs text-muted-foreground">{m(STATUS_LABEL[message.status])}</p>
     </div>
   );
 }
@@ -595,10 +614,11 @@ function UnplacedGuestMessage({
 function GuestModelLabel({ model }: { readonly model: GuestThreadModel }) {
   const label = getTriggerDisplayModelName({ slug: model.name, ...model }, model.driver);
   const fullLabel = getDisplayModelName({ slug: model.name, ...model });
+  const gt = useGT();
   return (
     <ComposerControl
       render={<span />}
-      aria-label={`型号:${fullLabel}`}
+      aria-label={gt("Model: {model}", { model: fullLabel })}
       className="pointer-events-none min-w-0 shrink"
     >
       {model.driver === null ? null : (
@@ -647,6 +667,8 @@ function GuestComposer({
   /** The guest's own message comes into view even if they had scrolled up, as the owner's does. */
   readonly onSent: () => void;
 }) {
+  const gt = useGT();
+  const m = useMessages();
   const [text, setText] = useState("");
   const [files, setFiles] = useState<ReadonlyArray<StagedFile>>([]);
   const [sending, setSending] = useState(false);
@@ -660,7 +682,10 @@ function GuestComposer({
       ...files,
       ...added.map((file) => ({ key: `staged-${nextFileKey.current++}`, file })),
     ];
-    const problem = guestFilesProblem(next.map((staged) => staged.file));
+    const problem = guestFilesProblem(
+      next.map((staged) => staged.file),
+      m,
+    );
     setError(problem);
     if (problem === null) setFiles(next);
   };
@@ -720,7 +745,7 @@ function GuestComposer({
       }}
     >
       {files.length > 0 ? (
-        <ul className="flex flex-wrap gap-2" aria-label="随附文件">
+        <ul className="flex flex-wrap gap-2" aria-label={gt("Attached files")}>
           {files.map((staged) => (
             <li
               key={staged.key}
@@ -735,14 +760,14 @@ function GuestComposer({
                   <PierreEntryIcon pathValue={staged.file.name} kind="file" theme={resolvedTheme} />
                   <span className="max-w-40 truncate">{staged.file.name}</span>
                   <span className="shrink-0 text-xs text-muted-foreground">
-                    {formatAttachmentSize(staged.file.size)}
+                    {formatAttachmentSize(staged.file.size, m)}
                   </span>
                 </span>
               )}
               <Button
                 size="icon-xs"
                 variant="ghost-muted"
-                aria-label={`删除${staged.file.name}`}
+                aria-label={gt("Remove {name}", { name: staged.file.name })}
                 onClick={() => {
                   setError(null);
                   setFiles((current) => current.filter((candidate) => candidate !== staged));
@@ -755,8 +780,8 @@ function GuestComposer({
         </ul>
       ) : null}
       <textarea
-        aria-label="消息"
-        placeholder="消息"
+        aria-label={gt("Message", { $context: "message input" })}
+        placeholder={gt("Message", { $context: "message input" })}
         rows={2}
         maxLength={GUEST_MESSAGE_MAX_LENGTH}
         value={text}
@@ -771,14 +796,17 @@ function GuestComposer({
           type="file"
           multiple
           hidden
-          aria-label="要附加的文件"
+          aria-label={gt("Files to attach")}
           onChange={(event) => {
             addFiles(Array.from(event.target.files ?? []));
             // The same file can be picked again after it is removed.
             event.target.value = "";
           }}
         />
-        <ComposerControl aria-label="附加文件" onClick={() => fileInputRef.current?.click()}>
+        <ComposerControl
+          aria-label={gt("Attach files")}
+          onClick={() => fileInputRef.current?.click()}
+        >
           <ComposerControlIcon icon={PaperclipIcon} />
         </ComposerControl>
         <GuestModelLabel model={model} />
@@ -788,12 +816,12 @@ function GuestComposer({
           </p>
         ) : (
           <p className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
-            每个消息都由所有者批准
+            <T>The owner approves each message</T>
           </p>
         )}
         <button
           type="submit"
-          aria-label="发送"
+          aria-label={gt("Send", { $context: "verb, sends the message" })}
           disabled={sending || (text.trim() === "" && files.length === 0)}
           className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-full bg-message-action text-message-action-foreground shadow-xs hover:bg-message-action-hover focus-visible:outline-2 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-64"
         >

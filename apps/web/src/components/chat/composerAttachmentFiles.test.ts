@@ -121,6 +121,12 @@ describe("composer attachment files", () => {
     ).toBe(true);
   });
 
+  it("leaves an image-and-text clipboard to the text path under Paste as Text", () => {
+    const image = new File(["png"], "image.png", { type: "image/png" });
+    const input = { files: [image], plainText: "Hello from Word", bypassAutoAttachment: true };
+    expect(shouldHandleComposerAttachmentPaste(input)).toBe(false);
+  });
+
   it("preserves text when the clipboard also includes generic image files", () => {
     const image = new File(["tiff"], "photo.tiff", { type: "image/tiff" });
     expect(
@@ -143,7 +149,7 @@ describe("composer attachment files", () => {
         supportsAttachmentUploads: false,
         maxFileAttachmentBytes: null,
       }),
-    ).toBe("在文件附件发送前等待服务器");
+    ).toBe("Waiting for the server before file attachments can send");
   });
 
   it("keeps draft-persisted file uploads when the upload capability flips off", () => {

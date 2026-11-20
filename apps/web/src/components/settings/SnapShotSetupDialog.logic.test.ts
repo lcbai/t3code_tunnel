@@ -96,7 +96,7 @@ it("offers manual capture on an unsupported GNOME version instead of trapping se
   expect(captureSetupBackend(state)).toBe("picker");
   expect(captureSetupAccessReady(state)).toBe(true);
   expect(captureSetupInitialStep(state)).toBe("access");
-  expect(captureSetupCheckMessage(state)).toContain("每次都选一个窗口");
+  expect(captureSetupCheckMessage(state)).toContain("choose a window each time");
 });
 
 it.each(["not-installed", "error"] as const)(
@@ -130,14 +130,14 @@ it("resumes KDE setup after the helper passes its real permission check", () => 
 
 it("does not report a successful check when capture support could not be read", () => {
   expect(captureSetupCheckMessage({ ...gnome, message: "Desktop disconnected" })).toContain(
-    "仍然无法检查访问权限",
+    "Still unable to check access",
   );
   expect(
     captureSetupCheckMessage({
       ...gnome,
       gnomeExtension: { status: "error", message: "Could not read extension state" },
     }),
-  ).toContain("仍然无法检查访问权限");
+  ).toContain("Still unable to check access");
 });
 
 it("uses a capable portal without requiring the optional GNOME extension", () => {
@@ -154,7 +154,7 @@ it("uses a capable portal without requiring the optional GNOME extension", () =>
       ...state,
       gnomeExtension: { status: "error", message: "Optional extension failed" },
     }),
-  ).toBe("准备继续选择快捷键。");
+  ).toBe("Ready. Continue to choose your shortcut.");
 });
 
 it("lets Niri setup finish with configuration instructions without claiming the binding was verified", () => {
@@ -238,5 +238,5 @@ it.each(["kde", "hyprland"] as const)("ignores errors from inactive helpers on %
     hyprlandHelper: { status: backend === "hyprland" ? "ready" : "error", message: "Hyprland" },
   };
   expect(captureSetupAccessReady(state)).toBe(true);
-  expect(captureSetupCheckMessage(state)).toBe("准备继续选择快捷键。");
+  expect(captureSetupCheckMessage(state)).toBe("Ready. Continue to choose your shortcut.");
 });

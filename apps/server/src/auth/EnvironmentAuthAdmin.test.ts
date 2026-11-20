@@ -76,15 +76,7 @@ it.layer(Layer.mergeAll(NodeServices.layer, NodeCrypto.layer))(
         const pairingLinks = yield* PairingGrantStore.PairingGrantStore;
         const environmentAuth = yield* EnvironmentAuth.EnvironmentAuth;
         const phone = yield* sessions.issue({ subject: "one-time-token" });
-        const persistentPairing = yield* environmentAuth.issuePairingCredential({
-          persistent: true,
-        });
-        const persistentToken = yield* environmentAuth.exchangeBootstrapCredentialForAccessToken(
-          persistentPairing.credential,
-          undefined,
-          { deviceType: "mobile" },
-        );
-        const persistentPhone = yield* sessions.verify(persistentToken.access_token);
+        const legacyPhone = yield* sessions.issue({ subject: "persistent-device-pairing" });
         const bot = yield* sessions.issue({ subject: "cli-issued-session" });
         const startup = (ipAddress: string) =>
           sessions.issue({
@@ -94,7 +86,7 @@ it.layer(Layer.mergeAll(NodeServices.layer, NodeCrypto.layer))(
         const startupPhone = yield* startup("192.168.1.20");
         const startupBrowser = yield* startup("127.0.0.1");
         yield* environmentAuth.createPairingLink({ subject: "one-time-token" });
-        yield* environmentAuth.issuePairingCredential({ persistent: true });
+        yield* environmentAuth.createPairingLink({ subject: "persistent-device-pairing" });
         yield* environmentAuth.issuePairingCredential({ access: "auto" });
 
         yield* EnvironmentAuth.make.pipe(
@@ -105,7 +97,7 @@ it.layer(Layer.mergeAll(NodeServices.layer, NodeCrypto.layer))(
 
         const remaining = (yield* sessions.listActive()).map((session) => session.sessionId);
         assert.notInclude(remaining, phone.sessionId);
-        assert.notInclude(remaining, persistentPhone.sessionId);
+        assert.notInclude(remaining, legacyPhone.sessionId);
         assert.notInclude(remaining, startupPhone.sessionId);
         assert.include(remaining, startupBrowser.sessionId);
         assert.include(remaining, bot.sessionId);
@@ -113,54 +105,29 @@ it.layer(Layer.mergeAll(NodeServices.layer, NodeCrypto.layer))(
       }).pipe(Effect.provide(layerEnvironmentAuth())),
     );
 
-    it.effect(
-      "revokes legacy account clients and grants on startup while keeping direct clients",
-      () =>
-        Effect.gen(function* () {
-          const sessions = yield* SessionStore.SessionStore;
-          const phone = yield* sessions.issue({ subject: "one-time-token" });
-          const bot = yield* sessions.issue({
-            subject: "mcp-client",
-            method: "bearer-access-token",
-          });
-          const scopes = [...AuthStandardClientScopes, "relay:read", "relay:write"] as const;
-          const legacySessions = yield* Effect.forEach(
-            ["browser-session-cookie", "bearer-access-token", "dpop-access-token"] as const,
-            (method) =>
-              sessions.issue({
-                subject: "cloud-connect",
-                method,
-                scopes,
-                ...(method === "dpop-access-token" ? { proofKeyThumbprint: "legacy-key" } : {}),
+    it.effect("revokes only T3 Connect clients when the policy keeps remote clients", () =>
+      Effect.gen(function* () {
+        const sessions = yield* SessionStore.SessionStore;
+        const phone = yield* sessions.issue({ subject: "one-time-token" });
+        const connect = yield* sessions.issue({ subject: "cloud-connect" });
+
+        yield* EnvironmentAuth.make.pipe(
+          Effect.provide(
+            Layer.merge(
+              ManagedPolicy.layerTest({
+                schemaVersion: 1,
+                organization: "Example Corp",
+                limits: { connect: false },
               }),
-          );
-          const pairingLinks = yield* PairingGrantStore.PairingGrantStore;
-          const legacyGrant = yield* pairingLinks.issueOneTimeToken({
-            subject: "cloud-connect",
-            scopes,
-            proofKeyThumbprint: "legacy-key",
-          });
-          const directGrant = yield* pairingLinks.issueOneTimeToken();
+              layerServerConfig(),
+            ),
+          ),
+        );
 
-          yield* EnvironmentAuth.make.pipe(
-            Effect.provide(Layer.merge(layerServerConfig(), ManagedPolicy.layerTest())),
-          );
-
-          for (const session of legacySessions) {
-            const rejected = yield* sessions.verify(session.token).pipe(Effect.flip);
-            assert.equal(rejected._tag, "SessionTokenRevokedError");
-          }
-          assert.equal((yield* sessions.verify(phone.token)).sessionId, phone.sessionId);
-          assert.equal((yield* sessions.verify(bot.token)).sessionId, bot.sessionId);
-          const rejectedGrant = yield* pairingLinks
-            .consume(legacyGrant.credential, { proofKeyThumbprint: "legacy-key" })
-            .pipe(Effect.flip);
-          assert.equal(rejectedGrant._tag, "UnavailableBootstrapCredentialError");
-          assert.equal(
-            (yield* pairingLinks.consume(directGrant.credential)).subject,
-            "one-time-token",
-          );
-        }).pipe(Effect.provide(layerEnvironmentAuth())),
+        const remaining = (yield* sessions.listActive()).map((session) => session.sessionId);
+        assert.include(remaining, phone.sessionId);
+        assert.notInclude(remaining, connect.sessionId);
+      }).pipe(Effect.provide(layerEnvironmentAuth())),
     );
 
     it.effect("creates, lists, and revokes client pairing links", () =>

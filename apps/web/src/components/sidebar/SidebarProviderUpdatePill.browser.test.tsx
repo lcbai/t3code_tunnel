@@ -66,11 +66,11 @@ describe("SidebarProviderUpdatePill exit", () => {
     setup([provider("failed")]);
     await using screen = await render(<SidebarProviderUpdatePill />);
     using _timers = fakeTimers();
-    expect(screen.container.textContent).toContain("Claude 更新失败");
+    expect(screen.container.textContent).toContain("Claude update failed");
 
     await act(() =>
       screen.container
-        .querySelector<HTMLButtonElement>('[aria-label="解雇提供者更新通知"]')
+        .querySelector<HTMLButtonElement>('[aria-label="Dismiss provider update notice"]')
         ?.click(),
     );
     await advance(180);

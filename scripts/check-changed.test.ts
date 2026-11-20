@@ -18,7 +18,9 @@ import * as TestClock from "effect/testing/TestClock";
 import {
   comparisonBase,
   defaultConcurrency,
+  docReaderTests,
   gitLines,
+  ignoredCheckInputs,
   runSteps,
   splitTests,
   type Step,
@@ -34,6 +36,17 @@ describe("check:changed", () => {
     assert.strictEqual(defaultConcurrency(4, 15 * GiB), 2);
     assert.strictEqual(defaultConcurrency(4, 2 * GiB), 1);
     assert.strictEqual(defaultConcurrency(1, 64 * GiB), 1);
+  });
+
+  it("runs the server tests for the one guide they read and leaves other docs inert", () => {
+    const packages = readWorkspace();
+    assert.isTrue(
+      decide(["docs/user/t3-connect-troubleshooting.md"], packages, false).outputs.test_server,
+    );
+    assert.deepStrictEqual(docReaderTests(["docs/user/t3-connect-troubleshooting.md"]), [
+      "apps/server/src/cloud/ConnectReachability.test.ts",
+    ]);
+    assert.deepStrictEqual(decide(["docs/user/install.md"], packages, false).affected, []);
   });
 
   it.effect(
@@ -215,6 +228,8 @@ describe("check:changed", () => {
   it.each([
     "packages/shared/src/testing/longTempDir.ts",
     "packages/shared/src/testing/providerEnv.ts",
+    "packages/shared/src/testing/gitEnv.ts",
+    "packages/shared/src/testing/gitRepositoryEnv.ts",
   ])("tests every package when the shared test setup file %s changes", (file) => {
     assert.strictEqual(decide([file], readWorkspace(), false).outputs.test_packages, "");
   });
@@ -285,16 +300,17 @@ function fixture(remotes: Record<string, "A" | "B">) {
   };
 }
 
-const compare = (root: string, ref: Option.Option<string>) =>
+const inFixture = <A, E>(effect: Effect.Effect<A, E, ChildProcessSpawner.ChildProcessSpawner>) =>
   Effect.gen(function* () {
     const spawner = yield* ChildProcessSpawner.ChildProcessSpawner;
-    return yield* comparisonBase(root, ref).pipe(
+    return yield* effect.pipe(
       Effect.provideService(
         ChildProcessSpawner.ChildProcessSpawner,
         ChildProcessSpawner.make((command) => spawner.spawn(ChildProcess.setEnv(command, env))),
       ),
     );
   }).pipe(Effect.provide(NodeServices.layer), Effect.runPromise);
+const compare = (root: string, ref: Option.Option<string>) => inFixture(comparisonBase(root, ref));
 
 it.each(["upstream", "team/upstream"])(
   "compares against %s/main when the fork's origin/main lags it",
@@ -311,6 +327,44 @@ it("compares against an explicit ref instead of the closest remote main", async 
   const result = await compare(project.root, Option.some("origin/main"));
   assert.strictEqual(result.base, project.commits.A);
   assert.strictEqual(result.ref, "origin/main");
+});
+
+it("lists the ignored inputs that main's pathspecs list, without entering node_modules", async () => {
+  using project = fixture({});
+  const git = (...args: Array<string>) =>
+    NodeChildProcess.execFileSync("git", args, { cwd: project.root, encoding: "utf8", env });
+  const write = (file: string, content = "") => {
+    NodeFS.mkdirSync(NodePath.dirname(NodePath.join(project.root, file)), { recursive: true });
+    NodeFS.writeFileSync(NodePath.join(project.root, file), content);
+  };
+  write(".gitignore", "node_modules/\ndist/\n.generated/\n.env*\n*.gen.d.ts\nreplaced/\nskipped/");
+  for (const file of ["replaced", "skipped"]) write(file);
+  git("add", ".");
+  git("commit", "-m", "files that directories replace");
+  git("update-index", "--skip-worktree", "skipped");
+  for (const file of ["replaced", "skipped"]) NodeFS.rmSync(NodePath.join(project.root, file));
+  for (const file of [
+    ".env.local",
+    "src/types.gen.d.ts",
+    "src/.generated/routes.ts",
+    "dist/index.d.ts",
+    "dist/node_modules/pkg/index.d.ts",
+    "node_modules/pkg/index.d.ts",
+    // A package folder left behind by a branch switch.
+    "old/dist/a.d.ts",
+    "old/node_modules/pkg/index.d.ts",
+    "replaced/sub/a.d.ts",
+    "skipped/a.d.ts",
+  ])
+    write(file);
+  const command =
+    "ls-files -o -i --exclude-standard -- :(glob)**/.generated/** :(glob)**/.astro/** :(glob)**/*.d.ts :(glob)**/.env* :(exclude,glob)**/node_modules/**";
+  const old = git(...command.split(" "))
+    .split("\n")
+    .filter(Boolean)
+    .sort();
+  assert.includeMembers(old, ["old/dist/a.d.ts", "replaced/sub/a.d.ts", "skipped/a.d.ts"]);
+  assert.deepStrictEqual(await inFixture(ignoredCheckInputs(project.root)), old);
 });
 
 function launcherFixture() {

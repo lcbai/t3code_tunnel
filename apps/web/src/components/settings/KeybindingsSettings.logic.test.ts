@@ -55,7 +55,7 @@ describe("KeybindingsSettings.logic", () => {
       { command: "terminal.toggle", key: "mod+j", when: "terminalFocus" },
     ]);
     expect(new Set(rows.map((row) => row.id)).size).toBe(4);
-    expect(rows.find((row) => row.command === "chat.new")?.conflicts).toEqual(["切换终端"]);
+    expect(rows.find((row) => row.command === "chat.new")?.conflicts).toEqual(["Terminal: Toggle"]);
     expect(buildKeybindingRows(bindings.slice(1)).map((row) => row.id)).toEqual(
       rows.map((row) => row.id),
     );
@@ -213,7 +213,7 @@ describe("KeybindingsSettings.logic", () => {
     expect(buildWhenVariableOptions()).toContain("previewOpen");
     expect(parseWhenExpressionDraft("editorFocus &&")).toEqual({
       ok: false,
-      message: "使用变量与 !, QQ, QQ，和括号。",
+      message: "Use variables with !, &&, ||, and parentheses.",
     });
 
     expect(parseWhenExpressionDraft("!(terminalFocus || modelPickerOpen)")).toEqual({
@@ -263,20 +263,26 @@ describe("KeybindingsSettings.logic", () => {
       },
     ] satisfies ResolvedKeybindingsConfig);
 
-    expect(rows[0]?.conflicts).toEqual(["新建本地会话"]);
+    expect(rows[0]?.conflicts).toEqual(["Chat: New Local"]);
+    const disabledRows = buildKeybindingRows([
+      rows[0]!.binding,
+      { ...rows[1]!.binding, whenAst: { type: "identifier", name: "false" } },
+    ]);
+    expect(disabledRows.map((row) => row.conflicts)).toEqual([[], []]);
+
     expect(
       keybindingConflictLabels(rows, {
         rowId: rows[0]?.id ?? "",
         key: "mod+n",
         when: "",
       }),
-    ).toEqual(["新建本地会话"]);
+    ).toEqual(["Chat: New Local"]);
   });
 
   it.each([
-    { platform: "Linux x86_64", ctrl: ["新建会话"], meta: [] },
-    { platform: "Win32", ctrl: ["新建会话"], meta: [] },
-    { platform: "MacIntel", ctrl: [], meta: ["新建会话"] },
+    { platform: "Linux x86_64", ctrl: ["Chat: New"], meta: [] },
+    { platform: "Win32", ctrl: ["Chat: New"], meta: [] },
+    { platform: "MacIntel", ctrl: [], meta: ["Chat: New"] },
   ])("resolves mod to the $platform modifier when reporting conflicts", (expected) => {
     const rows = buildKeybindingRows(
       compileResolvedKeybindingsConfig([
@@ -292,7 +298,7 @@ describe("KeybindingsSettings.logic", () => {
     expect(conflictsFor("meta+k")).toEqual(expected.meta);
     expect(
       keybindingConflictLabels(rows, { rowId: "new", key: "ctrl+k", when: "" }, expected.platform),
-    ).toEqual(["新建本地会话", ...expected.ctrl].toSorted());
+    ).toEqual(["Chat: New Local", ...expected.ctrl].toSorted());
   });
 
   it("keeps mod and ctrl shortcuts apart when their when contexts differ", () => {

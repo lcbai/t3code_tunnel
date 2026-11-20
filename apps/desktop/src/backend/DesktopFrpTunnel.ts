@@ -21,6 +21,9 @@ import * as HttpClient from "effect/http/HttpClient";
 import * as ChildProcess from "effect/process/ChildProcess";
 import * as ChildProcessSpawner from "effect/process/ChildProcessSpawner";
 
+import { msg } from "gt-i18n";
+import { m } from "../i18n/messages.ts";
+
 import * as DesktopConfig from "../app/DesktopConfig.ts";
 import * as DesktopManagedPolicy from "../app/DesktopManagedPolicy.ts";
 import * as ElectronApp from "../electron/ElectronApp.ts";
@@ -69,11 +72,11 @@ const normalizeFrpConfig = (input: DesktopFrpTunnelConfig): DesktopFrpTunnelConf
     url.port === "0" ||
     !/^[a-z\d.-]+$/u.test(url.hostname)
   ) {
-    throw new Error("请输入 HTTPS 服务器域名，可包含端口。");
+    throw new Error(m(msg("Enter the HTTPS server domain, with an optional port.")));
   }
   const token = input.token.trim();
   if (!/^[!-~]{1,512}$/u.test(token)) {
-    throw new Error("请输入服务器提供的密钥。密钥不可包含空格或换行。");
+    throw new Error(m(msg("Enter the server token without spaces or line breaks.")));
   }
   return { url: url.origin, token };
 };
@@ -103,10 +106,10 @@ const validateConfig = (input: DesktopFrpTunnelConfig) =>
     catch: (error) =>
       failure(
         error instanceof TypeError
-          ? "请输入有效的 HTTPS 服务器网址。"
+          ? m(msg("Enter a valid HTTPS server URL."))
           : error instanceof Error
             ? error.message
-            : "穿透服务器配置无效。",
+            : m(msg("The tunnel configuration is invalid.")),
       ),
   });
 
@@ -183,8 +186,12 @@ const make = Effect.gen(function* () {
               status: hasBothIds ? "error" : "connecting",
               url: config.url,
               message: hasBothIds
-                ? "此域名已连接到另一个 T3 Code 环境。"
-                : "正在等待穿透服务器。请确认网址、密钥和服务器配置。",
+                ? m(msg("This domain connects to a different T3 Code environment."))
+                : m(
+                    msg(
+                      "Waiting for the tunnel server. Check the URL, token, and server configuration.",
+                    ),
+                  ),
             },
       );
       yield* Effect.sleep(connected ? "15 seconds" : "3 seconds");
@@ -205,13 +212,13 @@ const make = Effect.gen(function* () {
               Ref.set(state, {
                 status: "error",
                 url: config.url,
-                message: "穿透进程已退出，正在重试。",
+                message: m(msg("The tunnel process exited. Retrying…")),
               }),
             onFailure: () =>
               Ref.set(state, {
                 status: "error",
                 url: config.url,
-                message: "无法启动 frpc。请检查安装包或 frpc 路径。",
+                message: m(msg("Could not start frpc. Check the installation or the frpc path.")),
               }),
           }),
           Effect.andThen(Effect.sleep("5 seconds")),
@@ -237,7 +244,9 @@ const make = Effect.gen(function* () {
         Ref.set(state, {
           status: "error",
           url: null,
-          message: "无法读取已保存的穿透配置，请重新输入网址和密钥。",
+          message: m(
+            msg("Could not read the saved tunnel settings. Enter the URL and token again."),
+          ),
         }),
       ),
     );
@@ -247,23 +256,28 @@ const make = Effect.gen(function* () {
     input: DesktopFrpTunnelConfig | null,
   ) {
     const destination = yield* Ref.get(target);
-    if (!destination) return yield* failure("请先启用本机环境。");
+    if (!destination) return yield* failure(m(msg("Enable the local environment first.")));
     if (input === null) {
       yield* fileSystem
         .remove(destination.file, { force: true })
-        .pipe(Effect.mapError(() => failure("无法删除已保存的穿透配置。")));
+        .pipe(
+          Effect.mapError(() => failure(m(msg("Could not remove the saved tunnel settings.")))),
+        );
       yield* stopChild;
       yield* Ref.set(state, disabled);
       return disabled;
     }
-    if (!(yield* remoteAllowed)) return yield* failure("当前管理策略禁止远程设备连接。");
+    if (!(yield* remoteAllowed))
+      return yield* failure(m(msg("Managed policy blocks remote connections.")));
     const config = yield* validateConfig(input);
     const temporary = `${destination.file}.tmp`;
     yield* Effect.gen(function* () {
       const encryptionAvailable = yield* safeStorage.isEncryptionAvailable;
       const storageBackend = yield* safeStorage.selectedStorageBackend;
       if (!encryptionAvailable || Option.contains(storageBackend, "basic_text")) {
-        return yield* failure("系统安全存储不可用。请解锁系统钥匙串后重试。");
+        return yield* failure(
+          m(msg("Secure storage is unavailable. Unlock the system keychain and try again.")),
+        );
       }
       const serialized = yield* encodeConfig(config);
       const encrypted = yield* safeStorage.encryptString(serialized);
@@ -271,7 +285,9 @@ const make = Effect.gen(function* () {
       yield* fileSystem.writeFile(temporary, encrypted, { mode: 0o600 });
       yield* fileSystem.rename(temporary, destination.file);
     }).pipe(
-      Effect.mapError((error) => (isTunnelError(error) ? error : failure("无法保存穿透配置。"))),
+      Effect.mapError((error) =>
+        isTunnelError(error) ? error : failure(m(msg("Could not save the tunnel settings."))),
+      ),
       Effect.ensuring(fileSystem.remove(temporary, { force: true }).pipe(Effect.ignore)),
     );
     yield* stopChild;
@@ -289,7 +305,7 @@ const make = Effect.gen(function* () {
         current.status === "connected" && current.url
           ? createAdvertisedEndpoint({
               id: `frp:${current.url}`,
-              label: "FRP 穿透",
+              label: "FRP",
               httpBaseUrl: current.url,
               provider: { id: "frp", label: "FRP", kind: "tunnel", isAddon: false },
               source: "desktop-core",

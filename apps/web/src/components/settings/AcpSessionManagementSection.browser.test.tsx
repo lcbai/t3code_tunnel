@@ -168,25 +168,58 @@ it("does not import with provider management alone", async () => {
   setup();
   grants.scopes.delete("orchestration:operate");
   await using screen = await renderSection();
-  await screen.click("清单会议");
-  expect(screen.button("导入").disabled).toBe(true);
-  await screen.click("导入");
+  await screen.click("List sessions");
+  expect(screen.button("Import").disabled).toBe(true);
+  await screen.click("Import");
   expect(commands.import).not.toHaveBeenCalled();
 });
 
 it("rechecks task access after confirming deletion", async () => {
   setup();
   await using screen = await renderSection();
-  await screen.click("清单会议");
+  await screen.click("List sessions");
   dialogs.confirm.mockImplementationOnce(async () => {
     grants.scopes.delete("orchestration:operate");
     return true;
   });
-  await screen.click("删除");
+  await screen.click("Delete");
   expect(commands.delete).not.toHaveBeenCalled();
 });
 
-it.each(["保存", "禁用"])("keeps other provider edits through a %s refetch", async (action) => {
+it("keeps a deleted ACP session out of a pending page only", async () => {
+  setup();
+  commands.list.mockResolvedValueOnce({
+    _tag: "Success",
+    value: { sessions: [session], nextCursor: "page-2" },
+  });
+  let finishPage!: (value: unknown) => void;
+  commands.list.mockReturnValueOnce(
+    new Promise((resolve) => {
+      finishPage = resolve;
+    }),
+  );
+  const otherSession = { ...session, sessionId: `${session.sessionId}0` };
+  await using screen = await renderSection();
+  const deletedRow = screen.getByText(session.sessionId, { exact: true });
+  await screen.click("List sessions");
+  await screen.click("Load more");
+  await screen.click("Delete");
+  await expect.element(deletedRow).not.toBeInTheDocument();
+
+  await act(async () =>
+    finishPage({
+      _tag: "Success",
+      value: { sessions: [session, otherSession], nextCursor: null },
+    }),
+  );
+  await expect.element(screen.getByText(otherSession.sessionId, { exact: true })).toBeVisible();
+  await expect.element(deletedRow).not.toBeInTheDocument();
+
+  await screen.click("Refresh");
+  await expect.element(deletedRow).toBeVisible();
+});
+
+it.each(["Save", "Disable"])("keeps other provider edits through a %s refetch", async (action) => {
   setup();
   const providers: AcpRegistryConfigurableProvider[] = ["google", "other"].map((providerId) => ({
     providerId,
@@ -197,12 +230,12 @@ it.each(["保存", "禁用"])("keeps other provider edits through a %s refetch",
   const response = { _tag: "Success" as const, value: { providers } };
   commands.listProviders.mockResolvedValue(response);
   await using screen = await renderSection();
-  await screen.click("名单提供者");
+  await screen.click("List providers");
   const input = (label: string) =>
     screen.container.querySelector<HTMLInputElement>(`[aria-label="${label}"]`)!;
-  await userEvent.fill(input("other 的基础 URL"), "https://other.example.test/v1");
-  await userEvent.fill(input("other只写信头JSON"), '{"X-Test":"unsaved"}');
-  await userEvent.fill(input("google只写信头JSON"), '{"X-Test":"saved"}');
+  await userEvent.fill(input("other base URL"), "https://other.example.test/v1");
+  await userEvent.fill(input("other write-only headers JSON"), '{"X-Test":"unsaved"}');
+  await userEvent.fill(input("google write-only headers JSON"), '{"X-Test":"saved"}');
 
   let resolveReload!: (value: typeof response) => void;
   const reload = new Promise<typeof response>((resolve) => {
@@ -213,30 +246,30 @@ it.each(["保存", "禁用"])("keeps other provider edits through a %s refetch",
   const mutation = new Promise<void>((resolve) => {
     resolveMutation = resolve;
   });
-  const command = action === "保存" ? commands.setProvider : commands.disableProvider;
+  const command = action === "Save" ? commands.setProvider : commands.disableProvider;
   command.mockReturnValueOnce(
     mutation.then(() => ({
       _tag: "Success",
-      value: action === "保存" ? { configured: true } : { disabled: true },
+      value: action === "Save" ? { configured: true } : { disabled: true },
     })),
   );
   await screen.click(action);
-  expect(screen.button("刷新").disabled).toBe(true);
+  expect(screen.button("Refresh").disabled).toBe(true);
   await act(async () => resolveMutation());
   for (const button of screen.container.querySelectorAll<HTMLButtonElement>("button")) {
-    if (button.textContent === "保存" || button.textContent === "禁用") {
+    if (button.textContent === "Save" || button.textContent === "Disable") {
       expect(button.disabled).toBe(true);
     }
   }
-  await userEvent.fill(input("other 的基础 URL"), "https://newer.example.test/v1");
+  await userEvent.fill(input("other base URL"), "https://newer.example.test/v1");
   await act(async () => resolveReload(response));
 
-  expect(input("other 的基础 URL").value).toBe("https://newer.example.test/v1");
-  expect(input("other只写信头JSON").value).toBe('{"X-Test":"unsaved"}');
-  expect(input("google只写信头JSON").value).toBe("");
-  await screen.click("刷新");
-  expect(input("other 的基础 URL").value).toBe("https://api.example.test/v1");
-  expect(input("other只写信头JSON").value).toBe("");
+  expect(input("other base URL").value).toBe("https://newer.example.test/v1");
+  expect(input("other write-only headers JSON").value).toBe('{"X-Test":"unsaved"}');
+  expect(input("google write-only headers JSON").value).toBe("");
+  await screen.click("Refresh");
+  expect(input("other base URL").value).toBe("https://api.example.test/v1");
+  expect(input("other write-only headers JSON").value).toBe("");
 });
 
 it.each([true, false])(
@@ -246,7 +279,7 @@ it.each([true, false])(
     await using screen = await renderSection({ canList, projects: [] });
     await screen.setProjects([project]);
     const action = screen.getByRole("button", {
-      name: canList ? "清单会议" : "名单提供者",
+      name: canList ? "List sessions" : "List providers",
     });
     await expect.element(action).toBeEnabled();
     if (!canList) {
@@ -261,7 +294,7 @@ it.each([true, false])(
       });
     } else {
       await expect
-        .element(screen.getByRole("textbox", { name: "google 的基础 URL" }))
+        .element(screen.getByRole("textbox", { name: "google base URL" }))
         .toHaveValue("https://api.example.test/v1");
       expect(commands.listProviders).toHaveBeenCalledWith({
         environmentId,
@@ -282,38 +315,41 @@ it.each([true, false])(
     });
     await using screen = await renderSection({ canList, projects: [project, second] });
     await screen.getByRole("combobox").click();
-    await screen.getByRole("option", { name: "Second", exact: true }).click();
+    if (canList) {
+      // Keys sent before the popup takes focus only move focus onto the selected option.
+      await expect.element(screen.getByRole("option", { name: "Antigravity" })).toHaveFocus();
+      await userEvent.keyboard("{ArrowDown}{Enter}");
+    } else await screen.getByRole("option", { name: "Second", exact: true }).click();
     await expect
       .element(
         screen.getByRole("combobox", {
-          name: canList ? "ACP会话的项目" : "ACP 提供者的项目",
+          name: canList ? "Project for ACP sessions" : "Project for ACP providers",
         }),
       )
       .toHaveFocus();
-    if (canList) await screen.getByRole("button", { name: "清单会议" }).click();
-    await screen.getByRole("button", { name: "名单提供者" }).click();
-    const protocol = screen.getByRole("combobox", { name: "google 协议" });
-    await expect.element(protocol).toHaveTextContent("OpenAI 接口");
-    await userEvent.click(protocol);
-    await userEvent.click(screen.getByRole("option", { name: "OpenAI 接口", exact: true }));
+    if (canList) await screen.getByRole("button", { name: "List sessions" }).click();
+    await screen.getByRole("button", { name: "List providers" }).click();
     await userEvent.fill(
-      screen.getByRole("textbox", { name: "google 的基础 URL" }),
+      screen.getByRole("textbox", { name: "google base URL" }),
       "https://draft.test",
     );
-    await userEvent.fill(screen.getByLabelText("google只写信头JSON"), '{"Secret":"draft"}');
+    await userEvent.fill(
+      screen.getByLabelText("google write-only headers JSON"),
+      '{"Secret":"draft"}',
+    );
 
     await screen.setProjects([project, replacement, second]);
     await expect
       .element(
         screen.getByRole("combobox", {
-          name: canList ? "ACP会话的项目" : "ACP 提供者的项目",
+          name: canList ? "Project for ACP sessions" : "Project for ACP providers",
         }),
       )
       .toHaveTextContent("Second");
     await expect
-      .element(screen.getByRole("textbox", { name: "google 的基础 URL" }))
+      .element(screen.getByRole("textbox", { name: "google base URL" }))
       .toHaveValue("https://draft.test");
-    await screen.getByRole("button", { name: "保存", exact: true }).click();
+    await screen.getByRole("button", { name: "Save", exact: true }).click();
     expect(commands.setProvider).toHaveBeenLastCalledWith({
       environmentId,
       input: {
@@ -328,36 +364,36 @@ it.each([true, false])(
 
     await screen.setProjects([project]);
     await expect.element(screen.getByText(session.title)).not.toBeInTheDocument();
-    await expect.element(screen.getByRole("button", { name: "装入更多" })).not.toBeInTheDocument();
+    await expect.element(screen.getByRole("button", { name: "Load more" })).not.toBeInTheDocument();
     await expect
-      .element(screen.getByRole("textbox", { name: "google 的基础 URL" }))
+      .element(screen.getByRole("textbox", { name: "google base URL" }))
       .not.toBeInTheDocument();
-    await screen.getByRole("button", { name: "名单提供者" }).click();
+    await screen.getByRole("button", { name: "List providers" }).click();
     expect(commands.listProviders).toHaveBeenLastCalledWith({
       environmentId,
       input: { instanceId, projectId },
     });
-    await expect.element(screen.getByLabelText("google只写信头JSON")).toHaveValue("");
+    await expect.element(screen.getByLabelText("google write-only headers JSON")).toHaveValue("");
     await expect
-      .element(screen.getByRole("textbox", { name: "google 的基础 URL" }))
+      .element(screen.getByRole("textbox", { name: "google base URL" }))
       .toHaveValue("https://api.example.test/v1");
 
     await screen.setProjects([second, project]);
     await expect
       .element(
         screen.getByRole("combobox", {
-          name: canList ? "ACP会话的项目" : "ACP 提供者的项目",
+          name: canList ? "Project for ACP sessions" : "Project for ACP providers",
         }),
       )
       .toHaveTextContent("Antigravity");
     await expect
-      .element(screen.getByRole("textbox", { name: "google 的基础 URL" }))
+      .element(screen.getByRole("textbox", { name: "google base URL" }))
       .toHaveValue("https://api.example.test/v1");
 
     await screen.setProjects([]);
-    await expect.element(screen.getByRole("button", { name: "名单提供者" })).toBeDisabled();
+    await expect.element(screen.getByRole("button", { name: "List providers" })).toBeDisabled();
     await expect
-      .element(screen.getByRole("textbox", { name: "google 的基础 URL" }))
+      .element(screen.getByRole("textbox", { name: "google base URL" }))
       .not.toBeInTheDocument();
   },
 );
@@ -371,39 +407,39 @@ it("ignores a late listing after project replacement", async () => {
     }),
   );
   await using screen = await renderSection();
-  await screen.click("清单会议");
+  await screen.click("List sessions");
   await screen.setProjects([replacement]);
   await act(async () =>
     finish({ _tag: "Success", value: { sessions: [session], nextCursor: "old-page" } }),
   );
   await expect.element(screen.getByText(session.title)).not.toBeInTheDocument();
-  await expect.element(screen.getByRole("button", { name: "装入更多" })).not.toBeInTheDocument();
-  await expect.element(screen.getByRole("button", { name: "清单会议" })).toBeEnabled();
+  await expect.element(screen.getByRole("button", { name: "Load more" })).not.toBeInTheDocument();
+  await expect.element(screen.getByRole("button", { name: "List sessions" })).toBeEnabled();
 });
 
-it.each(["保存", "禁用"])("does not refetch the old project after a late %s", async (action) => {
+it.each(["Save", "Disable"])("does not refetch the old project after a late %s", async (action) => {
   setup();
-  const command = action === "保存" ? commands.setProvider : commands.disableProvider;
+  const command = action === "Save" ? commands.setProvider : commands.disableProvider;
   let finish!: () => void;
   command.mockReturnValueOnce(
     new Promise<void>((resolve) => {
       finish = resolve;
     }).then(() => ({
       _tag: "Success",
-      value: action === "保存" ? { configured: true } : { disabled: true },
+      value: action === "Save" ? { configured: true } : { disabled: true },
     })),
   );
   await using screen = await renderSection();
-  await screen.click("名单提供者");
+  await screen.click("List providers");
   await screen.click(action);
   expect(command).toHaveBeenCalledOnce();
   await screen.setProjects([replacement]);
   await act(async () => finish());
   expect(commands.listProviders).toHaveBeenCalledOnce();
-  await expect.element(screen.getByRole("button", { name: "名单提供者" })).toBeEnabled();
+  await expect.element(screen.getByRole("button", { name: "List providers" })).toBeEnabled();
 });
 
-it.each(["删除", "禁用"])(
+it.each(["Delete", "Disable"])(
   "does not act on a replaced project after confirming %s",
   async (action) => {
     setup();
@@ -414,11 +450,11 @@ it.each(["删除", "禁用"])(
       }),
     );
     await using screen = await renderSection();
-    await screen.click(action === "删除" ? "清单会议" : "名单提供者");
+    await screen.click(action === "Delete" ? "List sessions" : "List providers");
     await screen.click(action);
     await screen.setProjects([replacement]);
     await act(async () => finish(true));
-    expect(action === "删除" ? commands.delete : commands.disableProvider).not.toHaveBeenCalled();
+    expect(action === "Delete" ? commands.delete : commands.disableProvider).not.toHaveBeenCalled();
   },
 );
 
@@ -434,14 +470,14 @@ it("keeps logout pending across project replacement and clears replacement sessi
     })),
   );
   await using screen = await renderSection();
-  await screen.click("注销");
+  await screen.click("Log out");
   await screen.setProjects([replacement]);
-  await screen.click("清单会议");
+  await screen.click("List sessions");
   await expect.element(screen.getByText(session.title)).toBeVisible();
-  await expect.element(screen.getByRole("button", { name: "正在注销" })).toBeDisabled();
-  await screen.click("正在注销");
+  await expect.element(screen.getByRole("button", { name: "Logging out" })).toBeDisabled();
+  await screen.click("Logging out");
   expect(commands.logout).toHaveBeenCalledOnce();
   await act(async () => finish());
   await expect.element(screen.getByText(session.title)).not.toBeInTheDocument();
-  await expect.element(screen.getByRole("button", { name: "注销", exact: true })).toBeEnabled();
+  await expect.element(screen.getByRole("button", { name: "Log out", exact: true })).toBeEnabled();
 });

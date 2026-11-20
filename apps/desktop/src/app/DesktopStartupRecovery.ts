@@ -7,11 +7,13 @@ import type * as Scope from "effect/Scope";
 import * as Stream from "effect/Stream";
 import * as SubscriptionRef from "effect/SubscriptionRef";
 import type * as Electron from "electron";
+import { msg } from "gt-i18n";
 
 import * as ElectronApp from "../electron/ElectronApp.ts";
 import * as ElectronShell from "../electron/ElectronShell.ts";
 import * as ElectronTheme from "../electron/ElectronTheme.ts";
 import * as ElectronWindow from "../electron/ElectronWindow.ts";
+import { m } from "../i18n/messages.ts";
 import * as DesktopUpdates from "../updates/DesktopUpdates.ts";
 import type { BackendStartupFailure } from "../backend/DesktopBackendManager.ts";
 import * as DesktopEnvironment from "./DesktopEnvironment.ts";
@@ -81,30 +83,59 @@ const actionLink = (action: StartupRecoveryAction, label: string, primary = fals
 function describeOffer(offer: StartupRecoveryOffer): { text: string; action: string } {
   switch (offer._tag) {
     case "Checking":
-      return { text: "正在检查新版本…", action: "" };
+      return { text: m(msg("Checking for a newer version…")), action: "" };
     case "Update":
       return {
-        text: `已有新版本 ${offer.version}，可能包含此问题的修复。`,
-        action: actionLink("update", `更新到 ${offer.version}`, true),
+        text: m(msg("Version {version} is available. It can contain a fix."), {
+          version: offer.version,
+        }),
+        action: actionLink(
+          "update",
+          m(msg("Update to {version}"), { version: offer.version }),
+          true,
+        ),
       };
     case "Downloading":
       return {
-        text: `正在下载 ${offer.version}${offer.percent === null ? "" : ` (${Math.floor(offer.percent / 10) * 10}%)`}。下载完成后，T3 Code 将重启。`,
+        text:
+          offer.percent === null
+            ? m(msg("Downloading {version}. T3 Code restarts when the download is done."), {
+                version: offer.version,
+              })
+            : m(
+                msg(
+                  "Downloading {version} ({percent}%). T3 Code restarts when the download is done.",
+                ),
+                { version: offer.version, percent: String(Math.floor(offer.percent / 10) * 10) },
+              ),
         action: "",
       };
     case "Reinstall":
       return {
-        text: `版本 ${offer.version} 曾在这台电脑上正常启动。下载安装包即可恢复该版本。`,
-        action: actionLink("reinstall", `下载 ${offer.version}`, true),
+        text: m(
+          msg(
+            "Version {version} started correctly on this computer. Download it and install it to go back.",
+          ),
+          { version: offer.version },
+        ),
+        action: actionLink(
+          "reinstall",
+          m(msg("Download {version}"), { version: offer.version }),
+          true,
+        ),
       };
     case "Releases":
       return {
-        text: "你可以在发布页面下载其他版本。",
-        action: actionLink("releases", "打开发布页面", true),
+        text: m(msg("Get a different version from the releases page.")),
+        action: actionLink("releases", m(msg("Open releases")), true),
       };
     case "ManagedPolicy":
       return {
-        text: "组织的管理策略阻止了 T3 Code 启动。请将以下详细信息发给 IT 管理员。",
+        text: m(
+          msg(
+            "Your organization's managed policy stopped T3 Code from starting. Send the details below to your IT administrator.",
+          ),
+        ),
         action: "",
       };
   }
@@ -118,7 +149,8 @@ function buildStartupRecoveryHtml(input: {
 }): string {
   const offer = describeOffer(input.offer);
   const output = input.failure.output.trim();
-  return `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'"><title>T3 Code 无法启动</title><style>
+  const title = escapeHtml(m(msg("T3 Code could not start")));
+  return `<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'"><title>${title}</title><style>
 :root{color-scheme:light dark;--bg:#fff;--fg:#111;--muted:#666;--line:#ddd;--code:#f4f4f4}
 @media (prefers-color-scheme:dark){:root{--bg:#000;--fg:#fff;--muted:#999;--line:#333;--code:#111}}
 html,body{margin:0;height:100%;background:var(--bg);color:var(--fg)}
@@ -129,12 +161,12 @@ h1{font-size:18px;margin:0}p{margin:0}.muted{color:var(--muted)}
 .button.primary{background:var(--fg);color:var(--bg);border-color:var(--fg)}
 pre{flex:1;min-height:60px;margin:0;overflow:auto;background:var(--code);border:1px solid var(--line);border-radius:6px;padding:10px;font:11px/1.4 ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap;word-break:break-word}
 </style></head><body>
-<h1>T3 Code 无法启动</h1>
+<h1>${title}</h1>
 <p>${escapeHtml(input.failure.reason)}</p>
 <p>${escapeHtml(offer.text)}</p>
-<div class="actions">${offer.action}${actionLink("copy", "复制详细信息")}${actionLink("quit", "退出")}</div>
-<pre>${escapeHtml(output.length > 0 ? output : "服务器没有输出。")}</pre>
-<p class="muted">版本 ${escapeHtml(input.appVersion)}。T3 Code 将在后台重试。日志： ${escapeHtml(input.logDir)}</p>
+<div class="actions">${offer.action}${actionLink("copy", m(msg("Copy details")))}${actionLink("quit", m(msg("Quit", { $context: "button, quits the app" })))}</div>
+<pre>${escapeHtml(output.length > 0 ? output : m(msg("The server wrote no output.")))}</pre>
+<p class="muted">${escapeHtml(m(msg("Version {version}. T3 Code tries again in the background. Logs: {logDir}"), { version: input.appVersion, logDir: input.logDir }))}</p>
 </body></html>`;
 }
 
@@ -212,13 +244,15 @@ export const listen: Effect.Effect<
     switch (action) {
       case "update": {
         if (current._tag !== "Update") return;
-        const state = yield* updates.getState;
-        if (state.downloadedVersion === null) {
+        let { downloadedVersion } = yield* updates.getState;
+        if (downloadedVersion === null) {
+          // The download re-checks first, so it can fetch a newer build than the one offered.
           const download = yield* updates.download;
           if (!download.completed) return;
+          downloadedVersion = download.state.downloadedVersion;
         }
-        // Waits for a running background check; plain install would refuse.
-        yield* updates.installPrepared(current.version);
+        if (downloadedVersion === null) return;
+        yield* updates.installPrepared(downloadedVersion);
         return;
       }
       case "reinstall":
@@ -268,7 +302,7 @@ export const listen: Effect.Effect<
           minWidth: 420,
           minHeight: 320,
           show: false,
-          title: "T3 Code 无法启动",
+          title: m(msg("T3 Code could not start")),
           autoHideMenuBar: true,
           backgroundColor: shouldUseDarkColors ? "#000000" : "#ffffff",
           webPreferences: {

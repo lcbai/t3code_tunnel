@@ -2,7 +2,7 @@ import { StrictMode } from "react";
 import { describe, expect, it, vi } from "vite-plus/test";
 import { page, userEvent } from "vite-plus/test/browser";
 
-import { render } from "../../../test/render";
+import { act, render } from "../../../test/render";
 import {
   CUSTOM_THEMES_STORAGE_KEY,
   getCustomThemes,
@@ -12,7 +12,7 @@ import {
   themeColorToHex,
   THEME_FILE_VERSION,
 } from "../../themePalette";
-import type { OpenVsxThemeExtension } from "../../openVsxThemes";
+import { importOpenVsxThemeExtension, type OpenVsxThemeExtension } from "../../openVsxThemes";
 import { ThemeImportDialog } from "./ThemeImportDialog";
 
 const searchOpenVsxThemes = vi.hoisted(() => vi.fn());
@@ -54,7 +54,8 @@ describe("ThemeImportDialog", () => {
       </StrictMode>,
     );
 
-    await userEvent.type(page.getByLabelText("搜索打开的 VSX 主题"), "night");
+    // One input event: keystrokes more than the search debounce apart would search a prefix first.
+    await userEvent.fill(page.getByLabelText("Search Open VSX themes"), "night");
 
     await expect.element(page.getByRole("heading", { name: "Nightfall" })).toBeVisible();
     expect(searchOpenVsxThemes).toHaveBeenCalledWith(
@@ -64,52 +65,61 @@ describe("ThemeImportDialog", () => {
   });
 });
 
-const theme = (name: string, accent = "#3b82f6") => ({
+const theme = (name: string, accent = "#3b82f6", css?: string) => ({
   version: THEME_FILE_VERSION,
   name,
   appearance: "dark",
   colors: { accent },
+  ...(css ? { css } : {}),
 });
 
-const themeFile = (name: string, accent?: string) =>
-  new File([JSON.stringify(theme(name, accent))], `${name}.json`, { type: "application/json" });
+const themeFile = (name: string, accent?: string, css?: string) =>
+  new File([JSON.stringify(theme(name, accent, css))], `${name}.json`, {
+    type: "application/json",
+  });
 
-it.each(["更新现有", "都留着"])("keeps batch failures visible after %s", async (choice) => {
-  using _themes = {
-    [Symbol.dispose]() {
-      window.localStorage.removeItem(CUSTOM_THEMES_STORAGE_KEY);
-      invalidateCustomThemes();
-    },
-  };
-  installCustomTheme(parseThemeFile(theme("Dusk")));
-  const onOpenChange = vi.fn();
-  await using _screen = await render(
-    <ThemeImportDialog
-      open
-      onOpenChange={onOpenChange}
-      onImported={() => true}
-      onImportedMany={() => {}}
-    />,
-  );
-  const input = document.querySelector<HTMLInputElement>('input[type="file"]')!;
-  await userEvent.upload(input, [
-    themeFile("Dawn"),
-    themeFile("Dusk", "#f97316"),
-    new File(["{"], "broken.json", { type: "application/json" }),
-  ]);
+const DUSK_CSS = ".chat-header { height: 3rem; }";
 
-  await expect.element(page.getByText("已安装")).toBeVisible();
-  await expect.element(page.getByText(/^broken\.json:/)).toBeVisible();
-  expect(getCustomThemes().map((theme) => theme.label)).toContain("Dawn");
-  await page.getByRole("button", { name: choice }).click();
-  invalidateCustomThemes();
-  const label = choice === "更新现有" ? "Dusk" : "Dusk (1)";
-  expect(getCustomThemes().find((theme) => theme.label === label)?.colors).toEqual(
-    parseThemeFile(theme("Dusk", "#f97316")).colors,
-  );
-  await expect.element(page.getByText(/^broken\.json:/)).toBeVisible();
-  expect(onOpenChange).not.toHaveBeenCalledWith(false);
-});
+it.each(["Update existing", "Keep both"])(
+  "keeps batch failures visible after %s",
+  async (choice) => {
+    using _themes = {
+      [Symbol.dispose]() {
+        window.localStorage.removeItem(CUSTOM_THEMES_STORAGE_KEY);
+        invalidateCustomThemes();
+      },
+    };
+    installCustomTheme(parseThemeFile(theme("Dusk")));
+    const onOpenChange = vi.fn();
+    await using _screen = await render(
+      <ThemeImportDialog
+        open
+        onOpenChange={onOpenChange}
+        onImported={() => true}
+        onImportedMany={() => {}}
+      />,
+    );
+    const input = document.querySelector<HTMLInputElement>('input[type="file"]')!;
+    await userEvent.upload(input, [
+      themeFile("Dawn"),
+      themeFile("Dusk", "#f97316", DUSK_CSS),
+      new File(["{"], "broken.json", { type: "application/json" }),
+    ]);
+
+    await expect.element(page.getByText("Already installed")).toBeVisible();
+    await expect.element(page.getByText(/^broken\.json:/)).toBeVisible();
+    expect(getCustomThemes().map((theme) => theme.label)).toContain("Dawn");
+    await page.getByRole("button", { name: choice }).click();
+    invalidateCustomThemes();
+    const label = choice === "Update existing" ? "Dusk" : "Dusk (1)";
+    expect(getCustomThemes().find((theme) => theme.label === label)).toMatchObject({
+      colors: parseThemeFile(theme("Dusk", "#f97316")).colors,
+      css: DUSK_CSS,
+    });
+    await expect.element(page.getByText(/^broken\.json:/)).toBeVisible();
+    expect(onOpenChange).not.toHaveBeenCalledWith(false);
+  },
+);
 
 function isolateThemes() {
   const previous = localStorage.getItem(CUSTOM_THEMES_STORAGE_KEY);
@@ -123,6 +133,29 @@ function isolateThemes() {
     },
   };
 }
+
+it("sizes an oversized theme file just under 1 MB as 1.00 MB", async () => {
+  using _themes = isolateThemes();
+  await using _screen = await render(
+    <ThemeImportDialog
+      open
+      onOpenChange={() => {}}
+      onImported={() => true}
+      onImportedMany={() => {}}
+    />,
+  );
+  const input = document.querySelector<HTMLInputElement>('input[type="file"]')!;
+  await userEvent.upload(
+    input,
+    new File(["x".repeat(1_048_100)], "huge.json", { type: "application/json" }),
+  );
+
+  await expect
+    .element(page.getByText(/^That file is/))
+    .toHaveTextContent(
+      "That file is 1.00 MB. Theme files are only a few KB, so this one was not read (limit 256 KB).",
+    );
+});
 
 function themeJsonc(name: string, background: string) {
   return `{
@@ -148,13 +181,13 @@ describe("ThemeImportDialog JSONC imports", () => {
     );
     const json = themeJsonc("JSONC Night", "#002b36");
     if (source === "paste") {
-      await page.getByRole("textbox", { name: "主题JSON" }).fill(json);
+      await page.getByRole("textbox", { name: "Theme JSON" }).fill(json);
     } else {
       const input = document.querySelector<HTMLInputElement>('input[type="file"]')!;
       await userEvent.upload(input, new File([json], "night.json", { type: "application/json" }));
-      await expect.element(page.getByRole("textbox", { name: "主题JSON" })).toHaveValue(json);
+      await expect.element(page.getByRole("textbox", { name: "Theme JSON" })).toHaveValue(json);
     }
-    await page.getByRole("button", { name: "添加主题", exact: true }).click();
+    await page.getByRole("button", { name: "Add theme", exact: true }).click();
 
     expect(getCustomThemes().map((theme) => theme.label)).toEqual(["JSONC Night"]);
     expect(themeColorToHex(getCustomThemes()[0]!.colors.canvas)).toBe("#002b36");
@@ -188,4 +221,37 @@ describe("ThemeImportDialog JSONC imports", () => {
       "#fdf6e3",
     ]);
   });
+});
+
+it("does not install a pending community theme after leaving Appearance", async () => {
+  using _themes = isolateThemes();
+  searchOpenVsxThemes.mockReset();
+  searchOpenVsxThemes.mockResolvedValue([extension]);
+  const download = Promise.withResolvers<ReturnType<typeof parseThemeFile>[]>();
+  vi.mocked(importOpenVsxThemeExtension).mockReset();
+  vi.mocked(importOpenVsxThemeExtension).mockReturnValue(download.promise);
+  await using screen = await render(
+    <ThemeImportDialog
+      open
+      onOpenChange={() => {}}
+      onImported={() => true}
+      onImportedMany={() => {}}
+    />,
+  );
+  await userEvent.fill(page.getByLabelText("Search Open VSX themes"), "night");
+  await page.getByRole("button", { name: "Install Nightfall" }).click();
+  await screen.unmount();
+  await act(async () => {
+    download.resolve([
+      {
+        ...parseThemeFile(theme("Nightfall")),
+        collection: { id: extension.collectionId, label: extension.name },
+      },
+    ]);
+    await download.promise;
+  });
+  expect(
+    getCustomThemes(),
+    "expect leaving Appearance to cancel its pending theme installation",
+  ).toEqual([]);
 });

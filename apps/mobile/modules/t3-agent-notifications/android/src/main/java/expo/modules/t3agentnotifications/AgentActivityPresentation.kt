@@ -18,41 +18,41 @@ internal enum class ActivityPhase(
   val action: String,
   val color: Int
 ) {
-  STARTING("正在连接", "正在启动", "工作中", "打开", R.color.agent_activity_working),
-  RUNNING("工作中", "工作中", "工作中", "打开", R.color.agent_activity_working),
+  STARTING("Connecting", "Starting", "Working", "Open", R.color.agent_activity_working),
+  RUNNING("Working", "Working", "Working", "Open", R.color.agent_activity_working),
   APPROVAL(
-    "审批",
-    "需要审批",
-    "批准",
-    "批准",
+    "Approval",
+    "Approval needed",
+    "Approve",
+    "Approve",
     R.color.agent_activity_attention
   ),
   INPUT(
-    "输入",
-    "需要回答",
-    "回答",
-    "回答",
+    "Input",
+    "Question for you",
+    "Answer",
+    "Answer",
     R.color.agent_activity_input
   ),
   STALE(
-    "等待中",
-    "正在等待更新",
-    "等待中",
-    "打开",
+    "Waiting",
+    "Waiting for an update",
+    "Waiting",
+    "Open",
     R.color.agent_activity_waiting
   ),
   COMPLETED(
-    "完成",
-    "已完成",
-    "完成",
-    "打开",
+    "Done",
+    "Finished",
+    "Done",
+    "Open",
     R.color.agent_activity_done
   ),
   FAILED(
-    "失败",
-    "失败",
-    "失败",
-    "打开",
+    "Failed",
+    "Failed",
+    "Failed",
+    "Open",
     R.color.agent_activity_failed
   );
 
@@ -64,7 +64,7 @@ internal enum class ActivityPhase(
   }
 }
 
-
+/** The relay orders rows and their deep link together; never reorder them in the client. */
 internal fun activityRows(data: Map<String, String>) = (0..4).mapNotNull {
   val parts = data["activity_line_$it"]?.split('\t', limit = 3) ?: return@mapNotNull null
   if (parts.size != 3 || parts[1].isBlank()) {
@@ -104,25 +104,25 @@ internal class ActivityPresentation(data: Map<String, String>, private val activ
 
   val summary = when {
     hero == null -> data["activity_title"]?.takeIf { it.isNotBlank() }?.take(120)
-      ?: "智能体活动"
+      ?: "Agent activity"
     rows.size == 1 -> hero.title
     attentionCount == 1 -> "1 needs you"
     attentionCount > 1 -> "$attentionCount need you"
     activeCount > 0 && failedCount > 0 -> "$failedCount failed"
     activeCount > 0 -> "$activeCount working"
-    failedCount > 0 -> "已完成，$failedCount 项失败"
-    else -> "全部完成"
+    failedCount > 0 -> "Finished, $failedCount failed"
+    else -> "All finished"
   }
 
   val chip = when {
-    !active -> if (phase == ActivityPhase.FAILED) "失败" else "完成"
-    phase == null -> data["activity_chip"]?.takeIf { it.isNotBlank() }?.take(7) ?: "活动中"
+    !active -> if (phase == ActivityPhase.FAILED) "Failed" else "Done"
+    phase == null -> data["activity_chip"]?.takeIf { it.isNotBlank() }?.take(7) ?: "Active"
     phase == ActivityPhase.RUNNING && activeCount > 1 ->
       "${if (activeCount > 9) "9+" else activeCount} live"
     else -> phase.chip
   }
 
-  val action = if (active) phase?.action ?: "打开" else null
+  val action = if (active) phase?.action ?: "Open" else null
 
   fun applyTo(builder: NotificationCompat.Builder, context: Context) {
     val tint = phase?.let { ContextCompat.getColor(context, it.color) }

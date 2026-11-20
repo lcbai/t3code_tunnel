@@ -4,6 +4,7 @@ import type {
   OrchestrationV2NativeChildWork,
   ThreadId,
 } from "@t3tools/contracts";
+import { T, useGT } from "gt-react-native";
 import { ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -24,6 +25,7 @@ export function NativeChildWorkSheet(props: {
   readonly threadId: ThreadId;
   readonly onClose: () => void;
 }) {
+  const gt = useGT();
   const insets = useSafeAreaInsets();
   const query = useEnvironmentQuery<OrchestrationV2GetNativeChildWorkResult, unknown>(
     orchestrationEnvironment.nativeChildWork({
@@ -33,7 +35,7 @@ export function NativeChildWorkSheet(props: {
   );
   const children = query.data?.children;
   return (
-    <Sheet title="子智能体工作" onClose={props.onClose}>
+    <Sheet title={gt("Subagent work")} onClose={props.onClose}>
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={{
@@ -44,24 +46,26 @@ export function NativeChildWorkSheet(props: {
         }}
       >
         <Text className="font-sans text-xs text-foreground-secondary">
-          只读模式。这些子智能体无法接收消息。
+          <T>Read only. These subagents cannot take messages.</T>
         </Text>
         {query.error !== null ? (
           <Text selectable className="font-sans text-sm text-danger-foreground">
             {query.error}
           </Text>
         ) : children === undefined ? (
-          <Text className="font-sans text-sm text-foreground-secondary">正在加载…</Text>
+          <Text className="font-sans text-sm text-foreground-secondary">
+            <T>Loading…</T>
+          </Text>
         ) : children.length === 0 ? (
           <Text className="font-sans text-sm text-foreground-secondary">
-            提供方未记录此次调用启动的子智能体。
+            <T>The provider has no record of which subagents this call started.</T>
           </Text>
         ) : (
           children.map((child) => <NativeChild key={child.conversationId} child={child} />)
         )}
         <View className="flex-row justify-end">
           <Button
-            label="刷新"
+            label={gt("Refresh")}
             tone="secondary"
             disabled={query.isPending}
             onPress={query.refresh}
@@ -73,18 +77,23 @@ export function NativeChildWorkSheet(props: {
 }
 
 function NativeChild(props: { readonly child: OrchestrationV2NativeChildWork }) {
+  const gt = useGT();
   const { child } = props;
   return (
     <View className="gap-2">
-      <Text className="font-t3-bold text-sm text-foreground">{child.role || "子智能体"}</Text>
+      <Text className="font-t3-bold text-sm text-foreground">{child.role || gt("Subagent")}</Text>
       <Text selectable className="font-sans text-sm text-foreground-secondary">
         {child.prompt}
       </Text>
       {child.truncated ? (
-        <Text className="font-sans text-xs text-foreground-secondary">较早的步骤已隐藏。</Text>
+        <Text className="font-sans text-xs text-foreground-secondary">
+          <T>Earlier steps are not shown.</T>
+        </Text>
       ) : null}
       {child.steps === null ? (
-        <Text className="font-sans text-xs text-foreground-secondary">暂无转录文本。</Text>
+        <Text className="font-sans text-xs text-foreground-secondary">
+          <T>No transcript yet.</T>
+        </Text>
       ) : (
         <View className="gap-2 border-l border-border ps-3">
           {child.steps.map((step) => (

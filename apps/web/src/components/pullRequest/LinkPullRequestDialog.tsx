@@ -1,3 +1,4 @@
+import { thrownErrorMessage } from "@t3tools/client-runtime/errors";
 import type { ScopedThreadRef } from "@t3tools/contracts";
 import {
   pullRequestLinkProject,
@@ -5,7 +6,9 @@ import {
 } from "@t3tools/client-runtime/pull-request-link-input";
 import { useAtomValue } from "@effect/atom-react";
 import { settlePromise, squashAtomCommandFailure } from "@t3tools/client-runtime/state/runtime";
+import { msg, T, useGT } from "gt-react";
 import { useRef, useState } from "react";
+import { m } from "~/i18n/messages";
 
 import { useProjects, useThreadShell } from "~/state/entities";
 import { usePullRequestLinking } from "~/hooks/usePullRequestLinking";
@@ -63,6 +66,7 @@ function LinkPullRequestDialog({
   projectId,
   onOpenChange,
 }: LinkPullRequestDialogProps) {
+  const gt = useGT();
   const inputRef = useRef<HTMLInputElement>(null);
   const [reference, setReference] = useState("");
   const [dirty, setDirty] = useState(false);
@@ -103,7 +107,7 @@ function LinkPullRequestDialog({
     setPending(false);
     if (result._tag === "Failure") {
       const error = squashAtomCommandFailure(result);
-      setSubmitError(error instanceof Error ? error.message : "无法链接拉取请求。");
+      setSubmitError(thrownErrorMessage(error, m) ?? m(msg("Could not link the pull request.")));
       return;
     }
     onOpenChange(false);
@@ -112,9 +116,9 @@ function LinkPullRequestDialog({
   const validation = !dirty
     ? null
     : reference.trim().length === 0
-      ? "Paste a pull request URL or enter 123 / #123."
+      ? gt("Paste a pull request URL or enter 123 / #123.")
       : resolved === null
-        ? "Use a pull request URL, 123, or #123."
+        ? gt("Use a pull request URL, 123, or #123.")
         : "error" in resolved
           ? resolved.error
           : null;
@@ -123,13 +127,20 @@ function LinkPullRequestDialog({
     <Dialog open={open} onOpenChange={(next) => (pending ? undefined : onOpenChange(next))}>
       <DialogPopup className="max-w-xl" initialFocus={inputRef}>
         <DialogHeader>
-          <DialogTitle>链接拉取请求</DialogTitle>
-          <DialogDescription>将拉取请求附加到此会话的URL，或该会话寄存器的编号。</DialogDescription>
+          <DialogTitle>
+            <T>Link pull request</T>
+          </DialogTitle>
+          <DialogDescription>
+            <T>
+              Attach a pull request to this thread by its URL, or by its number for this thread's
+              repository.
+            </T>
+          </DialogDescription>
         </DialogHeader>
         <DialogPanel>
           <Input
             ref={inputRef}
-            placeholder="拉取请求地址或编号（如 #42）"
+            placeholder={gt("Pull request URL or #42")}
             value={reference}
             onChange={(event) => {
               setDirty(true);
@@ -158,7 +169,7 @@ function LinkPullRequestDialog({
             onClick={() => onOpenChange(false)}
             disabled={pending}
           >
-            取消
+            <T>Cancel</T>
           </Button>
           <Button
             type="button"
@@ -166,7 +177,7 @@ function LinkPullRequestDialog({
             onClick={() => void submit()}
             disabled={pending || resolved === null || "error" in resolved}
           >
-            {pending ? "连接中…" : "链接"}
+            {pending ? gt("Linking...") : gt("Link", { $context: "verb, button" })}
           </Button>
         </DialogFooter>
       </DialogPopup>

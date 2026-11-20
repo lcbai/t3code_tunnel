@@ -1,3 +1,5 @@
+import { thrownErrorMessage } from "@t3tools/client-runtime/errors";
+import { m } from "~/i18n/messages";
 import {
   isAtomCommandInterrupted,
   squashAtomCommandFailure,
@@ -10,10 +12,12 @@ import type {
   ProviderInstanceId,
   ServerProvider,
 } from "@t3tools/contracts";
+import { msg, T, useGT, useMessages, Var } from "gt-react";
 import { lazy, Suspense, useRef, useState } from "react";
 import { CopyIcon } from "lucide-react";
 
 import { writeTextToClipboard } from "../../hooks/useCopyToClipboard";
+import { isWebUrl } from "../../browser/webUrl";
 import { ensureLocalApi } from "../../localApi";
 import { useEnvironmentQuery } from "../../state/query";
 import { serverEnvironment } from "../../state/server";
@@ -40,8 +44,9 @@ export function ProviderAuthenticationSection({
   readonly provider: ServerProvider;
   readonly readOnly: boolean;
 }) {
+  const gt = useGT();
   const target = { environmentId, input: { instanceId } };
-  const query = useEnvironmentQuery(serverEnvironment.providerAuthState(target));
+  const query = useEnvironmentQuery(serverEnvironment.providerAuthState(target), useMessages());
   const commands = { reportFailure: false, reportDefect: false };
   const start = useAtomCommand(serverEnvironment.startProviderAuth, commands);
   const respond = useAtomCommand(serverEnvironment.respondProviderAuth, commands);
@@ -78,25 +83,25 @@ export function ProviderAuthenticationSection({
     (provider.auth.type === "gemini-api-key" || provider.auth.type === "agent-platform");
   const accountDescription = active
     ? auth?.phase === "starting"
-      ? (auth.message ?? (usesCredentials ? "正在连接…" : "开始登录…"))
+      ? (auth.message ?? (usesCredentials ? gt("Connecting…") : gt("Starting sign-in…")))
       : auth?.phase === "verifying"
         ? usesCredentials
-          ? "正在检查证书和加载模型…"
-          : "正在检查您的账户…"
+          ? gt("Checking credentials and loading models…")
+          : gt("Checking your account…")
         : interaction?.type === "terminal"
-          ? "在下面的终点站完全注册"
+          ? gt("Complete sign-in in the terminal below.")
           : interaction?.type === "credentials"
-            ? "在下面输入您的证书。"
-            : "在浏览器中完成登录。"
+            ? gt("Enter your credentials below.")
+            : gt("Finish signing in in your browser.")
     : signedIn
-      ? "已登录。"
+      ? gt("Signed in.")
       : isDiscovering
-        ? "发现登录方法…"
+        ? gt("Discovering sign-in methods…")
         : needsExternalSetup
-          ? "没有在应用中登入的广告。 跟着代理提供方的文档完成设置。"
+          ? gt("No in-app sign-in advertised. Follow the provider's docs to finish setup.")
           : usesCredentials
-            ? `连接到${environmentLabel} 来装入模型。`
-            : `签名于${environmentLabel}。`;
+            ? gt("Connect on {environment} to load models.", { environment: environmentLabel })
+            : gt("Sign in on {environment}.", { environment: environmentLabel });
   const statusMessage = auth?.phase === "failed" ? auth.message : null;
   const disabled = readOnly || pending || query.error !== null || isDiscovering;
   const draftId = `${auth?.flowId ?? ""}:${interaction?.id ?? ""}`;
@@ -117,10 +122,14 @@ export function ProviderAuthenticationSection({
       if (result._tag === "Success") succeeded = true;
       else if (!isAtomCommandInterrupted(result)) {
         const failure = squashAtomCommandFailure(result);
-        setError(failure instanceof Error ? failure.message : "提供方登录失败，请再试一次。");
+        setError(
+          failure instanceof Error
+            ? (thrownErrorMessage(failure, m) ?? failure.message)
+            : gt("Provider sign-in failed. Try again."),
+        );
       }
     } catch {
-      setError("提供方登录失败，请再试一次。");
+      setError(gt("Provider sign-in failed. Try again."));
     }
     pendingRef.current = false;
     setPending(false);
@@ -139,6 +148,10 @@ export function ProviderAuthenticationSection({
 
   async function openBrowser() {
     if (!url || readOnly) return;
+    if (!isWebUrl(url)) {
+      setError(gt("This sign-in link is not a web address, so it was not opened."));
+      return;
+    }
     const requiresConsent = interaction?.type === "browser" && interaction.requiresConsent;
     // Reserve tabs before awaiting consent; browsers block later opens.
     const pending = requiresConsent && !window.desktopBridge ? window.open("", "_blank") : null;
@@ -153,7 +166,7 @@ export function ProviderAuthenticationSection({
       setError(null);
     } catch {
       pending?.close();
-      setError("无法打开登录页面。 复制链接并在浏览器中打开。");
+      setError(gt("Could not open the sign-in page. Copy the link and open it in your browser."));
     }
   }
 
@@ -163,19 +176,21 @@ export function ProviderAuthenticationSection({
 
   return (
     <SettingsRow
-      title="账户"
+      title={gt("Account")}
       description={
         signedIn && !active && provider.auth.email?.trim() ? (
           <span>
-            签名为{" "}
-            <RedactedSensitiveText
-              key={provider.auth.email}
-              value={provider.auth.email}
-              ariaLabel="切换账户电子邮件可见度"
-              revealTooltip="显示邮箱地址"
-              hideTooltip="隐藏邮箱地址"
-              className="max-w-full truncate"
-            />
+            <T>
+              Signed in as{" "}
+              <RedactedSensitiveText
+                key={provider.auth.email}
+                value={provider.auth.email}
+                ariaLabel={gt("Toggle account email visibility")}
+                revealTooltip={gt("Click to reveal email")}
+                hideTooltip={gt("Click to hide email")}
+                className="max-w-full truncate"
+              />
+            </T>
           </span>
         ) : (
           <span role="status">{accountDescription}</span>
@@ -196,14 +211,16 @@ export function ProviderAuthenticationSection({
               disabled={disabled}
               onValueChange={(value) => setMethodId(value ?? "")}
             >
-              <SelectTrigger size="sm" aria-label="登录方式" className="w-44">
+              <SelectTrigger size="sm" aria-label={gt("Sign-in method")} className="w-44">
                 <SelectValue>
                   {auth?.methods?.find((method) => method.id === methodId)?.name ??
-                    "使用提供方默认方式"}
+                    gt("Provider default")}
                 </SelectValue>
               </SelectTrigger>
               <SelectPopup>
-                <SelectItem value="">使用提供方默认方式</SelectItem>
+                <SelectItem value="">
+                  <T>Provider default</T>
+                </SelectItem>
                 {auth?.methods?.map((method) => (
                   <SelectItem key={method.id} value={method.id}>
                     {method.name}
@@ -220,32 +237,42 @@ export function ProviderAuthenticationSection({
                 disabled={disabled}
                 onClick={() => void openBrowser()}
               >
-                打开浏览器
+                <T>Open browser</T>
               </Button>
               <Tooltip>
                 <TooltipTrigger
                   render={
                     <Button
-                      aria-label="复制登录链接"
+                      aria-label={gt("Copy sign-in link")}
                       size="icon-sm"
                       variant="ghost-muted"
                       disabled={disabled}
                       onClick={() => {
                         // Copy during the click to retain clipboard activation; consent must still be
                         // recorded before use.
-                        const copied = writeTextToClipboard(url, "Provider sign-in link");
+                        const copied = writeTextToClipboard(url, {
+                          target: "Provider sign-in link",
+                          unavailableMessage: msg(
+                            "Clipboard API is unavailable while copying Provider sign-in link.",
+                          ),
+                          failureMessage: msg(
+                            "Failed to copy Provider sign-in link to the clipboard.",
+                          ),
+                        });
                         void (async () => {
                           await copied;
                           if (interaction?.type === "browser" && interaction.requiresConsent)
                             await send({ type: "browser", action: "accept" });
-                        })().catch(() => setError("无法复制登录链接。"));
+                        })().catch(() => setError(gt("Could not copy the sign-in link.")));
                       }}
                     >
                       <CopyIcon />
                     </Button>
                   }
                 />
-                <TooltipPopup>复制登录链接</TooltipPopup>
+                <TooltipPopup>
+                  <T>Copy sign-in link</T>
+                </TooltipPopup>
               </Tooltip>
             </>
           ) : null}
@@ -258,13 +285,13 @@ export function ProviderAuthenticationSection({
                   <a href={provider.setup.documentationUrl} target="_blank" rel="noreferrer" />
                 }
               >
-                打开文档
+                <T>Open docs</T>
               </Button>
             ) : active && auth?.flowId ? (
               <Button
                 size="sm"
                 variant="ghost-muted"
-                aria-label="取消登录"
+                aria-label={gt("Cancel sign-in")}
                 disabled={disabled}
                 onClick={() =>
                   void run(() =>
@@ -272,7 +299,7 @@ export function ProviderAuthenticationSection({
                   )
                 }
               >
-                取消
+                <T>Cancel</T>
               </Button>
             ) : !active && !needsExternalSetup && provider.setup?.canAuthenticate !== false ? (
               <Button
@@ -294,14 +321,14 @@ export function ProviderAuthenticationSection({
                 }
               >
                 {signedIn
-                  ? "更改账户"
+                  ? gt("Change account")
                   : auth?.phase === "failed" || auth?.phase === "cancelled"
                     ? usesCredentials
-                      ? "重试连接"
-                      : "重试登录"
+                      ? gt("Retry connection")
+                      : gt("Retry sign-in")
                     : usesCredentials
-                      ? "连接"
-                      : "登录"}
+                      ? gt("Connect")
+                      : gt("Sign in")}
               </Button>
             ) : null}
             {!active && signedIn && (provider.auth.canLogout ?? provider.setup?.canAuthenticate) ? (
@@ -312,14 +339,20 @@ export function ProviderAuthenticationSection({
                 onClick={() => {
                   void ensureLocalApi()
                     .dialogs.confirm(
-                      `Sign out of ${provider.displayName ?? provider.driver} on ${environmentLabel}? This stops running threads that share this sign-in. Thread history is kept.`,
+                      gt(
+                        "Sign out of {provider} on {environment}? This stops running threads that share this sign-in. Thread history is kept.",
+                        {
+                          provider: provider.displayName ?? provider.driver,
+                          environment: environmentLabel,
+                        },
+                      ),
                     )
                     .then((confirmed) => {
                       if (confirmed) void run(() => logout(target));
                     });
                 }}
               >
-                退出登录
+                <T>Sign out</T>
               </Button>
             ) : null}
           </>
@@ -335,15 +368,23 @@ export function ProviderAuthenticationSection({
         <>
           {interaction?.type === "deviceCode" ? (
             <p className="py-2 text-sm text-muted-foreground">
-              输入代码{" "}
-              <code className="select-all font-mono text-foreground">{interaction.userCode}</code>{" "}
-              在您的浏览器中。
+              <T>
+                Enter code{" "}
+                <code className="select-all font-mono text-foreground">
+                  <Var>{interaction.userCode}</Var>
+                </code>{" "}
+                in your browser.
+              </T>
             </p>
           ) : null}
           {interaction?.type === "terminal" ? (
             <div className="py-2">
               <Suspense
-                fallback={<p className="text-xs text-muted-foreground">正在装入登录终端…</p>}
+                fallback={
+                  <p className="text-xs text-muted-foreground">
+                    <T>Loading sign-in terminal…</T>
+                  </p>
+                }
               >
                 <ProviderAuthTerminal
                   key={`${auth?.flowId}:${interaction.id}`}
@@ -375,14 +416,14 @@ export function ProviderAuthenticationSection({
                         if (result._tag !== "Success") {
                           terminalQueue.current = [];
                           if (!isAtomCommandInterrupted(result))
-                            setError("代理提供方的登录终端已无法使用。");
+                            setError(gt("The provider sign-in terminal is no longer available."));
                           break;
                         }
                       }
                     })()
                       .catch(() => {
                         terminalQueue.current = [];
-                        setError("无法将输入发送到服务商的登录终端。");
+                        setError(gt("Could not send input to the provider sign-in terminal."));
                       })
                       .finally(() => {
                         terminalSending.current = false;
@@ -423,7 +464,7 @@ export function ProviderAuthenticationSection({
                 className="w-fit"
                 disabled={disabled}
               >
-                连接
+                <T>Connect</T>
               </Button>
             </form>
           ) : null}
@@ -444,7 +485,7 @@ export function ProviderAuthenticationSection({
               }}
             >
               <label className="grid gap-1">
-                如果最后的本地主机页面没有加载，请粘贴其完整URL here。
+                <T>If the final localhost page does not load, paste its full URL here.</T>
                 <Input
                   size="sm"
                   id={`provider-callback-${instanceId}`}
@@ -463,7 +504,7 @@ export function ProviderAuthenticationSection({
                 className="w-fit"
                 disabled={disabled || !values.callback?.trim()}
               >
-                继续
+                <T>Continue</T>
               </Button>
             </form>
           ) : null}

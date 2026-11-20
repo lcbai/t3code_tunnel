@@ -75,12 +75,14 @@ export const ManagedPolicyLimits = Schema.Struct({
   maxRuntimeMode: Schema.optionalKey(RuntimeMode),
   /** Clients the server accepts. Without `remote`, nothing off this machine can pair. */
   clients: Schema.optionalKey(Schema.NonEmptyArray(ManagedPolicyClient)),
-  /** Legacy field accepted when loading older policy files. */
+  /** `false` turns T3 Connect off and unlinks this machine. */
   connect: Schema.optionalKey(Schema.Boolean),
   webhookTasks: Schema.optionalKey(Schema.Boolean),
   /** Can only turn product analytics off, never force it on. */
   telemetry: Schema.optionalKey(Schema.Boolean),
   browserCookieImport: Schema.optionalKey(Schema.Boolean),
+  /** `false` turns the preview tunnel off: no client reaches this machine's loopback ports. */
+  previewTunnel: Schema.optionalKey(Schema.Boolean),
   providers: Schema.optionalKey(ManagedProviderLimits),
   updates: Schema.optionalKey(ManagedUpdatesPolicy),
 });
@@ -90,9 +92,12 @@ export type ManagedPolicyLimits = typeof ManagedPolicyLimits.Type;
 export const ManagedPolicySummaryLimits = Schema.Struct({
   maxRuntimeMode: Schema.optionalKey(RuntimeMode),
   clients: Schema.optionalKey(Schema.NonEmptyArray(ManagedPolicyClient)),
+  /** `false` also when `clients` leaves out `remote`, since Connect is remote access. */
+  connect: Schema.optionalKey(Schema.Boolean),
   webhookTasks: Schema.optionalKey(Schema.Boolean),
   telemetry: Schema.optionalKey(Schema.Boolean),
   browserCookieImport: Schema.optionalKey(Schema.Boolean),
+  previewTunnel: Schema.optionalKey(Schema.Boolean),
   providers: Schema.optionalKey(
     Schema.Struct({
       /** Absent means every driver is allowed. */
@@ -204,8 +209,10 @@ export function clampManagedRuntimeMode(
 
 const CAPABILITY_LABELS = {
   remoteClients: "connecting from other devices",
+  connect: "T3 Connect",
   webhookTasks: "webhook tasks",
   browserCookieImport: "importing browser cookies",
+  previewTunnel: "opening this machine's local servers on other devices",
 } as const;
 
 /** Why a capability is unavailable on an environment with `summary`, or undefined when allowed. */
@@ -222,6 +229,16 @@ export function managedCapabilityDenial(
   return denied
     ? managedPolicyDeniedMessage(summary.organization, CAPABILITY_LABELS[capability])
     : undefined;
+}
+
+/** Whether the preview tunnel serves: the setting is on and no policy switches it off. */
+export function allowsPreviewTunnel(config: {
+  readonly settings: { readonly enablePreviewTunnel: boolean };
+  readonly managedPolicy?: ManagedPolicySummary | undefined;
+}): boolean {
+  return (
+    config.settings.enablePreviewTunnel && config.managedPolicy?.limits?.previewTunnel !== false
+  );
 }
 
 /** Whether the policy lets `driver` run; clients name it with their own provider label. */

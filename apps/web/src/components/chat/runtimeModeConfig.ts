@@ -1,32 +1,37 @@
+import { managedRuntimeModeDenial } from "@t3tools/client-runtime/contract-labels";
+import type { ManagedPolicySummary, RuntimeMode } from "@t3tools/contracts";
+import { msg } from "gt-react";
+import { m, type MessageResolver } from "~/i18n/messages";
 import {
-  managedRuntimeModeDenial,
-  type ManagedPolicySummary,
-  type RuntimeMode,
-} from "@t3tools/contracts";
-import { type LucideIcon, LockIcon, PenLineIcon, ShieldOffIcon, SparklesIcon } from "lucide-react";
+  type LucideIcon,
+  LockIcon,
+  PenLineIcon,
+  ShieldCheckIcon,
+  ShieldOffIcon,
+} from "lucide-react";
 
 export const runtimeModeConfig: Record<
   RuntimeMode,
   { label: string; description: string; icon: LucideIcon }
 > = {
   "approval-required": {
-    label: "监督",
-    description: "运行命令或修改文件前请求确认。",
+    label: msg("Supervised", { $context: "permission mode, agent asks before acting" }),
+    description: msg("Ask before commands and file changes."),
     icon: LockIcon,
   },
   "auto-accept-edits": {
-    label: "自动接受编辑",
-    description: "自动接受文件修改，执行其他操作前请求确认。",
+    label: msg("Auto-accept edits"),
+    description: msg("Auto-approve edits, ask before other actions."),
     icon: PenLineIcon,
   },
   auto: {
-    label: "自动",
-    description: "支持此模式的提供方会自动批准常规操作，其余提供方仍会请求确认。",
-    icon: SparklesIcon,
+    label: msg("Auto", { $context: "permission mode, provider approves routine actions" }),
+    description: msg("Supported providers approve routine actions; others still ask."),
+    icon: ShieldCheckIcon,
   },
   "full-access": {
-    label: "完全访问",
-    description: "运行命令和修改文件时无需确认。",
+    label: msg("Full access"),
+    description: msg("Allow commands and edits without prompts."),
     // An open lock reads like a closed one at small sizes; a crossed shield does not.
     icon: ShieldOffIcon,
   },
@@ -46,13 +51,51 @@ export function resolveCompatibleRuntimeMode(
   return { modes, mode: modes.includes(runtimeMode) ? runtimeMode : (modes[0] ?? runtimeMode) };
 }
 
+export function resolveRuntimeModeOption(
+  mode: RuntimeMode,
+  resolve: MessageResolver = m,
+): {
+  mode: RuntimeMode;
+  label: string;
+  description: string;
+  icon: LucideIcon;
+  disabledReason?: string;
+} {
+  const config = runtimeModeConfig[mode];
+  return {
+    mode,
+    ...config,
+    label: resolve(config.label),
+    description: resolve(config.description),
+  };
+}
+
+/** Why `mode` is unavailable under `managedPolicy`, or undefined when it is allowed. */
+export function runtimeModeDenial(
+  managedPolicy: ManagedPolicySummary | undefined,
+  mode: RuntimeMode,
+  resolve: MessageResolver = m,
+) {
+  const ceiling = managedPolicy?.limits?.maxRuntimeMode;
+  if (ceiling === undefined || managedRuntimeModeDenial(managedPolicy, mode) === undefined) {
+    return undefined;
+  }
+  return resolve(
+    msg("{organization} limits threads to {mode}.", {
+      organization: managedPolicy!.organization,
+      mode: resolve(runtimeModeConfig[ceiling].label),
+    }),
+  );
+}
+
 export function resolveRuntimeModeOptions(
   modes: ReadonlyArray<RuntimeMode>,
   managedPolicy: ManagedPolicySummary | undefined,
+  resolve: MessageResolver = m,
 ) {
   return modes.map((mode) => {
-    const option = { mode, ...runtimeModeConfig[mode] };
-    const disabledReason = managedRuntimeModeDenial(managedPolicy, mode);
+    const option = resolveRuntimeModeOption(mode, resolve);
+    const disabledReason = runtimeModeDenial(managedPolicy, mode, resolve);
     return disabledReason === undefined ? option : { ...option, disabledReason };
   });
 }

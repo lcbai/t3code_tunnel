@@ -1,4 +1,4 @@
-import { TrimmedString, makeProviderSettingsSchema } from "@t3tools/contracts";
+import { CustomModelSetting, TrimmedString, makeProviderSettingsSchema } from "@t3tools/contracts";
 import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
 
@@ -10,12 +10,12 @@ export const AcpRegistrySettings = makeProviderSettingsSchema(
     source: Schema.Literals(["registry", "local"]).pipe(
       Schema.withDecodingDefault(Effect.succeed("registry")),
       Schema.annotateKey({
-        title: "ACP 来源",
+        title: "ACP source",
         providerSettingsForm: {
           control: "select",
           options: [
-            { value: "registry", label: "ACP 注册表" },
-            { value: "local", label: "本地命令" },
+            { value: "registry", label: "ACP Registry" },
+            { value: "local", label: "Local command" },
           ],
         },
       }),
@@ -27,51 +27,44 @@ export const AcpRegistrySettings = makeProviderSettingsSchema(
     agentId: TrimmedString.pipe(
       Schema.withDecodingDefault(Effect.succeed("")),
       Schema.annotateKey({
-        title: "注册表代理 ID",
-        description: "ACP 官方注册表中的代理标识，例如 devin。",
+        title: "Registry agent ID",
+        description: "Agent identifier from the official ACP Registry, for example 'devin'.",
         providerSettingsForm: { placeholder: "devin", clearWhenEmpty: "persist" },
       }),
     ),
     commandPath: TrimmedString.pipe(
       Schema.withDecodingDefault(Effect.succeed("")),
       Schema.annotateKey({
-        title: "自定义可执行文件",
+        title: "Executable override",
         description:
-          "当前环境中的可执行文件。对于注册表代理，这会替换默认可执行文件，并保留参数和环境变量。",
-        providerSettingsForm: { placeholder: "使用注册表默认值", clearWhenEmpty: "omit" },
+          "Executable on this environment. For registry agents, this overrides the distribution executable while keeping its arguments and environment.",
+        providerSettingsForm: { placeholder: "Registry default", clearWhenEmpty: "omit" },
       }),
     ),
     commandArgs: Schema.Array(Schema.String).pipe(
       Schema.withDecodingDefault(Effect.succeed([])),
       Schema.annotateKey({ providerSettingsForm: { hidden: true } }),
     ),
-    autoUpdate: Schema.Boolean.pipe(
-      Schema.withDecodingDefault(Effect.succeed(false)),
-      Schema.annotateKey({
-        title: "自动升级 Qoder CN",
-        description: "检查到新版本后，在此环境中自动更新 Qoder CN CLI。",
-        providerSettingsForm: { control: "switch" },
-      }),
-    ),
     authMethodId: TrimmedString.pipe(
       Schema.withDecodingDefault(Effect.succeed("")),
       Schema.annotateKey({
-        title: "认证方式",
-        description: "可选的 ACP 认证方式 ID。默认使用第一个由代理管理的认证方式。",
-        providerSettingsForm: { placeholder: "自动", clearWhenEmpty: "omit" },
+        title: "Authentication method",
+        description:
+          "Optional ACP authentication method ID. By default, the first agent-managed method is selected.",
+        providerSettingsForm: { placeholder: "auto", clearWhenEmpty: "omit" },
       }),
     ),
     distribution: AcpRegistryDistributionPreference.pipe(
       Schema.withDecodingDefault(Effect.succeed("auto")),
       Schema.annotateKey({ providerSettingsForm: { hidden: true } }),
     ),
-    customModels: Schema.Array(Schema.String).pipe(
+    customModels: Schema.Array(CustomModelSetting).pipe(
       Schema.withDecodingDefault(Effect.succeed([])),
       Schema.annotateKey({ providerSettingsForm: { hidden: true } }),
     ),
   },
   {
-    order: ["source", "agentId", "commandPath", "authMethodId", "autoUpdate"],
+    order: ["source", "agentId", "commandPath", "authMethodId"],
   },
 );
 export type AcpRegistrySettings = typeof AcpRegistrySettings.Type;

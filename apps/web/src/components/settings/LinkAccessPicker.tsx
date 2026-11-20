@@ -1,4 +1,5 @@
 import { AuthMcpClientAccess } from "@t3tools/contracts";
+import { T, useMessages } from "gt-react";
 import { useId } from "react";
 
 import { accessConfig } from "../auth/ConnectAgentSurface";
@@ -15,11 +16,12 @@ export function LinkAccessPicker({
   readonly disabled?: boolean;
 }) {
   const labelId = useId();
+  const m = useMessages();
   const selected = accessConfig[value];
   return (
     <div className="space-y-1.5">
       <span id={labelId} className="block text-xs font-medium">
-        此处的代理可在目标环境执行的操作
+        <T>What agents here may do there</T>
       </span>
       <Select
         value={value}
@@ -32,7 +34,7 @@ export function LinkAccessPicker({
           <SelectValue>
             <span className="flex items-center gap-2">
               <selected.icon aria-hidden className="size-4" />
-              {selected.label}
+              {m(selected.label)}
             </span>
           </SelectValue>
         </SelectTrigger>
@@ -44,9 +46,9 @@ export function LinkAccessPicker({
                 <span className="grid min-w-0 gap-0.5 py-0.5">
                   <span className="inline-flex items-center gap-1.5 font-medium text-foreground">
                     <Icon aria-hidden className="size-3.5 shrink-0 text-muted-foreground" />
-                    {label}
+                    {m(label)}
                   </span>
-                  <span className="text-xs leading-4 text-muted-foreground">{description}</span>
+                  <span className="text-xs leading-4 text-muted-foreground">{m(description)}</span>
                 </span>
               </SelectItem>
             );
@@ -54,8 +56,12 @@ export function LinkAccessPicker({
         </SelectPopup>
       </Select>
       <p className="text-xs text-muted-foreground">
-        {selected.description}{" "}
-        一个代理从没有比它自己的模式更多的访问。在完全访问下，它只能改变启动的链接的会话，而不是机器自己的会话、工程或设置。
+        {m(selected.description)}{" "}
+        <T>
+          An agent never gets more access there than its own mode here. Below full access, it can
+          change only threads this link started, not that machine's own threads, projects or
+          settings.
+        </T>
       </p>
     </div>
   );

@@ -26,28 +26,80 @@ describe("summarizeT3ToolCalls", () => {
         output,
       ),
     );
-    expect(summarizeT3ToolCalls("thread-send", calls).label).toBe("已发送 1 条消息给 1 个会话");
+    expect(summarizeT3ToolCalls("thread-send", calls).label).toBe("Sent 1 message to 1 thread");
     expect(
       summarizeT3ToolCalls("thread-send", [
         completed({ toolName: "t3_thread_send", args: { threadId: "input-thread" } }),
         completed({ threadId: "input-thread" }),
       ]).label,
-    ).toBe("已发送 2 条消息给 1 个会话");
+    ).toBe("Sent 2 messages to 1 thread");
   });
 
   it("counts the pull requests batch link and unlink calls changed", () => {
     const urls = ["https://github.com/o/r/pull/1", "https://github.com/o/r/pull/1", "not-a-pr"];
     const links = completed({ urls }, { linkedCount: 1 });
     expect(summarizeT3ToolCalls("link-pr", [links, completed({ number: 3 })]).label).toBe(
-      "已关联 2 个拉取请求",
+      "Linked 2 pull requests",
     );
-    expect(summarizeT3ToolCalls("link-pr", [completed({ urls }, {})]).label).toBe("已关联拉取请求");
+    expect(summarizeT3ToolCalls("link-pr", [completed({ urls }, {})]).label).toBe(
+      "Linked pull requests",
+    );
     const batch = completed({ states: ["merged"] }, { unlinkedCount: 2 });
     expect(summarizeT3ToolCalls("unlink-pr", [batch, completed({ number: 3 })]).label).toBe(
-      "已取消关联 3 个拉取请求",
+      "Unlinked 3 pull requests",
     );
     const uncounted = completed({ states: ["merged"] }, { isError: false });
-    expect(summarizeT3ToolCalls("unlink-pr", [uncounted]).label).toBe("已取消关联拉取请求");
+    expect(summarizeT3ToolCalls("unlink-pr", [uncounted]).label).toBe("Unlinked pull requests");
+  });
+
+  it("tells opened and merged pull requests from found ones and auto-merges", () => {
+    const create = (created: boolean) => completed({ title: "t" }, { number: 1, created });
+    expect(summarizeT3ToolCalls("create-pr", [create(true)]).label).toBe("Opened 1 pull request");
+    expect(summarizeT3ToolCalls("create-pr", [create(false)]).label).toBe(
+      "Found 1 open pull request",
+    );
+    expect(summarizeT3ToolCalls("create-pr", [create(true), create(false)]).label).toBe(
+      "Opened 1 pull request, found 1 open",
+    );
+    const merge = (auto: boolean, state: string) => completed({ auto }, { number: 1, state });
+    expect(summarizeT3ToolCalls("merge-pr", [merge(false, "merged")]).label).toBe(
+      "Merged 1 pull request",
+    );
+    expect(summarizeT3ToolCalls("merge-pr", [merge(false, "open")]).label).toBe(
+      "Queued 1 pull request to merge",
+    );
+    expect(summarizeT3ToolCalls("merge-pr", [merge(true, "open")]).label).toBe(
+      "Queued 1 pull request to merge",
+    );
+    expect(
+      summarizeT3ToolCalls("merge-pr", [merge(true, "merged"), merge(true, "open")]).label,
+    ).toBe("Merged 1 pull request, queued 1");
+    expect(summarizeT3ToolCalls("review-pr", [completed({ verdict: "approve" }, {})]).label).toBe(
+      "Reviewed 1 pull request",
+    );
+  });
+
+  it("counts the checks a CI rerun restarted, and the ones the host refused", () => {
+    const rerun = (...outcomes: boolean[]) =>
+      completed(
+        {},
+        { checks: outcomes.map((outcome, index) => ({ name: `c${index}`, rerun: outcome })) },
+      );
+    expect(summarizeT3ToolCalls("ci-rerun", [rerun(true, true)])).toEqual({
+      label: "Re-ran 2 checks",
+      failedCount: 0,
+    });
+    expect(summarizeT3ToolCalls("ci-rerun", [rerun(true, false)])).toEqual({
+      label: "Re-ran 1 check, 1 refused",
+      failedCount: 1,
+    });
+    expect(summarizeT3ToolCalls("ci-rerun", [rerun(false)])).toEqual({
+      label: "Could not re-run 1 check",
+      failedCount: 1,
+    });
+    expect(summarizeT3ToolCalls("ci-rerun", [rerun()]).label).toBe(
+      "Found no failed checks to re-run",
+    );
   });
 
   it("excludes failed and unfinished sends even if the provider reports completed", () => {
@@ -63,11 +115,11 @@ describe("summarizeT3ToolCalls", () => {
       { input: { threadId: "cancelled" }, output: undefined, outcome: "unfinished" },
     ];
     expect(summarizeT3ToolCalls("thread-send", calls)).toEqual({
-      label: "已发送 1 条消息给 1 个会话",
+      label: "Sent 1 message to 1 thread",
       failedCount: 2,
     });
     expect(summarizeT3ToolCalls("thread-send", [calls[1]!])).toEqual({
-      label: "尝试发送 1 条消息给 1 个会话",
+      label: "Tried to send 1 message to 1 thread",
       failedCount: 1,
     });
   });
@@ -77,7 +129,7 @@ describe("summarizeT3ToolCalls", () => {
     expect(
       summarizeT3ToolCalls("delegate", [completed({}, failedChild), completed({}, failedChild)]),
     ).toEqual({
-      label: "已委派 1 个任务",
+      label: "Delegated 1 task",
       failedCount: 0,
     });
     expect(
@@ -85,13 +137,13 @@ describe("summarizeT3ToolCalls", () => {
         "task-status",
         Array.from({ length: 4 }, () => completed({ taskId: "task-1" }, failedChild)),
       ).label,
-    ).toBe("已检查任务状态 4 次");
+    ).toBe("Checked task status 4 times");
     expect(
       summarizeT3ToolCalls("thread-wait", [
         completed({ threadId: "thread-1" }, { threadId: "thread-1", timedOut: true }),
       ]),
     ).toEqual({
-      label: "已等待 1 个会话",
+      label: "Waited on 1 thread",
       failedCount: 0,
     });
   });

@@ -1,3 +1,4 @@
+import { T, useGT, useMessages, Var } from "gt-react";
 import { useState } from "react";
 
 import { Button } from "~/components/ui/button";
@@ -29,19 +30,24 @@ export function PreviewFileNotShown({
       <div className="mx-auto flex w-full max-w-xl flex-1 flex-col px-8 py-12 sm:py-16">
         <ErrorIcon className="mb-6 size-12 text-muted-foreground/70" />
         <h1 className="mb-3 text-2xl font-semibold leading-tight text-foreground">
-          此文件无法在此显示
+          <T>This file can&rsquo;t be shown here</T>
         </h1>
         <p className="text-sm leading-relaxed text-muted-foreground">
-          <span className="font-semibold text-foreground">{fileName}</span> from {host} 改为下载。
+          <T>
+            <span className="font-semibold text-foreground">
+              <Var>{fileName}</Var>
+            </span>{" "}
+            from <Var>{host}</Var> was downloaded instead.
+          </T>
         </p>
         <div className="mt-auto flex items-center gap-2 pt-8">
           <div className="flex-1" />
           <Button type="button" variant="outline" size="sm" onClick={onOpen}>
-            在浏览器中打开
+            <T>Open in browser</T>
           </Button>
           {downloadUrl ? (
             <Button type="button" size="sm" render={<a href={downloadUrl} download={fileName} />}>
-              下载
+              <T context="verb">Download</T>
             </Button>
           ) : null}
         </div>
@@ -51,9 +57,11 @@ export function PreviewFileNotShown({
 }
 
 export function PreviewUnreachable({ url, code, description, onReload, move }: Props) {
+  const gt = useGT();
+  const m = useMessages();
   const [showDetails, setShowDetails] = useState(false);
   const host = safeHost(url) ?? url;
-  const friendly = describePreviewError(description);
+  const friendly = describePreviewError(description, m);
   const errorLabel = description.length > 0 ? description : `ERR_${Math.abs(code) || "FAILED"}`;
 
   return (
@@ -61,20 +69,37 @@ export function PreviewUnreachable({ url, code, description, onReload, move }: P
       <div className="mx-auto flex w-full max-w-xl flex-1 flex-col px-8 py-12 sm:py-16">
         <ErrorIcon className="mb-6 size-12 text-muted-foreground/70" />
         <h1 className="mb-3 text-2xl font-semibold leading-tight text-foreground">
-          无法到达此网站
+          <T>This site can&rsquo;t be reached</T>
         </h1>
         <p className="text-sm leading-relaxed text-muted-foreground">
-          <span className="font-semibold text-foreground">{host}</span>: {friendly}.
+          <T>
+            <span className="font-semibold text-foreground">
+              <Var>{host}</Var>
+            </span>
+            : <Var>{friendly}</Var>.
+          </T>
         </p>
 
         {showDetails ? (
           <div className="mt-6 rounded-lg border border-border bg-muted/40 p-4 text-sm">
-            <p className="mb-2 font-medium text-foreground">尝试 :</p>
+            <p className="mb-2 font-medium text-foreground">
+              <T>Try:</T>
+            </p>
             <ul className="list-disc space-y-1 pl-5 text-muted-foreground">
-              <li>正在检查您的连接</li>
-              <li>确认 Dev 服务器正在运行</li>
-              {move ? <li>在环境浏览器中打开它，它到达它的网络</li> : null}
-              <li>检查代理和防火墙</li>
+              <li>
+                <T>Checking your connection</T>
+              </li>
+              <li>
+                <T>Confirming the dev server is running</T>
+              </li>
+              {move ? (
+                <li>
+                  <T>Opening it in the environment&rsquo;s browser, which reaches its network</T>
+                </li>
+              ) : null}
+              <li>
+                <T>Checking the proxy and the firewall</T>
+              </li>
             </ul>
           </div>
         ) : null}
@@ -90,7 +115,7 @@ export function PreviewUnreachable({ url, code, description, onReload, move }: P
             size="sm"
             onClick={() => setShowDetails((value) => !value)}
           >
-            {showDetails ? "隐藏细节" : "细节"}
+            {showDetails ? gt("Hide details") : gt("Details")}
           </Button>
           <div className="flex-1" />
           {move ? (
@@ -99,7 +124,7 @@ export function PreviewUnreachable({ url, code, description, onReload, move }: P
             </Button>
           ) : null}
           <Button type="button" size="sm" onClick={onReload}>
-            重新加载
+            <T>Reload</T>
           </Button>
         </div>
       </div>

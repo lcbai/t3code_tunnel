@@ -1,8 +1,12 @@
+import { thrownErrorMessage } from "@t3tools/client-runtime/errors";
+import { m as resolveMessage } from "~/i18n/messages";
 import { ProviderInstanceIcon } from "../chat/ProviderInstanceIcon";
 
 import { Radio as RadioPrimitive } from "@base-ui/react/radio";
 import { CheckIcon, ChevronDownIcon } from "lucide-react";
 import { useState } from "react";
+import { msg, T, useGT, useMessages, Var } from "gt-react";
+import type { MessageResolver } from "../../i18n/messages";
 import {
   deriveAvailableInstanceId,
   deriveInstanceId,
@@ -59,70 +63,32 @@ import { ProviderWizardAuthenticationStep } from "./ProviderWizardAuthentication
 import { resolveOfficialAcpRegistryIconUrl } from "./AcpRegistryIcon";
 import { AddManagedCodexAccountDialog } from "./CodexSetupSection";
 import { MultipleAccountsNote } from "./MultipleAccountsNote";
-import {
-  nextProviderEnvironmentWithFieldSecret,
-  nextProviderEnvironmentWithFieldValue,
-  ProviderEnvironmentFieldRow,
-  ProviderEnvironmentSection,
-} from "./ProviderInstanceCard";
+import { ProviderEnvironmentSection } from "./ProviderInstanceCard";
 import { useSecretSources } from "./SecretSourceInput";
-import doubaoLogo from "./provider-logos/doubao.png";
-import qoderCnLogo from "../../../../../assets/providers/qoder-cn.png";
 
 const INSTANCE_ID_PATTERN = /^[a-zA-Z][a-zA-Z0-9_-]*$/;
 const DEFAULT_DRIVER_KIND = ProviderDriverKind.make("codex");
 const ACP_REGISTRY_DRIVER_KIND = ProviderDriverKind.make("acpRegistry");
-const OPENCODE_DRIVER_KIND = ProviderDriverKind.make("opencode");
 const DEFAULT_DRIVER_OPTION = providerClients.definitions[0]!;
 const DRIVER_OPTIONS = providerClients.definitions.filter(
   (option) => option.driverKind !== ACP_REGISTRY_DRIVER_KIND,
 );
-const FEATURED_DRIVER_OPTIONS = DRIVER_OPTIONS.filter((option) => option.featured !== false).map(
-  (option) => ({ ...option, value: option.driverKind }),
-);
-const MORE_DRIVER_OPTIONS = DRIVER_OPTIONS.filter((option) => option.featured === false).map(
-  (option) => ({ ...option, value: option.driverKind }),
-);
+const FEATURED_DRIVER_OPTIONS = DRIVER_OPTIONS.filter((option) => option.featured !== false);
+const MORE_DRIVER_OPTIONS = DRIVER_OPTIONS.filter((option) => option.featured === false);
 const EMPTY_CONFIG_DRAFT: Record<string, unknown> = {};
-type ProviderOption = Pick<ProviderClientDefinition, "driverKind" | "label" | "badgeLabel"> & {
-  readonly value: string;
-  readonly logo?: string;
-  readonly disabled?: boolean;
-};
-const QODER_CN_OPTION = {
-  value: "preset:qoder-cn",
-  label: "Qoder CN",
-  driverKind: ACP_REGISTRY_DRIVER_KIND,
-  logo: qoderCnLogo,
-} satisfies ProviderOption;
-const QODER_CN_CONFIG: Record<string, unknown> = {
-  source: "local",
-  commandPath: "qoderclicn",
-  commandArgs: ["--acp"],
-};
-const DOUBAO_OPTION = {
-  value: "preset:doubao",
-  label: "豆包（火山方舟）",
-  driverKind: OPENCODE_DRIVER_KIND,
-  logo: doubaoLogo,
-} satisfies ProviderOption;
-const DOUBAO_CLI_OPTION = {
-  value: "preset:doubao-cli",
-  label: "豆包 CLI（企业）",
-  driverKind: OPENCODE_DRIVER_KIND,
-  logo: doubaoLogo,
-} satisfies ProviderOption;
-const DOUBAO_API_KEY_FIELD = providerClients
-  .get(OPENCODE_DRIVER_KIND)
-  ?.environmentFields?.find((field) => field.name === "ARK_CODING_PLAN_API_KEY");
-
-function validateInstanceId(id: string, existing: ReadonlySet<string>): string | null {
-  if (id.length === 0) return "Instance ID is required.";
-  if (id.length > 64) return "Instance ID must be 64 characters or fewer.";
+function validateInstanceId(
+  id: string,
+  existing: ReadonlySet<string>,
+  resolve: MessageResolver,
+): string | null {
+  if (id.length === 0) return resolve(msg("Instance ID is required."));
+  if (id.length > 64) return resolve(msg("Instance ID must be 64 characters or fewer."));
   if (!INSTANCE_ID_PATTERN.test(id)) {
-    return "Instance ID must start with a letter and use only letters, digits, '-', or '_'.";
+    return resolve(
+      msg("Instance ID must start with a letter and use only letters, digits, '-', or '_'."),
+    );
   }
-  if (existing.has(id)) return `已经存在名为“${id}” 的实例。`;
+  if (existing.has(id)) return resolve(msg("An instance named ''{id}'' already exists.", { id }));
   return null;
 }
 
@@ -133,8 +99,8 @@ function ProviderOptionGrid({
   onValueChange,
   ...labelProps
 }: {
-  readonly options: ReadonlyArray<ProviderOption>;
-  readonly value: string;
+  readonly options: ReadonlyArray<ProviderClientDefinition>;
+  readonly value: ProviderDriverKind;
   readonly disabled: boolean;
   readonly onValueChange: (value: string) => void;
   readonly "aria-label"?: string;
@@ -150,20 +116,15 @@ function ProviderOptionGrid({
     >
       {options.map((option) => (
         <RadioPrimitive.Root
-          key={option.value}
-          value={option.value}
-          disabled={option.disabled ?? false}
-          className="relative flex cursor-pointer items-center gap-3 rounded-lg bg-card px-3 py-3 text-left text-muted-foreground outline-none ring-1 ring-black/5 hover:bg-muted focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring data-checked:bg-primary/8 data-checked:text-foreground data-checked:ring-2 data-checked:ring-inset data-checked:ring-primary data-checked:hover:bg-primary/8 data-disabled:cursor-default data-disabled:opacity-50 dark:bg-white/3 dark:ring-white/5 dark:hover:bg-white/5 dark:data-checked:bg-primary/15 dark:data-checked:ring-primary dark:data-checked:hover:bg-primary/15"
+          key={option.driverKind}
+          value={option.driverKind}
+          className="relative flex cursor-pointer items-center gap-3 rounded-lg bg-card px-3 py-3 text-left text-muted-foreground outline-none ring-1 ring-black/5 hover:bg-muted focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring data-checked:bg-primary/8 data-checked:text-foreground data-checked:ring-2 data-checked:ring-inset data-checked:ring-primary data-checked:hover:bg-primary/8 dark:bg-white/3 dark:ring-white/5 dark:hover:bg-white/5 dark:data-checked:bg-primary/15 dark:data-checked:ring-primary dark:data-checked:hover:bg-primary/15"
         >
-          {option.logo ? (
-            <img src={option.logo} alt="" className="size-4 shrink-0 object-contain" />
-          ) : (
-            <ProviderInstanceIcon
-              driverKind={option.driverKind}
-              displayName={option.label}
-              iconClassName="size-4"
-            />
-          )}
+          <ProviderInstanceIcon
+            driverKind={option.driverKind}
+            displayName={option.label}
+            iconClassName="size-4"
+          />
           <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
             {option.label}
           </span>
@@ -190,7 +151,6 @@ interface AddProviderInstanceDialogProps {
   readonly environmentLabel: string;
   readonly onOpenChange: (open: boolean) => void;
   readonly onCreated?: (instanceId: ProviderInstanceId, driver: ProviderDriverKind) => void;
-  readonly onSelectDoubaoCli?: (() => void) | undefined;
   /** Opens with "Show more" expanded, so the ACP Registry search is in view. */
   readonly showMoreProviders?: boolean;
 }
@@ -201,9 +161,10 @@ export function AddProviderInstanceDialog({
   environmentLabel,
   onOpenChange,
   onCreated,
-  onSelectDoubaoCli,
   showMoreProviders: initialShowMoreProviders = false,
 }: AddProviderInstanceDialogProps) {
+  const gt = useGT();
+  const m = useMessages();
   const settings = useEnvironmentSettings(environmentId);
   const secretSources = useSecretSources(environmentId);
   const persistProviderInstance = usePersistEnvironmentProviderInstanceMutation(environmentId);
@@ -213,46 +174,28 @@ export function AddProviderInstanceDialog({
   const [addingChatGptAccount, setAddingChatGptAccount] = useState(false);
   // Drivers the administrator's policy leaves out are not offered at all.
   const managedPolicy = useManagedPolicy(environmentId);
-  const featuredDriverOptions: ProviderOption[] = FEATURED_DRIVER_OPTIONS.filter((option) =>
+  const featuredDriverOptions = FEATURED_DRIVER_OPTIONS.filter((option) =>
     isManagedDriverAllowed(managedPolicy, option.driverKind),
   );
-  const moreDriverOptions: ProviderOption[] = MORE_DRIVER_OPTIONS.filter((option) =>
+  const moreDriverOptions = MORE_DRIVER_OPTIONS.filter((option) =>
     isManagedDriverAllowed(managedPolicy, option.driverKind),
   );
   const acpRegistryAllowed = isManagedDriverAllowed(managedPolicy, ACP_REGISTRY_DRIVER_KIND);
-  if (acpRegistryAllowed) {
-    featuredDriverOptions.push({ ...QODER_CN_OPTION, disabled: !canManageProviders });
-  }
-  if (DOUBAO_API_KEY_FIELD && isManagedDriverAllowed(managedPolicy, OPENCODE_DRIVER_KIND)) {
-    featuredDriverOptions.push({ ...DOUBAO_OPTION, disabled: !canManageProviders });
-  }
-  if (onSelectDoubaoCli) moreDriverOptions.push(DOUBAO_CLI_OPTION);
-  const [providerOption, setProviderOption] = useState<string>(
+  const [driver, setDriver] = useState<ProviderDriverKind>(
     () =>
-      (featuredDriverOptions.find((option) => !option.disabled) ?? moreDriverOptions[0])?.value ??
+      (featuredDriverOptions[0] ?? moreDriverOptions[0])?.driverKind ??
       (acpRegistryAllowed ? ACP_REGISTRY_DRIVER_KIND : DEFAULT_DRIVER_KIND),
   );
-  const isQoderCn = providerOption === QODER_CN_OPTION.value;
-  const isDoubao = providerOption === DOUBAO_OPTION.value;
-  const isDoubaoCli = providerOption === DOUBAO_CLI_OPTION.value;
-  const driver = isQoderCn
-    ? QODER_CN_OPTION.driverKind
-    : isDoubao || isDoubaoCli
-      ? DOUBAO_OPTION.driverKind
-      : ProviderDriverKind.make(providerOption);
-  const [identityByOption, setIdentityByOption] = useState<Record<string, ProviderIdentityDraft>>(
+  const [identityByDriver, setIdentityByDriver] = useState<Record<string, ProviderIdentityDraft>>(
     {},
   );
   const [selectedAcp, setSelectedAcp] = useState<AcpRegistrySearchAgent | null>(null);
   const [localEnvironment, setLocalEnvironment] = useState<
     ReadonlyArray<ProviderInstanceEnvironmentVariable>
   >([]);
-  const [doubaoEnvironment, setDoubaoEnvironment] = useState<
-    ReadonlyArray<ProviderInstanceEnvironmentVariable>
-  >([]);
   const [isManualAcpConfiguration, setIsManualAcpConfiguration] = useState(false);
   const [showMoreProviders, setShowMoreProviders] = useState(initialShowMoreProviders);
-  const [configByOption, setConfigByOption] = useState<Record<string, Record<string, unknown>>>({});
+  const [configByDriver, setConfigByDriver] = useState<Record<string, Record<string, unknown>>>({});
   const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [createdInstanceId, setCreatedInstanceId] = useState<ProviderInstanceId | null>(null);
@@ -266,7 +209,6 @@ export function AddProviderInstanceDialog({
   ]);
 
   const driverOption = providerClients.get(driver) ?? DEFAULT_DRIVER_OPTION;
-  const optionLabel = isQoderCn ? QODER_CN_OPTION.label : isDoubao ? "豆包" : driverOption.label;
   const isAcpRegistry = driver === ACP_REGISTRY_DRIVER_KIND;
   const showRegistrySearch =
     !createdInstanceId &&
@@ -277,17 +219,15 @@ export function AddProviderInstanceDialog({
   const registry = useAcpRegistrySearch(environmentId, showRegistrySearch);
   const isPreparingRegistryAgent = registry.preparingId !== null;
   const defaultIdentity: ProviderIdentityDraft = {
-    label: optionLabel,
+    label: driverOption.label,
     accentColor: "",
     instanceIdOverride: null,
   };
-  const { label, accentColor, instanceIdOverride } =
-    identityByOption[providerOption] ?? defaultIdentity;
+  const { label, accentColor, instanceIdOverride } = identityByDriver[driver] ?? defaultIdentity;
   const instanceId =
     instanceIdOverride ??
     deriveAvailableInstanceId(
       (candidateLabel) => {
-        if (isDoubao) return deriveInstanceId(driver, candidateLabel) || `${driver}_doubao`;
         if (!candidateLabel.trim() || candidateLabel === driverOption.label) {
           return isAcpRegistry ? `${driver}_custom` : driver;
         }
@@ -296,58 +236,51 @@ export function AddProviderInstanceDialog({
       label,
       existingIds,
     );
-  const driverSettingsFields = deriveProviderSettingsFields(driverOption);
-  const instanceIdError = validateInstanceId(instanceId, existingIds);
+  const driverSettingsFields = deriveProviderSettingsFields(driverOption, undefined, m);
+  const instanceIdError = validateInstanceId(instanceId, existingIds, m);
   const showInstanceIdError = hasAttemptedSubmit && instanceIdError !== null;
   const identityStep = 1;
-  const previewLabel = label.trim() || `${optionLabel} 工作空间`;
+  const previewLabel = label.trim() || gt("{provider} Workspace", { provider: driverOption.label });
 
-  const configDraft = isQoderCn
-    ? QODER_CN_CONFIG
-    : (configByOption[providerOption] ?? EMPTY_CONFIG_DRAFT);
-  const isLocalAcp =
-    isQoderCn || (isAcpRegistry && isManualAcpConfiguration && configDraft.source === "local");
+  const configDraft = configByDriver[driver] ?? EMPTY_CONFIG_DRAFT;
+  const isLocalAcp = isAcpRegistry && isManualAcpConfiguration && configDraft.source === "local";
   const localCommandPath =
     typeof configDraft.commandPath === "string" ? configDraft.commandPath.trim() : "";
   const manualAgentId = typeof configDraft.agentId === "string" ? configDraft.agentId.trim() : "";
   const acpSelectionError = isLocalAcp
     ? localCommandPath.length > 0
       ? null
-      : "需要可执行文件。"
+      : gt("Executable is required.")
     : selectedAcp !== null || (isManualAcpConfiguration && manualAgentId.length > 0)
       ? null
-      : "请选择一个 ACP 代理或手动配置。";
+      : gt("Select an ACP or configure one manually.");
   const wizardStepSummaries = isAcpRegistry
     ? ([
-        isLocalAcp
-          ? isQoderCn
-            ? QODER_CN_OPTION.label
-            : "本地 ACP 命令"
-          : (selectedAcp?.name ?? (manualAgentId || null)),
+        isLocalAcp ? gt("Local ACP command") : (selectedAcp?.name ?? (manualAgentId || null)),
         previewLabel,
         null,
       ] as const)
-    : ([optionLabel, previewLabel, null] as const);
+    : ([driverOption.label, previewLabel, null] as const);
   const setConfigDraft = (config: Record<string, unknown> | undefined) => {
-    setConfigByOption((existing) => {
+    setConfigByDriver((existing) => {
       const next = { ...existing };
       if (config === undefined || Object.keys(config).length === 0) {
-        delete next[providerOption];
+        delete next[driver];
       } else {
-        next[providerOption] = config;
+        next[driver] = config;
       }
       return next;
     });
   };
-  const selectProviderOption = (value: string) => {
-    setProviderOption(value);
+  const selectDriver = (value: string) => {
+    setDriver(ProviderDriverKind.make(value));
     setIsManualAcpConfiguration(false);
     setHasAttemptedSubmit(false);
   };
   const setIdentityDraft = (update: Partial<ProviderIdentityDraft>) => {
-    setIdentityByOption((existing) => ({
+    setIdentityByDriver((existing) => ({
       ...existing,
-      [providerOption]: { ...(existing[providerOption] ?? defaultIdentity), ...update },
+      [driver]: { ...(existing[driver] ?? defaultIdentity), ...update },
     }));
   };
 
@@ -382,7 +315,7 @@ export function AddProviderInstanceDialog({
   };
 
   const handleAcpPrepared = (agent: AcpRegistrySearchAgent) => {
-    setProviderOption(ACP_REGISTRY_DRIVER_KIND);
+    setDriver(ACP_REGISTRY_DRIVER_KIND);
     const nextLabel = agent.name;
     const registryIconUrl = resolveOfficialAcpRegistryIconUrl(agent.icon);
     const nextInstanceId = deriveAvailableInstanceId(
@@ -392,13 +325,13 @@ export function AddProviderInstanceDialog({
     );
     setSelectedAcp(agent);
     setIsManualAcpConfiguration(false);
-    setIdentityByOption((existing) =>
+    setIdentityByDriver((existing) =>
       updateProviderIdentityDraft(existing, ACP_REGISTRY_DRIVER_KIND, {
         label: nextLabel,
         instanceIdOverride: nextInstanceId,
       }),
     );
-    setConfigByOption((existing) => ({
+    setConfigByDriver((existing) => ({
       ...existing,
       [ACP_REGISTRY_DRIVER_KIND]: {
         agentId: agent.id,
@@ -411,15 +344,15 @@ export function AddProviderInstanceDialog({
   };
 
   const handleManualAcpConfiguration = () => {
-    setProviderOption(ACP_REGISTRY_DRIVER_KIND);
+    setDriver(ACP_REGISTRY_DRIVER_KIND);
     setSelectedAcp(null);
     setIsManualAcpConfiguration(true);
-    setConfigByOption((existing) => {
+    setConfigByDriver((existing) => {
       const next = { ...existing };
       delete next[ACP_REGISTRY_DRIVER_KIND];
       return next;
     });
-    setIdentityByOption((existing) =>
+    setIdentityByDriver((existing) =>
       updateProviderIdentityDraft(existing, ACP_REGISTRY_DRIVER_KIND, {
         label: "",
         instanceIdOverride: null,
@@ -428,17 +361,17 @@ export function AddProviderInstanceDialog({
     setHasAttemptedSubmit(false);
   };
 
-  const configureLocalAcp = (nextLabel: string, config: Record<string, unknown>) => {
-    setProviderOption(ACP_REGISTRY_DRIVER_KIND);
+  const handleLocalAcpConfiguration = () => {
+    setDriver(ACP_REGISTRY_DRIVER_KIND);
     setSelectedAcp(null);
     setIsManualAcpConfiguration(true);
-    setConfigByOption((existing) => ({
+    setConfigByDriver((existing) => ({
       ...existing,
-      [ACP_REGISTRY_DRIVER_KIND]: { ...config, source: "local" },
+      [ACP_REGISTRY_DRIVER_KIND]: { source: "local", commandArgs: [] },
     }));
-    setIdentityByOption((existing) =>
+    setIdentityByDriver((existing) =>
       updateProviderIdentityDraft(existing, ACP_REGISTRY_DRIVER_KIND, {
-        label: nextLabel,
+        label: gt("Local ACP"),
         instanceIdOverride: null,
       }),
     );
@@ -447,13 +380,7 @@ export function AddProviderInstanceDialog({
   };
 
   // A policy that owns this driver's launch settings also rules out ChatGPT's own runtime.
-  const driverLocks = managedInstanceLocks(managedPolicy, driver);
-  const doubaoApiKeyField = isDoubao && !configDraft.serverUrl ? DOUBAO_API_KEY_FIELD : undefined;
-  const doubaoKeyLock =
-    doubaoApiKeyField &&
-    (driverLocks?.wholeEnvironment || driverLocks?.environmentNames.has(doubaoApiKeyField.name))
-      ? driverLocks.reason
-      : undefined;
+  const driverLocks = managedInstanceLocks(managedPolicy, driver, m);
 
   const handleSave = async () => {
     if (!readEnvironmentScope(environmentId, AuthProvidersManageScope)) return;
@@ -461,15 +388,12 @@ export function AddProviderInstanceDialog({
     setHasAttemptedSubmit(true);
     if (instanceIdError !== null || (isAcpRegistry && acpSelectionError !== null)) return;
 
-    const config = driver === "codex" ? { ...configDraft, setupMode: "existing" } : configDraft;
+    const config =
+      driver === "codex"
+        ? { ...configByDriver[driver], setupMode: "existing" }
+        : (configByDriver[driver] ?? {});
     const hasConfig = Object.keys(config).length > 0;
     const normalizedAccentColor = normalizeProviderAccentColor(accentColor);
-    const environment =
-      isLocalAcp && !isQoderCn
-        ? localEnvironment
-        : doubaoApiKeyField && !doubaoKeyLock
-          ? doubaoEnvironment
-          : [];
 
     const nextInstance: ProviderInstanceConfig = {
       driver,
@@ -477,7 +401,7 @@ export function AddProviderInstanceDialog({
       ...(label.trim().length > 0 ? { displayName: label.trim() } : {}),
       ...(normalizedAccentColor ? { accentColor: normalizedAccentColor } : {}),
       ...(hasConfig ? { config } : {}),
-      ...(environment.length > 0 ? { environment } : {}),
+      ...(isLocalAcp && localEnvironment.length > 0 ? { environment: localEnvironment } : {}),
     };
     const brandedId = ProviderInstanceId.make(instanceId);
     setIsSaving(true);
@@ -491,8 +415,11 @@ export function AddProviderInstanceDialog({
       setIsSaving(false);
       toastManager.add({
         type: "error",
-        title: "无法添加提供者实例",
-        description: error instanceof Error ? error.message : "设置更新失败。",
+        title: gt("Could not add provider instance"),
+        description:
+          error instanceof Error
+            ? (thrownErrorMessage(error, resolveMessage) ?? error.message)
+            : gt("The settings update failed."),
       });
       return;
     }
@@ -505,8 +432,11 @@ export function AddProviderInstanceDialog({
     }
     toastManager.add({
       type: "success",
-      title: "添加了提供者实例",
-      description: `已添加 ${label.trim() || optionLabel}（${instanceId}）。`,
+      title: gt("Provider instance added"),
+      description: gt("{provider} instance ''{instanceId}'' was added.", {
+        provider: driverOption.label,
+        instanceId,
+      }),
     });
     onOpenChange(false);
   };
@@ -525,10 +455,14 @@ export function AddProviderInstanceDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <WizardPopup size="wide">
         <WizardHeader
-          title="添加代理提供方"
-          description={<>在其中添加账户或配置提供者 {environmentLabel}.</>}
+          title={gt("Add provider")}
+          description={
+            <T>
+              Add an account or configure a provider on <Var>{environmentLabel}</Var>.
+            </T>
+          }
         >
-          {isDoubaoCli ? null : isAcpRegistry ? (
+          {isAcpRegistry ? (
             <AddProviderInstanceWizardSteps
               currentStep={wizardStep}
               summaries={wizardStepSummaries}
@@ -562,24 +496,15 @@ export function AddProviderInstanceDialog({
             <WizardPanel className={cn(isAcpRegistry && wizardStep === identityStep && "min-h-72")}>
               <div className={cn("grid gap-2", wizardStep !== 0 && "hidden")}>
                 <div id="add-instance-driver-label" className="text-sm font-medium text-foreground">
-                  代理提供方
+                  {gt("Provider", { $context: "wizard step" })}
                 </div>
                 <ProviderOptionGrid
                   options={featuredDriverOptions}
-                  value={providerOption}
+                  value={driver}
                   disabled={isPreparingRegistryAgent}
-                  onValueChange={selectProviderOption}
+                  onValueChange={selectDriver}
                   aria-labelledby="add-instance-driver-label"
                 />
-                {isDoubaoCli ? (
-                  <p className="text-sm text-muted-foreground">
-                    扫码需要已开通豆包 CLI 权限的企业账号。
-                  </p>
-                ) : isDoubao ? (
-                  <p className="text-sm text-muted-foreground">
-                    支持火山方舟 Coding Plan 个人版，需套餐专属 API 密钥和 OpenCode。
-                  </p>
-                ) : null}
                 <MultipleAccountsNote environmentId={environmentId} driver={driver} />
               </div>
 
@@ -587,7 +512,7 @@ export function AddProviderInstanceDialog({
                 <Collapsible open={showMoreProviders} onOpenChange={setShowMoreProviders}>
                   <div className="flex pt-2">
                     <CollapsibleTrigger render={<Button variant="ghost-muted" size="xs" />}>
-                      {showMoreProviders ? "收起" : "显示更多"}
+                      {showMoreProviders ? gt("Show less") : gt("Show more")}
                       <ChevronDownIcon
                         aria-hidden
                         className={cn("transition-transform", showMoreProviders && "rotate-180")}
@@ -599,15 +524,17 @@ export function AddProviderInstanceDialog({
                     <div className="space-y-4 pt-4">
                       <ProviderOptionGrid
                         options={moreDriverOptions}
-                        value={providerOption}
+                        value={driver}
                         disabled={isPreparingRegistryAgent}
-                        onValueChange={selectProviderOption}
-                        aria-label="更多代理提供方"
+                        onValueChange={selectDriver}
+                        aria-label={gt("More providers")}
                       />
                       {!acpRegistryAllowed ? null : (
                         <div className="flex items-center gap-3 text-xs text-muted-foreground">
                           <div aria-hidden className="flex-1 border-t border-border/70" />
-                          <span>或从 ACP 注册表选择</span>
+                          <span>
+                            <T>Or choose from ACP Registry</T>
+                          </span>
                           <div aria-hidden className="flex-1 border-t border-border/70" />
                         </div>
                       )}
@@ -616,12 +543,16 @@ export function AddProviderInstanceDialog({
                           <div className="flex items-start justify-between gap-3">
                             <div>
                               <h3 className="text-sm font-medium text-foreground">
-                                {isLocalAcp ? "本地 ACP 命令" : "手动输入"}
+                                {isLocalAcp ? gt("Local ACP command") : gt("Enter manually")}
                               </h3>
                               <p className="mt-0.5 text-xs text-muted-foreground">
                                 {isLocalAcp
-                                  ? `在 ${environmentLabel} 上运行已安装的 ACP 可执行文件。`
-                                  : "输入注册表中的代理 ID。可选填本地可执行文件和认证方式。"}
+                                  ? gt("Run an installed ACP executable on {environment}.", {
+                                      environment: environmentLabel,
+                                    })
+                                  : gt(
+                                      "Enter an official registry ID and any local executable or auth override.",
+                                    )}
                               </p>
                             </div>
                             <Button
@@ -632,7 +563,7 @@ export function AddProviderInstanceDialog({
                               size="xs"
                               variant="ghost"
                             >
-                              搜索注册表
+                              <T>Search registry</T>
                             </Button>
                           </div>
                           <SettingsGroup variant="plain">
@@ -649,6 +580,7 @@ export function AddProviderInstanceDialog({
                                 environment={localEnvironment}
                                 onChange={setLocalEnvironment}
                                 secretSources={secretSources}
+                                environmentId={environmentId}
                               />
                             ) : null}
                           </SettingsGroup>
@@ -664,9 +596,7 @@ export function AddProviderInstanceDialog({
                             providerInstances={settings.providerInstances}
                             onPrepared={handleAcpPrepared}
                             onManualConfiguration={handleManualAcpConfiguration}
-                            onLocalConfiguration={() =>
-                              configureLocalAcp("本地 ACP", { commandArgs: [] })
-                            }
+                            onLocalConfiguration={handleLocalAcpConfiguration}
                           />
                           {isAcpRegistry && hasAttemptedSubmit && acpSelectionError ? (
                             <p className="mt-2 text-2xs text-destructive">{acpSelectionError}</p>
@@ -678,7 +608,7 @@ export function AddProviderInstanceDialog({
                 </Collapsible>
               ) : null}
 
-              {isAcpRegistry && !isLocalAcp && wizardStep === identityStep && selectedAcp ? (
+              {isAcpRegistry && wizardStep === 1 && selectedAcp ? (
                 <div className="mb-4 flex items-start justify-between gap-3 border-b border-border/70 pb-3">
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium text-foreground">
@@ -691,42 +621,34 @@ export function AddProviderInstanceDialog({
                   <div className="flex shrink-0 gap-2 text-2xs">
                     {selectedAcp.website ? (
                       <a
-                        aria-label={`为${selectedAcp.name} (${selectedAcp.id})打开文档`}
+                        aria-label={gt("Open documentation for {name} ({id})", {
+                          name: selectedAcp.name,
+                          id: selectedAcp.id,
+                        })}
                         className="text-muted-foreground hover:text-foreground"
                         href={selectedAcp.website}
                         rel="noreferrer"
                         target="_blank"
                       >
-                        文档
+                        <T>Docs</T>
                       </a>
                     ) : null}
                     {selectedAcp.repository ? (
                       <a
-                        aria-label={`${selectedAcp.name} (${selectedAcp.id}) 的开源`}
+                        aria-label={gt("Open source for {name} ({id})", {
+                          name: selectedAcp.name,
+                          id: selectedAcp.id,
+                        })}
                         className="text-muted-foreground hover:text-foreground"
                         href={selectedAcp.repository}
                         rel="noreferrer"
                         target="_blank"
                       >
-                        来源
+                        {gt("Source", { $context: "link to source code" })}
                       </a>
                     ) : null}
                   </div>
                 </div>
-              ) : null}
-
-              {isQoderCn && wizardStep === identityStep ? (
-                <p className="mb-4 text-sm text-muted-foreground">
-                  在 {environmentLabel} 上使用已安装的 Qoder CN CLI。
-                  <a
-                    className="ml-1 underline underline-offset-2"
-                    href="https://docs.qoder.cn/cli/installation"
-                    rel="noreferrer"
-                    target="_blank"
-                  >
-                    安装说明
-                  </a>
-                </p>
               ) : null}
 
               <SettingsGroup
@@ -734,9 +656,15 @@ export function AddProviderInstanceDialog({
                 className={cn(wizardStep !== identityStep && "hidden")}
               >
                 <SettingsRow
-                  title={<label htmlFor="add-provider-label">标签</label>}
+                  title={
+                    <label htmlFor="add-provider-label">
+                      {gt("Label", { $context: "noun, display name" })}
+                    </label>
+                  }
                   description={
-                    <span id="add-provider-label-description">在提供者列表中显示。</span>
+                    <span id="add-provider-label-description">
+                      <T>Shown in the provider list.</T>
+                    </span>
                   }
                   control={
                     <Input
@@ -744,16 +672,22 @@ export function AddProviderInstanceDialog({
                       aria-describedby="add-provider-label-description"
                       size="sm"
                       className="w-full @min-[32rem]/settings-row:w-56"
-                      placeholder="例如，工作"
+                      placeholder={gt("e.g. Work")}
                       value={label}
                       onChange={(event) => setIdentityDraft({ label: event.target.value })}
                     />
                   }
                 />
                 <SettingsRow
-                  title={<label htmlFor="add-provider-instance-id">实例标识</label>}
+                  title={
+                    <label htmlFor="add-provider-instance-id">
+                      <T>Instance ID</T>
+                    </label>
+                  }
                   description={
-                    <span id="add-provider-instance-id-description">字母，数字," -"，或"_"。</span>
+                    <span id="add-provider-instance-id-description">
+                      <T>Letters, digits, '-', or '_'.</T>
+                    </span>
                   }
                   status={
                     showInstanceIdError ? (
@@ -786,8 +720,8 @@ export function AddProviderInstanceDialog({
                   }
                 />
                 <SettingsRow
-                  title="强调色"
-                  description="用颜色区分模型选择器中的提供方实例。"
+                  title={gt("Accent color")}
+                  description={gt("Optional marker shown in the picker.")}
                   control={
                     <ProviderAccentColorPicker
                       displayName={label || driverOption.label}
@@ -801,30 +735,6 @@ export function AddProviderInstanceDialog({
 
               {!isAcpRegistry && driverSettingsFields.length > 0 ? (
                 <SettingsGroup variant="plain" className={cn(wizardStep !== 2 && "hidden")}>
-                  {doubaoApiKeyField ? (
-                    <ProviderEnvironmentFieldRow
-                      field={doubaoApiKeyField}
-                      variable={doubaoEnvironment[0]}
-                      idPrefix="add-provider-doubao"
-                      onCommit={(field, value) =>
-                        setDoubaoEnvironment((current) =>
-                          nextProviderEnvironmentWithFieldValue(current, field, value),
-                        )
-                      }
-                      onSecretChange={(field, secret) =>
-                        setDoubaoEnvironment((current) =>
-                          nextProviderEnvironmentWithFieldSecret(current, field, secret),
-                        )
-                      }
-                      onRemove={() => setDoubaoEnvironment([])}
-                      managedReason={doubaoKeyLock}
-                      secretSources={secretSources}
-                    />
-                  ) : isDoubao && configDraft.serverUrl ? (
-                    <p className="text-sm text-muted-foreground">
-                      请在该 OpenCode 服务器上配置火山方舟 Coding Plan。
-                    </p>
-                  ) : null}
                   <ProviderSettingsForm
                     definition={driverOption}
                     value={configDraft}
@@ -840,7 +750,7 @@ export function AddProviderInstanceDialog({
               ) : !isAcpRegistry && wizardStep === 2 ? (
                 <div className="grid gap-2">
                   <p className="text-sm text-muted-foreground">
-                    此驱动程序没有需要的配置。您现在可以添加实例。
+                    <T>This driver has no required configuration. You can add the instance now.</T>
                   </p>
                 </div>
               ) : null}
@@ -859,16 +769,12 @@ export function AddProviderInstanceDialog({
                   setWizardStep((step) => Math.max(0, step - 1));
                 }}
               >
-                {wizardStep === 0 ? "取消" : "返回"}
+                {wizardStep === 0 ? gt("Cancel") : gt("Back")}
               </Button>
-              {isDoubaoCli ? (
-                <Button size="sm" disabled={isPreparingRegistryAgent} onClick={onSelectDoubaoCli}>
-                  前往豆包 CLI 设置
-                </Button>
-              ) : wizardStep === 0 && driver === "codex" ? (
+              {wizardStep === 0 && driver === "codex" ? (
                 <>
                   <Button variant="outline" size="sm" onClick={() => navigateToStep(1)}>
-                    手动配置
+                    <T>Configure manually</T>
                   </Button>
                   {driverLocks?.configKeys.has("setupMode") ? null : (
                     <ChatGptConnectionButton
@@ -883,7 +789,7 @@ export function AddProviderInstanceDialog({
                   disabled={isPreparingRegistryAgent}
                   onClick={() => navigateToStep(wizardStep + 1)}
                 >
-                  下一步
+                  <T>Next</T>
                 </Button>
               ) : (
                 <Button
@@ -892,10 +798,10 @@ export function AddProviderInstanceDialog({
                   onClick={() => void handleSave()}
                 >
                   {isSaving
-                    ? "正在添加中…"
+                    ? gt("Adding...")
                     : isAcpRegistry && !isLocalAcp
-                      ? "继续登录"
-                      : "添加实例"}
+                      ? gt("Continue to sign-in")
+                      : gt("Add instance")}
                 </Button>
               )}
             </WizardFooter>
