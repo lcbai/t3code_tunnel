@@ -61,9 +61,9 @@ jobs:
           app="${apps[0]}"
           codesign --verify --deep --strict "$app"
           executable=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$app/Contents/Info.plist")
-          lipo -verify_arch arm64 "$app/Contents/MacOS/$executable"
+          lipo "$app/Contents/MacOS/$executable" -verify_arch arm64
           frpc="$app/Contents/Resources/frp/frpc"
-          lipo -verify_arch arm64 "$frpc"
+          lipo "$frpc" -verify_arch arm64
           if [[ "$(uname -m)" == arm64 ]]; then "$frpc" --version; fi
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
